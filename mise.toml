@@ -1,0 +1,44 @@
+[tools]
+xcodegen = "2.46.0"
+
+[tasks.app]
+description = "Build the universal macOS app into dist/"
+dir = "{{ config_root }}"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+xcodegen generate --quiet
+settings=()
+if [ -n "${SIGN_IDENTITY:-}" ]; then
+    settings+=(CODE_SIGN_IDENTITY="$SIGN_IDENTITY" OTHER_CODE_SIGN_FLAGS=--timestamp)
+fi
+if [ -n "${VERSION:-}" ]; then
+    settings+=(MARKETING_VERSION="$VERSION")
+fi
+if [ -n "${BUILD_NUMBER:-}" ]; then
+    settings+=(CURRENT_PROJECT_VERSION="$BUILD_NUMBER")
+fi
+xcodebuild -project UnlocalFS.xcodeproj -scheme UnlocalFS -configuration Release -destination "generic/platform=macOS" -derivedDataPath .build/xcode -quiet build ${settings[@]+"${settings[@]}"}
+rm -rf dist/UnlocalFS.app
+mkdir -p dist
+ditto .build/xcode/Build/Products/Release/UnlocalFS.app dist/UnlocalFS.app
+codesign --verify --deep --strict dist/UnlocalFS.app
+echo "Built $PWD/dist/UnlocalFS.app"
+'''
+
+[tasks.test]
+description = "Test the macOS app core"
+dir = "{{ config_root }}"
+run = "swift test --package-path Packages/UnlocalFSCore"
+
+[tasks."test:integration"]
+description = "Test the bundled rclone against a local S3 server, the NFS client, and Keychain"
+dir = "{{ config_root }}"
+depends = ["app"]
+env = { UNLOCALFS_TEST_KEYCHAIN = "1", RCLONE_BINARY = "{{ config_root }}/dist/UnlocalFS.app/Contents/Helpers/rclone" }
+run = "swift test --package-path Packages/UnlocalFSCore"
+
+[tasks.xcode]
+description = "Generate the Xcode project and open it"
+dir = "{{ config_root }}"
+run = "xcodegen generate && open UnlocalFS.xcodeproj"

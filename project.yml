@@ -1,0 +1,84 @@
+name: UnlocalFS
+options:
+  bundleIdPrefix: app.unlocalfs
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  UnlocalFSCore:
+    path: Packages/UnlocalFSCore
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+targets:
+  UnlocalFS:
+    type: application
+    platform: macOS
+    sources:
+      - path: UnlocalFS
+      - path: packaging/THIRD_PARTY_NOTICES.txt
+        buildPhase: resources
+      - path: libexec/mount
+        buildPhase:
+          copyFiles:
+            destination: resources
+            subpath: libexec
+    dependencies:
+      - package: UnlocalFSCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.unlocalfs.desktop
+        INFOPLIST_FILE: UnlocalFS/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        RCLONE_VERSION: 1.75.1
+        RCLONE_SHA256_ARM64: c61d7a371c62bcbbe882c3423aa4b8bf63485c248dd0f692997b8f0c3f6d0c6f
+        RCLONE_SHA256_AMD64: 29253d0288b8fbbac46baad6e5f6add6cb01d462c79f10805bbd4631c4cdf82c
+    postBuildScripts:
+      - name: Embed rclone
+        shell: /bin/bash
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          cache="$PROJECT_DIR/.build/rclone/$RCLONE_VERSION"
+          slices=()
+          for arch in $ARCHS; do
+              case "$arch" in
+                  arm64) platform=arm64 checksum="$RCLONE_SHA256_ARM64" ;;
+                  x86_64) platform=amd64 checksum="$RCLONE_SHA256_AMD64" ;;
+              esac
+              name="rclone-v$RCLONE_VERSION-osx-$platform"
+              if [ ! -x "$cache/$name/rclone" ]; then
+                  mkdir -p "$cache"
+                  curl -fsSL "https://github.com/rclone/rclone/releases/download/v$RCLONE_VERSION/$name.zip" -o "$cache/$name.zip"
+                  echo "$checksum  $cache/$name.zip" | shasum -a 256 -c -
+                  ditto -x -k "$cache/$name.zip" "$cache"
+                  rm "$cache/$name.zip"
+              fi
+              slices+=("$cache/$name/rclone")
+          done
+          helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/rclone"
+          mkdir -p "$(dirname "$helper")"
+          lipo -create "${slices[@]}" -output "$helper"
+          if [ "$EXPANDED_CODE_SIGN_IDENTITY" = "-" ]; then
+              codesign --force --sign - --options runtime "$helper"
+          else
+              codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime --timestamp "$helper"
+          fi
+schemes:
+  UnlocalFS:
+    build:
+      targets:
+        UnlocalFS: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - package: UnlocalFSCore/UnlocalFSCoreTests
+    archive:
+      config: Release

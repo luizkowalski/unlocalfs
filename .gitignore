@@ -1,0 +1,7 @@
+mise.local.toml
+.build/
+dist/
+.DS_Store
+.swiftpm/
+UnlocalFS.xcodeproj/
+/docs

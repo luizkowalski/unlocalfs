@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: jdx/mise-action@v2
+
+      - name: Test
+        run: mise test
+
+      - name: Build
+        run: VERSION="${TAG#v}" BUILD_NUMBER="$GITHUB_RUN_NUMBER" mise app
+
+      - name: Package
+        run: |
+          cd dist
+          zip="UnlocalFS-${TAG#v}.zip"
+          ditto -c -k --keepParent UnlocalFS.app "$zip"
+          shasum -a 256 "$zip" > "$zip.sha256"
+
+      - name: Upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" dist/UnlocalFS-*.zip dist/UnlocalFS-*.zip.sha256 --clobber

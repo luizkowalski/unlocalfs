@@ -1,0 +1,81 @@
+import AppKit
+import SwiftUI
+
+@main struct UnlocalFSApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+
+    var body: some Scene {
+        Window("UnlocalFS", id: "main") {
+            MainView().environment(delegate.model)
+        }
+        .defaultSize(width: 860, height: 580)
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Connection…") { delegate.model.editor = .init() }
+                    .keyboardShortcut("n")
+                    .disabled(!delegate.model.ready)
+            }
+        }
+        MenuBarExtra("UnlocalFS", systemImage: "externaldrive.badge.icloud") {
+            MenuContent().environment(delegate.model)
+        }
+    }
+}
+
+@MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+    let model = AppModel()
+    private var checkingQuit = false
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !checkingQuit else { return .terminateCancel }
+        checkingQuit = true
+        Task {
+            let allowed = await model.canQuit()
+            checkingQuit = false
+            if !allowed {
+                sender.activate()
+                let alert = NSAlert()
+                alert.messageText = "UnlocalFS is still running"
+                alert.informativeText = model.alert ?? "Disconnect your drives before quitting."
+                model.alert = nil
+                alert.runModal()
+            }
+            sender.reply(toApplicationShouldTerminate: allowed)
+        }
+        return .terminateLater
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag { sender.windows.first?.makeKeyAndOrderFront(nil) }
+        return true
+    }
+}
+
+private struct MenuContent: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Open UnlocalFS") {
+            openWindow(id: "main")
+            NSApp.activate()
+        }
+        Divider()
+        if model.connections.isEmpty { Text("No connections yet") }
+        ForEach(model.connections) { connection in
+            Menu(connection.name) {
+                Text(model.statusText(connection))
+                Button(model.isActive(connection) ? "Disconnect" : "Connect") {
+                    Task { await model.toggle(connection) }
+                }
+                .disabled(!model.canToggle(connection))
+                Button("Open in Finder") { model.openDrive(connection) }
+                    .disabled(model.statuses[connection.id]?.isMounted != true)
+            }
+        }
+        Divider()
+        Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
+    }
+}
