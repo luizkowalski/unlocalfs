@@ -34,6 +34,8 @@ struct MountTests {
             #expect(try String(contentsOf: mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "hello from S3")
             try Data("written through Finder's filesystem".utf8).write(to: mounted.appendingPathComponent("upload.txt"))
             #expect(try await service.status(connection).pendingUploads > 0)
+            let activity = try await service.activity(connection)
+            #expect(activity.contains { $0.path == "upload.txt" && $0.state == .queued })
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
             let reopened = MountService(executable: executable, helperDirectory: helpers, paths: paths)
             #expect(try await reopened.status(connection).isMounted)
@@ -42,6 +44,8 @@ struct MountTests {
                 try await Task.sleep(for: .milliseconds(500))
             }
             #expect(try String(contentsOf: source.appendingPathComponent("upload.txt"), encoding: .utf8) == "written through Finder's filesystem")
+            #expect(try await reopened.activity(connection).isEmpty)
+            try await verifyUploadProgress(service: reopened, connection: connection, paths: paths, executable: executable)
             try await reopened.unmount(connection)
             let stopped = try await reopened.status(connection)
             #expect(!stopped.isMounted && !stopped.isRunning)
@@ -52,6 +56,28 @@ struct MountTests {
             throw error
         }
     }
+}
+
+private func verifyUploadProgress(service: MountService, connection: Connection, paths: AppPaths, executable: URL) async throws {
+    _ = try await Command.run(executable, [
+        "rc", "--unix-socket", paths.socket(connection).path, "core/bwlimit", "rate=1M", "--config", "/dev/null"
+    ])
+    try Data(repeating: 42, count: 8 * 1024 * 1024).write(to: paths.mount(connection).appendingPathComponent("large.bin"))
+    var sawProgress = false
+    for _ in 0..<80 {
+        sawProgress = try await service.activity(connection).contains {
+            $0.path == "large.bin" && $0.state == .uploading && ($0.bytesTransferred ?? 0) > 0 && $0.size == 8 * 1024 * 1024
+        }
+        if sawProgress { break }
+        try await Task.sleep(for: .milliseconds(250))
+    }
+    #expect(sawProgress)
+    for _ in 0..<80 {
+        if try await service.activity(connection).isEmpty { break }
+        try await Task.sleep(for: .milliseconds(250))
+    }
+    #expect(try await service.activity(connection).isEmpty)
+    #expect(try await service.status(connection).isMounted)
 }
 
 private struct S3Server {

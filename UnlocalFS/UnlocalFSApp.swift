@@ -8,7 +8,7 @@ import SwiftUI
         Window("UnlocalFS", id: "main") {
             MainView().environment(delegate.model)
         }
-        .defaultSize(width: 860, height: 580)
+        .defaultSize(width: 860, height: 680)
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("New Connection…") { delegate.model.editor = .init() }

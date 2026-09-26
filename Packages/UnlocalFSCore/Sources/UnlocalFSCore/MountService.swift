@@ -111,6 +111,23 @@ public actor MountService {
         return status
     }
 
+    public func activity(_ connection: Connection) async throws -> [FileActivity] {
+        async let queueData = control(connection, "vfs/queue")
+        async let statsData = control(connection, "core/stats")
+        let queue = try await JSONDecoder().decode(UploadQueue.self, from: queueData).queue
+        let transfers = try await JSONDecoder().decode(TransferStats.self, from: statsData).transferring ?? []
+        let queuedPaths = Set(queue.map(\.name))
+        let queued = queue.map { item in
+            let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .retrying : .queued
+            let transfer = item.uploading ? transfers.first { $0.isUpload && $0.name == item.name } : nil
+            return FileActivity(path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes)
+        }
+        let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
+            FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes)
+        }
+        return (queued + transferring).sorted(using: KeyPathComparator(\.path, comparator: .localizedStandard))
+    }
+
     public func unmount(_ connection: Connection) async throws {
         let current = try await status(connection)
         guard !current.hasUnfinishedUploads else {
@@ -194,7 +211,7 @@ public actor MountService {
     private func isMounted(_ url: URL) -> Bool {
         let path = url.resolvingSymlinksInPath().path
         let volumes = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: [], options: []) ?? []
-        return volumes.contains { $0.path == path }
+        return volumes.contains { $0.resolvingSymlinksInPath().path == path }
     }
 }
 

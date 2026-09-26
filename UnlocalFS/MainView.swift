@@ -35,7 +35,7 @@ struct MainView: View {
                 }
             }
         }
-        .frame(minWidth: 720, minHeight: 500)
+        .frame(minWidth: 720, minHeight: 680)
         .sheet(item: $model.editor) { ConnectionEditor(connection: $0) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}
@@ -98,6 +98,9 @@ private struct ConnectionDetail: View {
                 }
                 if let error = model.errors[connection.id] {
                     errorBox(error)
+                }
+                if status?.isRunning == true {
+                    ActivityView(connection: connection)
                 }
                 GroupBox("Connection") {
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {

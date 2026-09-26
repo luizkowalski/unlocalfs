@@ -17,6 +17,8 @@ UnlocalFS runs [rclone](https://rclone.org), the open-source cloud storage tool,
 
 Drives mount in `~/UnlocalFS`. Files you open are cached on your Mac, so apps can read and edit them at local speed. Changes upload to your bucket after you close the file. The app shows pending uploads and will not disconnect a drive until they finish.
 
+Select a connected drive to see its activity: queued uploads, uploads waiting to retry, and active uploads and downloads with progress when available. The list refreshes every few seconds. Deletions are not shown because rclone does not report Finder deletions in its activity data. Disconnect the drive yourself when you are finished.
+
 ## Privacy
 
 - Your access key and secret key are stored in the macOS Keychain.
