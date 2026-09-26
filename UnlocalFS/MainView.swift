@@ -117,7 +117,13 @@ private struct ConnectionDetail: View {
                             row("Drive", Text(tildePath(model.paths.mount(connection))))
                             row("Cache", Text(tildePath(model.paths.cache(connection))))
                             if let status, status.isRunning {
-                                row("Cache size", Text("\(status.bytesCached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))"))
+                                row("Cache size", HStack(spacing: 12) {
+                                    Gauge(value: Double(status.bytesCached), in: 0...Double(connection.cacheLimit)) {}
+                                        .gaugeStyle(.linearCapacity)
+                                        .frame(maxWidth: 240)
+                                        .accessibilityLabel("Cache size")
+                                    Text("\(status.bytesCached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))")
+                                })
                             } else {
                                 row("Cache limit", Text(connection.cacheLimit, format: .byteCount(style: .file)))
                             }
@@ -189,7 +195,7 @@ private struct ConnectionDetail: View {
         (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
     }
 
-    private func row(_ label: LocalizedStringKey, _ value: Text) -> some View {
+    private func row(_ label: LocalizedStringKey, _ value: some View) -> some View {
         GridRow {
             Text(label).foregroundStyle(.secondary)
             value.textSelection(.enabled)
