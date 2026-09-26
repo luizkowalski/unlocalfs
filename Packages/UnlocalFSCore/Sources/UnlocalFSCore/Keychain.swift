@@ -37,11 +37,7 @@ public struct Keychain: Sendable {
     }
 
     private func query(_ id: UUID) -> [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: id.uuidString
-        ]
+        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: id.uuidString]
     }
 
     private func check(_ status: OSStatus) throws {

@@ -117,11 +117,8 @@ private struct ConnectionDetail: View {
                                 row("Cache size", status.bytesCached.formatted(.byteCount(style: .file)))
                             }
                         }
-                        Text(
-                            "Files upload after you close them. Keep the drive connected until pending uploads finish."
-                        )
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                        Text("Files upload after you close them. Keep the drive connected until pending uploads finish.")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 }
@@ -154,9 +151,7 @@ private struct ConnectionDetail: View {
                     if model.busy.contains(connection.id) {
                         ProgressView().controlSize(.small)
                     } else {
-                        Circle()
-                            .fill(status?.isMounted == true ? Color.green : Color.secondary)
-                            .frame(width: 7, height: 7)
+                        Circle().fill(status?.isMounted == true ? Color.green : Color.secondary).frame(width: 7, height: 7)
                     }
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
                 }

@@ -43,9 +43,7 @@ public actor MountService {
         guard !starting.contains(connection.id) else { throw AppError("This drive is already connecting.") }
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
-        guard try await !status(connection).isActive else {
-            throw AppError("This drive is already running. Disconnect it first.")
-        }
+        guard try await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
         try await test(connection, credentials: credentials)
         try paths.prepare()
         let mount = paths.mount(connection)
@@ -94,9 +92,7 @@ public actor MountService {
         var status = MountStatus()
         status.isMounted = isMounted(paths.mount(connection))
         guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            if status.isMounted {
-                throw AppError("The drive is mounted, but its control service is unavailable. Do not delete its cache.")
-            }
+            if status.isMounted { throw AppError("The drive is mounted, but its control service is unavailable. Do not delete its cache.") }
             status.isRunning = isRunning(connection)
             return status
         }
@@ -122,23 +118,15 @@ public actor MountService {
         }
         if current.isMounted {
             do {
-                _ = try await Command.run(
-                    URL(filePath: "/sbin/umount"),
-                    [paths.mount(connection).path],
-                    timeout: .seconds(10)
-                )
+                _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(10))
             } catch {
-                throw AppError(
-                    "Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)"
-                )
+                throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
             }
         }
         if current.isRunning {
             let remaining = try await status(connection)
             guard !remaining.hasUnfinishedUploads else {
-                throw AppError(
-                    "The drive was ejected, but uploads are still finishing. Disconnect again after they complete."
-                )
+                throw AppError("The drive was ejected, but uploads are still finishing. Disconnect again after they complete.")
             }
             if remaining.isRunning { try await stop(connection) }
         }

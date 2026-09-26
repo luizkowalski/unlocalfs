@@ -19,8 +19,7 @@ struct MountTests {
             mounts: root.appendingPathComponent("drives"),
             logs: root.appendingPathComponent("logs")
         )
-        let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("../../../../libexec").standardized
+        let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../../libexec").standardized
         let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
         var connection = fixture()
         connection.endpoint = "http://127.0.0.1:19753"
@@ -32,8 +31,7 @@ struct MountTests {
         try await service.mount(connection, credentials: credentials)
         do {
             let mounted = paths.mount(connection)
-            let hello = try String(contentsOf: mounted.appendingPathComponent("hello.txt"), encoding: .utf8)
-            #expect(hello == "hello from S3")
+            #expect(try String(contentsOf: mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "hello from S3")
             try Data("written through Finder's filesystem".utf8).write(to: mounted.appendingPathComponent("upload.txt"))
             #expect(try await service.status(connection).pendingUploads > 0)
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
@@ -43,8 +41,7 @@ struct MountTests {
                 if try await reopened.status(connection).pendingUploads == 0 { break }
                 try await Task.sleep(for: .milliseconds(500))
             }
-            let uploaded = try String(contentsOf: source.appendingPathComponent("upload.txt"), encoding: .utf8)
-            #expect(uploaded == "written through Finder's filesystem")
+            #expect(try String(contentsOf: source.appendingPathComponent("upload.txt"), encoding: .utf8) == "written through Finder's filesystem")
             try await reopened.unmount(connection)
             let stopped = try await reopened.status(connection)
             #expect(!stopped.isMounted && !stopped.isRunning)
@@ -66,18 +63,12 @@ private struct S3Server {
         FileManager.default.createFile(atPath: logURL.path, contents: nil)
         log = try FileHandle(forWritingTo: logURL)
         process.executableURL = executable
-        process.arguments = [
-            "serve", "s3", root.appendingPathComponent("source").path,
-            "--addr", "127.0.0.1:19753",
-            "--auth-key", "test-key,test-secret",
-            "--config", "/dev/null"
-        ]
+        process.arguments = ["serve", "s3", root.appendingPathComponent("source").path, "--addr", "127.0.0.1:19753", "--auth-key", "test-key,test-secret", "--config", "/dev/null"]
         process.standardOutput = log
         process.standardError = log
         try process.run()
         try await Task.sleep(for: .seconds(1))
-        let output = (try? String(contentsOf: logURL, encoding: .utf8)) ?? ""
-        try #require(process.isRunning, "S3 fixture could not start: \(output)")
+        try #require(process.isRunning, "S3 fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")")
     }
 
     func stop() {
