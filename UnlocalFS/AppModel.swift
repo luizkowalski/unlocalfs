@@ -3,6 +3,8 @@ import Observation
 import UnlocalFSCore
 
 @MainActor @Observable final class AppModel {
+    enum Activity { case idle, connected, syncing }
+
     var connections: [Connection] = []
     var selection: UUID?
     var statuses: [UUID: MountStatus] = [:]
@@ -137,6 +139,11 @@ import UnlocalFSCore
             }
         }
         return true
+    }
+
+    var activity: Activity {
+        if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .syncing }
+        return statuses.values.contains(where: \.isMounted) ? .connected : .idle
     }
 
     func isActive(_ connection: Connection) -> Bool {

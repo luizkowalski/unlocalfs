@@ -16,8 +16,10 @@ import SwiftUI
                     .disabled(!delegate.model.ready)
             }
         }
-        MenuBarExtra("UnlocalFS", systemImage: "externaldrive.badge.icloud") {
+        MenuBarExtra {
             MenuContent().environment(delegate.model)
+        } label: {
+            MenuBarIcon(activity: delegate.model.activity)
         }
     }
 }
