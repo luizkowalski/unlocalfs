@@ -4,3 +4,4 @@ included:
   - Packages/UnlocalFSCore/Tests
 disabled_rules:
   - optional_data_string_conversion
+line_length: 180

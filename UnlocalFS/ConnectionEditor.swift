@@ -78,7 +78,7 @@ struct ConnectionEditor: View {
         } catch { self.error = error.localizedDescription }
     }
 
-    private func test() async {
+    func test() async {
         testing = true
         tested = false
         error = nil
