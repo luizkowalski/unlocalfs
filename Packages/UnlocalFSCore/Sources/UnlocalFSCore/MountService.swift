@@ -66,6 +66,8 @@ public actor MountService {
             "nfsmount", ":s3:\(connection.bucket)", mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path,
+            "--vfs-cache-max-size", "\(connection.cacheLimit)B",
+            "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--s3-directory-markers", "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
         ]

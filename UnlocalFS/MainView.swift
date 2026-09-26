@@ -104,20 +104,25 @@ private struct ConnectionDetail: View {
                 }
                 GroupBox("Connection") {
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
-                        row("Provider", connection.provider.title)
-                        row("Bucket", connection.bucket)
-                        row("Endpoint", connection.endpoint)
-                        row("Region", connection.region.isEmpty ? "Default" : connection.region)
+                        row("Provider", Text(connection.provider.title))
+                        row("Bucket", Text(connection.bucket))
+                        row("Endpoint", Text(connection.endpoint))
+                        row("Region", connection.region.isEmpty ? Text("Default") : Text(connection.region))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 }
                 GroupBox("On this Mac") {
                     VStack(alignment: .leading, spacing: 14) {
                         Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
-                            row("Drive", tildePath(model.paths.mount(connection)))
-                            row("Cache", tildePath(model.paths.cache(connection)))
+                            row("Drive", Text(tildePath(model.paths.mount(connection))))
+                            row("Cache", Text(tildePath(model.paths.cache(connection))))
                             if let status, status.isRunning {
-                                row("Cache size", status.bytesCached.formatted(.byteCount(style: .file)))
+                                row("Cache size", Text("\(status.bytesCached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))"))
+                            } else {
+                                row("Cache limit", Text(connection.cacheLimit, format: .byteCount(style: .file)))
+                            }
+                            if connection.minimumFreeSpace > 0 {
+                                row("Keep free", Text(connection.minimumFreeSpace, format: .byteCount(style: .file)))
                             }
                         }
                         Text("Files upload after you close them. Keep the drive connected until pending uploads finish.")
@@ -184,10 +189,10 @@ private struct ConnectionDetail: View {
         (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
     }
 
-    private func row(_ label: String, _ value: String) -> some View {
+    private func row(_ label: LocalizedStringKey, _ value: Text) -> some View {
         GridRow {
             Text(label).foregroundStyle(.secondary)
-            Text(value).textSelection(.enabled)
+            value.textSelection(.enabled)
         }
     }
 }

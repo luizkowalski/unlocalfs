@@ -7,8 +7,22 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var endpoint = ""
     public var region = "us-east-1"
     public var bucket = ""
+    public var cacheLimit: Int64 = 128_000_000
+    public var minimumFreeSpace: Int64 = 0
 
     public init() {}
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        provider = try container.decode(Provider.self, forKey: .provider)
+        endpoint = try container.decode(String.self, forKey: .endpoint)
+        region = try container.decode(String.self, forKey: .region)
+        bucket = try container.decode(String.self, forKey: .bucket)
+        cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
+        minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
+    }
 
     public func validate() throws {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

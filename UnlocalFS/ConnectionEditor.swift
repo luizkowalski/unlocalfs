@@ -15,8 +15,12 @@ struct ConnectionEditor: View {
         _connection = State(initialValue: connection)
     }
 
+    private static let cacheLimits: [Int64] = [128_000_000, 512_000_000, 1_000_000_000, 5_000_000_000, 10_000_000_000, 50_000_000_000]
+    private static let freeSpaces: [Int64] = [1_000_000_000, 5_000_000_000, 10_000_000_000, 20_000_000_000]
+
     private var isNew: Bool { !model.connections.contains { $0.id == connection.id } }
     private var isLocked: Bool { testing || !credentialsLoaded }
+    private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket] }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,6 +38,17 @@ struct ConnectionEditor: View {
                     TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Cache") {
+                    Picker("Cache limit", selection: $connection.cacheLimit) {
+                        ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                    }
+                    Picker("Keep free on disk", selection: $connection.minimumFreeSpace) {
+                        Text("Off").tag(Int64(0))
+                        ForEach(Self.freeSpaces, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                    }
+                    Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Credentials") {
@@ -65,9 +80,10 @@ struct ConnectionEditor: View {
             }
             .padding(20)
         }
-        .frame(width: 560, height: 630)
+        .frame(width: 560)
+        .presentationSizing(.fitted)
         .onAppear(perform: loadCredentials)
-        .onChange(of: connection) { tested = false }
+        .onChange(of: testInputs) { tested = false }
         .onChange(of: credentials) { tested = false }
     }
 

@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "UnlocalFSCore",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v15)],
     products: [.library(name: "UnlocalFSCore", targets: ["UnlocalFSCore"])],
     dependencies: [.package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")],
     targets: [

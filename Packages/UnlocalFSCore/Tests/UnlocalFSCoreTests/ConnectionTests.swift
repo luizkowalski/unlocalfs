@@ -19,6 +19,19 @@ import UnlocalFSCore
         #expect(try store.all().isEmpty)
     }
 
+    @Test func connectionsSavedBeforeCacheLimitsUseTheDefaults() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("config.json")
+        try Data("""
+        {"connections":[{"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"us-east-1"}]}
+        """.utf8).write(to: url)
+        let connection = try #require(try ConnectionStore(url: url).all().first)
+        #expect(connection.cacheLimit == 128_000_000)
+        #expect(connection.minimumFreeSpace == 0)
+    }
+
     @Test func driveNamesAreUniqueRegardlessOfCase() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

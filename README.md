@@ -27,7 +27,7 @@ Select a connected drive to see its activity: queued uploads, uploads waiting to
 
 ## Install
 
-Download the latest `UnlocalFS-<version>.zip` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), unzip it, and move **UnlocalFS** to Applications. It needs macOS 14 or later and runs on Apple silicon and Intel Macs.
+Download the latest `UnlocalFS-<version>.zip` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), unzip it, and move **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
 
 The app is not notarized yet, so macOS blocks it the first time. Remove the quarantine flag:
 
@@ -49,7 +49,7 @@ Closing the window keeps UnlocalFS in the menu bar, where you can connect, disco
 ## Good to know
 
 - S3 is not a local disk. Saving a large file takes as long as uploading it. Try UnlocalFS with files you have copies of first.
-- The local cache has no size limit yet. It lives in `~/Library/Application Support/UnlocalFS/cache`. Do not delete it while uploads are pending.
+- Each drive has a cache limit (default 128 MB) and an optional amount of disk space to keep free. When the cache is over the limit, rclone removes the files you have not opened for the longest time. Open files and pending uploads stay, so the cache can go over the limit for a short time. The cache lives in `~/Library/Application Support/UnlocalFS/cache`. Do not delete it while uploads are pending.
 - Drives do not connect automatically at login.
 - Logs are in `~/Library/Logs/UnlocalFS`. Click **Open Log** in the app to see the log of a drive.
 
