@@ -22,7 +22,11 @@ public struct AppPaths: Sendable {
 
     public func prepare() throws {
         for directory in [support, sockets, logs, mounts] {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
         }
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: sockets.path)
     }
@@ -30,7 +34,9 @@ public struct AppPaths: Sendable {
     public func mount(_ connection: Connection) -> URL { mounts.appending(path: connection.name) }
     public func cache(_ connection: Connection) -> URL { support.appending(path: "cache/\(connection.id.uuidString)") }
     public func log(_ connection: Connection) -> URL { logs.appending(path: "\(connection.id.uuidString).log") }
-    public func socket(_ connection: Connection) -> URL { sockets.appending(path: "\(connection.id.uuidString.prefix(18)).sock") }
+    public func socket(_ connection: Connection) -> URL {
+        sockets.appending(path: "\(connection.id.uuidString.prefix(18)).sock")
+    }
 
     private var sockets: URL { support.appending(path: "run") }
 }

@@ -64,8 +64,11 @@ import UnlocalFSCore
         do {
             try keychain.save(credentials, for: connection.id)
         } catch {
-            if let previous { try store.save(previous) }
-            else { try store.delete(connection.id) }
+            if let previous {
+                try store.save(previous)
+            } else {
+                try store.delete(connection.id)
+            }
             throw error
         }
         connections = try store.all()
@@ -78,7 +81,9 @@ import UnlocalFSCore
         busy.insert(connection.id)
         defer { busy.remove(connection.id) }
         do {
-            guard try await !service.status(connection).isActive else { throw AppError("Disconnect this drive before deleting it.") }
+            guard try await !service.status(connection).isActive else {
+                throw AppError("Disconnect this drive before deleting it.")
+            }
             try keychain.delete(connection.id)
             try store.delete(connection.id)
             connections = try store.all()
@@ -125,11 +130,18 @@ import UnlocalFSCore
         for connection in connections {
             do {
                 if try await service.status(connection).isActive {
-                    alert = "Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar."
+                    alert = """
+                        Disconnect your drives before quitting. This keeps pending uploads safe. \
+                        Closing the window leaves UnlocalFS in the menu bar.
+                        """
                     return false
                 }
             } catch {
-                alert = "Could not check \(connection.name). Open its log and check the drive before quitting.\n\n\(error.localizedDescription)"
+                alert = """
+                    Could not check \(connection.name). Open its log and check the drive before quitting.
+
+                    \(error.localizedDescription)
+                    """
                 return false
             }
         }
@@ -153,7 +165,10 @@ import UnlocalFSCore
         if errors[connection.id] != nil { return "Needs attention" }
         guard let status = statuses[connection.id] else { return "Checking…" }
         if status.failedUploads > 0 { return "Upload needs attention" }
-        if status.pendingUploads > 0 { return String(AttributedString(localized: "^[\(status.pendingUploads) upload](inflect: true) pending").characters) }
+        if status.pendingUploads > 0 {
+            let pending = AttributedString(localized: "^[\(status.pendingUploads) upload](inflect: true) pending")
+            return String(pending.characters)
+        }
         if status.isMounted { return "Connected" }
         if status.isRunning { return "Ejected · disconnect to stop" }
         return "Disconnected"

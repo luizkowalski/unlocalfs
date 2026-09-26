@@ -14,7 +14,8 @@ public struct Keychain: Sendable {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound { return nil }
         try check(status)
-        return try JSONDecoder().decode(Credentials.self, from: result as! Data)
+        guard let data = result as? Data else { throw AppError("Keychain returned unexpected data.") }
+        return try JSONDecoder().decode(Credentials.self, from: data)
     }
 
     public func save(_ credentials: Credentials, for id: UUID) throws {
@@ -36,7 +37,11 @@ public struct Keychain: Sendable {
     }
 
     private func query(_ id: UUID) -> [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: id.uuidString]
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: id.uuidString
+        ]
     }
 
     private func check(_ status: OSStatus) throws {

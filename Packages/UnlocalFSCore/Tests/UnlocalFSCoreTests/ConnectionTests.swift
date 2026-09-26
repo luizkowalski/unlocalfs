@@ -36,7 +36,12 @@ import UnlocalFSCore
         #expect(throws: (any Error).self) { try connection.validate() }
     }
 
-    @Test(arguments: ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"])
+    @Test(arguments: [
+        "ftp://example.com",
+        "https://example.com/bucket",
+        "https://user:pass@example.com",
+        "https://example.com?secret=value"
+    ])
     func invalidS3EndpointsAreRejected(endpoint: String) {
         var connection = fixture()
         connection.endpoint = endpoint

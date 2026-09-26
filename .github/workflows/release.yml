@@ -17,6 +17,9 @@ jobs:
 
       - uses: jdx/mise-action@v4
 
+      - name: Lint
+        run: mise lint
+
       - name: Test
         run: mise test
 

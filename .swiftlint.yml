@@ -1,0 +1,6 @@
+included:
+  - UnlocalFS
+  - Packages/UnlocalFSCore/Sources
+  - Packages/UnlocalFSCore/Tests
+disabled_rules:
+  - optional_data_string_conversion

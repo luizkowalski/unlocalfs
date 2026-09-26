@@ -42,7 +42,12 @@ struct MainView: View {
         } message: {
             Text($0)
         }
-        .confirmationDialog("Delete \(model.deleting?.name ?? "connection")?", isPresented: $model.isConfirmingDelete, titleVisibility: .visible, presenting: model.deleting) { connection in
+        .confirmationDialog(
+            "Delete \(model.deleting?.name ?? "connection")?",
+            isPresented: $model.isConfirmingDelete,
+            titleVisibility: .visible,
+            presenting: model.deleting
+        ) { connection in
             Button("Delete Connection", role: .destructive) { Task { await model.delete(connection) } }
         } message: { _ in
             Text("This removes the saved connection and credentials. Remote files and the local file cache are kept.")
@@ -104,27 +109,37 @@ private struct ConnectionDetail: View {
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 }
                 GroupBox("On this Mac") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(model.paths.mount(connection).path).textSelection(.enabled)
-                        if let status, status.isRunning {
-                            Text("\(status.bytesCached.formatted(.byteCount(style: .file))) cached locally")
-                                .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 14) {
+                        Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
+                            row("Drive", tildePath(model.paths.mount(connection)))
+                            row("Cache", tildePath(model.paths.cache(connection)))
+                            if let status, status.isRunning {
+                                row("Cache size", status.bytesCached.formatted(.byteCount(style: .file)))
+                            }
                         }
-                        Text("Files upload after you close them. Keep the drive connected until pending uploads finish.")
-                            .font(.callout).foregroundStyle(.secondary)
+                        Text(
+                            "Files upload after you close them. Keep the drive connected until pending uploads finish."
+                        )
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 }
-                HStack {
-                    Button("Edit Connection") { model.editor = connection }
-                        .disabled(!model.canEdit(connection))
-                    Button("Open Log") { model.openLog(connection) }
-                    Spacer()
-                    Button("Delete…", role: .destructive) { model.deleting = connection }
-                        .disabled(!model.canEdit(connection))
-                }
             }
             .padding(28)
+        }
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Button("Edit Connection") { model.editor = connection }
+                    .disabled(!model.canEdit(connection))
+                Button("Open Log") { model.openLog(connection) }
+                Spacer()
+                Button("Delete…", role: .destructive) { model.deleting = connection }
+                    .disabled(!model.canEdit(connection))
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 16)
+            .background(.bar)
         }
         .navigationTitle(connection.name)
     }
@@ -139,7 +154,9 @@ private struct ConnectionDetail: View {
                     if model.busy.contains(connection.id) {
                         ProgressView().controlSize(.small)
                     } else {
-                        Circle().fill(status?.isMounted == true ? Color.green : Color.secondary).frame(width: 7, height: 7)
+                        Circle()
+                            .fill(status?.isMounted == true ? Color.green : Color.secondary)
+                            .frame(width: 7, height: 7)
                     }
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
                 }
@@ -163,6 +180,10 @@ private struct ConnectionDetail: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading).padding(6)
         }
+    }
+
+    private func tildePath(_ url: URL) -> String {
+        (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
     }
 
     private func row(_ label: String, _ value: String) -> some View {

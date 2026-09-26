@@ -9,7 +9,8 @@ import UnlocalFSCore
         "\"uploadsQueued\":0,\"uploadsInProgress\":0,\"erroredFiles\":1"
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String) async throws {
-        try await withFixture(script: "#!/bin/sh\nprintf '%s' '{\"diskCache\":{\(cache),\"bytesUsed\":42}}'\n") { service, connection in
+        let script = "#!/bin/sh\nprintf '%s' '{\"diskCache\":{\(cache),\"bytesUsed\":42}}'\n"
+        try await withFixture(script: script) { service, connection in
             let status = try await service.status(connection)
             #expect(status.isRunning)
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -36,7 +37,7 @@ import UnlocalFSCore
 
     @Test(arguments: ["before", "during", "after"])
     func disconnectSucceedsWhenRcloneExitsDuringShutdown(phase: String) async throws {
-        try await withFixture(script: { shutdownScript(phase: phase, root: $0) }) { service, connection in
+        try await withFixture { shutdownScript(phase: phase, root: $0) } operation: { service, connection in
             try await service.unmount(connection)
             let status = try await service.status(connection)
             #expect(!status.isMounted && !status.isRunning)
@@ -44,7 +45,7 @@ import UnlocalFSCore
     }
 
     @Test func disconnectReportsQuitFailuresWhileRcloneRemainsRunning() async throws {
-        try await withFixture(script: { shutdownScript(phase: "running", root: $0) }) { service, connection in
+        try await withFixture { shutdownScript(phase: "running", root: $0) } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
                 error is AppError && error.localizedDescription.contains("Quit failed")
             }
@@ -54,9 +55,18 @@ import UnlocalFSCore
     }
 
     @Test func connectionErrorsDoNotExposeCredentials() async throws {
-        let script = "#!/bin/sh\nprintf '%s' \"Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN\"\nexit 1\n"
+        let script = """
+            #!/bin/sh
+            printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN"
+            exit 1
+
+            """
         try await withFixture(script: script) { service, connection in
-            let credentials = Credentials(accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token")
+            let credentials = Credentials(
+                accessKey: "private-access",
+                secretKey: "private-secret",
+                sessionToken: "private-token"
+            )
             await #expect { try await service.test(connection, credentials: credentials) } throws: { error in
                 !error.localizedDescription.contains("private-") && error.localizedDescription.contains("Denied")
             }
@@ -84,10 +94,18 @@ private func withFixture(script: String, operation: (MountService, Connection) a
     try await withFixture(script: { _ in script }, operation: operation)
 }
 
-private func withFixture(script: (URL) -> String, operation: (MountService, Connection) async throws -> Void) async throws {
+private func withFixture(
+    script: (URL) -> String,
+    operation: (MountService, Connection) async throws -> Void
+) async throws {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
-    let paths = AppPaths(config: root.appendingPathComponent("config.json"), support: root, mounts: root.appendingPathComponent("drives"), logs: root.appendingPathComponent("logs"))
+    let paths = AppPaths(
+        config: root.appendingPathComponent("config.json"),
+        support: root,
+        mounts: root.appendingPathComponent("drives"),
+        logs: root.appendingPathComponent("logs")
+    )
     try paths.prepare()
     let connection = fixture()
     FileManager.default.createFile(atPath: paths.socket(connection).path, contents: Data())

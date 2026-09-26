@@ -24,8 +24,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
               url.path.isEmpty || url.path == "/" else {
             throw AppError("Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query.")
         }
-        guard !bucket.isEmpty, bucket != ".", bucket != "..",
-              bucket.rangeOfCharacter(from: CharacterSet(charactersIn: "/:").union(.whitespacesAndNewlines).union(.controlCharacters)) == nil else {
+        let forbidden = CharacterSet(charactersIn: "/:").union(.whitespacesAndNewlines).union(.controlCharacters)
+        guard !bucket.isEmpty, bucket != ".", bucket != "..", bucket.rangeOfCharacter(from: forbidden) == nil else {
             throw AppError("Enter the bucket name, without a path.")
         }
     }

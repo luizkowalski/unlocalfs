@@ -1,4 +1,5 @@
 [tools]
+swiftlint = "0.65.1"
 xcodegen = "2.46.0"
 
 [tasks.app]
@@ -42,3 +43,8 @@ run = "swift test --package-path Packages/UnlocalFSCore"
 description = "Generate the Xcode project and open it"
 dir = "{{ config_root }}"
 run = "xcodegen generate && open UnlocalFS.xcodeproj"
+
+[tasks.lint]
+description = "Lint Swift sources"
+dir = "{{ config_root }}"
+run = "swiftlint lint --strict"
