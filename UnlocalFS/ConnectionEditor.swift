@@ -31,7 +31,7 @@ struct ConnectionEditor: View {
                         ForEach(Provider.allCases) { Text($0.title).tag($0) }
                     }
                     TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket"))
-                    TextField("Endpoint", text: $connection.endpoint, prompt: Text("https://s3.example.com"))
+                    TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto.")
                         .font(.caption).foregroundStyle(.secondary)
