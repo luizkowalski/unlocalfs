@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -11,7 +12,7 @@ jobs:
   build:
     runs-on: macos-26
     env:
-      TAG: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v7
 
@@ -33,7 +34,7 @@ jobs:
           ditto -c -k --keepParent UnlocalFS.app "$zip"
           shasum -a 256 "$zip" > "$zip.sha256"
 
-      - name: Upload
+      - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" dist/UnlocalFS-*.zip dist/UnlocalFS-*.zip.sha256 --clobber
+        run: gh release create "$TAG" dist/UnlocalFS-*.zip dist/UnlocalFS-*.zip.sha256 --verify-tag --generate-notes

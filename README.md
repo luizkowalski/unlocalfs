@@ -59,10 +59,11 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 mise install
 mise app      # builds dist/UnlocalFS.app
 mise test     # runs the tests
+mise lint     # runs SwiftLint
 mise xcode    # opens the project in Xcode
 ```
 
-Publishing a release on GitHub builds the app and attaches it to that release. The release tag, such as `v0.2.0`, sets the app version.
+CI lints, tests, and builds every push. Pushing a tag such as `v0.2.0` builds the app and publishes a GitHub release with it. The tag sets the app version.
 
 ## License
 
