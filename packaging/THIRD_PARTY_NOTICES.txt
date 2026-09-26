@@ -21,3 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 SQLite is in the public domain (https://sqlite.org/copyright.html).
+
+Provider icons are from Simple Icons 16.32.0 (https://simpleicons.org), released under CC0 1.0.
+Amazon S3, Cloudflare, MinIO, Wasabi, and DigitalOcean are trademarks of their respective owners.

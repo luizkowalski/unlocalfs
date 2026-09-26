@@ -8,7 +8,7 @@ struct MainView: View {
         @Bindable var model = model
         NavigationSplitView {
             List(selection: $model.selection) {
-                Section("Connections") {
+                Section("Unlocals") {
                     ForEach(model.connections) { ConnectionRow(connection: $0) }
                 }
             }
@@ -104,7 +104,7 @@ private struct ConnectionDetail: View {
                 }
                 GroupBox("Connection") {
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
-                        row("Provider", Text(connection.provider.title))
+                        row("Provider", Label { Text(connection.provider.title) } icon: { connection.provider.logo })
                         row("Bucket", Text(connection.bucket))
                         row("Endpoint", Text(connection.endpoint))
                         row("Region", connection.region.isEmpty ? Text("Default") : Text(connection.region))
@@ -157,8 +157,10 @@ private struct ConnectionDetail: View {
 
     private var header: some View {
         HStack(spacing: 16) {
-            Image(systemName: "externaldrive.badge.icloud")
-                .font(.system(size: 40, weight: .light)).foregroundStyle(.tint)
+            logo
+                .frame(width: 40, height: 40)
+                .foregroundStyle(.tint)
+                .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 5) {
                 Text(connection.name).font(.largeTitle.bold())
                 HStack(spacing: 6) {
@@ -171,6 +173,14 @@ private struct ConnectionDetail: View {
                 }
             }
             Spacer()
+        }
+    }
+
+    @ViewBuilder private var logo: some View {
+        if connection.provider == .other {
+            connection.provider.logo.font(.system(size: 40, weight: .light))
+        } else {
+            connection.provider.logo.resizable().scaledToFit()
         }
     }
 

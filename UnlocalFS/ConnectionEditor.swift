@@ -32,7 +32,9 @@ struct ConnectionEditor: View {
                 Section("Drive") {
                     TextField("Name", text: $connection.name, prompt: Text("My storage"))
                     Picker("Provider", selection: $connection.provider) {
-                        ForEach(Provider.allCases) { Text($0.title).tag($0) }
+                        ForEach(Provider.allCases) { provider in
+                            Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
+                        }
                     }
                     TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket"))
                     TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
