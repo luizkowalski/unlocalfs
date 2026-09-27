@@ -48,54 +48,17 @@ import UnlocalFSCore
         #expect(Credentials().validate().map(\.field) == ["Access key", "Secret key"])
     }
 
-    @Test(arguments: ["", ".", "..", "a/b", "a:b", "bad\nname"])
-    func invalidMountNamesAreRejected(name: String) {
-        var connection = fixture()
-        connection.name = name
-        #expect(!connection.validate().isEmpty)
-    }
+    static let invalidConnections: [(String, Connection)] =
+        ["", ".", "..", "a/b", "a:b", "bad\nname", String(repeating: "a", count: 121), String(repeating: "é", count: 61)].map { ("Name", fixture(name: $0)) } +
+        ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"].map { ("Endpoint", fixture(endpoint: $0)) } +
+        ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"].map { ("Bucket", fixture(bucket: $0)) } +
+        ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"].map { ("Folder", fixture(folder: $0)) }
 
-    @Test(arguments: ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"])
-    func invalidFoldersAreNotSaved(folder: String) {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let store = ConnectionStore(url: directory.appendingPathComponent("config.json"))
-        var connection = fixture()
-        connection.folder = folder
-        #expect(throws: (any Error).self) { try store.save(connection) }
-    }
-
-    @Test(arguments: ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"])
-    func invalidS3EndpointsAreRejected(endpoint: String) {
-        var connection = fixture()
-        connection.endpoint = endpoint
-        #expect(!connection.validate().isEmpty)
-    }
-
-    @Test func validationReportsAllInvalidFields() {
-        var connection = fixture()
-        connection.name = " "
-        connection.endpoint = "not a URL"
-        connection.bucket = "bad/bucket"
-        connection.folder = "../private"
-        #expect(Set(connection.validate().map(\.field)) == ["Name", "Endpoint", "Bucket", "Folder"])
-    }
-
-    @Test(arguments: [String(repeating: "a", count: 121), String(repeating: "é", count: 61)])
-    func driveNamesOverTheByteLimitAreRejected(name: String) {
-        var connection = fixture()
-        connection.name = name
-        #expect(connection.validate().map(\.field) == ["Name"])
-    }
-
-    @Test(arguments: ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"])
-    func invalidBucketsAreNotSaved(bucket: String) throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let store = ConnectionStore(url: directory.appendingPathComponent("config.json"))
-        var connection = fixture()
-        connection.bucket = bucket
-        #expect(throws: (any Error).self) { try store.save(connection) }
+    @Test(arguments: invalidConnections)
+    func invalidConnectionsAreNotSaved(field: String, connection: Connection) throws {
+        let store = ConnectionStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/config.json"))
+        #expect(Set(connection.validate().map(\.field)) == [field])
+        #expect(throws: AppError.self) { try store.save(connection) }
         #expect(try store.all().isEmpty)
     }
 
@@ -106,10 +69,11 @@ import UnlocalFSCore
     }
 }
 
-func fixture() -> Connection {
+func fixture(name: String = "My files", endpoint: String = "https://s3.example.com", bucket: String = "my-bucket", folder: String = "") -> Connection {
     var connection = Connection()
-    connection.name = "My files"
-    connection.endpoint = "https://s3.example.com"
-    connection.bucket = "my-bucket"
+    connection.name = name
+    connection.endpoint = endpoint
+    connection.bucket = bucket
+    connection.folder = folder
     return connection
 }

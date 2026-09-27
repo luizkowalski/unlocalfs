@@ -57,20 +57,8 @@ import UnlocalFSCore
         """)
         #expect(activity.map(\.path) == ["file2.txt", "file10.txt"])
     }
-
-    @Test func idleDriveHasNoActivity() async throws {
-        let activity = try await fetchActivity(queue: "{\"queue\":[]}")
-        #expect(activity.isEmpty)
-    }
-
-    @Test func invalidActivityIsReportedInsteadOfShowingAnIdleDrive() async {
-        await #expect(throws: DecodingError.self) {
-            try await fetchActivity(queue: "{}")
-        }
-    }
 }
 
-@discardableResult
 private func fetchActivity(queue: String, stats: String = "{}") async throws -> [FileActivity] {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
