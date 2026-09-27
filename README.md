@@ -7,7 +7,7 @@
 
 <h1 align="center">UnlocalFS</h1>
 
-UnlocalFS puts your S3 bucket in Finder. Add a bucket once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac.
+UnlocalFS puts your S3 bucket in Finder. Add a bucket once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
 
 It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and any other S3-compatible storage.
 
@@ -41,12 +41,28 @@ You can also open the app once, then choose **System Settings → Privacy & Secu
 
 1. Click **Add Connection**.
 2. Enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
-
-   To show only one folder of the bucket as the drive, enter its path in **Folder**, for example `clients/acme`. This limits what the drive shows. It does not limit access. If two drives show the same files, a change in one drive can take time to show in the other, and edits to the same file at the same time can overwrite each other.
 3. Enter your access key and secret key, then click **Test Connection** and **Save**.
 4. Click **Connect**, then **Open in Finder**.
 
 Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. UnlocalFS will not quit while a drive is connected, so pending uploads are never cut off. Disconnect your drives first. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
+
+## Folder drives
+
+A drive can show one folder of a bucket instead of the whole bucket. Enter the folder path in **Folder**, for example `clients/acme`, and the drive opens straight into that folder. This is handy for a big shared bucket: make one drive per project, client, or type of file.
+
+To add another folder from the same bucket, select a drive and choose **Duplicate**. The copy keeps the endpoint, bucket, and credentials, so you only change the name and the folder.
+
+A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. If two drives show the same files, a change in one can take a moment to show in the other, and saving the same file from both at once can overwrite one of the edits.
+
+## Shortcuts
+
+| Action | Shortcut |
+|---|---|
+| New connection | ⌘N |
+| Edit the selected connection | ⌘E |
+| Duplicate the selected connection | ⌘D |
+
+Right-click a drive in the sidebar to open it in Finder, edit, duplicate, or delete it. You can only edit or delete a drive while it is disconnected.
 
 ## Good to know
 
@@ -74,7 +90,7 @@ mise lint     # runs SwiftLint
 mise xcode    # opens the project in Xcode
 ```
 
-CI lints, tests, and builds every push. Pushing a tag such as `v0.2.0` builds the app and publishes a GitHub release with it. The tag sets the app version.
+CI lints and tests every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
 ## License
 
