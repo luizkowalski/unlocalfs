@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import UnlocalFSCore
 
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct MountTests {
     @Test func s3DriveReadsUploadsSurvivesReopeningAndUnmountsSafely() async throws {
         let binary = try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"])
@@ -13,13 +13,7 @@ struct MountTests {
         let executable = URL(fileURLWithPath: binary)
         let server = try await S3Server(executable: executable, root: root)
         defer { server.stop() }
-        let paths = AppPaths(
-            config: root.appendingPathComponent("config.json"),
-            support: root.appendingPathComponent("app"),
-            mounts: root.appendingPathComponent("drives"),
-            logs: root.appendingPathComponent("logs")
-        )
-        let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../../libexec").standardized
+        let paths = appPaths(root)
         let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
         var connection = fixture()
         connection.endpoint = "http://127.0.0.1:19753"
@@ -56,6 +50,46 @@ struct MountTests {
             throw error
         }
     }
+
+    @Test func folderDriveShowsOnlyThatFolder() async throws {
+        let binary = try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"])
+        let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
+        let bucket = root.appendingPathComponent("source/my-bucket")
+        let folder = bucket.appendingPathComponent("clients/acme")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("acme plan".utf8).write(to: folder.appendingPathComponent("plan.txt"))
+        try Data("other client".utf8).write(to: bucket.appendingPathComponent("clients/other.txt"))
+        let executable = URL(fileURLWithPath: binary)
+        let server = try await S3Server(executable: executable, root: root)
+        defer { server.stop() }
+        let paths = appPaths(root)
+        let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
+        var connection = fixture()
+        connection.endpoint = "http://127.0.0.1:19753"
+        connection.folder = "clients/acme"
+        try await service.mount(connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+        do {
+            let mounted = paths.mount(connection)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: mounted.path) == ["plan.txt"])
+            #expect(try String(contentsOf: mounted.appendingPathComponent("plan.txt"), encoding: .utf8) == "acme plan")
+            try await service.unmount(connection)
+            try FileManager.default.removeItem(at: root)
+        } catch {
+            try? await service.unmount(connection)
+            throw error
+        }
+    }
+}
+
+private let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../../libexec").standardized
+
+private func appPaths(_ root: URL) -> AppPaths {
+    AppPaths(
+        config: root.appendingPathComponent("config.json"),
+        support: root.appendingPathComponent("app"),
+        mounts: root.appendingPathComponent("drives"),
+        logs: root.appendingPathComponent("logs")
+    )
 }
 
 private func verifyUploadProgress(service: MountService, connection: Connection, paths: AppPaths, executable: URL) async throws {

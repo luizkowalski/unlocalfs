@@ -30,7 +30,7 @@ public actor MountService {
         try credentials.validate()
         do {
             _ = try await Command.run(executable, [
-                "lsf", ":s3:\(connection.bucket)", "--max-depth", "1", "--dirs-only",
+                "lsf", remote(connection), "--max-depth", "1", "--dirs-only",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
                 "--contimeout", "5s", "--timeout", "10s"
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
@@ -63,7 +63,7 @@ public actor MountService {
         let process = Process()
         process.executableURL = executable
         process.arguments = [
-            "nfsmount", ":s3:\(connection.bucket)", mount.path,
+            "nfsmount", remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path,
             "--vfs-cache-max-size", "\(connection.cacheLimit)B",
@@ -141,6 +141,10 @@ public actor MountService {
             } catch {
                 throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
             }
+            for _ in 0..<20 {
+                if !isMounted(paths.mount(connection)) { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
         }
         if current.isRunning {
             let remaining = try await status(connection)
@@ -176,6 +180,10 @@ public actor MountService {
         try await Command.run(executable, [
             "rc", "--unix-socket", paths.socket(connection).path, method, "--config", "/dev/null"
         ], environment: baseEnvironment, timeout: .seconds(4))
+    }
+
+    private func remote(_ connection: Connection) -> String {
+        connection.folder.isEmpty ? ":s3:\(connection.bucket)" : ":s3:\(connection.bucket)/\(connection.folder)"
     }
 
     private func isRunning(_ connection: Connection) -> Bool {

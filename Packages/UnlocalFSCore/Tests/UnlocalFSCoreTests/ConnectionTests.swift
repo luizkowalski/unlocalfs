@@ -12,6 +12,7 @@ import UnlocalFSCore
         var connection = fixture()
         try store.save(connection)
         connection.region = "auto"
+        connection.folder = "clients/acme"
         try store.save(connection)
         let reopened = ConnectionStore(url: url)
         #expect(try reopened.all() == [connection])
@@ -47,6 +48,16 @@ import UnlocalFSCore
         var connection = fixture()
         connection.name = name
         #expect(throws: (any Error).self) { try connection.validate() }
+    }
+
+    @Test(arguments: ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"])
+    func invalidFoldersAreNotSaved(folder: String) {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConnectionStore(url: directory.appendingPathComponent("config.json"))
+        var connection = fixture()
+        connection.folder = folder
+        #expect(throws: (any Error).self) { try store.save(connection) }
     }
 
     @Test(arguments: ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"])
