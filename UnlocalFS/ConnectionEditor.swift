@@ -4,27 +4,36 @@ import UnlocalFSCore
 struct ConnectionEditor: View {
     @Environment(AppModel.self) private var model
     @State private var connection: Connection
+    private let credentialsSource: UUID
+    private let isDuplicate: Bool
     @State private var credentials = Credentials()
     @State private var credentialsLoaded = false
     @State private var testing = false
     @State private var tested = false
     @State private var error: String?
+    @FocusState private var folderFocused: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(connection: Connection) {
-        _connection = State(initialValue: connection)
+    init(draft: AppModel.Draft) {
+        _connection = State(initialValue: draft.connection)
+        credentialsSource = draft.credentialsSource
+        isDuplicate = draft.isDuplicate
     }
 
     private static let cacheLimits: [Int64] = [128_000_000, 512_000_000, 1_000_000_000, 5_000_000_000, 10_000_000_000, 50_000_000_000]
     private static let freeSpaces: [Int64] = [1_000_000_000, 5_000_000_000, 10_000_000_000, 20_000_000_000]
 
     private var isNew: Bool { !model.connections.contains { $0.id == connection.id } }
+    private var title: String {
+        if isDuplicate { return "Duplicate connection" }
+        return isNew ? "Add connection" : "Edit connection"
+    }
     private var isLocked: Bool { testing || !credentialsLoaded }
     private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder] }
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(isNew ? "Add connection" : "Edit connection")
+            Text(title)
                 .font(.title2.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(24)
@@ -38,6 +47,7 @@ struct ConnectionEditor: View {
                     }
                     TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket"))
                     TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme"))
+                        .focused($folderFocused)
                     TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
@@ -92,8 +102,9 @@ struct ConnectionEditor: View {
 
     private func loadCredentials() {
         do {
-            credentials = try model.credentials(for: connection)
+            credentials = try model.credentials(for: credentialsSource)
             credentialsLoaded = true
+            folderFocused = isDuplicate
         } catch { self.error = error.localizedDescription }
     }
 

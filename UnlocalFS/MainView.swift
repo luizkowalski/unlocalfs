@@ -14,14 +14,14 @@ struct MainView: View {
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230)
             .safeAreaInset(edge: .bottom) {
-                Button("Add connection", systemImage: "plus") { model.editor = Connection() }
+                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
                     .buttonStyle(.borderless)
                     .disabled(!model.ready)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
             }
         } detail: {
-            if let connection = model.connections.first(where: { $0.id == model.selection }) {
+            if let connection = model.selected {
                 ConnectionDetail(connection: connection)
             } else {
                 ContentUnavailableView {
@@ -29,14 +29,14 @@ struct MainView: View {
                 } description: {
                     Text("Connect an S3 bucket and use its files from your Mac.")
                 } actions: {
-                    Button("Add Connection") { model.editor = Connection() }
+                    Button("Add Connection") { model.edit(Connection()) }
                         .buttonStyle(.borderedProminent)
                         .disabled(!model.ready)
                 }
             }
         }
         .frame(minWidth: 720, minHeight: 680)
-        .sheet(item: $model.editor) { ConnectionEditor(connection: $0) }
+        .sheet(item: $model.editor) { ConnectionEditor(draft: $0) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}
         } message: {
@@ -74,6 +74,17 @@ private struct ConnectionRow: View {
             }
         }
         .tag(connection.id)
+        .contextMenu {
+            Button("Open in Finder") { model.openDrive(connection) }
+                .disabled(model.statuses[connection.id]?.isMounted != true)
+            Divider()
+            Button("Edit Connection") { model.edit(connection) }
+                .disabled(!model.canEdit(connection))
+            Button("Duplicate") { model.duplicate(connection) }
+            Divider()
+            Button("Delete…", role: .destructive) { model.deleting = connection }
+                .disabled(!model.canEdit(connection))
+        }
     }
 }
 
@@ -144,8 +155,9 @@ private struct ConnectionDetail: View {
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
-                Button("Edit Connection") { model.editor = connection }
+                Button("Edit Connection") { model.edit(connection) }
                     .disabled(!model.canEdit(connection))
+                Button("Duplicate") { model.duplicate(connection) }
                 Button("Open Log") { model.openLog(connection) }
                 Spacer()
                 Button("Delete…", role: .destructive) { model.deleting = connection }

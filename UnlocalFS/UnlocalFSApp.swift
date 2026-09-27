@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UnlocalFSCore
 
 @main struct UnlocalFSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
@@ -11,9 +12,14 @@ import SwiftUI
         .defaultSize(width: 860, height: 680)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("New Connection…") { delegate.model.editor = .init() }
+                Button("New Connection…") { delegate.model.edit(Connection()) }
                     .keyboardShortcut("n")
                     .disabled(!delegate.model.ready)
+                Button("Duplicate Connection…") {
+                    if let connection = delegate.model.selected { delegate.model.duplicate(connection) }
+                }
+                    .keyboardShortcut("d")
+                    .disabled(delegate.model.selected == nil)
             }
         }
         MenuBarExtra {

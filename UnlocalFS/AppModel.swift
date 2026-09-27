@@ -5,13 +5,20 @@ import UnlocalFSCore
 @MainActor @Observable final class AppModel {
     enum Activity { case idle, connected, syncing }
 
+    struct Draft: Identifiable {
+        var connection: Connection
+        var credentialsSource: UUID
+        var id: UUID { connection.id }
+        var isDuplicate: Bool { credentialsSource != connection.id }
+    }
+
     var connections: [Connection] = []
     var selection: UUID?
     var statuses: [UUID: MountStatus] = [:]
     var errors: [UUID: String] = [:]
     var busy: Set<UUID> = []
     var alert: String?
-    var editor: Connection?
+    var editor: Draft?
     var deleting: Connection?
     private(set) var ready = false
 
@@ -44,6 +51,8 @@ import UnlocalFSCore
         }
     }
 
+    var selected: Connection? { connections.first { $0.id == selection } }
+
     var isShowingAlert: Bool {
         get { alert != nil }
         set { if !newValue { alert = nil } }
@@ -54,8 +63,19 @@ import UnlocalFSCore
         set { if !newValue { deleting = nil } }
     }
 
-    func credentials(for connection: Connection) throws -> Credentials {
-        try keychain.read(connection.id) ?? Credentials()
+    func credentials(for id: UUID) throws -> Credentials {
+        try keychain.read(id) ?? Credentials()
+    }
+
+    func edit(_ connection: Connection) {
+        editor = Draft(connection: connection, credentialsSource: connection.id)
+    }
+
+    func duplicate(_ connection: Connection) {
+        var copy = connection
+        copy.id = UUID()
+        copy.name = "\(connection.name) copy"
+        editor = Draft(connection: copy, credentialsSource: connection.id)
     }
 
     func save(_ connection: Connection, credentials: Credentials) throws {
@@ -102,7 +122,7 @@ import UnlocalFSCore
             if try await service.status(connection).isActive {
                 try await service.unmount(connection)
             } else {
-                try await service.mount(connection, credentials: credentials(for: connection))
+                try await service.mount(connection, credentials: credentials(for: connection.id))
             }
             statuses[connection.id] = try await service.status(connection)
         } catch { errors[connection.id] = error.localizedDescription }
