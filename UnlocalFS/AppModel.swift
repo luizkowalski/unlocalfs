@@ -79,7 +79,7 @@ import UnlocalFSCore
     }
 
     func save(_ connection: Connection, credentials: Credentials) throws {
-        try connection.validate()
+        try connection.validateOrThrow()
         try credentials.validate()
         let previous = connections.first { $0.id == connection.id }
         try store.save(connection)

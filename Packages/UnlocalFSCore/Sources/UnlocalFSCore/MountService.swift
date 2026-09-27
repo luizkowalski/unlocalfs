@@ -26,7 +26,7 @@ public actor MountService {
     }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        try connection.validate()
+        try connection.validateOrThrow()
         try credentials.validate()
         do {
             _ = try await Command.run(executable, [

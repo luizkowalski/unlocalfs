@@ -14,7 +14,7 @@ public struct ConnectionStore: Sendable {
     }
 
     public func save(_ connection: Connection) throws {
-        try connection.validate()
+        try connection.validateOrThrow()
         let others = try all().filter { $0.id != connection.id }
         guard !others.contains(where: { $0.name.caseInsensitiveCompare(connection.name) == .orderedSame }) else {
             throw AppError("A drive with that name already exists.")
@@ -30,7 +30,9 @@ public struct ConnectionStore: Sendable {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        try encoder.encode(Config(connections: connections)).write(to: url, options: .atomic)
+        try encoder.encode(Config(connections: connections)).write(
+            to: url, options: .atomic
+        )
     }
 }
 

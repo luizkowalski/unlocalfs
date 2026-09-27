@@ -1,11 +1,12 @@
 import Foundation
+import SwiftDataValidator
 
-public struct Connection: Codable, Identifiable, Equatable, Sendable {
+public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatable {
     public var id = UUID()
     public var name = ""
     public var provider = Provider.other
     public var endpoint = ""
-    public var region = "us-east-1"
+    public var region = "auto"
     public var bucket = ""
     public var folder = ""
     public var cacheLimit: Int64 = 128_000_000
@@ -26,27 +27,48 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
     }
 
-    public func validate() throws {
-        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              name != ".", name != "..", name.utf8.count <= 120,
-              name.rangeOfCharacter(from: CharacterSet(charactersIn: "/:").union(.controlCharacters)) == nil else {
-            throw AppError("Enter a drive name without slashes, colons, or control characters.")
+    public func validate() -> [ValidationError] {
+        var validator = Validator()
+        let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
+        validator.validate(field: "Name", value: name) {
+            $0.notEmpty()
+            $0.custom({ _ in
+                name != "." && name != ".." &&
+                    name.rangeOfCharacter(from: forbiddenNameCharacters) == nil
+            }, error: .custom(message: "Enter a drive name without slashes, colons, or control characters."))
         }
-        guard let url = URLComponents(string: endpoint),
-              ["http", "https"].contains(url.scheme),
-              let host = url.host, !host.isEmpty,
-              url.user == nil, url.password == nil,
-              url.query == nil, url.fragment == nil,
-              url.path.isEmpty || url.path == "/" else {
-            throw AppError("Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query.")
+        validator.validate(field: "Name length (bytes)", value: name.utf8.count) {
+            $0.range(min: 0, max: 120)
         }
-        guard !bucket.isEmpty, bucket != ".", bucket != "..",
-              bucket.rangeOfCharacter(from: CharacterSet(charactersIn: "/:").union(.whitespacesAndNewlines).union(.controlCharacters)) == nil else {
-            throw AppError("Enter the bucket name, without a path.")
+        validator.validate(field: "Endpoint", value: endpoint) {
+            $0.matchesURL()
+            $0.custom({ _ in
+                guard let url = URLComponents(string: endpoint) else { return false }
+                return ["http", "https"].contains(url.scheme) &&
+                    url.host?.isEmpty == false && url.user == nil && url.password == nil &&
+                    url.query == nil && url.fragment == nil && (url.path.isEmpty || url.path == "/")
+            }, error: .custom(message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."))
         }
-        guard folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) }),
-              folder.rangeOfCharacter(from: .controlCharacters) == nil else {
-            throw AppError("Enter a folder path like clients/acme, or leave it empty to use the whole bucket.")
+        validator.validate(field: "Bucket", value: bucket) {
+            $0.notEmpty()
+            $0.custom({ _ in
+                bucket != "." && bucket != ".." &&
+                    bucket.rangeOfCharacter(from: forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil
+            }, error: .custom(message: "Enter the bucket name, without a path."))
+        }
+        validator.validate(field: "Folder", value: folder) {
+            $0.custom({ _ in
+                (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
+                    folder.rangeOfCharacter(from: .controlCharacters) == nil
+            }, error: .custom(message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."))
+        }
+        return validator.errors()
+    }
+
+    public func validateOrThrow() throws {
+        let errors = validate()
+        if !errors.isEmpty {
+            throw AppError(errors.map(\.localizedDescription).joined(separator: "\n"))
         }
     }
 }

@@ -47,7 +47,7 @@ import UnlocalFSCore
     func invalidMountNamesAreRejected(name: String) {
         var connection = fixture()
         connection.name = name
-        #expect(throws: (any Error).self) { try connection.validate() }
+        #expect(!connection.validate().isEmpty)
     }
 
     @Test(arguments: ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"])
@@ -64,13 +64,40 @@ import UnlocalFSCore
     func invalidS3EndpointsAreRejected(endpoint: String) {
         var connection = fixture()
         connection.endpoint = endpoint
-        #expect(throws: (any Error).self) { try connection.validate() }
+        #expect(!connection.validate().isEmpty)
+    }
+
+    @Test func validationReportsAllInvalidFields() {
+        var connection = fixture()
+        connection.name = " "
+        connection.endpoint = "not a URL"
+        connection.bucket = "bad/bucket"
+        connection.folder = "../private"
+        #expect(Set(connection.validate().map(\.field)) == ["Name", "Endpoint", "Bucket", "Folder"])
+    }
+
+    @Test(arguments: [String(repeating: "a", count: 121), String(repeating: "é", count: 61)])
+    func driveNamesOverTheByteLimitAreRejected(name: String) {
+        var connection = fixture()
+        connection.name = name
+        #expect(!connection.validate().isEmpty)
+    }
+
+    @Test(arguments: ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"])
+    func invalidBucketsAreNotSaved(bucket: String) throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConnectionStore(url: directory.appendingPathComponent("config.json"))
+        var connection = fixture()
+        connection.bucket = bucket
+        #expect(throws: (any Error).self) { try store.save(connection) }
+        #expect(try store.all().isEmpty)
     }
 
     @Test func localS3EndpointsAreAccepted() throws {
         var connection = fixture()
         connection.endpoint = "http://127.0.0.1:19753"
-        try connection.validate()
+        #expect(connection.validate().isEmpty)
     }
 }
 

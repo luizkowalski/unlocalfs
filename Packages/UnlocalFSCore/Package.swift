@@ -5,9 +5,15 @@ let package = Package(
     name: "UnlocalFSCore",
     platforms: [.macOS(.v15)],
     products: [.library(name: "UnlocalFSCore", targets: ["UnlocalFSCore"])],
-    dependencies: [.package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
+        .package(url: "https://github.com/joelklabo/SwiftDataValidator", from: "1.0.0")
+    ],
     targets: [
-        .target(name: "UnlocalFSCore", dependencies: [.product(name: "Subprocess", package: "swift-subprocess")]),
+        .target(name: "UnlocalFSCore", dependencies: [
+            .product(name: "Subprocess", package: "swift-subprocess"),
+            .product(name: "SwiftDataValidator", package: "SwiftDataValidator")
+        ]),
         .testTarget(name: "UnlocalFSCoreTests", dependencies: ["UnlocalFSCore"])
     ]
 )
