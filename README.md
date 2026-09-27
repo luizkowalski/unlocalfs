@@ -41,6 +41,8 @@ You can also open the app once, then choose **System Settings → Privacy & Secu
 
 1. Click **Add Connection**.
 2. Enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
+
+   To show only one folder of the bucket as the drive, enter its path in **Folder**, for example `clients/acme`. This limits what the drive shows. It does not limit access. If two drives show the same files, a change in one drive can take time to show in the other, and edits to the same file at the same time can overwrite each other.
 3. Enter your access key and secret key, then click **Test Connection** and **Save**.
 4. Click **Connect**, then **Open in Finder**.
 
