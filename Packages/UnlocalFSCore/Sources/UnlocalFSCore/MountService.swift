@@ -141,6 +141,10 @@ public actor MountService {
             } catch {
                 throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
             }
+            for _ in 0..<20 {
+                if !isMounted(paths.mount(connection)) { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
         }
         if current.isRunning {
             let remaining = try await status(connection)
