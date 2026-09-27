@@ -44,7 +44,7 @@ You can also open the app once, then choose **System Settings → Privacy & Secu
 3. Enter your access key and secret key, then click **Test Connection** and **Save**.
 4. Click **Connect**, then **Open in Finder**.
 
-Closing the window keeps UnlocalFS in the menu bar, where you can connect, disconnect, and open drives. UnlocalFS will not quit while a drive is connected, so pending uploads are never cut off. Disconnect your drives first. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
+Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. UnlocalFS will not quit while a drive is connected, so pending uploads are never cut off. Disconnect your drives first. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
 
 ## Good to know
 

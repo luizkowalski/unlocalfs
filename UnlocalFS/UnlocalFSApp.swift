@@ -28,7 +28,10 @@ import SwiftUI
     let model = AppModel()
     private var checkingQuit = false
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        sender.setActivationPolicy(.accessory)
+        return false
+    }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !checkingQuit else { return .terminateCancel }
@@ -50,6 +53,7 @@ import SwiftUI
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        sender.setActivationPolicy(.regular)
         if !flag { sender.windows.first?.makeKeyAndOrderFront(nil) }
         return true
     }
@@ -62,6 +66,7 @@ private struct MenuContent: View {
     var body: some View {
         Button("Open UnlocalFS") {
             openWindow(id: "main")
+            NSApp.setActivationPolicy(.regular)
             NSApp.activate()
         }
         Divider()
