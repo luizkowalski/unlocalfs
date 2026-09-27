@@ -14,12 +14,9 @@ public struct ConnectionStore: Sendable {
     }
 
     public func save(_ connection: Connection) throws {
-        try connection.validateOrThrow()
-        let others = try all().filter { $0.id != connection.id }
-        guard !others.contains(where: { $0.name.caseInsensitiveCompare(connection.name) == .orderedSame }) else {
-            throw AppError("A drive with that name already exists.")
-        }
-        try write(others + [connection])
+        let connections = try all()
+        try AppError.throwing(connection.validate(against: connections))
+        try write(connections.filter { $0.id != connection.id } + [connection])
     }
 
     public func delete(_ id: UUID) throws {

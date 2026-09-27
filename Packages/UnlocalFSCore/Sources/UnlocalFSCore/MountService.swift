@@ -26,8 +26,7 @@ public actor MountService {
     }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        try connection.validateOrThrow()
-        try credentials.validate()
+        try AppError.throwing(connection.validate() + credentials.validate())
         do {
             _ = try await Command.run(executable, [
                 "lsf", remote(connection), "--max-depth", "1", "--dirs-only",

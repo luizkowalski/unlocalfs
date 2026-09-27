@@ -41,6 +41,11 @@ import UnlocalFSCore
         var duplicate = fixture()
         duplicate.name = "my files"
         #expect(throws: (any Error).self) { try store.save(duplicate) }
+        #expect(try duplicate.validate(against: store.all()).map(\.field) == ["Name"])
+    }
+
+    @Test func missingCredentialsAreReportedPerField() {
+        #expect(Credentials().validate().map(\.field) == ["Access key", "Secret key"])
     }
 
     @Test(arguments: ["", ".", "..", "a/b", "a:b", "bad\nname"])
@@ -80,7 +85,7 @@ import UnlocalFSCore
     func driveNamesOverTheByteLimitAreRejected(name: String) {
         var connection = fixture()
         connection.name = name
-        #expect(!connection.validate().isEmpty)
+        #expect(connection.validate().map(\.field) == ["Name"])
     }
 
     @Test(arguments: ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"])

@@ -11,8 +11,13 @@ struct ConnectionEditor: View {
     @State private var testing = false
     @State private var tested = false
     @State private var error: String?
-    @FocusState private var folderFocused: Bool
+    @State private var showErrors = false
+    @FocusState private var focus: Field?
     @Environment(\.dismiss) private var dismiss
+
+    private enum Field: String, CaseIterable {
+        case name = "Name", bucket = "Bucket", folder = "Folder", endpoint = "Endpoint", accessKey = "Access key", secretKey = "Secret key"
+    }
 
     init(draft: AppModel.Draft) {
         _connection = State(initialValue: draft.connection)
@@ -30,8 +35,17 @@ struct ConnectionEditor: View {
     }
     private var isLocked: Bool { testing || !credentialsLoaded }
     private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder] }
+    private var fieldErrors: [Field: String] {
+        guard showErrors else { return [:] }
+        var errors: [Field: String] = [:]
+        for error in connection.validate(against: model.connections) + credentials.validate() {
+            if let field = Field(rawValue: error.field), errors[field] == nil { errors[field] = error.localizedDescription }
+        }
+        return errors
+    }
 
     var body: some View {
+        let errors = fieldErrors
         VStack(spacing: 0) {
             Text(title)
                 .font(.title2.bold())
@@ -39,16 +53,15 @@ struct ConnectionEditor: View {
                 .padding(24)
             Form {
                 Section("Drive") {
-                    TextField("Name", text: $connection.name, prompt: Text("My storage"))
+                    validated(.name, error: errors[.name]) { TextField("Name", text: $connection.name, prompt: Text("My storage")) }
                     Picker("Provider", selection: $connection.provider) {
                         ForEach(Provider.allCases) { provider in
                             Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
                         }
                     }
-                    TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket"))
-                    TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme"))
-                        .focused($folderFocused)
-                    TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
+                    validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket")) }
+                    validated(.folder, error: errors[.folder]) { TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme")) }
+                    validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -65,8 +78,8 @@ struct ConnectionEditor: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Credentials") {
-                    TextField("Access key", text: $credentials.accessKey)
-                    SecureField("Secret key", text: $credentials.secretKey)
+                    validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $credentials.accessKey) }
+                    validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
                     SecureField("Session token (optional)", text: $credentials.sessionToken)
                     Text("Credentials are stored in your Mac’s Keychain.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -74,19 +87,19 @@ struct ConnectionEditor: View {
             }
             .formStyle(.grouped)
             .disabled(isLocked)
-            if let error {
-                Text(error).foregroundStyle(.red).font(.callout).textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 24).padding(.bottom, 12)
-            } else if tested {
-                Label("Connection successful", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green).padding(.bottom, 12)
-            }
             Divider()
             HStack {
                 Button { Task { await test() } } label: {
                     if testing { ProgressView().controlSize(.small) } else { Text("Test Connection") }
                 }
                 .disabled(isLocked)
+                if let error {
+                    Label(error, systemImage: "exclamationmark.circle.fill")
+                        .foregroundStyle(.red).font(.callout).lineLimit(1).help(error).textSelection(.enabled)
+                } else if tested {
+                    Label("Connection successful", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green).font(.callout)
+                }
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(testing)
                 Button("Save", action: save).keyboardShortcut(.defaultAction).disabled(isLocked)
@@ -100,18 +113,43 @@ struct ConnectionEditor: View {
         .onChange(of: credentials) { tested = false }
     }
 
+    private func validated(_ field: Field, error: String?, @ViewBuilder input: () -> some View) -> some View {
+        LabeledContent {
+            VStack(alignment: .trailing, spacing: 4) {
+                input()
+                    .labelsHidden()
+                    .focused($focus, equals: field)
+                if let error {
+                    Label(error, systemImage: "exclamationmark.circle.fill")
+                        .font(.caption).foregroundStyle(.red).multilineTextAlignment(.trailing)
+                }
+            }
+        } label: {
+            Text(field.rawValue).foregroundStyle(error == nil ? Color.primary : Color.red)
+        }
+    }
+
+    private func focusFirstInvalidField() -> Bool {
+        showErrors = true
+        error = nil
+        let errors = fieldErrors
+        guard let field = Field.allCases.first(where: { errors[$0] != nil }) else { return false }
+        focus = field
+        return true
+    }
+
     private func loadCredentials() {
         do {
             credentials = try model.credentials(for: credentialsSource)
             credentialsLoaded = true
-            folderFocused = isDuplicate
+            if isDuplicate { focus = .folder }
         } catch { self.error = error.localizedDescription }
     }
 
     func test() async {
+        if focusFirstInvalidField() { return }
         testing = true
         tested = false
-        error = nil
         defer { testing = false }
         do {
             try await model.service.test(connection, credentials: credentials)
@@ -120,6 +158,7 @@ struct ConnectionEditor: View {
     }
 
     private func save() {
+        if focusFirstInvalidField() { return }
         do {
             try model.save(connection, credentials: credentials)
             dismiss()
