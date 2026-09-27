@@ -67,7 +67,7 @@ private struct MenuContent: View {
         Button("Open UnlocalFS") {
             openWindow(id: "main")
             NSApp.setActivationPolicy(.regular)
-            NSApp.activate()
+            NSApp.activate(ignoringOtherApps: true)
         }
         Divider()
         if model.connections.isEmpty { Text("No connections yet") }
