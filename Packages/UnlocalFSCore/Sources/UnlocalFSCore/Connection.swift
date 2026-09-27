@@ -36,9 +36,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
                 name != "." && name != ".." &&
                     name.rangeOfCharacter(from: forbiddenNameCharacters) == nil
             }, error: .custom(message: "Enter a drive name without slashes, colons, or control characters."))
-        }
-        validator.validate(field: "Name length (bytes)", value: name.utf8.count) {
-            $0.range(min: 0, max: 120)
+            $0.custom({ _ in name.utf8.count <= 120 }, error: .custom(message: "Enter a shorter drive name. The limit is 120 bytes."))
         }
         validator.validate(field: "Endpoint", value: endpoint) {
             $0.matchesURL()
@@ -65,11 +63,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         return validator.errors()
     }
 
-    public func validateOrThrow() throws {
-        let errors = validate()
-        if !errors.isEmpty {
-            throw AppError(errors.map(\.localizedDescription).joined(separator: "\n"))
+    public func validate(against connections: [Connection]) -> [ValidationError] {
+        var errors = validate()
+        if connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
+            errors.append(ValidationError(field: "Name", rule: .custom(message: "A drive with that name already exists.")))
         }
+        return errors
     }
 }
 
@@ -106,12 +105,19 @@ public struct Credentials: Codable, Equatable, Sendable {
         self.sessionToken = sessionToken
     }
 
-    public func validate() throws {
-        guard !accessKey.isEmpty, !secretKey.isEmpty else { throw AppError("Enter an access key and secret key.") }
+    public func validate() -> [ValidationError] {
+        var validator = Validator()
+        validator.validate(field: "Access key", value: accessKey) { $0.notEmpty() }
+        validator.validate(field: "Secret key", value: secretKey) { $0.notEmpty() }
+        return validator.errors()
     }
 }
 
 public struct AppError: LocalizedError, Sendable {
     public let errorDescription: String?
     public init(_ message: String) { errorDescription = message }
+
+    public static func throwing(_ errors: [ValidationError]) throws {
+        if !errors.isEmpty { throw AppError(errors.map(\.localizedDescription).joined(separator: "\n")) }
+    }
 }
