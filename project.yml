@@ -1,6 +1,5 @@
 name: UnlocalFS
 options:
-  bundleIdPrefix: app.unlocalfs
   deploymentTarget:
     macOS: "15.0"
 packages:
@@ -28,7 +27,7 @@ targets:
       - package: UnlocalFSCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.unlocalfs.desktop
+        PRODUCT_BUNDLE_IDENTIFIER: net.luizkowalski.unlocalfs
         INFOPLIST_FILE: UnlocalFS/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_IDENTITY: "-"
