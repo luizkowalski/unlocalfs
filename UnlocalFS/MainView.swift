@@ -106,6 +106,9 @@ private struct ConnectionDetail: View {
                     Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
                         row("Provider", Label { Text(connection.provider.title) } icon: { connection.provider.logo })
                         row("Bucket", Text(connection.bucket))
+                        if !connection.folder.isEmpty {
+                            row("Folder", Text(connection.folder))
+                        }
                         row("Endpoint", Text(connection.endpoint))
                         row("Region", connection.region.isEmpty ? Text("Default") : Text(connection.region))
                     }

@@ -7,6 +7,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var endpoint = ""
     public var region = "us-east-1"
     public var bucket = ""
+    public var folder = ""
     public var cacheLimit: Int64 = 128_000_000
     public var minimumFreeSpace: Int64 = 0
 
@@ -20,6 +21,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         endpoint = try container.decode(String.self, forKey: .endpoint)
         region = try container.decode(String.self, forKey: .region)
         bucket = try container.decode(String.self, forKey: .bucket)
+        folder = try container.decodeIfPresent(String.self, forKey: .folder) ?? folder
         cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
     }
@@ -41,6 +43,10 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         guard !bucket.isEmpty, bucket != ".", bucket != "..",
               bucket.rangeOfCharacter(from: CharacterSet(charactersIn: "/:").union(.whitespacesAndNewlines).union(.controlCharacters)) == nil else {
             throw AppError("Enter the bucket name, without a path.")
+        }
+        guard folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) }),
+              folder.rangeOfCharacter(from: .controlCharacters) == nil else {
+            throw AppError("Enter a folder path like clients/acme, or leave it empty to use the whole bucket.")
         }
     }
 }

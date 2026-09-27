@@ -20,7 +20,7 @@ struct ConnectionEditor: View {
 
     private var isNew: Bool { !model.connections.contains { $0.id == connection.id } }
     private var isLocked: Bool { testing || !credentialsLoaded }
-    private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket] }
+    private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder] }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,9 +37,10 @@ struct ConnectionEditor: View {
                         }
                     }
                     TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket"))
+                    TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme"))
                     TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com"))
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
-                    Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto.")
+                    Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Cache") {
