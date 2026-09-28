@@ -135,7 +135,12 @@ import UnlocalFSCore
         do {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch { alert = error.localizedDescription }
-        opensAtLogin = SMAppService.mainApp.status == .enabled
+        syncOpensAtLogin()
+    }
+
+    private func syncOpensAtLogin() {
+        let enabled = SMAppService.mainApp.status == .enabled
+        if opensAtLogin != enabled { opensAtLogin = enabled }
     }
 
     private func connectAutomatically() async {
@@ -148,6 +153,7 @@ import UnlocalFSCore
         guard !refreshing else { return }
         refreshing = true
         defer { refreshing = false }
+        syncOpensAtLogin()
         for connection in connections where !busy.contains(connection.id) {
             do {
                 let status = try await service.status(connection)
