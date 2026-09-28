@@ -79,6 +79,36 @@ struct MountTests {
             throw error
         }
     }
+
+    @Test func readOnlyDriveRejectsWrites() async throws {
+        let binary = try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"])
+        let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
+        let source = root.appendingPathComponent("source/my-bucket")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try Data("hello from S3".utf8).write(to: source.appendingPathComponent("hello.txt"))
+        let executable = URL(fileURLWithPath: binary)
+        let server = try await S3Server(executable: executable, root: root)
+        defer { server.stop() }
+        let paths = appPaths(root)
+        let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
+        var connection = fixture()
+        connection.endpoint = "http://127.0.0.1:19753"
+        connection.readOnly = true
+        try await service.mount(connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+        do {
+            let mounted = paths.mount(connection)
+            #expect(try String(contentsOf: mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "hello from S3")
+            #expect(throws: (any Error).self) { try Data("nope".utf8).write(to: mounted.appendingPathComponent("upload.txt")) }
+            #expect(throws: (any Error).self) { try FileManager.default.removeItem(at: mounted.appendingPathComponent("hello.txt")) }
+            try await service.unmount(connection)
+            #expect(FileManager.default.fileExists(atPath: source.appendingPathComponent("hello.txt").path))
+            #expect(!FileManager.default.fileExists(atPath: source.appendingPathComponent("upload.txt").path))
+            try FileManager.default.removeItem(at: root)
+        } catch {
+            try? await service.unmount(connection)
+            throw error
+        }
+    }
 }
 
 private let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("../../../../libexec").standardized

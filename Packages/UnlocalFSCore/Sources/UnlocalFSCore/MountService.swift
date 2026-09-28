@@ -61,7 +61,7 @@ public actor MountService {
         defer { try? log.close() }
         let process = Process()
         process.executableURL = executable
-        process.arguments = [
+        var arguments = [
             "nfsmount", remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path,
@@ -70,6 +70,8 @@ public actor MountService {
             "--s3-directory-markers", "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
         ]
+        if connection.readOnly { arguments.append("--read-only") }
+        process.arguments = arguments
         process.environment = environment(connection, credentials: credentials)
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
