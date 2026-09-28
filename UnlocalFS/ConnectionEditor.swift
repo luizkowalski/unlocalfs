@@ -74,7 +74,7 @@ struct ConnectionEditor: View {
                     Text("Credentials are stored in your Mac’s Keychain.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-                Section("Startup") {
+                Section("Options") {
                     Toggle("Connect on start up", isOn: $connection.connectsAutomatically)
                 }
                 Section("Cache") {
