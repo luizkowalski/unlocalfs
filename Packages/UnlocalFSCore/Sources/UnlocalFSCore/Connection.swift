@@ -11,6 +11,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
     public var folder = ""
     public var cacheLimit: Int64 = 128_000_000
     public var minimumFreeSpace: Int64 = 0
+    public var connectsAutomatically = false
 
     public init() {}
 
@@ -25,6 +26,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         folder = try container.decodeIfPresent(String.self, forKey: .folder) ?? folder
         cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
+        connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
     }
 
     public func validate() -> [ValidationError] {

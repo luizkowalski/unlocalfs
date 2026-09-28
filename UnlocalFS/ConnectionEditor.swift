@@ -66,6 +66,11 @@ struct ConnectionEditor: View {
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                Section("Startup") {
+                    Toggle("Connect automatically", isOn: $connection.connectsAutomatically)
+                    Text("Connects this drive when UnlocalFS opens. To open UnlocalFS when you log in, turn on Open at Login in the menu bar.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Cache") {
                     Picker("Cache limit", selection: $connection.cacheLimit) {
                         ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }

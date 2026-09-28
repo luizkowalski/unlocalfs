@@ -94,6 +94,7 @@ private struct MenuContent: View {
             }
         }
         Divider()
+        Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
         Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }
