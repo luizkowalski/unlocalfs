@@ -12,6 +12,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
     public var cacheLimit: Int64 = 128_000_000
     public var minimumFreeSpace: Int64 = 0
     public var connectsAutomatically = false
+    public var readOnly = false
 
     public init() {}
 
@@ -26,6 +27,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         folder = try container.decodeIfPresent(String.self, forKey: .folder) ?? folder
         cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
+        readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? readOnly
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
     }
 

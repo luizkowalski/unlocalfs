@@ -75,6 +75,26 @@ import UnlocalFSCore
         }
     }
 
+    @Test(arguments: [true, false])
+    func readOnlyDrivesMountWithReadOnlyAccess(readOnly: Bool) async throws {
+        try await withFixture { root in
+            """
+            #!/bin/sh
+            case "$1" in
+                lsf) exit 0 ;;
+                nfsmount) echo "$@" > '\(root.path)/arguments'; exit 1 ;;
+                *) exit 1 ;;
+            esac
+            """
+        } operation: { service, connection, root in
+            var connection = connection
+            connection.readOnly = readOnly
+            await #expect(throws: AppError.self) { try await service.mount(connection, credentials: Credentials(accessKey: "a", secretKey: "b")) }
+            let arguments = try String(contentsOf: root.appendingPathComponent("arguments"), encoding: .utf8)
+            #expect(arguments.contains("--read-only") == readOnly)
+        }
+    }
+
     @Test func connectionErrorsDoNotExposeCredentials() async throws {
         let script = "#!/bin/sh\nprintf '%s' \"Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN\"\nexit 1\n"
         try await withFixture(script: script) { service, connection in

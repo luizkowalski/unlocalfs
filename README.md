@@ -52,7 +52,7 @@ A drive can show one folder of a bucket instead of the whole bucket. Enter the f
 
 To add another folder from the same bucket, select a drive and choose **Duplicate**. The copy keeps the endpoint, bucket, and credentials, so you only change the name and the folder.
 
-A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. If two drives show the same files, a change in one can take a moment to show in the other, and saving the same file from both at once can overwrite one of the edits.
+A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. To block writes, turn on **Read-only** in the drive settings. Apps then cannot create, change, or delete files on the drive. For full protection, use keys that only have read access. If two drives show the same files, a change in one can take a moment to show in the other, and saving the same file from both at once can overwrite one of the edits.
 
 ## Shortcuts
 

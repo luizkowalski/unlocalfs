@@ -65,6 +65,9 @@ struct ConnectionEditor: View {
                     TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
                         .font(.caption).foregroundStyle(.secondary)
+                    Toggle("Read-only", isOn: $connection.readOnly)
+                    Text("Apps cannot create, change, or delete files on this drive. This limits the drive, not your keys. Use read-only keys for full protection.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Startup") {
                     Toggle("Connect automatically", isOn: $connection.connectsAutomatically)

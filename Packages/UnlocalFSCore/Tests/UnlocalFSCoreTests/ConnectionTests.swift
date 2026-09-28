@@ -13,6 +13,7 @@ import UnlocalFSCore
         try store.save(connection)
         connection.region = "auto"
         connection.folder = "clients/acme"
+        connection.readOnly = true
         connection.connectsAutomatically = true
         try store.save(connection)
         let reopened = ConnectionStore(url: url)
@@ -32,6 +33,7 @@ import UnlocalFSCore
         let connection = try #require(try ConnectionStore(url: url).all().first)
         #expect(connection.cacheLimit == 128_000_000)
         #expect(connection.minimumFreeSpace == 0)
+        #expect(!connection.readOnly)
         #expect(!connection.connectsAutomatically)
     }
 
