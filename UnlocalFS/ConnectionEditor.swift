@@ -14,12 +14,24 @@ struct ConnectionEditor: View {
     @State private var tested = false
     @State private var error: String?
     @State private var showErrors = false
+    @State private var pane = Pane.connection
     @FocusState private var focus: Field?
     @Environment(\.dismiss) private var dismiss
 
+    private enum Pane: String, CaseIterable {
+        case connection = "Connection", settings = "Settings"
+    }
+
     private enum Field: String, CaseIterable {
-        case name = "Name", bucket = "Bucket", folder = "Folder", endpoint = "Endpoint", accessKey = "Access key", secretKey = "Secret key"
+        case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
         case encryptionPassword = "Encryption password", confirmation = "Confirm password"
+
+        var pane: Pane {
+            switch self {
+            case .encryptionPassword, .confirmation: .settings
+            default: .connection
+            }
+        }
     }
 
     init(draft: AppModel.Draft) {
@@ -51,61 +63,27 @@ struct ConnectionEditor: View {
     var body: some View {
         let errors = fieldErrors
         VStack(spacing: 0) {
-            Text(title)
-                .font(.title2.bold())
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(24)
-            Form {
-                Section("Drive") {
-                    validated(.name, error: errors[.name]) { TextField("Name", text: $connection.name, prompt: Text("My storage")) }
-                    Picker("Provider", selection: $connection.provider) {
-                        ForEach(Provider.allCases) { provider in
-                            Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
-                        }
-                    }
-                    validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket")) }
-                    validated(.folder, error: errors[.folder]) { TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme")) }
-                    validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
-                    TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
-                    Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Toggle("Read-only", isOn: $connection.readOnly)
+            HStack {
+                Text(title).font(.title2.bold())
+                Spacer()
+                Picker("Section", selection: $pane) {
+                    ForEach(Pane.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
-                Section("Credentials") {
-                    validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $credentials.accessKey) }
-                    validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
-                    SecureField("Session token (optional)", text: $credentials.sessionToken)
-                    Text("Credentials are stored in your Mac’s Keychain.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("Encryption") {
-                    Toggle("Encrypt files", isOn: $connection.encrypted).disabled(!isNew)
-                    if isNew && connection.encrypted {
-                        validated(.encryptionPassword, error: errors[.encryptionPassword]) { SecureField("Encryption password", text: $credentials.encryptionPassword) }
-                        validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $confirmation) }
-                    }
-                    Text(isNew
-                         ? "Files and file names are encrypted on this Mac before they upload. Keep the password in a safe place. " +
-                           "Without it, nobody can read these files, including you."
-                         : "You cannot change encryption after you add a drive.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("Options") {
-                    Toggle("Connect on start up", isOn: $connection.connectsAutomatically)
-                }
-                Section("Cache") {
-                    Picker("Cache limit", selection: $connection.cacheLimit) {
-                        ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
-                    }
-                    Picker("Keep free on disk", selection: $connection.minimumFreeSpace) {
-                        Text("Off").tag(Int64(0))
-                        ForEach(Self.freeSpaces, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
-                    }
-                    Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
-                        .font(.caption).foregroundStyle(.secondary)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 4)
+            Group {
+                switch pane {
+                case .connection: connectionForm(errors: errors)
+                case .settings: settingsForm(errors: errors)
                 }
             }
             .formStyle(.grouped)
+            .frame(height: 560)
             .disabled(isLocked)
             Divider()
             HStack {
@@ -133,6 +111,74 @@ struct ConnectionEditor: View {
         .onChange(of: credentials) { tested = false }
     }
 
+    private func connectionForm(errors: [Field: String]) -> some View {
+        Form {
+            Section {
+                validated(.name, error: errors[.name]) { TextField("Name", text: $connection.name, prompt: Text("My storage")) }
+                Picker("Provider", selection: $connection.provider) {
+                    ForEach(Provider.allCases) { provider in
+                        Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
+                    }
+                }
+                validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
+                TextField("Region", text: $connection.region, prompt: Text("us-east-1 or auto"))
+                validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $connection.bucket, prompt: Text("my-bucket")) }
+                validated(.folder, error: errors[.folder]) { TextField("Folder", text: $connection.folder, prompt: Text("Optional, for example clients/acme")) }
+            } header: {
+                Text("Storage")
+            } footer: {
+                Text("Use the endpoint without the bucket name. For Cloudflare R2, use region auto.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $credentials.accessKey) }
+                validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
+                SecureField("Session token", text: $credentials.sessionToken, prompt: Text("Optional"))
+            } header: {
+                Text("Credentials")
+            } footer: {
+                Text("Credentials are stored in your Mac’s Keychain.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func settingsForm(errors: [Field: String]) -> some View {
+        Form {
+            Section("General") {
+                Toggle("Read-only", isOn: $connection.readOnly)
+                Toggle("Connect on start up", isOn: $connection.connectsAutomatically)
+            }
+            Section("Encryption") {
+                Toggle(isOn: $connection.encrypted) {
+                    Text("Encrypt files")
+                    Text(isNew
+                         ? "Files and names are encrypted before they upload. Without the password, nobody can read them, including you."
+                         : "You cannot change this after you add a drive.")
+                }
+                .disabled(!isNew)
+                if isNew && connection.encrypted {
+                    validated(.encryptionPassword, error: errors[.encryptionPassword]) { SecureField("Encryption password", text: $credentials.encryptionPassword) }
+                    validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $confirmation) }
+                }
+            }
+            Section {
+                Picker("Cache limit", selection: $connection.cacheLimit) {
+                    ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                }
+                Picker("Keep free on disk", selection: $connection.minimumFreeSpace) {
+                    Text("Off").tag(Int64(0))
+                    ForEach(Self.freeSpaces, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                }
+            } header: {
+                Text("Cache")
+            } footer: {
+                Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private func validated(_ field: Field, error: String?, @ViewBuilder input: () -> some View) -> some View {
         LabeledContent {
             VStack(alignment: .trailing, spacing: 4) {
@@ -154,6 +200,7 @@ struct ConnectionEditor: View {
         error = nil
         let errors = fieldErrors
         guard let field = Field.allCases.first(where: { errors[$0] != nil }) else { return false }
+        pane = field.pane
         focus = field
         return true
     }
