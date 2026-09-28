@@ -62,7 +62,16 @@ private struct ConnectionRow: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 3) {
-                Text(connection.name)
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text(connection.name)
+                    if connection.encrypted {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .help("Encrypted drive")
+                            .accessibilityLabel("Encrypted drive")
+                    }
+                }
                 Text(model.statusText(connection)).font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
@@ -122,6 +131,7 @@ private struct ConnectionDetail: View {
                         }
                         row("Endpoint", Text(connection.endpoint))
                         row("Region", connection.region.isEmpty ? Text("Default") : Text(connection.region))
+                        row("Encrypted", connection.encrypted ? Text("Yes") : Text("No"))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 }

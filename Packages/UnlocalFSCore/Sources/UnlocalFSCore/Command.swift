@@ -3,9 +3,11 @@ import Subprocess
 import System
 
 public enum Command {
-    public static func run(_ executable: URL, _ arguments: [String], environment: [String: String]? = nil, timeout: Duration = .seconds(30)) async throws -> Data {
+    public static func run(
+        _ executable: URL, _ arguments: [String], input: String = "", environment: [String: String]? = nil, timeout: Duration = .seconds(30)
+    ) async throws -> Data {
         try await withThrowingTaskGroup { group in
-            group.addTask { try await execute(executable, arguments, environment: environment) }
+            group.addTask { try await execute(executable, arguments, input: input, environment: environment) }
             group.addTask {
                 try await Task.sleep(for: timeout)
                 throw AppError("The command timed out. Try again.")
@@ -15,7 +17,7 @@ public enum Command {
         }
     }
 
-    private static func execute(_ executable: URL, _ arguments: [String], environment: [String: String]?) async throws -> Data {
+    private static func execute(_ executable: URL, _ arguments: [String], input: String, environment: [String: String]?) async throws -> Data {
         var options = PlatformOptions()
         options.teardownSequence = [.gracefulShutDown(allowedDurationToNextStep: .seconds(1))]
         let result = try await Subprocess.run(
@@ -23,6 +25,7 @@ public enum Command {
             arguments: Arguments(arguments),
             environment: environment.map { .custom(Dictionary(uniqueKeysWithValues: $0.map { (Environment.Key(stringLiteral: $0), $1) })) } ?? .inherit,
             platformOptions: options,
+            input: .string(input),
             output: .data(limit: 1 << 20),
             error: .combinedWithOutput
         )

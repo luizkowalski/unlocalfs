@@ -26,16 +26,29 @@ public actor MountService {
     }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        try AppError.throwing(connection.validate() + credentials.validate())
+        try AppError.throwing(connection.validate() + credentials.validate(for: connection))
+        let credentials = try await prepareCredentials(credentials)
         do {
             _ = try await Command.run(executable, [
-                "lsf", remote(connection), "--max-depth", "1", "--dirs-only",
+                "lsf", connection.encrypted ? ":crypt:" : remote(connection), "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
                 "--contimeout", "5s", "--timeout", "10s"
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
-            throw redacted(error, credentials: credentials)
+            throw redacted(error, secrets: [
+                credentials.accessKey, credentials.secretKey, credentials.sessionToken,
+                credentials.encryptionPassword, credentials.obscuredEncryptionPassword
+            ])
         }
+    }
+
+    public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
+        var credentials = credentials
+        if !credentials.encryptionPassword.isEmpty, credentials.obscuredEncryptionPassword.isEmpty {
+            let output = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: credentials.encryptionPassword, environment: baseEnvironment)
+            credentials.obscuredEncryptionPassword = String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return credentials
     }
 
     public func mount(_ connection: Connection, credentials: Credentials) async throws {
@@ -43,6 +56,7 @@ public actor MountService {
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
         guard try await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
+        let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
         let mount = paths.mount(connection)
@@ -62,10 +76,9 @@ public actor MountService {
         let process = Process()
         process.executableURL = executable
         var arguments = [
-            "nfsmount", remote(connection), mount.path,
+            "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path,
-            "--vfs-cache-max-size", "\(connection.cacheLimit)B",
+            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--s3-directory-markers", "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
@@ -199,7 +212,7 @@ public actor MountService {
     }
 
     private func environment(_ connection: Connection, credentials: Credentials) -> [String: String] {
-        baseEnvironment.merging([
+        var environment = baseEnvironment.merging([
             "RCLONE_S3_PROVIDER": connection.provider.rawValue,
             "RCLONE_S3_ENDPOINT": connection.endpoint,
             "RCLONE_S3_REGION": connection.region,
@@ -209,11 +222,16 @@ public actor MountService {
             "RCLONE_S3_ENV_AUTH": "false",
             "UNLOCALFS_VOLUME_NAME": connection.name
         ]) { _, new in new }
+        if connection.encrypted {
+            environment["RCLONE_CRYPT_REMOTE"] = remote(connection)
+            environment["RCLONE_CRYPT_PASSWORD"] = credentials.obscuredEncryptionPassword
+        }
+        return environment
     }
 
-    private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
+    private func redacted(_ error: any Error, secrets: [String]) -> AppError {
         var message = error.localizedDescription
-        for secret in [credentials.accessKey, credentials.secretKey, credentials.sessionToken] where !secret.isEmpty {
+        for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }
         return AppError(message)

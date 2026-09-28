@@ -96,11 +96,23 @@ import UnlocalFSCore
     }
 
     @Test func connectionErrorsDoNotExposeCredentials() async throws {
-        let script = "#!/bin/sh\nprintf '%s' \"Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN\"\nexit 1\n"
+        let script = """
+        #!/bin/sh
+        case "$1" in
+            obscure) printf 'obscured-token' ;;
+            lsf)
+                printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD private-password"
+                exit 1 ;;
+        esac
+        """
         try await withFixture(script: script) { service, connection in
-            let credentials = Credentials(accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token")
+            var connection = connection
+            connection.encrypted = true
+            let credentials = Credentials(
+                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: "private-password"
+            )
             await #expect { try await service.test(connection, credentials: credentials) } throws: { error in
-                !error.localizedDescription.contains("private-") && error.localizedDescription.contains("Denied")
+                !error.localizedDescription.contains("private-") && !error.localizedDescription.contains("obscured-") && error.localizedDescription.contains("Denied")
             }
         }
     }

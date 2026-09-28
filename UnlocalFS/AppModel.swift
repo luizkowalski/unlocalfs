@@ -82,8 +82,9 @@ import UnlocalFSCore
         editor = Draft(connection: copy, credentialsSource: connection.id)
     }
 
-    func save(_ connection: Connection, credentials: Credentials) throws {
-        try AppError.throwing(credentials.validate())
+    func save(_ connection: Connection, credentials: Credentials) async throws {
+        try AppError.throwing(credentials.validate(for: connection))
+        let credentials = try await service.prepareCredentials(credentials)
         let previous = connections.first { $0.id == connection.id }
         try store.save(connection)
         do {
