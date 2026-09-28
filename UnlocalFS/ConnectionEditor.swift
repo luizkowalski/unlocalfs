@@ -10,6 +10,7 @@ struct ConnectionEditor: View {
     @State private var confirmation = ""
     @State private var credentialsLoaded = false
     @State private var testing = false
+    @State private var saving = false
     @State private var tested = false
     @State private var error: String?
     @State private var showErrors = false
@@ -35,7 +36,7 @@ struct ConnectionEditor: View {
         if isDuplicate { return "Duplicate connection" }
         return isNew ? "Add connection" : "Edit connection"
     }
-    private var isLocked: Bool { testing || !credentialsLoaded }
+    private var isLocked: Bool { testing || saving || !credentialsLoaded }
     private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder, String(connection.encrypted)] }
     private var fieldErrors: [Field: String] {
         guard showErrors else { return [:] }
@@ -120,8 +121,8 @@ struct ConnectionEditor: View {
                         .foregroundStyle(.green).font(.callout)
                 }
                 Spacer()
-                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(testing)
-                Button("Save", action: save).keyboardShortcut(.defaultAction).disabled(isLocked)
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(testing || saving)
+                Button("Save") { Task { await save() } }.keyboardShortcut(.defaultAction).disabled(isLocked)
             }
             .padding(20)
         }
@@ -177,10 +178,12 @@ struct ConnectionEditor: View {
         } catch { self.error = error.localizedDescription }
     }
 
-    private func save() {
+    private func save() async {
         if focusFirstInvalidField() { return }
+        saving = true
+        defer { saving = false }
         do {
-            try model.save(connection, credentials: credentials)
+            try await model.save(connection, credentials: credentials)
             dismiss()
         } catch { self.error = error.localizedDescription }
     }

@@ -104,7 +104,12 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var accessKey: String
     public var secretKey: String
     public var sessionToken: String
-    public var encryptionPassword: String
+    public var encryptionPassword: String {
+        didSet {
+            if encryptionPassword != oldValue { obscuredEncryptionPassword = "" }
+        }
+    }
+    public var obscuredEncryptionPassword = ""
 
     public init(accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "") {
         self.accessKey = accessKey
@@ -119,6 +124,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         secretKey = try container.decode(String.self, forKey: .secretKey)
         sessionToken = try container.decode(String.self, forKey: .sessionToken)
         encryptionPassword = try container.decodeIfPresent(String.self, forKey: .encryptionPassword) ?? ""
+        obscuredEncryptionPassword = try container.decodeIfPresent(String.self, forKey: .obscuredEncryptionPassword) ?? ""
     }
 
     public func validate(for connection: Connection) -> [ValidationError] {

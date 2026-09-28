@@ -27,23 +27,28 @@ public actor MountService {
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
         try AppError.throwing(connection.validate() + credentials.validate(for: connection))
-        let environment = try await environment(connection, credentials: credentials)
-        let output: Data
+        let credentials = try await prepareCredentials(credentials)
         do {
-            output = try await Command.run(executable, [
-                "lsf", remote(connection), "--max-depth", "1", "--dirs-only",
+            _ = try await Command.run(executable, [
+                "lsf", connection.encrypted ? ":crypt:" : remote(connection), "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
                 "--contimeout", "5s", "--timeout", "10s"
-            ], environment: environment, timeout: .seconds(20))
+            ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
             throw redacted(error, secrets: [
                 credentials.accessKey, credentials.secretKey, credentials.sessionToken,
-                credentials.encryptionPassword, environment["RCLONE_CRYPT_PASSWORD", default: ""]
+                credentials.encryptionPassword, credentials.obscuredEncryptionPassword
             ])
         }
-        if connection.encrypted, String(decoding: output, as: UTF8.self).contains("undecryptable") {
-            throw AppError("Some files in this folder cannot be decrypted. Check the encryption password, or choose a folder that only has files from this encrypted drive.")
+    }
+
+    public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
+        var credentials = credentials
+        if !credentials.encryptionPassword.isEmpty, credentials.obscuredEncryptionPassword.isEmpty {
+            let output = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: credentials.encryptionPassword, environment: baseEnvironment)
+            credentials.obscuredEncryptionPassword = String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        return credentials
     }
 
     public func mount(_ connection: Connection, credentials: Credentials) async throws {
@@ -51,6 +56,7 @@ public actor MountService {
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
         guard try await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
+        let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
         let mount = paths.mount(connection)
@@ -70,17 +76,16 @@ public actor MountService {
         let process = Process()
         process.executableURL = executable
         var arguments = [
-            "nfsmount", remote(connection), mount.path,
+            "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path,
-            "--vfs-cache-max-size", "\(connection.cacheLimit)B",
+            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--s3-directory-markers", "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
         ]
         if connection.readOnly { arguments.append("--read-only") }
         process.arguments = arguments
-        process.environment = try await environment(connection, credentials: credentials)
+        process.environment = environment(connection, credentials: credentials)
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
         process.standardError = log
@@ -192,8 +197,7 @@ public actor MountService {
     }
 
     private func remote(_ connection: Connection) -> String {
-        let storage = connection.folder.isEmpty ? ":s3:\(connection.bucket)" : ":s3:\(connection.bucket)/\(connection.folder)"
-        return connection.encrypted ? ":crypt,remote=\"\(storage.replacingOccurrences(of: "\"", with: "\"\""))\":" : storage
+        connection.folder.isEmpty ? ":s3:\(connection.bucket)" : ":s3:\(connection.bucket)/\(connection.folder)"
     }
 
     private func isRunning(_ connection: Connection) -> Bool {
@@ -207,7 +211,7 @@ public actor MountService {
          "LANG": "en_US.UTF-8"]
     }
 
-    private func environment(_ connection: Connection, credentials: Credentials) async throws -> [String: String] {
+    private func environment(_ connection: Connection, credentials: Credentials) -> [String: String] {
         var environment = baseEnvironment.merging([
             "RCLONE_S3_PROVIDER": connection.provider.rawValue,
             "RCLONE_S3_ENDPOINT": connection.endpoint,
@@ -219,8 +223,8 @@ public actor MountService {
             "UNLOCALFS_VOLUME_NAME": connection.name
         ]) { _, new in new }
         if connection.encrypted {
-            let obscured = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: credentials.encryptionPassword, environment: baseEnvironment)
-            environment["RCLONE_CRYPT_PASSWORD"] = String(decoding: obscured, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            environment["RCLONE_CRYPT_REMOTE"] = remote(connection)
+            environment["RCLONE_CRYPT_PASSWORD"] = credentials.obscuredEncryptionPassword
         }
         return environment
     }

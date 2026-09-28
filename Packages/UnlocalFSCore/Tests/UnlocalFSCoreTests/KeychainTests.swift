@@ -10,7 +10,8 @@ struct KeychainTests {
         defer { try? keychain.delete(id) }
         #expect(try keychain.read(id) == nil)
         try keychain.save(Credentials(accessKey: "test-key", secretKey: "first-secret"), for: id)
-        let updated = Credentials(accessKey: "test-key", secretKey: "new-secret", sessionToken: "test-session")
+        var updated = Credentials(accessKey: "test-key", secretKey: "new-secret", sessionToken: "test-session", encryptionPassword: "test-password")
+        updated.obscuredEncryptionPassword = "obscured-password"
         try keychain.save(updated, for: id)
         #expect(try keychain.read(id) == updated)
         try keychain.delete(id)

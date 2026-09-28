@@ -44,3 +44,9 @@ jobs:
       - name: Build
         if: matrix.os == 'macos-26'
         run: mise app
+
+      - name: Test rclone integration
+        if: matrix.os == 'macos-26'
+        env:
+          RCLONE_BINARY: ${{ github.workspace }}/dist/UnlocalFS.app/Contents/Helpers/rclone
+        run: swift test --package-path Packages/UnlocalFSCore --filter MountTests

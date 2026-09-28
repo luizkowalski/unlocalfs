@@ -95,59 +95,24 @@ import UnlocalFSCore
         }
     }
 
-    @Test(arguments: [("", #":crypt,remote=":s3:my-bucket":"#), (#"clients/a"b,c"#, #":crypt,remote=":s3:my-bucket/clients/a""b,c":"#)])
-    func encryptedDrivesMountThroughCrypt(folder: String, remote: String) async throws {
-        try await withFixture { root in
-            """
-            #!/bin/sh
-            case "$1" in
-                obscure) printf 'obscured-'; cat ;;
-                lsf) exit 0 ;;
-                nfsmount) echo "$2 $RCLONE_CRYPT_PASSWORD" > '\(root.path)/arguments'; exit 1 ;;
-                *) exit 1 ;;
-            esac
-            """
-        } operation: { service, connection, root in
-            var connection = connection
-            connection.folder = folder
-            connection.encrypted = true
-            await #expect(throws: AppError.self) {
-                try await service.mount(connection, credentials: Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw"))
-            }
-            let arguments = try String(contentsOf: root.appendingPathComponent("arguments"), encoding: .utf8)
-            #expect(arguments == "\(remote) obscured-pw\n")
-        }
-    }
-
-    @Test func encryptedDrivesRefuseFilesTheyCannotDecrypt() async throws {
-        let script = "#!/bin/sh\ncase \"$1\" in obscure) cat ;; lsf) echo 'NOTICE: abc: Skipping undecryptable dir name: bad PKCS#7 padding' ;; esac\n"
+    @Test func connectionErrorsDoNotExposeCredentials() async throws {
+        let script = """
+        #!/bin/sh
+        case "$1" in
+            obscure) printf 'obscured-token' ;;
+            lsf)
+                printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD private-password"
+                exit 1 ;;
+        esac
+        """
         try await withFixture(script: script) { service, connection in
             var connection = connection
             connection.encrypted = true
-            await #expect { try await service.test(connection, credentials: Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw")) } throws: { error in
-                error.localizedDescription.contains("cannot be decrypted")
-            }
-        }
-    }
-
-    @Test func connectionErrorsDoNotExposeTheEncryptionPassword() async throws {
-        let script = "#!/bin/sh\ncase \"$1\" in obscure) printf 'obscured-token' ;; lsf) printf '%s' \"Denied $RCLONE_CRYPT_PASSWORD private-password\"; exit 1 ;; esac\n"
-        try await withFixture(script: script) { service, connection in
-            var connection = connection
-            connection.encrypted = true
-            let credentials = Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "private-password")
+            let credentials = Credentials(
+                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: "private-password"
+            )
             await #expect { try await service.test(connection, credentials: credentials) } throws: { error in
                 !error.localizedDescription.contains("private-") && !error.localizedDescription.contains("obscured-") && error.localizedDescription.contains("Denied")
-            }
-        }
-    }
-
-    @Test func connectionErrorsDoNotExposeCredentials() async throws {
-        let script = "#!/bin/sh\nprintf '%s' \"Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN\"\nexit 1\n"
-        try await withFixture(script: script) { service, connection in
-            let credentials = Credentials(accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token")
-            await #expect { try await service.test(connection, credentials: credentials) } throws: { error in
-                !error.localizedDescription.contains("private-") && error.localizedDescription.contains("Denied")
             }
         }
     }
