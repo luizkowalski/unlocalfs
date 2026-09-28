@@ -66,13 +66,16 @@ struct ConnectionEditor: View {
                     Text("Use the service endpoint without the bucket name. For Cloudflare R2, use region auto. Enter a folder to show only that folder as the drive.")
                         .font(.caption).foregroundStyle(.secondary)
                     Toggle("Read-only", isOn: $connection.readOnly)
-                    Text("Apps cannot create, change, or delete files on this drive. This limits the drive, not your keys. Use read-only keys for full protection.")
+                }
+                Section("Credentials") {
+                    validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $credentials.accessKey) }
+                    validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
+                    SecureField("Session token (optional)", text: $credentials.sessionToken)
+                    Text("Credentials are stored in your Mac’s Keychain.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Startup") {
-                    Toggle("Connect automatically", isOn: $connection.connectsAutomatically)
-                    Text("Connects this drive when UnlocalFS opens. To open UnlocalFS when you log in, turn on Open at Login in the menu bar.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Toggle("Connect on start up", isOn: $connection.connectsAutomatically)
                 }
                 Section("Cache") {
                     Picker("Cache limit", selection: $connection.cacheLimit) {
@@ -83,13 +86,6 @@ struct ConnectionEditor: View {
                         ForEach(Self.freeSpaces, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
                     }
                     Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("Credentials") {
-                    validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $credentials.accessKey) }
-                    validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
-                    SecureField("Session token (optional)", text: $credentials.sessionToken)
-                    Text("Credentials are stored in your Mac’s Keychain.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

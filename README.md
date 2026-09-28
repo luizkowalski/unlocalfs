@@ -75,7 +75,7 @@ Right-click a drive in the sidebar to open it in Finder, edit, duplicate, or del
   killall Finder
   ```
 
-- To connect a drive when UnlocalFS opens, turn on **Connect automatically** in its settings. To open UnlocalFS when you log in, choose **Open at Login** in the menu bar.
+- To connect a drive when UnlocalFS opens, turn on **Connect on start up** in its settings. To open UnlocalFS when you log in, choose **Open at Login** in the menu bar.
 - Logs are in `~/Library/Logs/UnlocalFS`. Click **Open Log** in the app to see the log of a drive.
 
 ## Build from source
