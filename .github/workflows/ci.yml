@@ -9,19 +9,26 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
-    runs-on: macos-26
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
 
-      - uses: jdx/mise-action@v4
-
       - name: SwiftLint
-        run: mise lint
+        run: |
+          version="$(sed -nE 's/^swiftlint[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' mise.toml)"
+          docker run --rm -v "$PWD:/work" -w /work "ghcr.io/realm/swiftlint:$version" lint --strict
 
   test:
+    name: test (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -30,23 +37,60 @@ jobs:
             xcode: "26.3"
           - os: macos-26
             xcode: "26.6"
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
     steps:
       - uses: actions/checkout@v7
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
+      - name: Cache Swift packages
+        uses: actions/cache@v6
+        with:
+          path: Packages/UnlocalFSCore/.build
+          key: spm-${{ matrix.os }}-${{ matrix.xcode }}-${{ hashFiles('Packages/UnlocalFSCore/Package.resolved') }}
+          restore-keys: spm-${{ matrix.os }}-${{ matrix.xcode }}-
 
-      - uses: jdx/mise-action@v4
+      - name: Cache rclone
+        uses: actions/cache@v6
+        with:
+          path: .build/rclone
+          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
 
       - name: Test
-        run: mise test
+        env:
+          INTEGRATION: "1"
+        run: scripts/test.sh
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-${{ matrix.os }}-${{ matrix.xcode }}
+          if-no-files-found: ignore
+          path: |
+            /tmp/uf-*/**/*.log
+            ~/Library/Logs/DiagnosticReports
+
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache rclone
+        uses: actions/cache@v6
+        with:
+          path: .build/rclone
+          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
 
       - name: Build
-        if: matrix.os == 'macos-26'
-        run: mise app
+        run: scripts/build-app.sh
 
-      - name: Test rclone integration
-        if: matrix.os == 'macos-26'
-        env:
-          RCLONE_BINARY: ${{ github.workspace }}/dist/UnlocalFS.app/Contents/Helpers/rclone
-        run: swift test --package-path Packages/UnlocalFSCore --filter MountTests
+      - name: Package
+        run: ditto -c -k --keepParent dist/UnlocalFS.app dist/UnlocalFS.zip
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: UnlocalFS
+          path: dist/UnlocalFS.zip
