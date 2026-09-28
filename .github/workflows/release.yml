@@ -10,16 +10,12 @@ permissions:
 jobs:
   build:
     runs-on: macos-26
+    timeout-minutes: 60
     env:
       TAG: ${{ github.event.release.tag_name }}
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
-
-      # - name: Lint
-      #   run: mise lint
-      # - name: Test
-      #   run: mise test
 
       - name: Import signing certificate
         if: vars.SIGN_IDENTITY != ''
@@ -41,7 +37,9 @@ jobs:
       - name: Build
         env:
           SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
-        run: VERSION="${TAG#v}" BUILD_NUMBER="$GITHUB_RUN_NUMBER" mise app
+          VERSION: ${{ github.event.release.tag_name }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: VERSION="${VERSION#v}" scripts/build-app.sh
 
       - name: Notarize
         if: vars.SIGN_IDENTITY != ''
@@ -65,3 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "$TAG" dist/UnlocalFS-*.zip dist/UnlocalFS-*.zip.sha256 --clobber
+
+      - name: Remove signing keychain
+        if: always() && vars.SIGN_IDENTITY != ''
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true

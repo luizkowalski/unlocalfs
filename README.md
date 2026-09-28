@@ -105,13 +105,14 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 
 ```sh
 mise install
-mise app      # builds dist/UnlocalFS.app
-mise test     # runs the tests
-mise lint     # runs SwiftLint
-mise xcode    # opens the project in Xcode
+mise app               # builds dist/UnlocalFS.app
+mise test              # runs the unit tests
+mise test:integration  # also mounts a drive against a local S3 server and uses Keychain
+mise lint              # runs SwiftLint
+mise xcode             # opens the project in Xcode
 ```
 
-CI lints and tests every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+The tasks wrap the scripts in `scripts/`, which is what CI runs. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
 ## License
 

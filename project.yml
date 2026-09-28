@@ -43,22 +43,9 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          cache="$PROJECT_DIR/.build/rclone/$RCLONE_VERSION"
           slices=()
           for arch in $ARCHS; do
-              case "$arch" in
-                  arm64) platform=arm64 checksum="$RCLONE_SHA256_ARM64" ;;
-                  x86_64) platform=amd64 checksum="$RCLONE_SHA256_AMD64" ;;
-              esac
-              name="rclone-v$RCLONE_VERSION-osx-$platform"
-              if [ ! -x "$cache/$name/rclone" ]; then
-                  mkdir -p "$cache"
-                  curl -fsSL "https://github.com/rclone/rclone/releases/download/v$RCLONE_VERSION/$name.zip" -o "$cache/$name.zip"
-                  echo "$checksum  $cache/$name.zip" | shasum -a 256 -c -
-                  ditto -x -k "$cache/$name.zip" "$cache"
-                  rm "$cache/$name.zip"
-              fi
-              slices+=("$cache/$name/rclone")
+              slices+=("$("$PROJECT_DIR/scripts/fetch-rclone.sh" "$arch")")
           done
           helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/rclone"
           mkdir -p "$(dirname "$helper")"
