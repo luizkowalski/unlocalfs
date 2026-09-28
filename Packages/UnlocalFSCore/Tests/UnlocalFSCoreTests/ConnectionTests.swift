@@ -15,6 +15,7 @@ import UnlocalFSCore
         connection.folder = "clients/acme"
         connection.readOnly = true
         connection.connectsAutomatically = true
+        connection.encrypted = true
         try store.save(connection)
         let reopened = ConnectionStore(url: url)
         #expect(try reopened.all() == [connection])
@@ -35,6 +36,12 @@ import UnlocalFSCore
         #expect(connection.minimumFreeSpace == 0)
         #expect(!connection.readOnly)
         #expect(!connection.connectsAutomatically)
+        #expect(!connection.encrypted)
+    }
+
+    @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {
+        let credentials = try JSONDecoder().decode(Credentials.self, from: Data(#"{"accessKey":"a","secretKey":"b","sessionToken":""}"#.utf8))
+        #expect(credentials == Credentials(accessKey: "a", secretKey: "b"))
     }
 
     @Test func driveNamesAreUniqueRegardlessOfCase() throws {
@@ -49,7 +56,15 @@ import UnlocalFSCore
     }
 
     @Test func missingCredentialsAreReportedPerField() {
-        #expect(Credentials().validate().map(\.field) == ["Access key", "Secret key"])
+        #expect(Credentials().validate(for: fixture()).map(\.field) == ["Access key", "Secret key"])
+    }
+
+    @Test func encryptedDrivesNeedAPassword() {
+        var connection = fixture()
+        connection.encrypted = true
+        let credentials = Credentials(accessKey: "a", secretKey: "b")
+        #expect(credentials.validate(for: connection).map(\.field) == ["Encryption password"])
+        #expect(Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw").validate(for: connection).isEmpty)
     }
 
     static let invalidConnections: [(String, Connection)] =

@@ -21,7 +21,8 @@ Select a connected drive to see its activity: queued uploads, uploads waiting to
 
 ## Privacy
 
-- Your access key and secret key are stored in the macOS Keychain.
+- Your access key, secret key, and encryption password are stored in the macOS Keychain.
+- Turn on **Encrypt files** to encrypt files and file names on your Mac before they upload. See [Encrypted drives](#encrypted-drives).
 - UnlocalFS talks only to the storage endpoint you enter. There is no UnlocalFS server, account, analytics, or telemetry.
 - Requests are signed on your Mac. Your secret key is never sent over the network, not even to your storage provider.
 
@@ -53,6 +54,15 @@ A drive can show one folder of a bucket instead of the whole bucket. Enter the f
 To add another folder from the same bucket, select a drive and choose **Duplicate**. The copy keeps the endpoint, bucket, and credentials, so you only change the name and the folder.
 
 A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. To block writes, turn on **Read-only** in the drive settings. Apps then cannot create, change, or delete files on the drive. For full protection, use keys that only have read access. If two drives show the same files, a change in one can take a moment to show in the other, and saving the same file from both at once can overwrite one of the edits.
+
+## Encrypted drives
+
+Turn on **Encrypt files** when you add a drive. UnlocalFS encrypts the content and the names of your files on your Mac before they upload, so your storage provider sees only random names and data. It uses [rclone crypt](https://rclone.org/crypt/) with the default settings, so you can also read the files with rclone and the same password.
+
+- Keep the password in a safe place. If you lose it, nobody can read the files, including you.
+- You cannot turn encryption on or off after you add a drive. To encrypt files you already have, add an encrypted drive with an empty folder and copy the files to it.
+- If the top folder of the drive has names that the password cannot decrypt, the drive does not connect. This happens when the password is wrong or when the folder also has files that are not encrypted.
+- Encrypted names are longer than the original names. Some providers limit the length of a file path.
 
 ## Shortcuts
 

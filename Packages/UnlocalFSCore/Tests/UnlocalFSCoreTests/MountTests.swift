@@ -80,6 +80,53 @@ struct MountTests {
         }
     }
 
+    @Test func encryptedDriveUploadsOnlyCiphertextAndRejectsTheWrongPassword() async throws {
+        let binary = try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"])
+        let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
+        let bucket = root.appendingPathComponent("source/my-bucket")
+        try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent(#"source/other-bucket/clients/a"b,c"#), withIntermediateDirectories: true)
+        let executable = URL(fileURLWithPath: binary)
+        let server = try await S3Server(executable: executable, root: root)
+        defer { server.stop() }
+        let paths = appPaths(root)
+        let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
+        var connection = fixture()
+        connection.endpoint = "http://127.0.0.1:19753"
+        connection.encrypted = true
+        let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse")
+        var quotedFolder = connection
+        quotedFolder.bucket = "other-bucket"
+        quotedFolder.folder = #"clients/a"b,c"#
+        try await service.test(quotedFolder, credentials: credentials)
+        try await service.mount(connection, credentials: credentials)
+        do {
+            let mounted = paths.mount(connection)
+            try Data("top secret".utf8).write(to: mounted.appendingPathComponent("secret plan.txt"))
+            for _ in 0..<40 {
+                if try await service.status(connection).pendingUploads == 0 { break }
+                try await Task.sleep(for: .milliseconds(500))
+            }
+            let stored = try FileManager.default.subpathsOfDirectory(atPath: bucket.path)
+            let object = try #require(stored.first)
+            #expect(stored.count == 1)
+            #expect(!object.contains("secret"))
+            #expect(try !String(decoding: Data(contentsOf: bucket.appendingPathComponent(object)), as: UTF8.self).contains("top secret"))
+            #expect(try String(contentsOf: mounted.appendingPathComponent("secret plan.txt"), encoding: .utf8) == "top secret")
+            try await service.unmount(connection)
+            var wrong = credentials
+            wrong.encryptionPassword = "wrong"
+            await #expect { try await service.test(connection, credentials: wrong) } throws: { $0.localizedDescription.contains("cannot be decrypted") }
+            await #expect { try await service.mount(connection, credentials: wrong) } throws: { $0.localizedDescription.contains("cannot be decrypted") }
+            #expect(try await !service.status(connection).isActive)
+            try FileManager.default.removeItem(at: root)
+        } catch {
+            try? await Task.sleep(for: .seconds(6))
+            try? await service.unmount(connection)
+            throw error
+        }
+    }
+
     @Test func readOnlyDriveRejectsWrites() async throws {
         let binary = try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"])
         let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")

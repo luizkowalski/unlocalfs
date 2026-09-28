@@ -7,6 +7,7 @@ struct ConnectionEditor: View {
     private let credentialsSource: UUID
     private let isDuplicate: Bool
     @State private var credentials = Credentials()
+    @State private var confirmation = ""
     @State private var credentialsLoaded = false
     @State private var testing = false
     @State private var tested = false
@@ -17,6 +18,7 @@ struct ConnectionEditor: View {
 
     private enum Field: String, CaseIterable {
         case name = "Name", bucket = "Bucket", folder = "Folder", endpoint = "Endpoint", accessKey = "Access key", secretKey = "Secret key"
+        case encryptionPassword = "Encryption password", confirmation = "Confirm password"
     }
 
     init(draft: AppModel.Draft) {
@@ -34,13 +36,14 @@ struct ConnectionEditor: View {
         return isNew ? "Add connection" : "Edit connection"
     }
     private var isLocked: Bool { testing || !credentialsLoaded }
-    private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder] }
+    private var testInputs: [String] { [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder, String(connection.encrypted)] }
     private var fieldErrors: [Field: String] {
         guard showErrors else { return [:] }
         var errors: [Field: String] = [:]
-        for error in connection.validate(against: model.connections) + credentials.validate() {
+        for error in connection.validate(against: model.connections) + credentials.validate(for: connection) {
             if let field = Field(rawValue: error.field), errors[field] == nil { errors[field] = error.localizedDescription }
         }
+        if isNew, connection.encrypted, confirmation != credentials.encryptionPassword { errors[.confirmation] = "The passwords do not match." }
         return errors
     }
 
@@ -72,6 +75,18 @@ struct ConnectionEditor: View {
                     validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $credentials.secretKey) }
                     SecureField("Session token (optional)", text: $credentials.sessionToken)
                     Text("Credentials are stored in your Mac’s Keychain.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Section("Encryption") {
+                    Toggle("Encrypt files", isOn: $connection.encrypted).disabled(!isNew)
+                    if isNew && connection.encrypted {
+                        validated(.encryptionPassword, error: errors[.encryptionPassword]) { SecureField("Encryption password", text: $credentials.encryptionPassword) }
+                        validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $confirmation) }
+                    }
+                    Text(isNew
+                         ? "Files and file names are encrypted on this Mac before they upload. Keep the password in a safe place. " +
+                           "Without it, nobody can read these files, including you."
+                         : "You cannot change encryption after you add a drive.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Options") {
@@ -145,6 +160,7 @@ struct ConnectionEditor: View {
     private func loadCredentials() {
         do {
             credentials = try model.credentials(for: credentialsSource)
+            confirmation = credentials.encryptionPassword
             credentialsLoaded = true
             if isDuplicate { focus = .folder }
         } catch { self.error = error.localizedDescription }

@@ -13,6 +13,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
     public var minimumFreeSpace: Int64 = 0
     public var connectsAutomatically = false
     public var readOnly = false
+    public var encrypted = false
 
     public init() {}
 
@@ -28,6 +29,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? readOnly
+        encrypted = try container.decodeIfPresent(Bool.self, forKey: .encrypted) ?? encrypted
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
     }
 
@@ -102,17 +104,30 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var accessKey: String
     public var secretKey: String
     public var sessionToken: String
+    public var encryptionPassword: String
 
-    public init(accessKey: String = "", secretKey: String = "", sessionToken: String = "") {
+    public init(accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "") {
         self.accessKey = accessKey
         self.secretKey = secretKey
         self.sessionToken = sessionToken
+        self.encryptionPassword = encryptionPassword
     }
 
-    public func validate() -> [ValidationError] {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        accessKey = try container.decode(String.self, forKey: .accessKey)
+        secretKey = try container.decode(String.self, forKey: .secretKey)
+        sessionToken = try container.decode(String.self, forKey: .sessionToken)
+        encryptionPassword = try container.decodeIfPresent(String.self, forKey: .encryptionPassword) ?? ""
+    }
+
+    public func validate(for connection: Connection) -> [ValidationError] {
         var validator = Validator()
         validator.validate(field: "Access key", value: accessKey) { $0.notEmpty() }
         validator.validate(field: "Secret key", value: secretKey) { $0.notEmpty() }
+        if connection.encrypted {
+            validator.validate(field: "Encryption password", value: encryptionPassword) { $0.notEmpty() }
+        }
         return validator.errors()
     }
 }
