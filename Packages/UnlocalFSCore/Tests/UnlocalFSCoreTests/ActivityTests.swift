@@ -3,15 +3,16 @@ import Testing
 import UnlocalFSCore
 
 @Suite struct ActivityTests {
-    @Test func queuedUploadsShowTheirPathsAndSizes() async throws {
+    @Test(arguments: [(0, false, FileActivity.State.queued), (2, false, .retrying), (1, true, .uploading)])
+    func queuedUploadsShowTheirPathSizeAndState(tries: Int, uploading: Bool, state: FileActivity.State) async throws {
         let activity = try await fetchActivity(queue: """
-        {"queue":[{"name":"photos/holiday.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
+        {"queue":[{"name":"photos/holiday.jpg","id":1,"size":2048,"expiry":4,"tries":\(tries),"delay":5,"uploading":\(uploading)}]}
         """)
         let item = try #require(activity.first)
         #expect(activity.count == 1)
         #expect(item.path == "photos/holiday.jpg")
         #expect(item.size == 2048)
-        #expect(item.state == .queued)
+        #expect(item.state == state)
         #expect(item.bytesTransferred == nil)
     }
 
@@ -30,23 +31,6 @@ import UnlocalFSCore
         let download = try #require(activity.first { $0.state == .downloading })
         #expect(download.bytesTransferred == 100)
         #expect(download.id != upload.id)
-    }
-
-    @Test func previouslyAttemptedUploadsShowWaitingForRetry() async throws {
-        let activity = try await fetchActivity(queue: """
-        {"queue":[{"name":"report.pdf","id":1,"size":200,"expiry":10,"tries":2,"delay":20,"uploading":false}]}
-        """)
-        let item = try #require(activity.first)
-        #expect(item.state == .retrying)
-    }
-
-    @Test func uploadingWithoutByteStatsHasIndeterminateProgress() async throws {
-        let activity = try await fetchActivity(queue: """
-        {"queue":[{"name":"empty.txt","id":1,"size":0,"expiry":-1,"tries":1,"delay":5,"uploading":true}]}
-        """)
-        let item = try #require(activity.first)
-        #expect(item.state == .uploading)
-        #expect(item.bytesTransferred == nil)
     }
 
     @Test func activityIsSortedByPath() async throws {

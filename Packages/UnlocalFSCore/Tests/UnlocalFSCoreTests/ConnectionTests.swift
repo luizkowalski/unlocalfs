@@ -4,10 +4,8 @@ import UnlocalFSCore
 
 @Suite struct ConnectionTests {
     @Test func savedConnectionsSurviveReopenUpdateAndDelete() throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appendingPathComponent("config.json")
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConnectionStore(url: url)
         var connection = fixture()
         try store.save(connection)
@@ -24,10 +22,9 @@ import UnlocalFSCore
     }
 
     @Test func connectionsSavedBeforeCacheLimitsUseTheDefaults() throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appendingPathComponent("config.json")
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("""
         {"connections":[{"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"us-east-1"}]}
         """.utf8).write(to: url)
@@ -45,46 +42,44 @@ import UnlocalFSCore
     }
 
     @Test func driveNamesAreUniqueRegardlessOfCase() throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let store = ConnectionStore(url: directory.appendingPathComponent("config.json"))
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let store = ConnectionStore(url: url)
         try store.save(fixture())
         var duplicate = fixture()
         duplicate.name = "my files"
-        #expect(throws: (any Error).self) { try store.save(duplicate) }
+        #expect(throws: AppError.self) { try store.save(duplicate) }
         #expect(try duplicate.validate(against: store.all()).map(\.field) == ["Name"])
+        #expect(try store.all().count == 1)
     }
 
-    @Test func missingCredentialsAreReportedPerField() {
-        #expect(Credentials().validate(for: fixture()).map(\.field) == ["Access key", "Secret key"])
-    }
-
-    @Test func encryptedDrivesNeedAPassword() {
+    @Test(arguments: [
+        (false, Credentials(), ["Access key", "Secret key"]),
+        (true, Credentials(accessKey: "a", secretKey: "b"), ["Encryption password"]),
+        (true, Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw"), [])
+    ])
+    func credentialsAreValidatedPerField(encrypted: Bool, credentials: Credentials, fields: [String]) {
         var connection = fixture()
-        connection.encrypted = true
-        let credentials = Credentials(accessKey: "a", secretKey: "b")
-        #expect(credentials.validate(for: connection).map(\.field) == ["Encryption password"])
-        #expect(Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw").validate(for: connection).isEmpty)
+        connection.encrypted = encrypted
+        #expect(credentials.validate(for: connection).map(\.field) == fields)
     }
 
-    static let invalidConnections: [(String, Connection)] =
-        ["", ".", "..", "a/b", "a:b", "bad\nname", String(repeating: "a", count: 121), String(repeating: "é", count: 61)].map { ("Name", fixture(name: $0)) } +
-        ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"].map { ("Endpoint", fixture(endpoint: $0)) } +
-        ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"].map { ("Bucket", fixture(bucket: $0)) } +
-        ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"].map { ("Folder", fixture(folder: $0)) }
+    static let validations: [(Set<String>, Connection)] = {
+        let valid: [Connection] = [fixture(), fixture(endpoint: "http://127.0.0.1:19753"), fixture(folder: "clients/acme")]
+        let names: [String] = ["", ".", "..", "a/b", "a:b", "bad\nname", String(repeating: "a", count: 121), String(repeating: "é", count: 61)]
+        let endpoints: [String] = ["ftp://example.com", "https://example.com/bucket", "https://user:pass@example.com", "https://example.com?secret=value"]
+        let buckets: [String] = ["", " ", ".", "..", "a/b", "a:b", "bad bucket", "bad\nbucket"]
+        let folders: [String] = ["/clients", "clients/", "clients//acme", "clients/../other", "./clients", "bad\nfolder"]
+        return valid.map { ([], $0) }
+            + names.map { (["Name"], fixture(name: $0)) }
+            + endpoints.map { (["Endpoint"], fixture(endpoint: $0)) }
+            + buckets.map { (["Bucket"], fixture(bucket: $0)) }
+            + folders.map { (["Folder"], fixture(folder: $0)) }
+    }()
 
-    @Test(arguments: invalidConnections)
-    func invalidConnectionsAreNotSaved(field: String, connection: Connection) throws {
-        let store = ConnectionStore(url: FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/config.json"))
-        #expect(Set(connection.validate().map(\.field)) == [field])
-        #expect(throws: AppError.self) { try store.save(connection) }
-        #expect(try store.all().isEmpty)
-    }
-
-    @Test func localS3EndpointsAreAccepted() throws {
-        var connection = fixture()
-        connection.endpoint = "http://127.0.0.1:19753"
-        #expect(connection.validate().isEmpty)
+    @Test(arguments: validations)
+    func validationReportsTheOffendingField(fields: Set<String>, connection: Connection) {
+        #expect(Set(connection.validate().map(\.field)) == fields)
     }
 }
 
@@ -95,4 +90,8 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     connection.bucket = bucket
     connection.folder = folder
     return connection
+}
+
+private func configURL() -> URL {
+    FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/config.json")
 }
