@@ -42,4 +42,5 @@ jobs:
         run: mise test
 
       - name: Build
+        if: matrix.os == 'macos-26'
         run: mise app
