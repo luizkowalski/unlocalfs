@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import ServiceManagement
 import UnlocalFSCore
 
 @MainActor @Observable final class AppModel {
@@ -21,6 +22,7 @@ import UnlocalFSCore
     var editor: Draft?
     var deleting: Connection?
     private(set) var ready = false
+    private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
 
     let paths = AppPaths.standard
     let service: MountService
@@ -44,6 +46,8 @@ import UnlocalFSCore
             ready = true
         } catch { alert = error.localizedDescription }
         Task {
+            await refresh()
+            await connectAutomatically()
             while !Task.isCancelled {
                 await refresh()
                 try? await Task.sleep(for: .seconds(3))
@@ -125,6 +129,19 @@ import UnlocalFSCore
             }
             statuses[connection.id] = try await service.status(connection)
         } catch { errors[connection.id] = error.localizedDescription }
+    }
+
+    func setOpensAtLogin(_ enabled: Bool) {
+        do {
+            if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+        } catch { alert = error.localizedDescription }
+        opensAtLogin = SMAppService.mainApp.status == .enabled
+    }
+
+    private func connectAutomatically() async {
+        for connection in connections where connection.connectsAutomatically && statuses[connection.id]?.isActive == false {
+            await toggle(connection)
+        }
     }
 
     func refresh() async {
