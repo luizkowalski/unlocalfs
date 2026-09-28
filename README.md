@@ -11,6 +11,17 @@ UnlocalFS puts your S3 bucket in Finder. Add a bucket once, click **Connect**, a
 
 It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and any other S3-compatible storage.
 
+## Features
+
+- **Finder integration:** Open, edit, and save files in your S3 bucket like any other folder on your Mac.
+- **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them.
+- **Mount a folder as a drive:** Turn one folder in a bucket into its own drive.
+- **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
+- **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
+- **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
+- **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
+- **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
+
 ## How it works
 
 UnlocalFS runs [rclone](https://rclone.org), the open-source cloud storage tool, and connects it to the NFS client that is built into macOS. There is no kernel extension, no FUSE driver, and no administrator password. rclone is bundled inside the app, so there is nothing else to install.
