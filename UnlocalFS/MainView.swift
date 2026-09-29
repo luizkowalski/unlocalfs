@@ -115,7 +115,7 @@ private struct ConnectionDetail: View {
                 header
                 HStack {
                     Button(model.toggleTitle(connection)) {
-                        Task { await model.toggle(connection) }
+                        Task { await model.toggle(connection, opensFinder: true) }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.canToggle(connection))

@@ -110,7 +110,7 @@ private struct MenuContent: View {
             Menu(connection.name) {
                 Text(model.statusText(connection))
                 Button(model.toggleTitle(connection)) {
-                    Task { await model.toggle(connection) }
+                    Task { await model.toggle(connection, opensFinder: true) }
                 }
                 .disabled(!model.canToggle(connection))
                 Button("Open in Finder") { model.openDrive(connection) }

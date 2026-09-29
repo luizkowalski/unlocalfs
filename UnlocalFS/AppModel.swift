@@ -121,7 +121,7 @@ import UnlocalFSCore
         } catch { alert = error.localizedDescription }
     }
 
-    func toggle(_ connection: Connection) async {
+    func toggle(_ connection: Connection, opensFinder: Bool = false) async {
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
@@ -134,6 +134,7 @@ import UnlocalFSCore
                 try await service.unmount(connection)
             } else {
                 try await service.mount(connection, credentials: credentials(for: connection.id))
+                if opensFinder { openDrive(connection) }
             }
         } catch {
             if !(error is UploadsPendingError) { errors[connection.id] = error.localizedDescription }
