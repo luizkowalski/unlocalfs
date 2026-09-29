@@ -42,6 +42,8 @@ struct ConnectionEditor: View {
 
     private static let cacheLimits: [Int64] = [128_000_000, 512_000_000, 1_000_000_000, 5_000_000_000, 10_000_000_000, 50_000_000_000]
     private static let freeSpaces: [Int64] = [1_000_000_000, 5_000_000_000, 10_000_000_000, 20_000_000_000]
+    private static let bandwidthLimits: [Int64] = [1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000]
+    private static let transferCounts = [1, 2, 4, 8, 16, 32]
 
     private var isNew: Bool { !model.connections.contains { $0.id == connection.id } }
     private var title: String {
@@ -176,6 +178,28 @@ struct ConnectionEditor: View {
                 Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            advancedSection
+        }
+    }
+
+    private var advancedSection: some View {
+        Section {
+            Picker("Bandwidth limit", selection: $connection.bandwidthLimit) {
+                Text("Off").tag(Int64(0))
+                ForEach(Self.bandwidthLimits, id: \.self) { limit in
+                    Text("\(limit, format: .byteCount(style: .file))/s").tag(limit)
+                }
+            }
+            Picker("Parallel transfers", selection: $connection.transfers) {
+                ForEach(Self.transferCounts, id: \.self) { count in
+                    Text("\(count)").tag(count)
+                }
+            }
+        } header: {
+            Text("Advanced")
+        } footer: {
+            Text("Bandwidth limits uploads and downloads. Parallel transfers controls how many files can move at once.")
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 

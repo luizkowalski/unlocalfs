@@ -21,7 +21,7 @@ import UnlocalFSCore
         #expect(try store.all().isEmpty)
     }
 
-    @Test func connectionsSavedBeforeCacheLimitsUseTheDefaults() throws {
+    @Test func connectionsSavedBeforeNewSettingsUseTheDefaults() throws {
         let url = configURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -34,6 +34,25 @@ import UnlocalFSCore
         #expect(!connection.readOnly)
         #expect(!connection.connectsAutomatically)
         #expect(!connection.encrypted)
+        #expect(connection.bandwidthLimit == 0)
+        #expect(connection.transfers == 4)
+    }
+
+    @Test func transferSettingsSurviveReopenAndUpdate() throws {
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("""
+        {"connections":[{"bandwidthLimit":10000000,"bucket":"my-bucket",
+        "endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files",
+        "provider":"Other","region":"auto","transfers":8}]}
+        """.utf8).write(to: url)
+        let store = ConnectionStore(url: url)
+        let connection = try #require(try store.all().first)
+        #expect(connection.bandwidthLimit == 10_000_000)
+        #expect(connection.transfers == 8)
+        try store.save(connection)
+        #expect(try ConnectionStore(url: url).all() == [connection])
     }
 
     @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {
