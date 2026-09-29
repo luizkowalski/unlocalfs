@@ -11,6 +11,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
     public var folder = ""
     public var cacheLimit: Int64 = 128_000_000
     public var minimumFreeSpace: Int64 = 0
+    public var bandwidthLimit: Int64 = 0
+    public var transfers = 4
     public var connectsAutomatically = false
     public var readOnly = false
     public var encrypted = false
@@ -28,6 +30,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         folder = try container.decodeIfPresent(String.self, forKey: .folder) ?? folder
         cacheLimit = try container.decodeIfPresent(Int64.self, forKey: .cacheLimit) ?? cacheLimit
         minimumFreeSpace = try container.decodeIfPresent(Int64.self, forKey: .minimumFreeSpace) ?? minimumFreeSpace
+        bandwidthLimit = try container.decodeIfPresent(Int64.self, forKey: .bandwidthLimit) ?? bandwidthLimit
+        transfers = try container.decodeIfPresent(Int.self, forKey: .transfers) ?? transfers
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? readOnly
         encrypted = try container.decodeIfPresent(Bool.self, forKey: .encrypted) ?? encrypted
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically

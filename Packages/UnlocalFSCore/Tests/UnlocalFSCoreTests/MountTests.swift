@@ -69,6 +69,22 @@ struct MountTests {
         }
     }
 
+    @Test func connectingAppliesBandwidthAndTransferLimits() async throws {
+        let connection = try JSONDecoder().decode(Connection.self, from: Data("""
+        {"bandwidthLimit":10000000,"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"auto","transfers":8}
+        """.utf8))
+        try await withDrive(connection: connection) { drive in
+            try await drive.service.mount(
+                drive.connection,
+                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            let options = try await drive.control("options/get")
+            let main = try #require(options["main"] as? [String: Any])
+            #expect(main["BwLimit"] as? String == "9.537Mi")
+            #expect(main["Transfers"] as? Int64 == 8)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
     @Test func encryptedDriveUploadsOnlyCiphertextAndRejectsTheWrongPassword() async throws {
         try await withDrive(encrypted: true) { drive in
             let credentials = try await drive.service.prepareCredentials(
@@ -218,7 +234,7 @@ private struct Drive {
 }
 
 private func withDrive(
-    folder: String = "", encrypted: Bool = false, readOnly: Bool = false,
+    folder: String = "", encrypted: Bool = false, readOnly: Bool = false, connection: Connection? = nil,
     _ body: (Drive) async throws -> Void
 ) async throws {
     let executable = URL(
@@ -234,7 +250,7 @@ private func withDrive(
         mounts: root.appendingPathComponent("drives"),
         logs: root.appendingPathComponent("logs")
     )
-    var connection = fixture(folder: folder)
+    var connection = connection ?? fixture(folder: folder)
     connection.endpoint = "http://127.0.0.1:19753"
     connection.encrypted = encrypted
     connection.readOnly = readOnly

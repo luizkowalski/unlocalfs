@@ -89,6 +89,7 @@ Right-click a drive in the sidebar to open it in Finder, edit, duplicate, or del
 
 - S3 is not a local disk. Saving a large file takes as long as uploading it. Try UnlocalFS with files you have copies of first.
 - Each drive has a cache limit (default 128 MB) and an optional amount of disk space to keep free. When the cache is over the limit, rclone removes the files you have not opened for the longest time. Open files and pending uploads stay, so the cache can go over the limit for a short time. The cache lives in `~/Library/Application Support/UnlocalFS/cache`. Do not delete it while uploads are pending.
+- Open **Advanced** in a drive’s settings to limit its bandwidth or change the number of files transferred at once. Bandwidth is unlimited by default and rclone transfers four files in parallel by default. The bandwidth choices are in MB/s and apply to uploads and downloads.
 - Finder writes `.DS_Store` files to folders you open, and they upload to your bucket like other files. To stop Finder from writing them on network drives, run the commands below. This setting applies to all network drives, not only UnlocalFS. macOS can also add `._` files when you copy files that have extended attributes. UnlocalFS cannot stop these files.
 
   ```sh

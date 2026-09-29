@@ -75,16 +75,7 @@ public actor MountService {
         defer { try? log.close() }
         let process = Process()
         process.executableURL = executable
-        var arguments = [
-            "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
-            "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
-            "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
-            "--s3-directory-markers", "--rc", "--rc-no-auth",
-            "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
-        ]
-        if connection.readOnly { arguments.append("--read-only") }
-        process.arguments = arguments
+        process.arguments = mountArguments(for: connection, mount: mount, socket: socket)
         process.environment = environment(connection, credentials: credentials)
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
@@ -198,6 +189,21 @@ public actor MountService {
 
     private func remote(_ connection: Connection) -> String {
         connection.folder.isEmpty ? ":s3:\(connection.bucket)" : ":s3:\(connection.bucket)/\(connection.folder)"
+    }
+
+    private func mountArguments(for connection: Connection, mount: URL, socket: URL) -> [String] {
+        var arguments = [
+            "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
+            "--config", "/dev/null", "--vfs-cache-mode", "full",
+            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
+            "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
+            "--transfers", "\(connection.transfers)",
+            "--s3-directory-markers", "--rc", "--rc-no-auth",
+            "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
+        ]
+        if connection.bandwidthLimit > 0 { arguments += ["--bwlimit", "\(connection.bandwidthLimit)B"] }
+        if connection.readOnly { arguments.append("--read-only") }
+        return arguments
     }
 
     private func isRunning(_ connection: Connection) -> Bool {
