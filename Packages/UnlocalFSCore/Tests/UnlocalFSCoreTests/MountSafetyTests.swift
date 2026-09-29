@@ -3,17 +3,33 @@ import Testing
 import UnlocalFSCore
 
 @Suite struct MountSafetyTests {
+    @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
+        try await withFixture(script: "#!/bin/sh\necho 'Control unavailable' >&2\nexit 1\n") { service, connection in
+            let before = await service.status(connection)
+            #expect(before.needsReconnect)
+            #expect(!before.isRunning)
+            await #expect {
+                try await service.reconnect(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+            } throws: { error in
+                error is AppError && error.localizedDescription.contains("Could not stop the old drive service")
+            }
+            let after = await service.status(connection)
+            #expect(after.isActive)
+        }
+    }
+
     @Test(arguments: [
-        "\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":0",
-        "\"uploadsQueued\":0,\"uploadsInProgress\":1,\"erroredFiles\":0",
-        "\"uploadsQueued\":0,\"uploadsInProgress\":0,\"erroredFiles\":1"
+        ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":0", true),
+        ("\"uploadsQueued\":0,\"uploadsInProgress\":1,\"erroredFiles\":0", true),
+        ("\"uploadsQueued\":0,\"uploadsInProgress\":0,\"erroredFiles\":1", false),
+        ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":1", false)
     ])
-    func unmountRefusesQueuedOrFailedUploads(cache: String) async throws {
+    func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
         try await withFixture(script: "#!/bin/sh\nprintf '%s' '{\"diskCache\":{\(cache),\"bytesUsed\":42}}'\n") { service, connection in
-            let status = try await service.status(connection)
+            let status = await service.status(connection)
             #expect(status.isRunning)
             await #expect { try await service.unmount(connection) } throws: { error in
-                error is AppError && error.localizedDescription.contains("upload")
+                pending ? error is UploadsPendingError : error is AppError
             }
         }
     }
@@ -29,8 +45,24 @@ import UnlocalFSCore
             """
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
-                error is AppError && error.localizedDescription.contains("upload")
+                error is UploadsPendingError
             }
+        }
+    }
+
+    @Test func disconnectKeepsTheServiceAliveWhenUploadStatusBecomesUnavailable() async throws {
+        try await withFixture { root in
+            """
+            #!/bin/sh
+            if [ "$4" = 'core/quit' ]; then rm "$3"; exit 0; fi
+            if [ -f '\(root.path)/checked' ]; then echo 'Control unavailable' >&2; exit 1; fi
+            touch '\(root.path)/checked'
+            printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42}}'
+            """
+        } operation: { service, connection in
+            await #expect(throws: AppError.self) { try await service.unmount(connection) }
+            let status = await service.status(connection)
+            #expect(status.isActive)
         }
     }
 
@@ -38,7 +70,7 @@ import UnlocalFSCore
     func disconnectSucceedsWhenRcloneExitsDuringShutdown(phase: String) async throws {
         try await withFixture { shutdownScript(phase: phase, root: $0) } operation: { service, connection in
             try await service.unmount(connection)
-            let status = try await service.status(connection)
+            let status = await service.status(connection)
             #expect(!status.isMounted && !status.isRunning)
         }
     }
@@ -48,7 +80,7 @@ import UnlocalFSCore
             await #expect { try await service.unmount(connection) } throws: { error in
                 error is AppError && error.localizedDescription.contains("Quit failed")
             }
-            let status = try await service.status(connection)
+            let status = await service.status(connection)
             #expect(status.isRunning)
         }
     }

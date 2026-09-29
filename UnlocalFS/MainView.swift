@@ -76,7 +76,9 @@ private struct ConnectionRow: View {
             }
             .padding(.vertical, 4)
         } icon: {
-            if model.isActive(connection) {
+            if model.needsReconnect(connection) {
+                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+            } else if model.isActive(connection) {
                 Image(systemName: "externaldrive.fill.badge.icloud")
             } else {
                 Image(systemName: "externaldrive").foregroundStyle(.secondary)
@@ -85,7 +87,11 @@ private struct ConnectionRow: View {
         .tag(connection.id)
         .contextMenu {
             Button("Open in Finder") { model.openDrive(connection) }
-                .disabled(model.statuses[connection.id]?.isMounted != true)
+                .disabled(model.statuses[connection.id]?.isMounted != true || model.needsReconnect(connection))
+            if model.needsReconnect(connection) {
+                Button("Reconnect") { Task { await model.toggle(connection) } }
+                    .disabled(!model.canToggle(connection))
+            }
             Divider()
             Button("Edit Connection") { model.edit(connection) }
                 .disabled(!model.canEdit(connection))
@@ -108,18 +114,30 @@ private struct ConnectionDetail: View {
             VStack(alignment: .leading, spacing: 24) {
                 header
                 HStack {
-                    Button(model.isActive(connection) ? "Disconnect" : "Connect") {
+                    Button(model.toggleTitle(connection)) {
                         Task { await model.toggle(connection) }
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.canToggle(connection))
                     Button("Open in Finder") { model.openDrive(connection) }
-                        .disabled(status?.isMounted != true)
+                        .disabled(status?.isMounted != true || model.needsReconnect(connection))
                 }
-                if let error = model.errors[connection.id] {
+                if !model.networkAvailable && model.isActive(connection) {
+                    Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                if let error = model.errors[connection.id] ?? status?.controlError {
                     errorBox(error)
+                } else if let status, status.pendingUploads > 0, status.failedUploads == 0 {
+                    Label(
+                        status.isMounted
+                            ? "Uploads pending. Keep this drive connected until uploads finish."
+                            : "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again.",
+                        systemImage: "info.circle"
+                    )
+                    .font(.callout).foregroundStyle(.secondary)
                 }
-                if status?.isRunning == true {
+                if status?.isRunning == true && !model.needsReconnect(connection) {
                     ActivityView(connection: connection)
                 }
                 GroupBox("Connection") {
@@ -140,7 +158,7 @@ private struct ConnectionDetail: View {
                         Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
                             row("Drive", Text(tildePath(model.paths.mount(connection))))
                             row("Cache", Text(tildePath(model.paths.cache(connection))))
-                            if let status, status.isRunning {
+                            if let status, status.isRunning && !status.needsReconnect {
                                 row("Cache size", HStack(spacing: 12) {
                                     Gauge(value: Double(status.bytesCached), in: 0...Double(connection.cacheLimit)) {}
                                         .gaugeStyle(.linearCapacity)
@@ -191,6 +209,9 @@ private struct ConnectionDetail: View {
                 HStack(spacing: 6) {
                     if model.busy.contains(connection.id) {
                         ProgressView().controlSize(.small)
+                    } else if model.needsReconnect(connection) || model.errors[connection.id] != nil
+                                || (status?.failedUploads ?? 0) > 0 || !model.networkAvailable && model.isActive(connection) {
+                        Circle().fill(Color.orange).frame(width: 7, height: 7)
                     } else {
                         Circle().fill(status?.isMounted == true ? Color.green : Color.secondary).frame(width: 7, height: 7)
                     }

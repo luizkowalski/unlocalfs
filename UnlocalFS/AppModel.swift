@@ -23,12 +23,15 @@ import UnlocalFSCore
     var deleting: Connection?
     private(set) var ready = false
     private(set) var opensAtLogin = SMAppService.mainApp.status == .enabled
+    private(set) var networkAvailable = true
+    private var sleeping = false
 
     let paths = AppPaths.standard
     let service: MountService
     private let keychain = Keychain()
     private let store: ConnectionStore
     private var refreshing = false
+    private var refreshRequested = false
     private var checkingQuit = false
 
     init() {
@@ -107,7 +110,7 @@ import UnlocalFSCore
         busy.insert(connection.id)
         defer { busy.remove(connection.id) }
         do {
-            guard try await !service.status(connection).isActive else { throw AppError("Disconnect this drive before deleting it.") }
+            guard await !service.status(connection).isActive else { throw AppError("Disconnect this drive before deleting it.") }
             try keychain.delete(connection.id)
             try store.delete(connection.id)
             paths.removeCache(connection)
@@ -124,13 +127,18 @@ import UnlocalFSCore
         errors[connection.id] = nil
         defer { busy.remove(connection.id) }
         do {
-            if try await service.status(connection).isActive {
+            let current = await service.status(connection)
+            if current.needsReconnect {
+                try await service.reconnect(connection, credentials: credentials(for: connection.id))
+            } else if current.isActive {
                 try await service.unmount(connection)
             } else {
                 try await service.mount(connection, credentials: credentials(for: connection.id))
             }
-            statuses[connection.id] = try await service.status(connection)
-        } catch { errors[connection.id] = error.localizedDescription }
+        } catch {
+            if !(error is UploadsPendingError) { errors[connection.id] = error.localizedDescription }
+        }
+        statuses[connection.id] = await service.status(connection)
     }
 
     func setOpensAtLogin(_ enabled: Bool) {
@@ -152,16 +160,33 @@ import UnlocalFSCore
     }
 
     func refresh() async {
-        guard !refreshing else { return }
+        guard !sleeping else { return }
+        if refreshing {
+            refreshRequested = true
+            return
+        }
         refreshing = true
         defer { refreshing = false }
-        syncOpensAtLogin()
-        for connection in connections where !busy.contains(connection.id) {
-            do {
-                let status = try await service.status(connection)
-                if !busy.contains(connection.id), statuses[connection.id] != status { statuses[connection.id] = status }
-            } catch { errors[connection.id] = error.localizedDescription }
-        }
+        repeat {
+            refreshRequested = false
+            syncOpensAtLogin()
+            for connection in connections where !busy.contains(connection.id) && !sleeping {
+                let status = await service.status(connection)
+                if !sleeping, !busy.contains(connection.id), statuses[connection.id] != status { statuses[connection.id] = status }
+            }
+        } while refreshRequested && !sleeping
+    }
+
+    func willSleep() { sleeping = true }
+
+    func didWake() async {
+        sleeping = false
+        await refresh()
+    }
+
+    func networkChanged(available: Bool) async {
+        networkAvailable = available
+        await refresh()
     }
 
     func canQuit() async -> Bool {
@@ -171,16 +196,9 @@ import UnlocalFSCore
             alert = "Wait for the current operation to finish before quitting."
             return false
         }
-        for connection in connections {
-            do {
-                if try await service.status(connection).isActive {
-                    alert = "Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar."
-                    return false
-                }
-            } catch {
-                alert = "Could not check \(connection.name). Open its log and check the drive before quitting.\n\n\(error.localizedDescription)"
-                return false
-            }
+        for connection in connections where await service.status(connection).isActive {
+            alert = "Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar."
+            return false
         }
         return true
     }
@@ -204,13 +222,24 @@ import UnlocalFSCore
 
     func statusText(_ connection: Connection) -> String {
         if busy.contains(connection.id) { return "Working…" }
+        if needsReconnect(connection) { return "Needs reconnect" }
         if errors[connection.id] != nil { return "Needs attention" }
         guard let status = statuses[connection.id] else { return "Checking…" }
+        if status.isActive && !networkAvailable { return "Network unavailable" }
         if status.failedUploads > 0 { return "Upload needs attention" }
         if status.pendingUploads > 0 { return String(AttributedString(localized: "^[\(status.pendingUploads) upload](inflect: true) pending").characters) }
         if status.isMounted { return "Connected" }
         if status.isRunning { return "Ejected · disconnect to stop" }
         return "Disconnected"
+    }
+
+    func needsReconnect(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.needsReconnect == true
+    }
+
+    func toggleTitle(_ connection: Connection) -> String {
+        if needsReconnect(connection) { return "Reconnect" }
+        return isActive(connection) ? "Disconnect" : "Connect"
     }
 
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }

@@ -1,4 +1,13 @@
+import Darwin
 import Foundation
+
+public struct UploadsPendingError: LocalizedError, Sendable {
+    public init() {}
+
+    public var errorDescription: String? {
+        "Uploads are still in progress. Wait for them to finish before disconnecting."
+    }
+}
 
 public struct MountStatus: Equatable, Sendable {
     public var isMounted = false
@@ -6,10 +15,11 @@ public struct MountStatus: Equatable, Sendable {
     public var pendingUploads = 0
     public var failedUploads = 0
     public var bytesCached: Int64 = 0
+    public var controlError: String?
     public init() {}
 
-    public var isActive: Bool { isMounted || isRunning }
-    public var hasUnfinishedUploads: Bool { pendingUploads > 0 || failedUploads > 0 }
+    public var isActive: Bool { isMounted || isRunning || needsReconnect }
+    public var needsReconnect: Bool { controlError != nil }
 }
 
 public actor MountService {
@@ -55,7 +65,7 @@ public actor MountService {
         guard !starting.contains(connection.id) else { throw AppError("This drive is already connecting.") }
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
-        guard try await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
+        guard await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
         let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
@@ -82,6 +92,12 @@ public actor MountService {
         process.standardError = log
         try process.run()
         processes[connection.id] = process
+        do {
+            try String(process.processIdentifier).write(to: paths.pidFile(connection), atomically: true, encoding: .utf8)
+        } catch {
+            process.terminate()
+            throw error
+        }
         for _ in 0..<60 {
             if isMounted(mount) { return }
             guard process.isRunning else {
@@ -95,26 +111,29 @@ public actor MountService {
         throw AppError("The drive took too long to mount. Open its log for details.")
     }
 
-    public func status(_ connection: Connection) async throws -> MountStatus {
+    public func status(_ connection: Connection) async -> MountStatus {
         var status = MountStatus()
         status.isMounted = isMounted(paths.mount(connection))
+        let running = isRunning(connection)
+        status.isRunning = running == true
         guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            if status.isMounted { throw AppError("The drive is mounted, but its control service is unavailable. Do not delete its cache.") }
-            status.isRunning = isRunning(connection)
+            if status.isActive {
+                status.controlError = "The drive's control service is unavailable. Reconnect to restore the drive. Its cache will be kept."
+            }
             return status
         }
-        let data: Data
         do {
-            data = try await control(connection, "vfs/stats")
+            let data = try await control(connection, "vfs/stats")
+            let cache = try JSONDecoder().decode(VFSStats.self, from: data).diskCache
+            status.isRunning = true
+            status.pendingUploads = cache.uploadsQueued + cache.uploadsInProgress
+            status.failedUploads = cache.erroredFiles
+            status.bytesCached = cache.bytesUsed
         } catch {
-            if status.isMounted || isRunning(connection) { throw error }
-            return status
+            if status.isMounted || running != false {
+                status.controlError = "The drive's control service is unavailable. Its cache will be kept.\n\n\(error.localizedDescription)"
+            }
         }
-        let cache = try JSONDecoder().decode(VFSStats.self, from: data).diskCache
-        status.isRunning = true
-        status.pendingUploads = cache.uploadsQueued + cache.uploadsInProgress
-        status.failedUploads = cache.erroredFiles
-        status.bytesCached = cache.bytesUsed
         return status
     }
 
@@ -136,49 +155,43 @@ public actor MountService {
     }
 
     public func unmount(_ connection: Connection) async throws {
-        let current = try await status(connection)
-        guard !current.hasUnfinishedUploads else {
-            throw AppError("Files are still uploading or need a retry. Keep this drive connected until uploads finish.")
-        }
-        if current.isMounted {
-            do {
-                _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(10))
-            } catch {
-                throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
-            }
-            for _ in 0..<20 {
-                if !isMounted(paths.mount(connection)) { break }
-                try await Task.sleep(for: .milliseconds(100))
-            }
-        }
-        if current.isRunning {
-            let remaining = try await status(connection)
-            guard !remaining.hasUnfinishedUploads else {
-                throw AppError("The drive was ejected, but uploads are still finishing. Disconnect again after they complete.")
-            }
-            if remaining.isRunning { try await stop(connection) }
-        }
-        processes[connection.id] = nil
+        try await disconnect(connection, recovering: false)
     }
 
-    private func stop(_ connection: Connection) async throws {
-        var quitError: (any Error)?
-        do {
-            _ = try await control(connection, "core/quit")
-        } catch {
-            quitError = error
+    public func reconnect(_ connection: Connection, credentials: Credentials) async throws {
+        try await disconnect(connection, recovering: true)
+        try await mount(connection, credentials: credentials)
+    }
+
+    private func disconnect(_ connection: Connection, recovering: Bool) async throws {
+        let current = await status(connection)
+        if let error = current.controlError, !recovering { throw AppError(error) }
+        if current.needsReconnect, isRunning(connection) == nil {
+            throw AppError("Could not stop the old drive service because its process could not be identified. The cache was kept.")
         }
-        for _ in 0..<20 {
-            if !isRunning(connection),
-               !FileManager.default.fileExists(atPath: paths.socket(connection).path),
-               !isMounted(paths.mount(connection)) {
-                return
+        try checkUploads(current)
+        if current.isMounted { try await eject(connection) }
+        if current.needsReconnect {
+            try await stop(connection)
+        } else if current.isRunning {
+            let remaining = await status(connection)
+            try checkUploads(remaining)
+            if let error = remaining.controlError {
+                try await waitForStop(connection, error: AppError(error))
+            } else if remaining.isRunning {
+                try await stop(connection)
             }
-            try await Task.sleep(for: .milliseconds(100))
         }
-        guard try await !status(connection).isActive else {
-            throw quitError ?? AppError("The drive is still stopping. Wait a moment and try disconnecting again.")
+        processes[connection.id] = nil
+        let pidFile = paths.pidFile(connection)
+        if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
+    }
+
+    private func checkUploads(_ status: MountStatus) throws {
+        guard status.failedUploads == 0 else {
+            throw AppError("Some files could not upload and need a retry. Keep UnlocalFS running until uploads finish.")
         }
+        guard status.pendingUploads == 0 else { throw UploadsPendingError() }
     }
 
     private func control(_ connection: Connection, _ method: String) async throws -> Data {
@@ -206,8 +219,13 @@ public actor MountService {
         return arguments
     }
 
-    private func isRunning(_ connection: Connection) -> Bool {
-        processes[connection.id]?.isRunning == true
+    private func isRunning(_ connection: Connection) -> Bool? {
+        guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8),
+              let pid = pid_t(saved), pid > 0 else {
+            return processes[connection.id]?.isRunning
+        }
+        if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning }
+        return kill(pid, 0) == 0 || errno != ESRCH
     }
 
     private var baseEnvironment: [String: String] {
@@ -244,9 +262,59 @@ public actor MountService {
     }
 
     private func isMounted(_ url: URL) -> Bool {
-        let path = url.resolvingSymlinksInPath().path
-        let volumes = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: [], options: []) ?? []
-        return volumes.contains { $0.resolvingSymlinksInPath().path == path }
+        guard let parent = realpath(url.deletingLastPathComponent().path, nil) else { return false }
+        defer { free(parent) }
+        let path = URL(filePath: String(cString: parent)).appendingPathComponent(url.lastPathComponent).path
+        var mounts: UnsafeMutablePointer<statfs>?
+        let count = getmntinfo_r_np(&mounts, MNT_NOWAIT)
+        guard let mounts else { return false }
+        defer { free(mounts) }
+        return (0..<Int(count)).contains { index in
+            withUnsafePointer(to: mounts[index].f_mntonname) {
+                $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) == path }
+            }
+        }
+    }
+}
+
+private extension MountService {
+    func eject(_ connection: Connection) async throws {
+        do {
+            _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(10))
+        } catch {
+            throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
+        }
+        for _ in 0..<20 {
+            if !isMounted(paths.mount(connection)) { return }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw AppError("The drive is still mounted. Close files using it and try again.")
+    }
+
+    func stop(_ connection: Connection) async throws {
+        var quitError: any Error = AppError("The drive is still stopping. Wait a moment and try disconnecting again.")
+        do {
+            _ = try await control(connection, "core/quit")
+        } catch {
+            quitError = error
+        }
+        try await waitForStop(connection, error: quitError)
+    }
+
+    func waitForStop(_ connection: Connection, error: any Error) async throws {
+        for _ in 0..<20 {
+            let running = isRunning(connection)
+            let socket = paths.socket(connection)
+            if running != true, !isMounted(paths.mount(connection)) {
+                if !FileManager.default.fileExists(atPath: socket.path) { return }
+                if running == false {
+                    try FileManager.default.removeItem(at: socket)
+                    return
+                }
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        throw error
     }
 }
 
