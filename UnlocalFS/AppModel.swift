@@ -121,7 +121,7 @@ import UnlocalFSCore
         } catch { alert = error.localizedDescription }
     }
 
-    func toggle(_ connection: Connection, opensFinder: Bool = true) async {
+    func toggle(_ connection: Connection, opensFinder: Bool = false) async {
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
@@ -156,7 +156,7 @@ import UnlocalFSCore
 
     private func connectAutomatically() async {
         for connection in connections where connection.connectsAutomatically && statuses[connection.id]?.isActive == false {
-            await toggle(connection, opensFinder: false)
+            await toggle(connection)
         }
     }
 
