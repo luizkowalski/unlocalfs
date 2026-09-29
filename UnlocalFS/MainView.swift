@@ -160,8 +160,8 @@ private struct ConnectionDetail: View {
                             row("Cache", Text(tildePath(model.paths.cache(connection))))
                             if let status, status.isRunning && !status.needsReconnect {
                                 row("Cache size", HStack(spacing: 12) {
-                                    Gauge(value: Double(status.bytesCached), in: 0...Double(connection.cacheLimit)) {}
-                                        .gaugeStyle(.linearCapacity)
+                                    ProgressView(value: Double(status.bytesCached), total: Double(connection.cacheLimit))
+                                        .tint(.green)
                                         .frame(maxWidth: 240)
                                         .accessibilityLabel("Cache size")
                                     Text("\(status.bytesCached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))")
