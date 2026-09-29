@@ -1,4 +1,5 @@
 import AppKit
+import Network
 import SwiftUI
 import UnlocalFSCore
 
@@ -38,6 +39,29 @@ import UnlocalFSCore
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
     private var checkingQuit = false
+    private let pathMonitor = NWPathMonitor()
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let center = NSWorkspace.shared.notificationCenter
+        center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
+        center.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
+        pathMonitor.pathUpdateHandler = { [weak self] path in
+            let available = path.status == .satisfied
+            Task { @MainActor [weak self] in await self?.model.networkChanged(available: available) }
+        }
+        pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        pathMonitor.cancel()
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+
+    @objc private func willSleep(_ notification: Notification) { model.willSleep() }
+
+    @objc private func didWake(_ notification: Notification) {
+        Task { await model.didWake() }
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         sender.setActivationPolicy(.accessory)
@@ -85,12 +109,12 @@ private struct MenuContent: View {
         ForEach(model.connections) { connection in
             Menu(connection.name) {
                 Text(model.statusText(connection))
-                Button(model.isActive(connection) ? "Disconnect" : "Connect") {
+                Button(model.toggleTitle(connection)) {
                     Task { await model.toggle(connection) }
                 }
                 .disabled(!model.canToggle(connection))
                 Button("Open in Finder") { model.openDrive(connection) }
-                    .disabled(model.statuses[connection.id]?.isMounted != true)
+                    .disabled(model.statuses[connection.id]?.isMounted != true || model.needsReconnect(connection))
             }
         }
         Divider()

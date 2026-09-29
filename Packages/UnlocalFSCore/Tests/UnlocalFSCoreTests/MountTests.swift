@@ -26,14 +26,17 @@ struct MountTests {
                     == "hello from S3")
             try Data("written through Finder's filesystem".utf8).write(
                 to: drive.mounted.appendingPathComponent("upload.txt"))
-            #expect(try await drive.service.status(drive.connection).pendingUploads > 0)
+            #expect(await drive.service.status(drive.connection).pendingUploads > 0)
             let activity = try await drive.service.activity(drive.connection)
             #expect(activity.contains { $0.path == "upload.txt" && $0.state == .queued })
-            await #expect(throws: AppError.self) {
+            await #expect(throws: UploadsPendingError.self) {
                 try await drive.service.unmount(drive.connection)
             }
+            await #expect(throws: UploadsPendingError.self) {
+                try await drive.service.reconnect(drive.connection, credentials: credentials)
+            }
             let reopened = drive.reopen()
-            #expect(try await reopened.status(drive.connection).isMounted)
+            #expect(await reopened.status(drive.connection).isMounted)
             try await drive.waitForUploads(on: reopened)
             #expect(
                 try String(
@@ -42,7 +45,7 @@ struct MountTests {
             #expect(try await reopened.activity(drive.connection).isEmpty)
             try await verifyUploadProgress(drive, service: reopened)
             try await reopened.unmount(drive.connection)
-            let stopped = try await reopened.status(drive.connection)
+            let stopped = await reopened.status(drive.connection)
             #expect(!stopped.isMounted && !stopped.isRunning)
         }
     }
@@ -65,6 +68,57 @@ struct MountTests {
                 try String(
                     contentsOf: drive.mounted.appendingPathComponent("plan.txt"), encoding: .utf8)
                     == "acme plan")
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @Test(arguments: [(false, false), (true, false), (false, true), (true, true)])
+    func reconnectPreservesCachedFilesWhenControlIsUnavailable(staleSocket: Bool, reopened: Bool) async throws {
+        try await withDrive { drive in
+            let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
+            try Data("remote file".utf8).write(to: drive.bucket.appendingPathComponent("hello.txt"))
+            try await drive.service.mount(drive.connection, credentials: credentials)
+            #expect(try String(contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "remote file")
+            let diskCache = try #require(try await drive.control("vfs/stats")["diskCache"] as? [String: Any])
+            let cached = URL(filePath: try #require(diskCache["path"] as? String)).appendingPathComponent("hello.txt")
+            #expect(try String(contentsOf: cached, encoding: .utf8) == "remote file")
+            let service = reopened ? drive.reopen() : drive.service
+            let socket = drive.paths.socket(drive.connection)
+            let hiddenSocket = socket.appendingPathExtension("hidden")
+            try FileManager.default.moveItem(at: socket, to: hiddenSocket)
+            defer {
+                if !FileManager.default.fileExists(atPath: socket.path) {
+                    try? FileManager.default.moveItem(at: hiddenSocket, to: socket)
+                }
+            }
+            if staleSocket { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
+            let unhealthy = await service.status(drive.connection)
+            #expect(unhealthy.isMounted)
+            #expect(unhealthy.needsReconnect)
+            try await service.reconnect(drive.connection, credentials: credentials)
+            let recovered = await service.status(drive.connection)
+            #expect(recovered.isMounted)
+            #expect(!recovered.needsReconnect)
+            #expect(try String(contentsOf: cached, encoding: .utf8) == "remote file")
+            #expect(try String(contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "remote file")
+            try await service.unmount(drive.connection)
+            #expect(await !service.status(drive.connection).isActive)
+        }
+    }
+
+    @Test func reconnectRestoresTheDriveAfterTheServiceCrashes() async throws {
+        try await withDrive { drive in
+            let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
+            try Data("remote file".utf8).write(to: drive.bucket.appendingPathComponent("hello.txt"))
+            try await drive.service.mount(drive.connection, credentials: credentials)
+            let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
+            _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
+            try await Task.sleep(for: .milliseconds(300))
+            let unhealthy = await drive.service.status(drive.connection)
+            #expect(unhealthy.isMounted)
+            #expect(unhealthy.needsReconnect)
+            try await drive.service.reconnect(drive.connection, credentials: credentials)
+            #expect(try String(contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "remote file")
             try await drive.service.unmount(drive.connection)
         }
     }
@@ -110,7 +164,7 @@ struct MountTests {
             let savedCredentials = try JSONDecoder().decode(
                 Credentials.self, from: JSONEncoder().encode(credentials))
             try await reopened.mount(drive.connection, credentials: savedCredentials)
-            #expect(try await reopened.status(drive.connection).bytesCached == 10)
+            #expect(await reopened.status(drive.connection).bytesCached == 10)
             try await reopened.unmount(drive.connection)
             try FileManager.default.removeItem(at: drive.paths.cache(drive.connection))
             try await drive.service.mount(drive.connection, credentials: credentials)
@@ -127,7 +181,7 @@ struct MountTests {
             await #expect {
                 try await drive.service.mount(drive.connection, credentials: wrong)
             } throws: { $0.localizedDescription.contains("undecryptable") }
-            #expect(try await !drive.service.status(drive.connection).isActive)
+            #expect(await !drive.service.status(drive.connection).isActive)
         }
     }
 
@@ -227,7 +281,7 @@ private struct Drive {
 
     func waitForUploads(on service: MountService) async throws {
         for _ in 0..<40 {
-            if try await service.status(connection).pendingUploads == 0 { return }
+            if await service.status(connection).pendingUploads == 0 { return }
             try await Task.sleep(for: .milliseconds(500))
         }
     }
@@ -262,6 +316,9 @@ private func withDrive(
         try await body(drive)
     } catch {
         try? await Task.sleep(for: .seconds(6))
+        if await drive.service.status(connection).isMounted {
+            _ = try? await Command.run(URL(filePath: "/sbin/umount"), [drive.mounted.path], timeout: .seconds(10))
+        }
         try? await drive.service.unmount(connection)
         throw error
     }
@@ -287,7 +344,7 @@ private func verifyUploadProgress(_ drive: Drive, service: MountService) async t
         try await Task.sleep(for: .milliseconds(250))
     }
     #expect(try await service.activity(drive.connection).isEmpty)
-    #expect(try await service.status(drive.connection).isMounted)
+    #expect(await service.status(drive.connection).isMounted)
 }
 
 private struct S3Server {

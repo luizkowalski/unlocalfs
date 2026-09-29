@@ -19,6 +19,7 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and 
 - **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
 - **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
+- **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
 - **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
 
@@ -29,6 +30,8 @@ UnlocalFS runs [rclone](https://rclone.org), the open-source cloud storage tool,
 Drives mount in `~/UnlocalFS`. Files you open are cached on your Mac, so apps can read and edit them at local speed. Changes upload to your bucket after you close the file. The app shows pending uploads and will not disconnect a drive until they finish.
 
 Select a connected drive to see its activity: queued uploads, uploads waiting to retry, and active uploads and downloads with progress when available. The list refreshes every few seconds. Deletions are not shown because rclone does not report Finder deletions in its activity data. Disconnect the drive yourself when you are finished.
+
+If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. Recovery stops if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
 
 ## Privacy
 
