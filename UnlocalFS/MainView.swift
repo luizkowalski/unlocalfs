@@ -50,7 +50,7 @@ struct MainView: View {
         ) { connection in
             Button("Delete Connection", role: .destructive) { Task { await model.delete(connection) } }
         } message: { _ in
-            Text("This removes the saved connection and credentials. Remote files and the local file cache are kept.")
+            Text("This removes the saved connection, credentials, and local file cache. Remote files are kept.")
         }
     }
 }

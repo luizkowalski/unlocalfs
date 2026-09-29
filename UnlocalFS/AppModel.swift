@@ -110,6 +110,7 @@ import UnlocalFSCore
             guard try await !service.status(connection).isActive else { throw AppError("Disconnect this drive before deleting it.") }
             try keychain.delete(connection.id)
             try store.delete(connection.id)
+            paths.removeCache(connection)
             connections = try store.all()
             statuses[connection.id] = nil
             errors[connection.id] = nil
