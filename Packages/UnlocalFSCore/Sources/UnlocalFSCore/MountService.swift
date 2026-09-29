@@ -280,7 +280,7 @@ public actor MountService {
 private extension MountService {
     func eject(_ connection: Connection) async throws {
         do {
-            _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(10))
+            _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(60))
         } catch {
             throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
         }
