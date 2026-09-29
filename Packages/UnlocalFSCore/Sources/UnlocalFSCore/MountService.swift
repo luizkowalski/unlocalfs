@@ -170,7 +170,7 @@ public actor MountService {
             throw AppError("Could not stop the old drive service because its process could not be identified. The cache was kept.")
         }
         try checkUploads(current)
-        if current.isMounted { try await eject(connection) }
+        if current.isMounted { try await eject(connection, force: !current.isRunning) }
         if current.needsReconnect {
             try await stop(connection)
         } else if current.isRunning {
@@ -278,9 +278,9 @@ public actor MountService {
 }
 
 private extension MountService {
-    func eject(_ connection: Connection) async throws {
+    func eject(_ connection: Connection, force: Bool) async throws {
         do {
-            _ = try await Command.run(URL(filePath: "/sbin/umount"), [paths.mount(connection).path], timeout: .seconds(60))
+            _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
         } catch {
             throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
         }
