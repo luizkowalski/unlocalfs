@@ -28,7 +28,7 @@ jobs:
   test:
     name: test (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 3
     strategy:
       fail-fast: false
       matrix:
@@ -72,7 +72,7 @@ jobs:
 
   build:
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 5
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app
     steps:
