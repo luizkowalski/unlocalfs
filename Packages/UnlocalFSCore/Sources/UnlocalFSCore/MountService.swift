@@ -45,11 +45,34 @@ public actor MountService {
                 "--contimeout", "5s", "--timeout", "10s"
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
-            throw redacted(error, secrets: [
-                credentials.accessKey, credentials.secretKey, credentials.sessionToken,
-                credentials.encryptionPassword, credentials.obscuredEncryptionPassword
-            ])
+            throw redacted(error, credentials: credentials)
         }
+    }
+
+    public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
+        guard !connection.encrypted else {
+            throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
+        }
+        try AppError.throwing(connection.validate() + credentials.validate(for: connection))
+        let output: Data
+        do {
+            output = try await Command.run(executable, [
+                "link", "\(remote(connection))/\(path)", "--expire", expiry.rawValue, "--quiet",
+                "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
+                "--contimeout", "5s", "--timeout", "10s"
+            ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
+        } catch {
+            throw AppError("""
+            Could not create a link. If the file is still uploading, wait for it to finish.
+
+            \(redacted(error, credentials: credentials).localizedDescription)
+            """)
+        }
+        guard let link = URL(string: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)),
+              ["http", "https"].contains(link.scheme) else {
+            throw AppError("Could not create a link. Try again.")
+        }
+        return link
     }
 
     public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
@@ -261,8 +284,12 @@ public actor MountService {
         return environment
     }
 
-    private func redacted(_ error: any Error, secrets: [String]) -> AppError {
+    private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
         var message = error.localizedDescription
+        let secrets = [
+            credentials.accessKey, credentials.secretKey, credentials.sessionToken,
+            credentials.encryptionPassword, credentials.obscuredEncryptionPassword
+        ]
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }
