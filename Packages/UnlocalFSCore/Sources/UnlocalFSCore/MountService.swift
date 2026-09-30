@@ -128,6 +128,10 @@ public actor MountService {
             status.isRunning = true
             status.pendingUploads = cache.uploadsQueued + cache.uploadsInProgress
             status.failedUploads = cache.erroredFiles
+            if status.pendingUploads > 0 {
+                let queue = try await JSONDecoder().decode(UploadQueue.self, from: control(connection, "vfs/queue")).queue
+                status.failedUploads += queue.count { $0.tries > 0 }
+            }
             status.bytesCached = cache.bytesUsed
         } catch {
             if status.isMounted || running != false {
@@ -152,6 +156,10 @@ public actor MountService {
             FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes)
         }
         return (queued + transferring).sorted(using: KeyPathComparator(\.path, comparator: .localizedStandard))
+    }
+
+    public func refresh(_ connection: Connection) async throws {
+        _ = try await control(connection, "vfs/forget")
     }
 
     public func unmount(_ connection: Connection) async throws {
@@ -210,7 +218,7 @@ public actor MountService {
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
-            "--transfers", "\(connection.transfers)",
+            "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--s3-directory-markers", "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
         ]
@@ -264,7 +272,7 @@ public actor MountService {
     private func isMounted(_ url: URL) -> Bool {
         guard let parent = realpath(url.deletingLastPathComponent().path, nil) else { return false }
         defer { free(parent) }
-        let path = URL(filePath: String(cString: parent)).appendingPathComponent(url.lastPathComponent).path
+        let path = URL(filePath: String(cString: parent)).appending(path: url.lastPathComponent).path
         var mounts: UnsafeMutablePointer<statfs>?
         let count = getmntinfo_r_np(&mounts, MNT_NOWAIT)
         guard let mounts else { return false }
