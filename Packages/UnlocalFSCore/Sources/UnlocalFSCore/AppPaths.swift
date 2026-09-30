@@ -28,6 +28,16 @@ public struct AppPaths: Sendable {
     }
 
     public func mount(_ connection: Connection) -> URL { mounts.appending(path: connection.name) }
+    public func drive(containing file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
+        let components = file.standardizedFileURL.pathComponents
+        for connection in connections {
+            let root = mount(connection).standardizedFileURL.pathComponents
+            if components.count > root.count, components.starts(with: root) {
+                return (connection, components.dropFirst(root.count).joined(separator: "/"))
+            }
+        }
+        return nil
+    }
     public func cache(_ connection: Connection) -> URL { support.appending(path: "cache/\(connection.id.uuidString)") }
     public func removeCache(_ connection: Connection) {
         try? FileManager.default.removeItem(at: cache(connection))
