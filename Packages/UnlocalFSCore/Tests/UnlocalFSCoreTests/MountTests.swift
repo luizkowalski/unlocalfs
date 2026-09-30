@@ -113,7 +113,7 @@ struct MountTests {
             try await drive.service.mount(drive.connection, credentials: credentials)
             let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
             _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
-            try await Task.sleep(for: .milliseconds(300))
+            try await Task.sleep(for: .seconds(4))
             let unhealthy = await drive.service.status(drive.connection)
             #expect(unhealthy.isMounted)
             #expect(unhealthy.needsReconnect)

@@ -272,7 +272,7 @@ public actor MountService {
     private func isMounted(_ url: URL) -> Bool {
         guard let parent = realpath(url.deletingLastPathComponent().path, nil) else { return false }
         defer { free(parent) }
-        let path = URL(filePath: String(cString: parent)).appendingPathComponent(url.lastPathComponent).path
+        let path = URL(filePath: String(cString: parent)).appending(path: url.lastPathComponent).path
         var mounts: UnsafeMutablePointer<statfs>?
         let count = getmntinfo_r_np(&mounts, MNT_NOWAIT)
         guard let mounts else { return false }
