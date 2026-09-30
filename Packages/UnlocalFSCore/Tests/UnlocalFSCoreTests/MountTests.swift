@@ -257,7 +257,7 @@ struct MountTests {
 private let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
-private struct Drive {
+struct Drive {
     let executable: URL
     let bucket: URL
     let paths: AppPaths
@@ -287,7 +287,7 @@ private struct Drive {
     }
 }
 
-private func withDrive(
+func withDrive(
     folder: String = "", encrypted: Bool = false, readOnly: Bool = false, connection: Connection? = nil,
     _ body: (Drive) async throws -> Void
 ) async throws {
@@ -358,7 +358,7 @@ private struct S3Server {
         process.executableURL = executable
         process.arguments = [
             "serve", "s3", root.appendingPathComponent("source").path, "--addr", "127.0.0.1:19753",
-            "--auth-key", "test-key,test-secret", "--config", "/dev/null"
+            "--auth-key", "test-key,test-secret", "--dir-cache-time", "0s", "--config", "/dev/null"
         ]
         process.standardOutput = log
         process.standardError = log

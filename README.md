@@ -20,6 +20,8 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and 
 - **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
 - **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
+- **Notifications:** Get told when uploads fail, and when a drive you tried to disconnect finishes uploading.
+- **Refresh files:** See changes made from other apps or Macs right away.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
 - **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
 
@@ -30,6 +32,10 @@ UnlocalFS runs [rclone](https://rclone.org), the open-source cloud storage tool,
 Drives mount in `~/UnlocalFS`. Files you open are cached on your Mac, so apps can read and edit them at local speed. Changes upload to your bucket after you close the file. The app shows pending uploads and will not disconnect a drive until they finish.
 
 Select a connected drive to see its activity: queued uploads, uploads waiting to retry, and active uploads and downloads with progress when available. The list refreshes every few seconds. Deletions are not shown because rclone does not report Finder deletions in its activity data. Disconnect the drive yourself when you are finished.
+
+UnlocalFS sends a notification when files on a drive cannot upload. If you click **Disconnect** while uploads are pending, it also tells you when they finish, so you know it is safe to disconnect.
+
+Changes made to the bucket from other apps or Macs show within 5 minutes. To see them sooner, choose **Refresh Files** in the app, the sidebar menu, or the menu bar.
 
 If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. Recovery stops if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
 
@@ -67,7 +73,7 @@ A drive can show one folder of a bucket instead of the whole bucket. Enter the f
 
 To add another folder from the same bucket, select a drive and choose **Duplicate**. The copy keeps the endpoint, bucket, and credentials, so you only change the name and the folder.
 
-A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. To block writes, turn on **Read-only** in the drive settings. Apps then cannot create, change, or delete files on the drive. For full protection, use keys that only have read access. If two drives show the same files, a change in one can take a moment to show in the other, and saving the same file from both at once can overwrite one of the edits.
+A folder limits what the drive shows. It does not limit access: the keys can still reach the whole bucket. To block writes, turn on **Read-only** in the drive settings. Apps then cannot create, change, or delete files on the drive. For full protection, use keys that only have read access. If two drives show the same files, a change in one shows in the other within 5 minutes or when you choose **Refresh Files**, and saving the same file from both at once can overwrite one of the edits.
 
 ## Encrypted drives
 
@@ -91,6 +97,7 @@ Right-click a drive in the sidebar to open it in Finder, edit, duplicate, or del
 ## Good to know
 
 - S3 is not a local disk. Saving a large file takes as long as uploading it. Try UnlocalFS with files you have copies of first.
+- S3 has no real folders, so folders show the time the drive connected as their modification date. Files show their own dates.
 - Each drive has a cache limit (default 128 MB) and an optional amount of disk space to keep free. When the cache is over the limit, rclone removes the files you have not opened for the longest time. Open files and pending uploads stay, so the cache can go over the limit for a short time. The cache lives in `~/Library/Application Support/UnlocalFS/cache`. Do not delete it while uploads are pending.
 - Open **Advanced** in a drive’s settings to limit its bandwidth or change the number of files transferred at once. Bandwidth is unlimited by default and rclone transfers four files in parallel by default. The bandwidth choices are in MB/s and apply to uploads and downloads.
 - Finder writes `.DS_Store` files to folders you open, and they upload to your bucket like other files. To stop Finder from writing them on network drives, run the commands below. This setting applies to all network drives, not only UnlocalFS. macOS can also add `._` files when you copy files that have extended attributes. UnlocalFS cannot stop these files.

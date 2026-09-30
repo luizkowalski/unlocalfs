@@ -25,7 +25,11 @@ import UnlocalFSCore
         ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":1", false)
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
-        try await withFixture(script: "#!/bin/sh\nprintf '%s' '{\"diskCache\":{\(cache),\"bytesUsed\":42}}'\n") { service, connection in
+        try await withFixture(script: """
+        #!/bin/sh
+        if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
+        printf '%s' '{"diskCache":{\(cache),"bytesUsed":42}}'
+        """) { service, connection in
             let status = await service.status(connection)
             #expect(status.isRunning)
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -38,6 +42,7 @@ import UnlocalFSCore
         try await withFixture { root in
             """
             #!/bin/sh
+            if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
             pending=0
             if [ -f '\(root.path)/checked' ]; then pending=1; fi
             touch '\(root.path)/checked'

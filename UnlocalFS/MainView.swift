@@ -87,7 +87,9 @@ private struct ConnectionRow: View {
         .tag(connection.id)
         .contextMenu {
             Button("Open in Finder") { model.openDrive(connection) }
-                .disabled(model.statuses[connection.id]?.isMounted != true || model.needsReconnect(connection))
+                .disabled(!model.canOpen(connection))
+            Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
+                .disabled(!model.canOpen(connection))
             if model.needsReconnect(connection) {
                 Button("Reconnect") { Task { await model.toggle(connection) } }
                     .disabled(!model.canToggle(connection))
@@ -120,7 +122,10 @@ private struct ConnectionDetail: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.canToggle(connection))
                     Button("Open in Finder") { model.openDrive(connection) }
-                        .disabled(status?.isMounted != true || model.needsReconnect(connection))
+                        .disabled(!model.canOpen(connection))
+                    Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
+                        .disabled(!model.canOpen(connection))
+                        .help("Show changes made to this drive from other apps or Macs")
                 }
                 if !model.networkAvailable && model.isActive(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")

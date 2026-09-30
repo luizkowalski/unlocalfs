@@ -1,7 +1,9 @@
 import AppKit
 import Observation
+import OSLog
 import ServiceManagement
 import UnlocalFSCore
+import UserNotifications
 
 @MainActor @Observable final class AppModel {
     enum Activity { case idle, connected, syncing }
@@ -33,6 +35,8 @@ import UnlocalFSCore
     private var refreshing = false
     private var refreshRequested = false
     private var checkingQuit = false
+    private var notifiedFailures: Set<UUID> = []
+    private var waitingToDisconnect: Set<UUID> = []
 
     init() {
         let contents = Bundle.main.bundleURL.appending(path: "Contents")
@@ -125,6 +129,7 @@ import UnlocalFSCore
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
+        waitingToDisconnect.remove(connection.id)
         defer { busy.remove(connection.id) }
         do {
             let current = await service.status(connection)
@@ -136,10 +141,18 @@ import UnlocalFSCore
                 try await service.mount(connection, credentials: credentials(for: connection.id))
                 if opensFinder { openDrive(connection) }
             }
+        } catch is UploadsPendingError {
+            waitingToDisconnect.insert(connection.id)
         } catch {
-            if !(error is UploadsPendingError) { errors[connection.id] = error.localizedDescription }
+            errors[connection.id] = error.localizedDescription
         }
-        statuses[connection.id] = await service.status(connection)
+        update(await service.status(connection), for: connection)
+    }
+
+    func refreshFiles(_ connection: Connection) async {
+        do {
+            try await service.refresh(connection)
+        } catch { errors[connection.id] = error.localizedDescription }
     }
 
     func setOpensAtLogin(_ enabled: Bool) {
@@ -173,7 +186,7 @@ import UnlocalFSCore
             syncOpensAtLogin()
             for connection in connections where !busy.contains(connection.id) && !sleeping {
                 let status = await service.status(connection)
-                if !sleeping, !busy.contains(connection.id), statuses[connection.id] != status { statuses[connection.id] = status }
+                if !sleeping, !busy.contains(connection.id) { update(status, for: connection) }
             }
         } while refreshRequested && !sleeping
     }
@@ -217,6 +230,10 @@ import UnlocalFSCore
         !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
     }
 
+    func canOpen(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.isMounted == true && !needsReconnect(connection)
+    }
+
     func canEdit(_ connection: Connection) -> Bool {
         canToggle(connection) && !isActive(connection)
     }
@@ -245,4 +262,35 @@ import UnlocalFSCore
 
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }
     func openLog(_ connection: Connection) { NSWorkspace.shared.open(paths.log(connection)) }
+}
+
+private extension AppModel {
+    func update(_ status: MountStatus, for connection: Connection) {
+        if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
+            notify(connection, title: "Uploads failed on \(connection.name)", body: "Some files could not upload. Keep the drive connected while UnlocalFS tries again.")
+        }
+        if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
+            notifiedFailures.remove(connection.id)
+            if waitingToDisconnect.remove(connection.id) != nil {
+                notify(connection, title: "\(connection.name) finished uploading", body: "You can disconnect it now.")
+            }
+        }
+        if statuses[connection.id] != status { statuses[connection.id] = status }
+    }
+
+    func notify(_ connection: Connection, title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        Task {
+            let center = UNUserNotificationCenter.current()
+            do {
+                guard try await center.requestAuthorization(options: [.alert]) else { return }
+                try await center.add(request)
+            } catch {
+                Logger().error("Could not show a notification: \(error, privacy: .public)")
+            }
+        }
+    }
 }

@@ -114,7 +114,9 @@ private struct MenuContent: View {
                 }
                 .disabled(!model.canToggle(connection))
                 Button("Open in Finder") { model.openDrive(connection) }
-                    .disabled(model.statuses[connection.id]?.isMounted != true || model.needsReconnect(connection))
+                    .disabled(!model.canOpen(connection))
+                Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
+                    .disabled(!model.canOpen(connection))
             }
         }
         Divider()

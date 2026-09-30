@@ -2,4 +2,4 @@
 set -eu
 args=("$@")
 args[${#args[@]}-2]="$UNLOCALFS_VOLUME_NAME:/"
-exec /sbin/mount -o localhost "${args[@]}"
+exec /sbin/mount -o localhost,acdirmin=1,acdirmax=3 "${args[@]}"
