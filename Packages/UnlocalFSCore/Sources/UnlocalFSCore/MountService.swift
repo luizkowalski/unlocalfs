@@ -45,10 +45,7 @@ public actor MountService {
                 "--contimeout", "5s", "--timeout", "10s"
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
-            throw redacted(error, secrets: [
-                credentials.accessKey, credentials.secretKey, credentials.sessionToken,
-                credentials.encryptionPassword, credentials.obscuredEncryptionPassword
-            ])
+            throw redacted(error, credentials: credentials)
         }
     }
 
@@ -261,8 +258,12 @@ public actor MountService {
         return environment
     }
 
-    private func redacted(_ error: any Error, secrets: [String]) -> AppError {
+    private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
         var message = error.localizedDescription
+        let secrets = [
+            credentials.accessKey, credentials.secretKey, credentials.sessionToken,
+            credentials.encryptionPassword, credentials.obscuredEncryptionPassword
+        ]
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }
@@ -282,6 +283,45 @@ public actor MountService {
                 $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) == path }
             }
         }
+    }
+}
+
+extension MountService {
+    public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
+        guard !connection.encrypted else {
+            throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
+        }
+        try AppError.throwing(connection.validate() + credentials.validate(for: connection))
+        if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
+            let pending: [FileActivity]
+            do {
+                pending = try await activity(connection)
+            } catch {
+                throw AppError("Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n\(error.localizedDescription)")
+            }
+            if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
+                throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
+            }
+        }
+        let output: Data
+        do {
+            output = try await Command.run(executable, [
+                "link", "\(remote(connection))/\(path)", "--expire", expiry.rawValue, "--quiet",
+                "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
+                "--contimeout", "5s", "--timeout", "10s"
+            ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
+        } catch {
+            throw AppError("""
+            Could not create a link. If the file is still uploading, wait for it to finish.
+
+            \(redacted(error, credentials: credentials).localizedDescription)
+            """)
+        }
+        guard let link = URL(string: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)),
+              ["http", "https"].contains(link.scheme) else {
+            throw AppError("Could not create a link. Try again.")
+        }
+        return link
     }
 }
 

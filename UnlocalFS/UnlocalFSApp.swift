@@ -38,6 +38,8 @@ import UnlocalFSCore
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
+    private var requester = NSWorkspace.shared.frontmostApplication
+    private var shareRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
 
@@ -45,11 +47,14 @@ import UnlocalFSCore
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
         center.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
+        center.addObserver(self, selector: #selector(applicationActivated), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         pathMonitor.pathUpdateHandler = { [weak self] path in
             let available = path.status == .satisfied
             Task { @MainActor [weak self] in await self?.model.networkChanged(available: available) }
         }
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
+        NSApp.servicesProvider = self
+        NSUpdateDynamicServices()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -91,6 +96,38 @@ import UnlocalFSCore
         sender.setActivationPolicy(.regular)
         if !flag { sender.windows.first?.makeKeyAndOrderFront(nil) }
         return true
+    }
+}
+
+extension AppDelegate {
+    @objc func copyShareLink(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+              !files.isEmpty, let expiry = userData.flatMap(ShareLinkExpiry.init) else {
+            error.pointee = "Select files in an UnlocalFS drive."
+            return
+        }
+        shareRequester = requester == NSRunningApplication.current ? nil : requester
+        if NSApp.isActive { returnShareFocus() }
+        Task {
+            defer { shareRequester = nil }
+            await model.copyShareLinks(for: files, expiry: expiry)
+        }
+    }
+
+    @objc private func applicationActivated(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+        if app == .current {
+            returnShareFocus()
+        } else {
+            requester = app
+        }
+    }
+
+    private func returnShareFocus() {
+        guard let shareRequester else { return }
+        self.shareRequester = nil
+        NSApp.yieldActivation(to: shareRequester)
+        shareRequester.activate()
     }
 }
 

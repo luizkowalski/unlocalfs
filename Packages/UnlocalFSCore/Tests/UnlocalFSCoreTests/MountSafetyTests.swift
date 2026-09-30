@@ -90,24 +90,61 @@ import UnlocalFSCore
         }
     }
 
-    @Test func connectionErrorsDoNotExposeCredentials() async throws {
+    @Test(arguments: ["lsf", "link"])
+    func connectionErrorsDoNotExposeCredentials(command: String) async throws {
         let script = """
         #!/bin/sh
         case "$1" in
+            rc)
+                if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; else printf '{}'; fi ;;
             obscure) printf 'obscured-token' ;;
-            lsf)
+            \(command))
                 printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD private-password" >&2
                 exit 1 ;;
         esac
         """
         try await withFixture(script: script) { service, connection in
             var connection = connection
-            connection.encrypted = true
+            connection.encrypted = command == "lsf"
             let credentials = Credentials(
                 accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: "private-password"
             )
-            await #expect { try await service.test(connection, credentials: credentials) } throws: { error in
+            await #expect {
+                if connection.encrypted {
+                    try await service.test(connection, credentials: credentials)
+                } else {
+                    _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: credentials)
+                }
+            } throws: { error in
                 !error.localizedDescription.contains("private-") && !error.localizedDescription.contains("obscured-") && error.localizedDescription.contains("Denied")
+            }
+        }
+    }
+
+    @Test func shareLinksNeedTheControlServiceToCheckUploads() async throws {
+        let script = """
+        #!/bin/sh
+        if [ "$1" = 'rc' ]; then echo 'Control unavailable' >&2; exit 1; fi
+        printf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'
+        """
+        try await withFixture(script: script) { service, connection in
+            await #expect {
+                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+            } throws: { error in
+                error is AppError && error.localizedDescription.contains("Reconnect the drive")
+            }
+        }
+    }
+
+    @Test func encryptedDrivesRefuseShareLinks() async throws {
+        try await withFixture(script: "#!/bin/sh\nprintf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'\n") { service, connection in
+            var connection = connection
+            connection.encrypted = true
+            let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
+            await #expect {
+                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: credentials)
+            } throws: { error in
+                error is AppError && error.localizedDescription.contains("encrypted drives")
             }
         }
     }
