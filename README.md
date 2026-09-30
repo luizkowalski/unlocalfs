@@ -21,6 +21,7 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and 
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
 - **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
 - **Notifications:** Get told when uploads fail, and when a drive you tried to disconnect finishes uploading.
+- **Sharing links:** Right-click a file in Finder to copy a link that expires after 1 hour, 1 day, or 7 days.
 - **Refresh files:** See changes made from other apps or Macs right away.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
 - **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
@@ -83,6 +84,16 @@ Turn on **Encrypt files** when you add a drive. UnlocalFS encrypts the content a
 - You cannot turn encryption on or off after you add a drive. To encrypt files you already have, add an encrypted drive with an empty folder and copy the files to it.
 - If the top folder of the drive has names that the password cannot decrypt, the drive does not connect. This happens when the password is wrong or when the folder also has files that are not encrypted.
 - Encrypted names are longer than the original names. Some providers limit the length of a file path.
+
+## Sharing links
+
+Right-click a file in a connected drive, choose **Services**, then **Copy Share Link (1 Hour)**, **Copy Share Link (1 Day)**, or **Copy Share Link (7 Days)**. UnlocalFS copies a presigned link to the clipboard and sends a notification. Anyone with the link can download the file until the link expires. They do not need your keys. If you select more than one file, you get one link on each line.
+
+- Links are not available for encrypted drives, because the link would point to encrypted data. The Services entries still show for these drives, but UnlocalFS tells you why it did not copy a link.
+- Wait until a file finishes uploading before you copy its link. If the drive shows **Needs reconnect**, reconnect it first.
+- You cannot cancel a link before it expires. To stop all links early, replace the access key.
+- A link includes your access key ID, but never your secret key. If you use temporary credentials, the link stops working when the credentials expire.
+- If the entries do not show, open UnlocalFS once. You can turn them on and add keyboard shortcuts in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**.
 
 ## Shortcuts
 
