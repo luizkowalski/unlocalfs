@@ -38,6 +38,7 @@ import UnlocalFSCore
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel()
+    private lazy var shareLinks = ShareLinkProvider(model: model)
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
 
@@ -50,6 +51,8 @@ import UnlocalFSCore
             Task { @MainActor [weak self] in await self?.model.networkChanged(available: available) }
         }
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
+        NSApp.servicesProvider = shareLinks
+        NSUpdateDynamicServices()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
