@@ -149,6 +149,27 @@ import UserNotifications
         update(await service.status(connection), for: connection)
     }
 
+    func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
+        var links: [String] = []
+        for file in files {
+            do {
+                guard let drive = paths.drive(containing: file, among: connections) else {
+                    throw AppError("The file is not in an UnlocalFS drive.")
+                }
+                let link = try await service.shareLink(
+                    for: drive.connection, path: drive.path, expiry: expiry, credentials: credentials(for: drive.connection.id)
+                )
+                links.append(link.absoluteString)
+            } catch {
+                notify(title: "Could not copy a link to \(file.lastPathComponent)", body: error.localizedDescription)
+                return
+            }
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(links.joined(separator: "\n"), forType: .string)
+        notify(title: links.count == 1 ? "Link copied" : "\(links.count) links copied", body: "Anyone with the link can download for \(expiry.title).")
+    }
+
     func refreshFiles(_ connection: Connection) async {
         do {
             try await service.refresh(connection)
@@ -267,18 +288,18 @@ import UserNotifications
 private extension AppModel {
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
-            notify(connection, title: "Uploads failed on \(connection.name)", body: "Some files could not upload. Keep the drive connected while UnlocalFS tries again.")
+            notify(title: "Uploads failed on \(connection.name)", body: "Some files could not upload. Keep the drive connected while UnlocalFS tries again.")
         }
         if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
             notifiedFailures.remove(connection.id)
             if waitingToDisconnect.remove(connection.id) != nil {
-                notify(connection, title: "\(connection.name) finished uploading", body: "You can disconnect it now.")
+                notify(title: "\(connection.name) finished uploading", body: "You can disconnect it now.")
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }
     }
 
-    func notify(_ connection: Connection, title: String, body: String) {
+    func notify(title: String, body: String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
