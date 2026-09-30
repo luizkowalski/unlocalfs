@@ -161,7 +161,7 @@ import UserNotifications
                 )
                 links.append(link.absoluteString)
             } catch {
-                notify(title: "Could not copy a link to \(file.lastPathComponent)", body: error.localizedDescription)
+                notify(title: "Could not copy a link to \(file.lastPathComponent)", body: error.localizedDescription, fallbackToAlert: true)
                 return
             }
         }
@@ -299,7 +299,7 @@ private extension AppModel {
         if statuses[connection.id] != status { statuses[connection.id] = status }
     }
 
-    func notify(title: String, body: String) {
+    func notify(title: String, body: String, fallbackToAlert: Bool = false) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -307,10 +307,19 @@ private extension AppModel {
         Task {
             let center = UNUserNotificationCenter.current()
             do {
-                guard try await center.requestAuthorization(options: [.alert]) else { return }
-                try await center.add(request)
+                if try await center.requestAuthorization(options: [.alert]) {
+                    try await center.add(request)
+                    return
+                }
             } catch {
                 Logger().error("Could not show a notification: \(error, privacy: .public)")
+            }
+            if fallbackToAlert {
+                NSApp.activate()
+                let alert = NSAlert()
+                alert.messageText = title
+                alert.informativeText = body
+                alert.runModal()
             }
         }
     }
