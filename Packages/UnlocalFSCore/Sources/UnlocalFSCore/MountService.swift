@@ -292,6 +292,17 @@ extension MountService {
             throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
         }
         try AppError.throwing(connection.validate() + credentials.validate(for: connection))
+        if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
+            let pending: [FileActivity]
+            do {
+                pending = try await activity(connection)
+            } catch {
+                throw AppError("Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n\(error.localizedDescription)")
+            }
+            if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
+                throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
+            }
+        }
         let output: Data
         do {
             output = try await Command.run(executable, [
