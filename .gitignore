@@ -4,4 +4,13 @@ dist/
 .DS_Store
 .swiftpm/
 UnlocalFS.xcodeproj/
-/docs
+/docs/*
+!/docs/package.json
+!/docs/package-lock.json
+!/docs/astro.config.mjs
+!/docs/tsconfig.json
+!/docs/README.md
+!/docs/src/
+!/docs/public/
+/docs/.astro/
+/docs/node_modules/
