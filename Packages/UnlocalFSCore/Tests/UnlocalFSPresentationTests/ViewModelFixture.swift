@@ -91,6 +91,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     var opensAtLogin = false
     var loginError: AppError?
     var copiedLinks: [URL] = []
+    var openedDrives: [UUID] = []
     struct Notification {
         let title: String
         let body: String
@@ -107,7 +108,7 @@ final class MemoryCredentialStorage: CredentialStorage {
 
     func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
     func cacheLocation(_ connection: Connection) -> URL { paths.cache(connection) }
-    func openDrive(_ connection: Connection) {}
+    func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }
     func notify(title: String, body: String, fallbackToAlert: Bool) {

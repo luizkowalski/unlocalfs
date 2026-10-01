@@ -106,15 +106,27 @@ import UnlocalFSDomain
         } catch { alert = error.localizedDescription }
     }
 
-    public func toggle(_ connection: Connection, opensFinder: Bool = false) async {
+    public func activate(_ connection: Connection) async {
+        guard !checkingQuit, canToggle(connection) else { return }
+        if canOpen(connection) || !isActive(connection) || needsReconnect(connection) {
+            await toggle(connection, opensFinder: true, allowsDisconnect: false)
+        }
+    }
+
+    public func toggle(_ connection: Connection, opensFinder: Bool = false, allowsDisconnect: Bool = true) async {
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
-        waitingToDisconnect.remove(connection.id)
+        if allowsDisconnect { waitingToDisconnect.remove(connection.id) }
         defer { busy.remove(connection.id) }
         do {
-            let outcome = try await toggleDrive.execute(connection)
-            if case .connected = outcome, opensFinder { openDrive(connection) }
+            let outcome = try await toggleDrive.execute(connection, allowsDisconnect: allowsDisconnect)
+            if opensFinder {
+                switch outcome {
+                case .connected, .reconnected: openDrive(connection)
+                case .disconnected: break
+                }
+            }
         } catch is UploadsPendingError {
             waitingToDisconnect.insert(connection.id)
         } catch {

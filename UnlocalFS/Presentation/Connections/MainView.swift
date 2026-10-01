@@ -14,6 +14,12 @@ struct MainView: View {
                     ForEach(model.connections) { ConnectionRow(connection: $0) }
                 }
             }
+            .contextMenu(forSelectionType: UUID.self) { _ in
+            } primaryAction: { ids in
+                if let connection = model.connections.first(where: { ids.contains($0.id) }) {
+                    Task { await model.activate(connection) }
+                }
+            }
             .navigationSplitViewColumnWidth(min: 200, ideal: 230)
             .safeAreaInset(edge: .bottom) {
                 Button("Add connection", systemImage: "plus") { model.edit(Connection()) }

@@ -1,0 +1,152 @@
+import Foundation
+import Testing
+import UnlocalFSDomain
+import UnlocalFSInfrastructure
+import UnlocalFSPresentation
+
+extension MountTests {
+    @MainActor @Test func activatingADisconnectedDriveConnectsAndOpensFinder() async throws {
+        try await withAppDrive { drive, app, desktop in
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(app.canOpen(drive.connection))
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func activatingAConnectedDriveOpensFinderWithoutDisconnecting() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            await app.refresh()
+
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func activatingADriveDisconnectedSinceLastRefreshConnectsAndOpensFinder() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            await app.refresh()
+            try await drive.service.unmount(drive.connection)
+            try #require(app.canOpen(drive.connection))
+
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func activatingAnUnhealthyDriveReconnectsAndOpensFinder() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            let socket = drive.paths.socket(drive.connection)
+            let hiddenSocket = socket.appendingPathExtension("hidden")
+            try FileManager.default.moveItem(at: socket, to: hiddenSocket)
+            defer {
+                if FileManager.default.fileExists(atPath: hiddenSocket.path) {
+                    try? FileManager.default.moveItem(at: hiddenSocket, to: socket)
+                }
+            }
+            await app.refresh()
+            #expect(app.needsReconnect(drive.connection))
+
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(app.canOpen(drive.connection))
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func activatingARecoveredDriveOpensFinderWithoutDisconnecting() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            let socket = drive.paths.socket(drive.connection)
+            let hiddenSocket = socket.appendingPathExtension("hidden")
+            try FileManager.default.moveItem(at: socket, to: hiddenSocket)
+            await app.refresh()
+            #expect(app.needsReconnect(drive.connection))
+            try FileManager.default.moveItem(at: hiddenSocket, to: socket)
+
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func repeatedActivationWhileConnectingOpensFinderOnce() async throws {
+        try await withAppDrive { drive, app, desktop in
+            async let first: Void = app.activate(drive.connection)
+            async let second: Void = app.activate(drive.connection)
+            _ = await (first, second)
+
+            #expect(app.problem(drive.connection) == nil)
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func openingADriveKeepsItsUploadCompletionNotification() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            try Data("upload".utf8).write(to: drive.mounted.appendingPathComponent("upload.txt"))
+            try #require(await drive.service.status(drive.connection).pendingUploads > 0)
+            await app.refresh()
+            await app.toggle(drive.connection)
+            try #require(app.canOpen(drive.connection))
+
+            await app.activate(drive.connection)
+            try await drive.waitForUploads(on: drive.service)
+            await app.refresh()
+
+            #expect(desktop.notificationTitles == ["\(drive.connection.name) finished uploading"])
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+}
+
+private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, DriveActivationDesktopServices) async throws -> Void) async throws {
+    try await withDrive { drive in
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: MemoryCredentialStorage())
+        try repository.save(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+        let desktop = await DriveActivationDesktopServices(paths: drive.paths)
+        let app = await AppViewModel(
+            initialConnections: .success([drive.connection]), drives: drive.service,
+            deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drive.service),
+            toggleDrive: ToggleDriveUseCase(repository: repository, drives: drive.service),
+            shareFiles: ShareFilesUseCase(repository: repository, drives: drive.service),
+            quit: QuitUseCase(drives: drive.service), desktop: desktop
+        )
+        await app.refresh()
+        try await body(drive, app, desktop)
+    }
+}
+
+@MainActor private final class DriveActivationDesktopServices: DesktopServices {
+    let paths: AppPaths
+    var opensAtLogin = false
+    var openedDrives: [UUID] = []
+    var notificationTitles: [String] = []
+
+    init(paths: AppPaths) { self.paths = paths }
+
+    func setOpensAtLogin(_ enabled: Bool) { opensAtLogin = enabled }
+    func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
+    func cacheLocation(_ connection: Connection) -> URL { paths.cache(connection) }
+    func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
+    func openLog(_ connection: Connection) {}
+    func copyShareLinks(_ links: [URL]) {}
+    func notify(title: String, body: String, fallbackToAlert: Bool) { notificationTitles.append(title) }
+}

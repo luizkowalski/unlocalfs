@@ -10,13 +10,14 @@ public struct ToggleDriveUseCase: Sendable {
         self.drives = drives
     }
 
-    public func execute(_ connection: Connection) async throws -> Outcome {
+    public func execute(_ connection: Connection, allowsDisconnect: Bool = true) async throws -> Outcome {
         let current = await drives.status(connection)
         if current.needsReconnect {
             try await drives.reconnect(connection, credentials: repository.credentials(for: connection.id))
             return .reconnected
         }
         if current.isActive {
+            if !allowsDisconnect { return current.isMounted ? .connected : .disconnected }
             try await drives.unmount(connection)
             return .disconnected
         }

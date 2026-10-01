@@ -5,6 +5,54 @@ import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 
 @MainActor @Suite struct AppViewModelTests {
+    @Test func activatingACheckingDriveDoesNothing() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.activate(connection)
+
+        #expect(desktop.openedDrives.isEmpty)
+        #expect(app.problem(connection) == nil)
+        #expect(app.statusText(connection) == "Checking…")
+    }
+
+    @Test func activatingAnEjectedDriveKeepsItsServiceRunning() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.serve(connection)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+        await app.refresh()
+
+        await app.activate(connection)
+
+        #expect(desktop.openedDrives.isEmpty)
+        #expect(app.problem(connection) == nil)
+        #expect(await fixture.service.status(connection).isRunning)
+    }
+
+    @Test func failedActivationShowsTheConnectErrorWithoutOpeningFinder() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        try "Connection failed".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+        await app.refresh()
+
+        await app.activate(connection)
+
+        #expect(desktop.openedDrives.isEmpty)
+        #expect(app.problem(connection)?.contains("Connection failed") == true)
+        #expect(!app.isActive(connection))
+    }
+
     @Test func savePublishesTheSavedConnectionAndSelection() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
