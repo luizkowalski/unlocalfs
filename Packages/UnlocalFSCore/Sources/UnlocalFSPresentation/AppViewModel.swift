@@ -108,9 +108,7 @@ import UnlocalFSDomain
 
     public func activate(_ connection: Connection) async {
         guard !checkingQuit, canToggle(connection) else { return }
-        if canOpen(connection) {
-            openDrive(connection)
-        } else if !isActive(connection) || needsReconnect(connection) {
+        if canOpen(connection) || !isActive(connection) || needsReconnect(connection) {
             await toggle(connection, opensFinder: true, allowsDisconnect: false)
         }
     }
@@ -119,7 +117,7 @@ import UnlocalFSDomain
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
-        waitingToDisconnect.remove(connection.id)
+        if allowsDisconnect { waitingToDisconnect.remove(connection.id) }
         defer { busy.remove(connection.id) }
         do {
             let outcome = try await toggleDrive.execute(connection, allowsDisconnect: allowsDisconnect)

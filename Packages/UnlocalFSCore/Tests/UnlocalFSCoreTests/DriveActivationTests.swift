@@ -29,6 +29,21 @@ extension MountTests {
         }
     }
 
+    @MainActor @Test func activatingADriveDisconnectedSinceLastRefreshConnectsAndOpensFinder() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            await app.refresh()
+            try await drive.service.unmount(drive.connection)
+            try #require(app.canOpen(drive.connection))
+
+            await app.activate(drive.connection)
+
+            #expect(desktop.openedDrives == [drive.connection.id])
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
     @MainActor @Test func activatingAnUnhealthyDriveReconnectsAndOpensFinder() async throws {
         try await withAppDrive { drive, app, desktop in
             try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
@@ -76,8 +91,27 @@ extension MountTests {
             async let second: Void = app.activate(drive.connection)
             _ = await (first, second)
 
+            #expect(app.problem(drive.connection) == nil)
             #expect(desktop.openedDrives == [drive.connection.id])
             #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
+    @MainActor @Test func openingADriveKeepsItsUploadCompletionNotification() async throws {
+        try await withAppDrive { drive, app, desktop in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            try Data("upload".utf8).write(to: drive.mounted.appendingPathComponent("upload.txt"))
+            try #require(await drive.service.status(drive.connection).pendingUploads > 0)
+            await app.refresh()
+            await app.toggle(drive.connection)
+            try #require(app.canOpen(drive.connection))
+
+            await app.activate(drive.connection)
+            try await drive.waitForUploads(on: drive.service)
+            await app.refresh()
+
+            #expect(desktop.notificationTitles == ["\(drive.connection.name) finished uploading"])
             try await drive.service.unmount(drive.connection)
         }
     }
@@ -104,6 +138,7 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     let paths: AppPaths
     var opensAtLogin = false
     var openedDrives: [UUID] = []
+    var notificationTitles: [String] = []
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -113,5 +148,5 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) {}
-    func notify(title: String, body: String, fallbackToAlert: Bool) {}
+    func notify(title: String, body: String, fallbackToAlert: Bool) { notificationTitles.append(title) }
 }
