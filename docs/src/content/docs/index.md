@@ -1,5 +1,5 @@
 ---
-title: Your S3 bucket in Finder
+title: "UnlocalFS: Your S3 bucket in Finder"
 description: Browse, open, and save files in S3-compatible storage from your Mac.
 ---
 
