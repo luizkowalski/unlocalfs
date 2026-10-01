@@ -23,7 +23,7 @@ let package = Package(
         ]),
         .target(name: "UnlocalFSPresentation", dependencies: ["UnlocalFSDomain"]),
         .testTarget(name: "UnlocalFSDomainTests", dependencies: ["UnlocalFSDomain"]),
-        .testTarget(name: "UnlocalFSCoreTests", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure"]),
+        .testTarget(name: "UnlocalFSCoreTests", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure", "UnlocalFSPresentation"]),
         .testTarget(name: "UnlocalFSPresentationTests", dependencies: ["UnlocalFSPresentation", "UnlocalFSDomain", "UnlocalFSInfrastructure"])
     ]
 )
