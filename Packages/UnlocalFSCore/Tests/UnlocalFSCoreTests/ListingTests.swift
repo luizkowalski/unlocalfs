@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSInfrastructure
 
 extension MountTests {
     @Test func refreshShowsFilesAddedToTheBucketElsewhere() async throws {

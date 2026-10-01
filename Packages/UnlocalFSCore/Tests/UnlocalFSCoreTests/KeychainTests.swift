@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSInfrastructure
 
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["UNLOCALFS_TEST_KEYCHAIN"] == "1", "Set UNLOCALFS_TEST_KEYCHAIN=1 to run"))
 struct KeychainTests {

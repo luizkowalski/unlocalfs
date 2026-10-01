@@ -1,7 +1,8 @@
 import Foundation
+import UnlocalFSDomain
 import Security
 
-public struct Keychain: Sendable {
+public struct Keychain: CredentialStorage {
     private let service: String
 
     public init(service: String = "app.unlocalfs.credentials") { self.service = service }

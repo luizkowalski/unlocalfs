@@ -4,16 +4,26 @@ import PackageDescription
 let package = Package(
     name: "UnlocalFSCore",
     platforms: [.macOS(.v15)],
-    products: [.library(name: "UnlocalFSCore", targets: ["UnlocalFSCore"])],
+    products: [
+        .library(name: "UnlocalFSDomain", targets: ["UnlocalFSDomain"]),
+        .library(name: "UnlocalFSInfrastructure", targets: ["UnlocalFSInfrastructure"]),
+        .library(name: "UnlocalFSPresentation", targets: ["UnlocalFSPresentation"])
+    ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
         .package(url: "https://github.com/joelklabo/SwiftDataValidator", from: "1.0.0")
     ],
     targets: [
-        .target(name: "UnlocalFSCore", dependencies: [
-            .product(name: "Subprocess", package: "swift-subprocess"),
+        .target(name: "UnlocalFSDomain", dependencies: [
             .product(name: "SwiftDataValidator", package: "SwiftDataValidator")
         ]),
-        .testTarget(name: "UnlocalFSCoreTests", dependencies: ["UnlocalFSCore"])
+        .target(name: "UnlocalFSInfrastructure", dependencies: [
+            "UnlocalFSDomain",
+            .product(name: "Subprocess", package: "swift-subprocess")
+        ]),
+        .target(name: "UnlocalFSPresentation", dependencies: ["UnlocalFSDomain"]),
+        .testTarget(name: "UnlocalFSDomainTests", dependencies: ["UnlocalFSDomain"]),
+        .testTarget(name: "UnlocalFSCoreTests", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure"]),
+        .testTarget(name: "UnlocalFSPresentationTests", dependencies: ["UnlocalFSPresentation", "UnlocalFSDomain", "UnlocalFSInfrastructure"])
     ]
 )

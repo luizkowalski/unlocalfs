@@ -1,5 +1,5 @@
 import SwiftUI
-import UnlocalFSCore
+import UnlocalFSDomain
 
 extension Provider {
     var logo: Image {

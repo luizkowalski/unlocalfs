@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
+import UnlocalFSPresentation
 
 struct MenuBarIcon: View {
-    let activity: AppModel.Activity
+    let activity: AppViewModel.Activity
     @State private var angle = 0.0
 
     var body: some View {

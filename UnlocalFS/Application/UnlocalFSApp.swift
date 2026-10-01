@@ -1,14 +1,15 @@
 import AppKit
 import Network
 import SwiftUI
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSPresentation
 
 @main struct UnlocalFSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
     var body: some Scene {
         Window("UnlocalFS", id: "main") {
-            MainView().environment(delegate.model)
+            MainView().environment(delegate.model).environment(delegate.viewModels)
         }
         .defaultSize(width: 860, height: 680)
         .commands {
@@ -37,13 +38,17 @@ import UnlocalFSCore
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
-    let model = AppModel()
+    let dependencies = AppDependencies.live()
+    var model: AppViewModel { dependencies.model }
+    var viewModels: ViewModelFactory { dependencies.viewModels }
     private var requester = NSWorkspace.shared.frontmostApplication
     private var shareRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
+    private var refreshTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        refreshTask = Task { await model.run() }
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
         center.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
@@ -58,6 +63,7 @@ import UnlocalFSCore
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        refreshTask?.cancel()
         pathMonitor.cancel()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
@@ -128,36 +134,5 @@ extension AppDelegate {
         self.shareRequester = nil
         NSApp.yieldActivation(to: shareRequester)
         shareRequester.activate()
-    }
-}
-
-private struct MenuContent: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some View {
-        Button("Open UnlocalFS") {
-            openWindow(id: "main")
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate(ignoringOtherApps: true)
-        }
-        Divider()
-        if model.connections.isEmpty { Text("No connections yet") }
-        ForEach(model.connections) { connection in
-            Menu(connection.name) {
-                Text(model.statusText(connection))
-                Button(model.toggleTitle(connection)) {
-                    Task { await model.toggle(connection, opensFinder: true) }
-                }
-                .disabled(!model.canToggle(connection))
-                Button("Open in Finder") { model.openDrive(connection) }
-                    .disabled(!model.canOpen(connection))
-                Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
-                    .disabled(!model.canOpen(connection))
-            }
-        }
-        Divider()
-        Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
-        Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }

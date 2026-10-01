@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSInfrastructure
 
 @Suite struct ActivityTests {
     @Test(arguments: [(0, false, FileActivity.State.queued), (2, false, .retrying), (1, true, .uploading)])

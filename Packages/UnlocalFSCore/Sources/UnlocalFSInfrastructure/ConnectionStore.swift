@@ -1,4 +1,5 @@
 import Foundation
+import UnlocalFSDomain
 
 public struct ConnectionStore: Sendable {
     private let url: URL
@@ -14,9 +15,7 @@ public struct ConnectionStore: Sendable {
     }
 
     public func save(_ connection: Connection) throws {
-        let connections = try all()
-        try AppError.throwing(connection.validate(against: connections))
-        try write(connections.filter { $0.id != connection.id } + [connection])
+        try write(all().filter { $0.id != connection.id } + [connection])
     }
 
     public func delete(_ id: UUID) throws {

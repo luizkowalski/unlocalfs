@@ -1,4 +1,5 @@
 import Foundation
+import UnlocalFSDomain
 
 public struct AppPaths: Sendable {
     public let config: URL

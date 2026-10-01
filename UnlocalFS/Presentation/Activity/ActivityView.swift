@@ -1,15 +1,16 @@
 import SwiftUI
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSPresentation
 
 struct ActivityView: View {
-    @Environment(AppModel.self) private var model
     let connection: Connection
-    @State private var activity: Result<[FileActivity], any Error>?
+    @Environment(ViewModelFactory.self) private var viewModels
+    @State private var viewModel: ActivityViewModel?
 
     var body: some View {
         GroupBox("Activity") {
             VStack(alignment: .leading, spacing: 14) {
-                switch activity {
+                switch viewModel?.activity {
                 case nil:
                     ProgressView("Checking activity…").controlSize(.small)
                 case .failure(let error):
@@ -27,18 +28,9 @@ struct ActivityView: View {
             .padding(12)
         }
         .task(id: connection.id) {
-            activity = nil
-            while !Task.isCancelled {
-                if !model.busy.contains(connection.id) {
-                    do {
-                        activity = .success(try await model.service.activity(connection))
-                    } catch is CancellationError {
-                    } catch {
-                        activity = .failure(error)
-                    }
-                }
-                try? await Task.sleep(for: .seconds(3))
-            }
+            let viewModel = self.viewModel ?? viewModels.makeActivity()
+            self.viewModel = viewModel
+            await viewModel.observe(connection)
         }
     }
 }
