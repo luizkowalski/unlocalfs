@@ -1,0 +1,199 @@
+import SwiftUI
+import UnlocalFSDomain
+import UnlocalFSPresentation
+
+struct ConnectionEditor: View {
+    @State private var viewModel: ConnectionEditorViewModel
+    @State private var pane = Pane.connection
+    @FocusState private var focus: ConnectionField?
+    @Environment(\.dismiss) private var dismiss
+
+    private enum Pane: String, CaseIterable {
+        case connection = "Connection", settings = "Settings"
+    }
+
+    init(viewModel: ConnectionEditorViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
+    private static let cacheLimits: [Int64] = [128_000_000, 512_000_000, 1_000_000_000, 5_000_000_000, 10_000_000_000, 50_000_000_000]
+    private static let freeSpaces: [Int64] = [1_000_000_000, 5_000_000_000, 10_000_000_000, 20_000_000_000]
+    private static let bandwidthLimits: [Int64] = [1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000, 100_000_000]
+    private static let transferCounts = [1, 2, 4, 8, 16, 32]
+
+    var body: some View {
+        let errors = viewModel.fieldErrors
+        VStack(spacing: 0) {
+            HStack {
+                Text(viewModel.title).font(.title2.bold())
+                Spacer()
+                Picker("Section", selection: $pane) {
+                    ForEach(Pane.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 4)
+            Group {
+                switch pane {
+                case .connection: connectionForm(errors: errors)
+                case .settings: settingsForm(errors: errors)
+                }
+            }
+            .formStyle(.grouped)
+            .frame(height: 560)
+            .disabled(viewModel.isLocked)
+            Divider()
+            HStack {
+                Button {
+                    Task {
+                        await viewModel.test()
+                        focusFirstInvalidField()
+                    }
+                } label: {
+                    if viewModel.testing { ProgressView().controlSize(.small) } else { Text("Test Connection") }
+                }
+                .disabled(viewModel.isLocked)
+                if let error = viewModel.error {
+                    Label(error, systemImage: "exclamationmark.circle.fill")
+                        .foregroundStyle(.red).font(.callout).lineLimit(1).help(error).textSelection(.enabled)
+                } else if viewModel.tested {
+                    Label("Connection successful", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green).font(.callout)
+                }
+                Spacer()
+                Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(viewModel.testing || viewModel.saving)
+                Button("Save") {
+                    Task {
+                        if await viewModel.save() { dismiss() } else { focusFirstInvalidField() }
+                    }
+                }.keyboardShortcut(.defaultAction).disabled(viewModel.isLocked)
+            }
+            .padding(20)
+        }
+        .frame(width: 560)
+        .presentationSizing(.fitted)
+        .onAppear {
+            viewModel.loadCredentials()
+            if viewModel.credentialsLoaded && viewModel.isDuplicate { focus = .folder }
+        }
+    }
+
+    private func connectionForm(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        return Form {
+            Section {
+                validated(.name, error: errors[.name]) { TextField("Name", text: $viewModel.connection.name, prompt: Text("My storage")) }
+                Picker("Provider", selection: $viewModel.connection.provider) {
+                    ForEach(Provider.allCases) { provider in
+                        Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
+                    }
+                }
+                validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $viewModel.connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
+                TextField("Region", text: $viewModel.connection.region, prompt: Text("us-east-1 or auto"))
+                validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
+                validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+            } header: {
+                Text("Storage")
+            } footer: {
+                Text("Use the endpoint without the bucket name. For Cloudflare R2, use region auto.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $viewModel.credentials.accessKey) }
+                validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $viewModel.credentials.secretKey) }
+                SecureField("Session token", text: $viewModel.credentials.sessionToken, prompt: Text("Optional"))
+            } header: {
+                Text("Credentials")
+            } footer: {
+                Text("Credentials are stored in your Mac’s Keychain.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func settingsForm(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        return Form {
+            Section("General") {
+                Toggle("Read-only", isOn: $viewModel.connection.readOnly)
+                Toggle("Connect on start up", isOn: $viewModel.connection.connectsAutomatically)
+            }
+            Section("Encryption") {
+                Toggle(isOn: $viewModel.connection.encrypted) {
+                    Text("Encrypt files")
+                    Text(viewModel.isNew
+                         ? "Files and names are encrypted before they upload. Without the password, nobody can read them, including you."
+                         : "You cannot change this after you add a drive.")
+                }
+                .disabled(!viewModel.isNew)
+                if viewModel.isNew && viewModel.connection.encrypted {
+                    validated(.encryptionPassword, error: errors[.encryptionPassword]) { SecureField("Encryption password", text: $viewModel.credentials.encryptionPassword) }
+                    validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $viewModel.confirmation) }
+                }
+            }
+            Section {
+                Picker("Cache limit", selection: $viewModel.connection.cacheLimit) {
+                    ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                }
+                Picker("Keep free on disk", selection: $viewModel.connection.minimumFreeSpace) {
+                    Text("Off").tag(Int64(0))
+                    ForEach(Self.freeSpaces, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
+                }
+            } header: {
+                Text("Cache")
+            } footer: {
+                Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            advancedSection
+        }
+    }
+
+    private var advancedSection: some View {
+        @Bindable var viewModel = viewModel
+        return Section {
+            Picker("Bandwidth limit", selection: $viewModel.connection.bandwidthLimit) {
+                Text("Off").tag(Int64(0))
+                ForEach(Self.bandwidthLimits, id: \.self) { limit in
+                    Text("\(limit, format: .byteCount(style: .file))/s").tag(limit)
+                }
+            }
+            Picker("Parallel transfers", selection: $viewModel.connection.transfers) {
+                ForEach(Self.transferCounts, id: \.self) { count in
+                    Text("\(count)").tag(count)
+                }
+            }
+        } header: {
+            Text("Advanced")
+        } footer: {
+            Text("Bandwidth limits uploads and downloads. Parallel transfers controls how many files can move at once.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func validated(_ field: ConnectionField, error: String?, @ViewBuilder input: () -> some View) -> some View {
+        LabeledContent {
+            VStack(alignment: .trailing, spacing: 4) {
+                input()
+                    .labelsHidden()
+                    .focused($focus, equals: field)
+                if let error {
+                    Label(error, systemImage: "exclamationmark.circle.fill")
+                        .font(.caption).foregroundStyle(.red).multilineTextAlignment(.trailing)
+                }
+            }
+        } label: {
+            Text(field.rawValue).foregroundStyle(error == nil ? Color.primary : Color.red)
+        }
+    }
+
+    private func focusFirstInvalidField() {
+        guard let field = viewModel.firstInvalidField else { return }
+        pane = field == .encryptionPassword || field == .confirmation ? .settings : .connection
+        focus = field
+    }
+}

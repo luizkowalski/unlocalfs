@@ -49,13 +49,23 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 ```sh
 mise install
 mise app               # builds dist/UnlocalFS.app
-mise test              # runs the unit tests
+mise test              # runs the core and view model tests
 mise test:integration  # also mounts a drive against a local S3 server and uses Keychain
 mise lint              # runs SwiftLint
 mise xcode             # opens the project in Xcode
 ```
 
 The tasks wrap the scripts in `scripts/`, which is what CI runs. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+
+The app uses Clean Architecture with MVVM and Observation:
+
+- `UnlocalFSDomain` owns connection rules, repository and drive interfaces, and save, delete, toggle, share, and quit use cases.
+- `UnlocalFSInfrastructure` implements JSON persistence, Keychain storage, rclone commands, and filesystem operations. It depends on Domain.
+- `UnlocalFSPresentation` contains the view models. It depends only on Domain. `AppViewModel` shares window and menu bar state; `ViewModelFactory` creates the editor and activity models.
+- `UnlocalFS/Presentation` contains the SwiftUI views.
+- `UnlocalFS/Application` constructs dependencies and handles macOS lifecycle events, Finder, clipboard, notifications, and login registration.
+
+SwiftPM target dependencies enforce the core boundary. App polling follows the app lifecycle; activity polling follows the view lifecycle. Existing configuration and Keychain formats remain compatible. See [the architecture guide](docs/architecture.md).
 
 ## Documentation development
 

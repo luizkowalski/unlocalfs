@@ -1,6 +1,7 @@
 import Foundation
 import Testing
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSInfrastructure
 
 @Suite struct CommandTests {
     @Test func commandsTimeOutInsteadOfHangingTheCaller() async {

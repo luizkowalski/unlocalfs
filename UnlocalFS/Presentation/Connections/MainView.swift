@@ -1,8 +1,10 @@
 import SwiftUI
-import UnlocalFSCore
+import UnlocalFSDomain
+import UnlocalFSPresentation
 
 struct MainView: View {
-    @Environment(AppModel.self) private var model
+    @Environment(AppViewModel.self) private var model
+    @Environment(ViewModelFactory.self) private var viewModels
 
     var body: some View {
         @Bindable var model = model
@@ -36,7 +38,7 @@ struct MainView: View {
             }
         }
         .frame(minWidth: 720, minHeight: 680)
-        .sheet(item: $model.editor) { ConnectionEditor(draft: $0) }
+        .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}
         } message: {
@@ -56,7 +58,7 @@ struct MainView: View {
 }
 
 private struct ConnectionRow: View {
-    @Environment(AppModel.self) private var model
+    @Environment(AppViewModel.self) private var model
     let connection: Connection
 
     var body: some View {
@@ -106,10 +108,8 @@ private struct ConnectionRow: View {
 }
 
 private struct ConnectionDetail: View {
-    @Environment(AppModel.self) private var model
+    @Environment(AppViewModel.self) private var model
     let connection: Connection
-
-    private var status: MountStatus? { model.statuses[connection.id] }
 
     var body: some View {
         ScrollView {
@@ -127,22 +127,17 @@ private struct ConnectionDetail: View {
                         .disabled(!model.canOpen(connection))
                         .help("Show changes made to this drive from other apps or Macs")
                 }
-                if !model.networkAvailable && model.isActive(connection) {
+                if model.isOffline(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
                         .font(.callout).foregroundStyle(.secondary)
                 }
-                if let error = model.errors[connection.id] ?? status?.controlError {
-                    errorBox(error)
-                } else if let status, status.pendingUploads > 0, status.failedUploads == 0 {
-                    Label(
-                        status.isMounted
-                            ? "Uploads pending. Keep this drive connected until uploads finish."
-                            : "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again.",
-                        systemImage: "info.circle"
-                    )
-                    .font(.callout).foregroundStyle(.secondary)
+                if let problem = model.problem(connection) {
+                    errorBox(problem)
+                } else if let notice = model.uploadNotice(connection) {
+                    Label(notice, systemImage: "info.circle")
+                        .font(.callout).foregroundStyle(.secondary)
                 }
-                if status?.isRunning == true && !model.needsReconnect(connection) {
+                if model.isServing(connection) {
                     ActivityView(connection: connection)
                 }
                 GroupBox("Connection") {
@@ -161,15 +156,15 @@ private struct ConnectionDetail: View {
                 GroupBox("On this Mac") {
                     VStack(alignment: .leading, spacing: 14) {
                         Grid(alignment: .leading, horizontalSpacing: 24, verticalSpacing: 14) {
-                            row("Drive", Text(tildePath(model.paths.mount(connection))))
-                            row("Cache", Text(tildePath(model.paths.cache(connection))))
-                            if let status, status.isRunning && !status.needsReconnect {
+                            row("Drive", Text(tildePath(model.mountLocation(connection))))
+                            row("Cache", Text(tildePath(model.cacheLocation(connection))))
+                            if let cached = model.cachedBytes(connection) {
                                 row("Cache size", HStack(spacing: 12) {
-                                    ProgressView(value: Double(status.bytesCached), total: Double(connection.cacheLimit))
+                                    ProgressView(value: Double(cached), total: Double(connection.cacheLimit))
                                         .tint(.green)
                                         .frame(maxWidth: 240)
                                         .accessibilityLabel("Cache size")
-                                    Text("\(status.bytesCached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))")
+                                    Text("\(cached, format: .byteCount(style: .file)) of \(connection.cacheLimit, format: .byteCount(style: .file))")
                                 })
                             } else {
                                 row("Cache limit", Text(connection.cacheLimit, format: .byteCount(style: .file)))
@@ -212,13 +207,11 @@ private struct ConnectionDetail: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(connection.name).font(.largeTitle.bold())
                 HStack(spacing: 6) {
-                    if model.busy.contains(connection.id) {
-                        ProgressView().controlSize(.small)
-                    } else if model.needsReconnect(connection) || model.errors[connection.id] != nil
-                                || (status?.failedUploads ?? 0) > 0 || !model.networkAvailable && model.isActive(connection) {
-                        Circle().fill(Color.orange).frame(width: 7, height: 7)
-                    } else {
-                        Circle().fill(status?.isMounted == true ? Color.green : Color.secondary).frame(width: 7, height: 7)
+                    switch model.indicator(connection) {
+                    case .working: ProgressView().controlSize(.small)
+                    case .attention: Circle().fill(Color.orange).frame(width: 7, height: 7)
+                    case .connected: Circle().fill(Color.green).frame(width: 7, height: 7)
+                    case .idle: Circle().fill(Color.secondary).frame(width: 7, height: 7)
                     }
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
                 }
@@ -241,10 +234,7 @@ private struct ConnectionDetail: View {
                 Label("Connection needs attention", systemImage: "exclamationmark.triangle").font(.headline)
                 Text(error).font(.callout).textSelection(.enabled)
                 HStack {
-                    Button("Check Again") {
-                        model.errors[connection.id] = nil
-                        Task { await model.refresh() }
-                    }
+                    Button("Check Again") { Task { await model.checkAgain(connection) } }
                     Button("Open Log") { model.openLog(connection) }
                 }
             }

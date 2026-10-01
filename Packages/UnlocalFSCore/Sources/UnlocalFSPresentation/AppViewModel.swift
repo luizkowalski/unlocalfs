@@ -1,0 +1,333 @@
+import Foundation
+import Observation
+import UnlocalFSDomain
+
+@MainActor @Observable public final class AppViewModel {
+    public enum Activity { case idle, connected, syncing }
+    public enum Indicator { case working, attention, connected, idle }
+
+    public private(set) var connections: [Connection] = []
+    public var selection: UUID?
+    public private(set) var statuses: [UUID: MountStatus] = [:]
+    public private(set) var errors: [UUID: String] = [:]
+    public private(set) var busy: Set<UUID> = []
+    public var alert: String?
+    public var editor: ConnectionDraft?
+    public var deleting: Connection?
+    public private(set) var ready = false
+    public private(set) var opensAtLogin: Bool
+    private var networkAvailable = true
+    private var sleeping = false
+
+    private let drives: any DriveGateway
+    private let deleteConnection: DeleteConnectionUseCase
+    private let toggleDrive: ToggleDriveUseCase
+    private let shareFiles: ShareFilesUseCase
+    private let quit: QuitUseCase
+    private let desktop: any DesktopServices
+    private var refreshing = false
+    private var refreshRequested = false
+    private var checkingQuit = false
+    private var notifiedFailures: Set<UUID> = []
+    private var waitingToDisconnect: Set<UUID> = []
+
+    public init(
+        initialConnections: Result<[Connection], any Error>,
+        drives: any DriveGateway,
+        deleteConnection: DeleteConnectionUseCase,
+        toggleDrive: ToggleDriveUseCase,
+        shareFiles: ShareFilesUseCase,
+        quit: QuitUseCase,
+        desktop: any DesktopServices
+    ) {
+        self.drives = drives
+        self.deleteConnection = deleteConnection
+        self.toggleDrive = toggleDrive
+        self.shareFiles = shareFiles
+        self.quit = quit
+        self.desktop = desktop
+        opensAtLogin = desktop.opensAtLogin
+        switch initialConnections {
+        case .success(let connections):
+            self.connections = connections
+            selection = connections.first?.id
+            ready = true
+        case .failure(let error):
+            alert = error.localizedDescription
+        }
+    }
+
+    public func run() async {
+        await refresh()
+        await connectAutomatically()
+        while !Task.isCancelled {
+            await refresh()
+            do {
+                try await Task.sleep(for: .seconds(3))
+            } catch { return }
+        }
+    }
+
+    public var selected: Connection? { connections.first { $0.id == selection } }
+
+    public var isShowingAlert: Bool {
+        get { alert != nil }
+        set { if !newValue { alert = nil } }
+    }
+
+    public var isConfirmingDelete: Bool {
+        get { deleting != nil }
+        set { if !newValue { deleting = nil } }
+    }
+
+    public func edit(_ connection: Connection) {
+        editor = ConnectionDraft(connection: connection)
+    }
+
+    public func duplicate(_ connection: Connection) {
+        editor = ConnectionDraft(duplicating: connection)
+    }
+
+    func connectionSaved(_ connection: Connection, connections: [Connection]) {
+        self.connections = connections
+        selection = connection.id
+        statuses[connection.id] = MountStatus()
+        errors[connection.id] = nil
+    }
+
+    public func delete(_ connection: Connection) async {
+        busy.insert(connection.id)
+        defer { busy.remove(connection.id) }
+        do {
+            connections = try await deleteConnection.execute(connection)
+            statuses[connection.id] = nil
+            errors[connection.id] = nil
+            selection = connections.first?.id
+        } catch { alert = error.localizedDescription }
+    }
+
+    public func toggle(_ connection: Connection, opensFinder: Bool = false) async {
+        guard !checkingQuit, canToggle(connection) else { return }
+        busy.insert(connection.id)
+        errors[connection.id] = nil
+        waitingToDisconnect.remove(connection.id)
+        defer { busy.remove(connection.id) }
+        do {
+            let outcome = try await toggleDrive.execute(connection)
+            if case .connected = outcome, opensFinder { openDrive(connection) }
+        } catch is UploadsPendingError {
+            waitingToDisconnect.insert(connection.id)
+        } catch {
+            errors[connection.id] = error.localizedDescription
+        }
+        update(await drives.status(connection), for: connection)
+    }
+
+    public func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
+        do {
+            let links = try await shareFiles.execute(files, expiry: expiry)
+            desktop.copyShareLinks(links)
+            desktop.notify(
+                title: links.count == 1 ? "Link copied" : "\(links.count) links copied",
+                body: "Anyone with the link can download for \(expiry.title).", fallbackToAlert: false
+            )
+        } catch let error as ShareFileError {
+            desktop.notify(title: "Could not copy a link to \(error.file.lastPathComponent)", body: error.localizedDescription, fallbackToAlert: true)
+        } catch {
+            desktop.notify(title: "Could not copy share links", body: error.localizedDescription, fallbackToAlert: true)
+        }
+    }
+
+    public func refreshFiles(_ connection: Connection) async {
+        do {
+            try await drives.refresh(connection)
+        } catch { errors[connection.id] = error.localizedDescription }
+    }
+
+    public func checkAgain(_ connection: Connection) async {
+        errors[connection.id] = nil
+        await refresh()
+    }
+
+    public func setOpensAtLogin(_ enabled: Bool) {
+        do {
+            try desktop.setOpensAtLogin(enabled)
+        } catch { alert = error.localizedDescription }
+        syncOpensAtLogin()
+    }
+
+    private func syncOpensAtLogin() {
+        let enabled = desktop.opensAtLogin
+        if opensAtLogin != enabled { opensAtLogin = enabled }
+    }
+
+    private func connectAutomatically() async {
+        for connection in connections {
+            if let status = statuses[connection.id], connection.shouldConnectAutomatically(status: status) {
+                await toggle(connection)
+            }
+        }
+    }
+
+    public func refresh() async {
+        guard !sleeping else { return }
+        if refreshing {
+            refreshRequested = true
+            return
+        }
+        refreshing = true
+        defer { refreshing = false }
+        repeat {
+            refreshRequested = false
+            syncOpensAtLogin()
+            for connection in connections where !busy.contains(connection.id) && !sleeping {
+                let status = await drives.status(connection)
+                if !sleeping, !busy.contains(connection.id) { update(status, for: connection) }
+            }
+        } while refreshRequested && !sleeping
+    }
+
+    public func willSleep() { sleeping = true }
+
+    public func didWake() async {
+        sleeping = false
+        await refresh()
+    }
+
+    public func networkChanged(available: Bool) async {
+        networkAvailable = available
+        await refresh()
+    }
+
+    public func canQuit() async -> Bool {
+        checkingQuit = true
+        defer { checkingQuit = false }
+        do {
+            try await quit.execute(connections: connections, operationInProgress: !busy.isEmpty)
+            return true
+        } catch {
+            alert = error.localizedDescription
+            return false
+        }
+    }
+}
+
+extension AppViewModel {
+    public var activity: Activity {
+        if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .syncing }
+        return statuses.values.contains(where: \.isMounted) ? .connected : .idle
+    }
+
+    public func isActive(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.isActive == true
+    }
+
+    public func isOffline(_ connection: Connection) -> Bool {
+        isActive(connection) && !networkAvailable
+    }
+
+    public func isServing(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.isRunning == true && !needsReconnect(connection)
+    }
+
+    public func cachedBytes(_ connection: Connection) -> Int64? {
+        isServing(connection) ? statuses[connection.id]?.bytesCached : nil
+    }
+
+    public func problem(_ connection: Connection) -> String? {
+        errors[connection.id] ?? statuses[connection.id]?.controlError
+    }
+
+    public func uploadNotice(_ connection: Connection) -> String? {
+        guard let status = statuses[connection.id], status.pendingUploads > 0, status.failedUploads == 0 else { return nil }
+        return status.isMounted
+            ? "Uploads pending. Keep this drive connected until uploads finish."
+            : "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again."
+    }
+
+    public func canToggle(_ connection: Connection) -> Bool {
+        !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
+    }
+
+    public func canOpen(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.isMounted == true && !needsReconnect(connection)
+    }
+
+    public func canEdit(_ connection: Connection) -> Bool {
+        canToggle(connection) && !isActive(connection)
+    }
+
+    public func indicator(_ connection: Connection) -> Indicator {
+        switch condition(connection) {
+        case .working: .working
+        case .needsReconnect, .needsAttention, .offline, .uploadFailed: .attention
+        default: statuses[connection.id]?.isMounted == true ? .connected : .idle
+        }
+    }
+
+    public func statusText(_ connection: Connection) -> String {
+        switch condition(connection) {
+        case .working: "Working…"
+        case .needsReconnect: "Needs reconnect"
+        case .needsAttention: "Needs attention"
+        case .checking: "Checking…"
+        case .offline: "Network unavailable"
+        case .uploadFailed: "Upload needs attention"
+        case .uploading(let count): String(AttributedString(localized: "^[\(count) upload](inflect: true) pending").characters)
+        case .connected: "Connected"
+        case .ejected: "Ejected · disconnect to stop"
+        case .disconnected: "Disconnected"
+        }
+    }
+
+    public func needsReconnect(_ connection: Connection) -> Bool {
+        statuses[connection.id]?.needsReconnect == true
+    }
+
+    public func toggleTitle(_ connection: Connection) -> String {
+        if needsReconnect(connection) { return "Reconnect" }
+        return isActive(connection) ? "Disconnect" : "Connect"
+    }
+
+    public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
+    public func cacheLocation(_ connection: Connection) -> URL { desktop.cacheLocation(connection) }
+
+    public func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
+    public func openLog(_ connection: Connection) { desktop.openLog(connection) }
+}
+
+private extension AppViewModel {
+    enum Condition {
+        case working, needsReconnect, needsAttention, checking, offline, uploadFailed, uploading(Int), connected, ejected, disconnected
+    }
+
+    func condition(_ connection: Connection) -> Condition {
+        if busy.contains(connection.id) { return .working }
+        if needsReconnect(connection) { return .needsReconnect }
+        if errors[connection.id] != nil { return .needsAttention }
+        guard let status = statuses[connection.id] else { return .checking }
+        if status.isActive && !networkAvailable { return .offline }
+        if status.failedUploads > 0 { return .uploadFailed }
+        if status.pendingUploads > 0 { return .uploading(status.pendingUploads) }
+        if status.isMounted { return .connected }
+        if status.isRunning { return .ejected }
+        return .disconnected
+    }
+
+    func update(_ status: MountStatus, for connection: Connection) {
+        if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
+            notify(title: "Uploads failed on \(connection.name)", body: "Some files could not upload. Keep the drive connected while UnlocalFS tries again.")
+        }
+        if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
+            notifiedFailures.remove(connection.id)
+            if waitingToDisconnect.remove(connection.id) != nil {
+                notify(title: "\(connection.name) finished uploading", body: "You can disconnect it now.")
+            }
+        }
+        if statuses[connection.id] != status { statuses[connection.id] = status }
+    }
+
+    func notify(title: String, body: String) {
+        desktop.notify(title: title, body: body, fallbackToAlert: false)
+    }
+}

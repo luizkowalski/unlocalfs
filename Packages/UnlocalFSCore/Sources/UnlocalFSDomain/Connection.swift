@@ -37,10 +37,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
     }
 
+    public func shouldConnectAutomatically(status: MountStatus) -> Bool {
+        connectsAutomatically && !status.isActive
+    }
+
     public func validate() -> [ValidationError] {
         var validator = Validator()
         let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
-        validator.validate(field: "Name", value: name) {
+        validator.validate(field: ConnectionField.name.rawValue, value: name) {
             $0.notEmpty()
             $0.custom({ _ in
                 name != "." && name != ".." &&
@@ -48,7 +52,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
             }, error: .custom(message: "Enter a drive name without slashes, colons, or control characters."))
             $0.custom({ _ in name.utf8.count <= 120 }, error: .custom(message: "Enter a shorter drive name. The limit is 120 bytes."))
         }
-        validator.validate(field: "Endpoint", value: endpoint) {
+        validator.validate(field: ConnectionField.endpoint.rawValue, value: endpoint) {
             $0.matchesURL()
             $0.custom({ _ in
                 guard let url = URLComponents(string: endpoint) else { return false }
@@ -57,14 +61,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
                     url.query == nil && url.fragment == nil && (url.path.isEmpty || url.path == "/")
             }, error: .custom(message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."))
         }
-        validator.validate(field: "Bucket", value: bucket) {
+        validator.validate(field: ConnectionField.bucket.rawValue, value: bucket) {
             $0.notEmpty()
             $0.custom({ _ in
                 bucket != "." && bucket != ".." &&
                     bucket.rangeOfCharacter(from: forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil
             }, error: .custom(message: "Enter the bucket name, without a path."))
         }
-        validator.validate(field: "Folder", value: folder) {
+        validator.validate(field: ConnectionField.folder.rawValue, value: folder) {
             $0.custom({ _ in
                 (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
                     folder.rangeOfCharacter(from: .controlCharacters) == nil
@@ -76,10 +80,27 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
     public func validate(against connections: [Connection]) -> [ValidationError] {
         var errors = validate()
         if connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
-            errors.append(ValidationError(field: "Name", rule: .custom(message: "A drive with that name already exists.")))
+            errors.append(ValidationError(field: ConnectionField.name.rawValue, rule: .custom(message: "A drive with that name already exists.")))
         }
         return errors
     }
+
+    public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> [ValidationError] {
+        var errors = validate(against: connections) + credentials.validate(for: self)
+        if encrypted, !connections.contains(where: { $0.id == id }), confirmation != credentials.encryptionPassword {
+            errors.append(ValidationError(field: ConnectionField.confirmation.rawValue, rule: .custom(message: "The passwords do not match.")))
+        }
+        return errors
+    }
+}
+
+public enum ConnectionField: String, CaseIterable, Sendable {
+    case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
+    case encryptionPassword = "Encryption password", confirmation = "Confirm password"
+}
+
+extension ValidationError {
+    public var connectionField: ConnectionField? { ConnectionField(rawValue: field) }
 }
 
 public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -133,10 +154,10 @@ public struct Credentials: Codable, Equatable, Sendable {
 
     public func validate(for connection: Connection) -> [ValidationError] {
         var validator = Validator()
-        validator.validate(field: "Access key", value: accessKey) { $0.notEmpty() }
-        validator.validate(field: "Secret key", value: secretKey) { $0.notEmpty() }
+        validator.validate(field: ConnectionField.accessKey.rawValue, value: accessKey) { $0.notEmpty() }
+        validator.validate(field: ConnectionField.secretKey.rawValue, value: secretKey) { $0.notEmpty() }
         if connection.encrypted {
-            validator.validate(field: "Encryption password", value: encryptionPassword) { $0.notEmpty() }
+            validator.validate(field: ConnectionField.encryptionPassword.rawValue, value: encryptionPassword) { $0.notEmpty() }
         }
         return validator.errors()
     }

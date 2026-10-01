@@ -5,6 +5,7 @@ dist/
 .swiftpm/
 UnlocalFS.xcodeproj/
 /docs/*
+!/docs/architecture.md
 !/docs/package.json
 !/docs/package-lock.json
 !/docs/astro.config.mjs

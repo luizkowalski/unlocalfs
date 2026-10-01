@@ -25,6 +25,11 @@ targets:
             subpath: libexec
     dependencies:
       - package: UnlocalFSCore
+        product: UnlocalFSDomain
+      - package: UnlocalFSCore
+        product: UnlocalFSInfrastructure
+      - package: UnlocalFSCore
+        product: UnlocalFSPresentation
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.luizkowalski.unlocalfs
@@ -65,6 +70,8 @@ schemes:
     test:
       config: Debug
       targets:
+        - package: UnlocalFSCore/UnlocalFSDomainTests
         - package: UnlocalFSCore/UnlocalFSCoreTests
+        - package: UnlocalFSCore/UnlocalFSPresentationTests
     archive:
       config: Release

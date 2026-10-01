@@ -8,7 +8,7 @@ dir = "{{ config_root }}"
 run = "scripts/build-app.sh"
 
 [tasks.test]
-description = "Test the macOS app core"
+description = "Test the macOS app core and view models"
 dir = "{{ config_root }}"
 run = "scripts/test.sh"
 

@@ -1,28 +1,8 @@
 import Darwin
 import Foundation
+import UnlocalFSDomain
 
-public struct UploadsPendingError: LocalizedError, Sendable {
-    public init() {}
-
-    public var errorDescription: String? {
-        "Uploads are still in progress. Wait for them to finish before disconnecting."
-    }
-}
-
-public struct MountStatus: Equatable, Sendable {
-    public var isMounted = false
-    public var isRunning = false
-    public var pendingUploads = 0
-    public var failedUploads = 0
-    public var bytesCached: Int64 = 0
-    public var controlError: String?
-    public init() {}
-
-    public var isActive: Bool { isMounted || isRunning || needsReconnect }
-    public var needsReconnect: Bool { controlError != nil }
-}
-
-public actor MountService {
+public actor MountService: DriveGateway {
     private let executable: URL
     private let helperDirectory: URL
     private let paths: AppPaths
@@ -35,8 +15,13 @@ public actor MountService {
         self.paths = paths
     }
 
+    public nonisolated func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
+        paths.drive(containing: file, among: connections)
+    }
+
+    public nonisolated func removeCache(_ connection: Connection) { paths.removeCache(connection) }
+
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        try AppError.throwing(connection.validate() + credentials.validate(for: connection))
         let credentials = try await prepareCredentials(credentials)
         do {
             _ = try await Command.run(executable, [
@@ -174,13 +159,13 @@ public actor MountService {
         if current.needsReconnect, isRunning(connection) == nil {
             throw AppError("Could not stop the old drive service because its process could not be identified. The cache was kept.")
         }
-        try checkUploads(current)
+        try current.requireSafeDisconnect()
         if current.isMounted { try await eject(connection, force: !current.isRunning) }
         if current.needsReconnect {
             try await stop(connection)
         } else if current.isRunning {
             let remaining = await status(connection)
-            try checkUploads(remaining)
+            try remaining.requireSafeDisconnect()
             if let error = remaining.controlError {
                 try await waitForStop(connection, error: AppError(error))
             } else if remaining.isRunning {
@@ -190,13 +175,6 @@ public actor MountService {
         processes[connection.id] = nil
         let pidFile = paths.pidFile(connection)
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
-    }
-
-    private func checkUploads(_ status: MountStatus) throws {
-        guard status.failedUploads == 0 else {
-            throw AppError("Some files could not upload and need a retry. Keep UnlocalFS running until uploads finish.")
-        }
-        guard status.pendingUploads == 0 else { throw UploadsPendingError() }
     }
 
     private func control(_ connection: Connection, _ method: String) async throws -> Data {
@@ -291,7 +269,6 @@ extension MountService {
         guard !connection.encrypted else {
             throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
         }
-        try AppError.throwing(connection.validate() + credentials.validate(for: connection))
         if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
             let pending: [FileActivity]
             do {
