@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import UnlocalFSDomain
 
 public protocol CredentialStorage: Sendable {
@@ -8,25 +9,24 @@ public protocol CredentialStorage: Sendable {
 }
 
 public final class SavedConnectionRepository: ConnectionRepository {
-    private let store: ConnectionStore
+    private let store: Mutex<ConnectionStore>
     private let credentials: any CredentialStorage
-    private let lock = NSLock()
 
     public init(store: ConnectionStore, credentials: any CredentialStorage) {
-        self.store = store
+        self.store = Mutex(store)
         self.credentials = credentials
     }
 
     public func all() throws -> [Connection] {
-        try lock.withLock { try store.all() }
+        try store.withLock { try $0.all() }
     }
 
     public func credentials(for id: UUID) throws -> Credentials {
-        try lock.withLock { try credentials.read(id) ?? Credentials() }
+        try store.withLock { _ in try credentials.read(id) ?? Credentials() }
     }
 
     public func save(_ connection: Connection, credentials: Credentials) throws {
-        try lock.withLock {
+        try store.withLock { store in
             let previous = try store.all().first { $0.id == connection.id }
             try store.save(connection)
             do {
@@ -43,7 +43,7 @@ public final class SavedConnectionRepository: ConnectionRepository {
     }
 
     public func delete(_ id: UUID) throws {
-        try lock.withLock {
+        try store.withLock { store in
             try store.delete(id)
             try credentials.delete(id)
         }
