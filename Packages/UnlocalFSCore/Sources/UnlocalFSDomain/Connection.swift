@@ -1,7 +1,6 @@
 import Foundation
-import SwiftDataValidator
 
-public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatable {
+public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var id = UUID()
     public var name = ""
     public var provider = Provider.other
@@ -41,66 +40,62 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable, Validatabl
         connectsAutomatically && !status.isActive
     }
 
-    public func validate() -> [ValidationError] {
-        var validator = Validator()
+    public func validate() -> ValidationResult<ConnectionField> {
+        var result = ValidationResult<ConnectionField>()
         let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
-        validator.validate(field: ConnectionField.name.rawValue, value: name) {
-            $0.notEmpty()
-            $0.custom({ _ in
-                name != "." && name != ".." &&
-                    name.rangeOfCharacter(from: forbiddenNameCharacters) == nil
-            }, error: .custom(message: "Enter a drive name without slashes, colons, or control characters."))
-            $0.custom({ _ in name.utf8.count <= 120 }, error: .custom(message: "Enter a shorter drive name. The limit is 120 bytes."))
-        }
-        validator.validate(field: ConnectionField.endpoint.rawValue, value: endpoint) {
-            $0.matchesURL()
-            $0.custom({ _ in
-                guard let url = URLComponents(string: endpoint) else { return false }
-                return ["http", "https"].contains(url.scheme) &&
-                    url.host?.isEmpty == false && url.user == nil && url.password == nil &&
-                    url.query == nil && url.fragment == nil && (url.path.isEmpty || url.path == "/")
-            }, error: .custom(message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."))
-        }
-        validator.validate(field: ConnectionField.bucket.rawValue, value: bucket) {
-            $0.notEmpty()
-            $0.custom({ _ in
-                bucket != "." && bucket != ".." &&
-                    bucket.rangeOfCharacter(from: forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil
-            }, error: .custom(message: "Enter the bucket name, without a path."))
-        }
-        validator.validate(field: ConnectionField.folder.rawValue, value: folder) {
-            $0.custom({ _ in
-                (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
-                    folder.rangeOfCharacter(from: .controlCharacters) == nil
-            }, error: .custom(message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."))
-        }
-        return validator.errors()
+        result.check(!name.isBlank, field: .name, message: "Name cannot be empty")
+        result.check(
+            name != "." && name != ".." && name.rangeOfCharacter(from: forbiddenNameCharacters) == nil,
+            field: .name, message: "Enter a drive name without slashes, colons, or control characters."
+        )
+        result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
+        let url = URL(string: endpoint)
+        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: "Endpoint must be a valid URL")
+        let validEndpoint = URLComponents(string: endpoint).map { url in
+            ["http", "https"].contains(url.scheme) &&
+                url.host?.isEmpty == false && url.user == nil && url.password == nil &&
+                url.query == nil && url.fragment == nil && (url.path.isEmpty || url.path == "/")
+        } ?? false
+        result.check(
+            validEndpoint, field: .endpoint,
+            message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."
+        )
+        result.check(!bucket.isBlank, field: .bucket, message: "Bucket cannot be empty")
+        result.check(
+            bucket != "." && bucket != ".." &&
+                bucket.rangeOfCharacter(from: forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
+            field: .bucket, message: "Enter the bucket name, without a path."
+        )
+        result.check(
+            (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
+                folder.rangeOfCharacter(from: .controlCharacters) == nil,
+            field: .folder, message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."
+        )
+        return result
     }
 
-    public func validate(against connections: [Connection]) -> [ValidationError] {
-        var errors = validate()
-        if connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
-            errors.append(ValidationError(field: ConnectionField.name.rawValue, rule: .custom(message: "A drive with that name already exists.")))
-        }
-        return errors
+    public func validate(against connections: [Connection]) -> ValidationResult<ConnectionField> {
+        var result = validate()
+        result.check(
+            !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
+            field: .name, message: "A drive with that name already exists."
+        )
+        return result
     }
 
-    public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> [ValidationError] {
-        var errors = validate(against: connections) + credentials.validate(for: self)
-        if encrypted, !connections.contains(where: { $0.id == id }), confirmation != credentials.encryptionPassword {
-            errors.append(ValidationError(field: ConnectionField.confirmation.rawValue, rule: .custom(message: "The passwords do not match.")))
+    public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> ValidationResult<ConnectionField> {
+        var result = validate(against: connections)
+        result.issues += credentials.validate(for: self).issues
+        if encrypted, !connections.contains(where: { $0.id == id }) {
+            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: "The passwords do not match.")
         }
-        return errors
+        return result
     }
 }
 
 public enum ConnectionField: String, CaseIterable, Sendable {
     case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
     case encryptionPassword = "Encryption password", confirmation = "Confirm password"
-}
-
-extension ValidationError {
-    public var connectionField: ConnectionField? { ConnectionField(rawValue: field) }
 }
 
 public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -152,22 +147,22 @@ public struct Credentials: Codable, Equatable, Sendable {
         obscuredEncryptionPassword = try container.decodeIfPresent(String.self, forKey: .obscuredEncryptionPassword) ?? ""
     }
 
-    public func validate(for connection: Connection) -> [ValidationError] {
-        var validator = Validator()
-        validator.validate(field: ConnectionField.accessKey.rawValue, value: accessKey) { $0.notEmpty() }
-        validator.validate(field: ConnectionField.secretKey.rawValue, value: secretKey) { $0.notEmpty() }
+    public func validate(for connection: Connection) -> ValidationResult<ConnectionField> {
+        var result = ValidationResult<ConnectionField>()
+        result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
+        result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
         if connection.encrypted {
-            validator.validate(field: ConnectionField.encryptionPassword.rawValue, value: encryptionPassword) { $0.notEmpty() }
+            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")
         }
-        return validator.errors()
+        return result
     }
 }
 
 public struct AppError: LocalizedError, Sendable {
     public let errorDescription: String?
     public init(_ message: String) { errorDescription = message }
+}
 
-    public static func throwing(_ errors: [ValidationError]) throws {
-        if !errors.isEmpty { throw AppError(errors.map(\.localizedDescription).joined(separator: "\n")) }
-    }
+private extension String {
+    var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }

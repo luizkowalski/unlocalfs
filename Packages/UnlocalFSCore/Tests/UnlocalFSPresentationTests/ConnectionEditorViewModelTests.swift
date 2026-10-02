@@ -21,6 +21,96 @@ import UnlocalFSPresentation
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.config.path))
     }
 
+    @Test func testRevealsErrorsWithoutRunningAProcess() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        var connection = connectionFixture()
+        connection.bucket = " "
+        connection.encrypted = true
+        let editor = fixture.editor(draft: .init(connection: connection))
+        editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
+        editor.confirmation = "password"
+
+        #expect(editor.fieldErrors.isEmpty)
+        #expect(editor.firstInvalidField == nil)
+        await editor.test()
+
+        #expect(editor.fieldErrors[.bucket] == "Bucket cannot be empty")
+        #expect(editor.firstInvalidField == .bucket)
+        #expect(!editor.tested)
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
+    @Test func correctingFieldsUpdatesErrorsAndFocusWithoutAnotherAttempt() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let editor = fixture.editor(draft: .init(connection: Connection()))
+        await editor.test()
+        #expect(editor.firstInvalidField == .name)
+
+        editor.connection.name = "Photos"
+
+        #expect(editor.fieldErrors[.name] == nil)
+        #expect(editor.firstInvalidField == .endpoint)
+        editor.connection.endpoint = "https://s3.example.com"
+        #expect(editor.fieldErrors[.endpoint] == nil)
+        #expect(editor.firstInvalidField == .bucket)
+    }
+
+    @Test func duplicateNameFromSavedConnectionsTakesFocusInFormOrder() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        try fixture.repository.save(connectionFixture(), credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        var connection = connectionFixture()
+        connection.name = "my files"
+        connection.folder = "bad//folder"
+        let editor = fixture.editor(draft: .init(connection: connection))
+        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+
+        await editor.test()
+
+        #expect(editor.firstInvalidField == .name)
+        #expect(editor.fieldErrors[.name] == "A drive with that name already exists.")
+        #expect(editor.fieldErrors[.folder] == "Enter a folder path like clients/acme, or leave it empty to use the whole bucket.")
+    }
+
+    @Test func staleEditorNameListShowsTheSaveErrorAndKeepsTheApp() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let app = fixture.app()
+        let editor = fixture.editor(draft: .init(connection: connectionFixture()), app: app)
+        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        let saved = connectionFixture()
+        try fixture.repository.save(saved, credentials: Credentials(accessKey: "old-key", secretKey: "old-secret"))
+
+        #expect(await editor.save() == false)
+
+        #expect(editor.error == "A drive with that name already exists.")
+        #expect(editor.fieldErrors.isEmpty)
+        #expect(try fixture.repository.all() == [saved])
+        #expect(app.connections.isEmpty)
+    }
+
+    @Test func validSavePreparesCredentialsAndReturnsSavedConnectionsToTheApp() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let app = fixture.app()
+        var connection = connectionFixture()
+        connection.encrypted = true
+        let editor = fixture.editor(draft: .init(connection: connection), app: app)
+        editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
+        editor.confirmation = "password"
+
+        #expect(await editor.save())
+
+        #expect(app.connections == [connection])
+        #expect(try fixture.repository.all() == [connection])
+        var expected = editor.credentials
+        expected.obscuredEncryptionPassword = "prepared-password"
+        #expect(try fixture.repository.credentials(for: connection.id) == expected)
+        #expect(try String(contentsOf: fixture.root.appending(path: "process-calls"), encoding: .utf8) == "obscure\n")
+    }
+
     @Test func duplicateLoadsTheOriginalCredentials() throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
@@ -56,21 +146,6 @@ import UnlocalFSPresentation
         #expect(editor.firstInvalidField == .confirmation)
         #expect(editor.fieldErrors[.confirmation] == "The passwords do not match.")
         #expect(!editor.tested)
-    }
-
-    @Test func duplicateDriveNameIsCheckedAgainstSavedConnections() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        try ConnectionStore(url: fixture.paths.config).save(connectionFixture())
-        var connection = connectionFixture()
-        connection.name = "my files"
-        let editor = fixture.editor(draft: .init(connection: connection))
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
-
-        #expect(await editor.save() == false)
-
-        #expect(editor.firstInvalidField == .name)
-        #expect(try ConnectionStore(url: fixture.paths.config).all().count == 1)
     }
 
     @Test func changingTheEndpointClearsTheSuccessfulTest() async throws {

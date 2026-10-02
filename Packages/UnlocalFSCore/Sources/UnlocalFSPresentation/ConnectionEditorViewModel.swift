@@ -57,11 +57,7 @@ import UnlocalFSDomain
 
     public var fieldErrors: [ConnectionField: String] {
         guard showErrors else { return [:] }
-        var errors: [ConnectionField: String] = [:]
-        for error in connection.validate(credentials: credentials, confirmation: confirmation, against: connections) {
-            if let field = error.connectionField, errors[field] == nil { errors[field] = error.localizedDescription }
-        }
-        return errors
+        return connection.validate(credentials: credentials, confirmation: confirmation, against: connections).fieldErrors
     }
 
     public var firstInvalidField: ConnectionField? {

@@ -17,6 +17,7 @@ struct ViewModelFixture {
         let executable = root.appending(path: "rclone")
         try """
         #!/bin/sh
+        printf '%s\\n' "$1" >> '\(root.path)/process-calls'
         case "$1" in
             lsf)
                 if [ -f '\(root.path)/test-error' ]; then
@@ -24,6 +25,7 @@ struct ViewModelFixture {
                     exit 1
                 fi
                 ;;
+            obscure) cat >/dev/null; printf 'prepared-password\\n' ;;
             rc)
                 case "$4" in
                     vfs/stats) cat '\(root.path)/vfs-stats.json' ;;
