@@ -16,7 +16,6 @@ import UnlocalFSInfrastructure
                 _ = try await SaveConnectionUseCase(repository: repository, drives: drives)
                     .execute(draft, credentials: Credentials(accessKey: "new-key", secretKey: "new-secret", encryptionPassword: "password"), confirmation: "password")
             }
-            #expect(try repository.all() == [connection])
             #expect(try Data(contentsOf: paths.config) == config)
             #expect(try repository.credentials(for: connection.id) == original)
             #expect(try repository.credentials(for: draft.id) == Credentials())

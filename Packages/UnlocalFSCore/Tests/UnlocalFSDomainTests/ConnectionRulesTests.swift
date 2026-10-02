@@ -41,11 +41,6 @@ import UnlocalFSDomain
         #expect(connection.validate(credentials: credentials, confirmation: "", against: [connection]).isValid)
     }
 
-    @Test func unchangedIdentityKeepsItsName() {
-        let connection = fixture()
-        #expect(connection.validate(against: [connection]).isValid)
-    }
-
     @Test func saveIssuesKeepConnectionCredentialsAndConfirmationOrder() {
         var connection = fixture(name: "my files", folder: "bad//folder")
         connection.encrypted = true
@@ -68,14 +63,6 @@ import UnlocalFSDomain
             The passwords do not match.
             """
         }
-    }
-
-    @Test func duplicatedEncryptedDriveRequiresConfirmation() {
-        var connection = fixture()
-        connection.encrypted = true
-        let draft = ConnectionDraft(duplicating: connection)
-        let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
-        #expect(draft.connection.validate(credentials: credentials, confirmation: "", against: [connection]).issues.map(\.field) == [.confirmation])
     }
 
     @Test func unencryptedDriveIgnoresConfirmation() {

@@ -85,7 +85,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> ValidationResult<ConnectionField> {
         var result = validate(against: connections)
-        result.append(contentsOf: credentials.validate(for: self).issues)
+        result.issues += credentials.validate(for: self).issues
         if encrypted, !connections.contains(where: { $0.id == id }) {
             result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: "The passwords do not match.")
         }

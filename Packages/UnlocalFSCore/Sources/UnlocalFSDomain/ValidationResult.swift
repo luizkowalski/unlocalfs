@@ -9,7 +9,7 @@ public struct ValidationResult<Field: Hashable & Sendable>: Equatable, Sendable 
         }
     }
 
-    public private(set) var issues: [Issue] = []
+    public var issues: [Issue] = []
 
     public init() {}
 
@@ -21,10 +21,6 @@ public struct ValidationResult<Field: Hashable & Sendable>: Equatable, Sendable 
 
     public mutating func check(_ condition: Bool, field: Field, message: String) {
         if !condition { issues.append(Issue(field: field, message: message)) }
-    }
-
-    public mutating func append(contentsOf issues: [Issue]) {
-        self.issues.append(contentsOf: issues)
     }
 
     public func requireValid() throws {
