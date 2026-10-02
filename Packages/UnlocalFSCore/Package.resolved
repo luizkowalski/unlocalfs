@@ -1,5 +1,5 @@
 {
-  "originHash" : "555e5ca6668f159898a176284794726029a954dcd7af1ee0f3debb84a17f5065",
+  "originHash" : "0bb95984ebe42dfe29026983259cabf59489621639dcf13d5b781cd52e18a327",
   "pins" : [
     {
       "identity" : "swift-subprocess",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
         "version" : "1.8.1"
-      }
-    },
-    {
-      "identity" : "swiftdatavalidator",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/joelklabo/SwiftDataValidator",
-      "state" : {
-        "revision" : "f9b5711d3cf6c289bdd878951bb3e0262261cfcc",
-        "version" : "1.0.0"
       }
     }
   ],

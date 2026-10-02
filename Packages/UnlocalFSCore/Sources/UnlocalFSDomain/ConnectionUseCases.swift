@@ -10,7 +10,7 @@ public struct SaveConnectionUseCase: Sendable {
     }
 
     public func execute(_ connection: Connection, credentials: Credentials, confirmation: String = "") async throws -> [Connection] {
-        try AppError.throwing(connection.validate(credentials: credentials, confirmation: confirmation, against: repository.all()))
+        try connection.validate(credentials: credentials, confirmation: confirmation, against: repository.all()).requireValid()
         let prepared = try await drives.prepareCredentials(credentials)
         try repository.save(connection, credentials: prepared)
         return try repository.all()

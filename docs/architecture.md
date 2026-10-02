@@ -22,7 +22,7 @@ flowchart LR
 | ShareFilesUseCase | Resolves selected files to drives and creates links; identifies the failed file |
 | QuitUseCase | Refuses quit during an operation or while a drive remains active |
 
-`ConnectionField` names each field that validation reports, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. Simple status, test, refresh, and activity operations use the gateway directly. The domain imports Foundation and SwiftDataValidator; it has no UI, Security, subprocess, or filesystem implementation dependencies.
+`ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. Simple status, test, refresh, and activity operations use the gateway directly. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.
 
 ## Infrastructure
 

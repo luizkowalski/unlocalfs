@@ -10,13 +10,10 @@ let package = Package(
         .library(name: "UnlocalFSPresentation", targets: ["UnlocalFSPresentation"])
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
-        .package(url: "https://github.com/joelklabo/SwiftDataValidator", from: "1.0.0")
+        .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")
     ],
     targets: [
-        .target(name: "UnlocalFSDomain", dependencies: [
-            .product(name: "SwiftDataValidator", package: "SwiftDataValidator")
-        ]),
+        .target(name: "UnlocalFSDomain"),
         .target(name: "UnlocalFSInfrastructure", dependencies: [
             "UnlocalFSDomain",
             .product(name: "Subprocess", package: "swift-subprocess")

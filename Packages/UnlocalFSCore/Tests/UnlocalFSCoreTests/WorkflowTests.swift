@@ -5,15 +5,22 @@ import UnlocalFSInfrastructure
 
 @Suite struct WorkflowTests {
     @Test func saveRejectsANameAddedAfterTheEditorOpened() async throws {
-        try await withWorkflowFixture { repository, drives, _, connection in
-            try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        try await withWorkflowFixture { repository, drives, paths, connection in
+            let original = Credentials(accessKey: "key", secretKey: "secret")
+            try repository.save(connection, credentials: original)
+            let config = try Data(contentsOf: paths.config)
             var draft = connection
             draft.id = UUID()
+            draft.encrypted = true
             await #expect(throws: AppError.self) {
                 _ = try await SaveConnectionUseCase(repository: repository, drives: drives)
-                    .execute(draft, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+                    .execute(draft, credentials: Credentials(accessKey: "new-key", secretKey: "new-secret", encryptionPassword: "password"), confirmation: "password")
             }
             #expect(try repository.all() == [connection])
+            #expect(try Data(contentsOf: paths.config) == config)
+            #expect(try repository.credentials(for: connection.id) == original)
+            #expect(try repository.credentials(for: draft.id) == Credentials())
+            #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
         }
     }
 
@@ -77,6 +84,7 @@ private func withWorkflowFixture(
     let executable = root.appending(path: "rclone")
     try """
     #!/bin/sh
+    printf '%s\\n' "$1" >> '\(root.path)/process-calls'
     if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
     if [ "$1" = 'rc' ]; then printf '%s' '{"diskCache":{"uploadsQueued":1,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}'; fi
     """.write(to: executable, atomically: true, encoding: .utf8)
