@@ -96,7 +96,24 @@ struct ViewModelFixture {
         return connection
     }
 
+    func sftpConnection() throws -> Connection {
+        let hosts = root.appending(path: "known_hosts")
+        try Data().write(to: hosts)
+        var connection = sftpConnectionFixture()
+        connection.sftp.trustedHostsFile = hosts.path
+        return connection
+    }
+
     func remove() { try? FileManager.default.removeItem(at: root) }
+}
+
+func sftpConnectionFixture() -> Connection {
+    var connection = Connection()
+    connection.name = "Server"
+    connection.provider = .sftp
+    connection.sftp.host = "files.example.com"
+    connection.sftp.username = "me"
+    return connection
 }
 
 func connectionFixture() -> Connection {

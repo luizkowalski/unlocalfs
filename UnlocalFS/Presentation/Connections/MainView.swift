@@ -35,7 +35,7 @@ struct MainView: View {
                 ContentUnavailableView {
                     Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
                 } description: {
-                    Text("Connect an S3 bucket and use its files from your Mac.")
+                    Text("Connect an S3 bucket or an SFTP server and use its files from your Mac.")
                 } actions: {
                     Button("Add Connection") { model.edit(Connection()) }
                         .buttonStyle(.borderedProminent)
