@@ -137,16 +137,22 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func encryptedDrivesRefuseShareLinks() async throws {
-        try await withFixture(script: "#!/bin/sh\nprintf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'\n") { service, connection in
+    @Test func configExportRefusesFoldersEndingInWhitespace() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return "#!/bin/sh\ntouch '\(root.path)/ran'\n"
+        } operation: { service, connection in
             var connection = connection
             connection.encrypted = true
-            let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
+            connection.folder = "clients/acme "
             await #expect {
-                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: credentials)
+                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
             } throws: { error in
-                error is AppError && error.localizedDescription.contains("encrypted drives")
+                error.localizedDescription.contains("ends with a space")
             }
+            let root = try #require(fixtureRoot)
+            #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
         }
     }
 }

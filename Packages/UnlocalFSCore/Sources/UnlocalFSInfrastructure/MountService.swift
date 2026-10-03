@@ -175,7 +175,6 @@ public actor MountService: DriveGateway {
         processes[connection.id] = nil
         let pidFile = paths.pidFile(connection)
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
-        removeCache(connection)
     }
 
     private func control(_ connection: Connection, _ method: String) async throws -> Data {
@@ -184,8 +183,8 @@ public actor MountService: DriveGateway {
         ], environment: baseEnvironment, timeout: .seconds(4))
     }
 
-    private func remote(_ connection: Connection) -> String {
-        connection.folder.isEmpty ? ":s3:\(connection.bucket)" : ":s3:\(connection.bucket)/\(connection.folder)"
+    private func remote(_ connection: Connection, base: String = ":s3:") -> String {
+        connection.folder.isEmpty ? "\(base)\(connection.bucket)" : "\(base)\(connection.bucket)/\(connection.folder)"
     }
 
     private func mountArguments(for connection: Connection, mount: URL, socket: URL) -> [String] {
@@ -195,7 +194,7 @@ public actor MountService: DriveGateway {
             "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
-            "--s3-directory-markers", "--rc", "--rc-no-auth",
+            "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
         ]
         if connection.bandwidthLimit > 0 { arguments += ["--bwlimit", "\(connection.bandwidthLimit)B"] }
@@ -220,21 +219,31 @@ public actor MountService: DriveGateway {
     }
 
     private func environment(_ connection: Connection, credentials: Credentials) -> [String: String] {
-        var environment = baseEnvironment.merging([
-            "RCLONE_S3_PROVIDER": connection.provider.rawValue,
-            "RCLONE_S3_ENDPOINT": connection.endpoint,
-            "RCLONE_S3_REGION": connection.region,
-            "RCLONE_S3_ACCESS_KEY_ID": credentials.accessKey,
-            "RCLONE_S3_SECRET_ACCESS_KEY": credentials.secretKey,
-            "RCLONE_S3_SESSION_TOKEN": credentials.sessionToken,
-            "RCLONE_S3_ENV_AUTH": "false",
-            "UNLOCALFS_VOLUME_NAME": connection.name
-        ]) { _, new in new }
+        var environment = baseEnvironment.merging(
+            s3Options(connection, credentials: credentials).map { ("RCLONE_S3_\($0.key.uppercased())", $0.value) }
+        ) { _, new in new }
+        environment["UNLOCALFS_VOLUME_NAME"] = connection.name
         if connection.encrypted {
             environment["RCLONE_CRYPT_REMOTE"] = remote(connection)
             environment["RCLONE_CRYPT_PASSWORD"] = credentials.obscuredEncryptionPassword
         }
         return environment
+    }
+
+    private func s3Options(_ connection: Connection, credentials: Credentials?) -> [String: String] {
+        var options = [
+            "provider": connection.provider.rawValue,
+            "endpoint": connection.endpoint,
+            "region": connection.region,
+            "env_auth": "false",
+            "directory_markers": "true"
+        ]
+        if let credentials {
+            options["access_key_id"] = credentials.accessKey
+            options["secret_access_key"] = credentials.secretKey
+            options["session_token"] = credentials.sessionToken
+        }
+        return options
     }
 
     private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
@@ -266,10 +275,38 @@ public actor MountService: DriveGateway {
 }
 
 extension MountService {
-    public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
-        guard !connection.encrypted else {
-            throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
+    public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
+        guard connection.folder.last?.isWhitespace != true else {
+            throw AppError("This drive's folder ends with a space, which rclone config files cannot keep. Rename the folder to export a config.")
         }
+        var prepared: Credentials?
+        if let credentials { prepared = try await prepareCredentials(credentials) }
+        let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let config = scratch.appending(path: "rclone.conf")
+        var crypt = [
+            "remote": remote(connection, base: "unlocalfs-s3:"), "filename_encryption": "standard",
+            "directory_name_encryption": "true", "filename_encoding": "base32"
+        ]
+        crypt["password"] = prepared?.obscuredEncryptionPassword
+        do {
+            try await createRemote("unlocalfs-s3", type: "s3", options: s3Options(connection, credentials: prepared), config: config)
+            try await createRemote("unlocalfs", type: "crypt", options: crypt, config: config)
+        } catch {
+            throw redacted(error, credentials: prepared ?? Credentials())
+        }
+        _ = try FileManager.default.replaceItemAt(destination, withItemAt: config, options: .usingNewMetadataOnly)
+    }
+
+    private func createRemote(_ name: String, type: String, options: [String: String], config: URL) async throws {
+        let parameters = options.filter { !$0.value.isEmpty }.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }
+        _ = try await Command.run(executable, [
+            "config", "create", name, type] + parameters + [
+            "--no-obscure", "--non-interactive", "--no-output", "--config", config.path
+        ], environment: baseEnvironment)
+    }
+
+    public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
         if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
             let pending: [FileActivity]
             do {

@@ -27,6 +27,9 @@ public struct ShareFilesUseCase: Sendable {
                 guard let drive = drives.remoteFile(file, among: connections) else {
                     throw AppError("The file is not in an UnlocalFS drive.")
                 }
+                guard !drive.connection.encrypted else {
+                    throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
+                }
                 let link = try await drives.shareLink(
                     for: drive.connection, path: drive.path, expiry: expiry, credentials: repository.credentials(for: drive.connection.id)
                 )

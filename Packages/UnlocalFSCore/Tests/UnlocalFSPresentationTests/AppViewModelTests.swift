@@ -159,6 +159,70 @@ import UnlocalFSPresentation
         #expect(notification.fallbackToAlert)
     }
 
+    @Test func sharingFromAnEncryptedDriveExplainsWhyWithoutCreatingALink() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = try fixture.saveEncryptedConnection()
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.copyShareLinks(for: [fixture.paths.mount(connection).appending(path: "plan.pdf")], expiry: .day)
+
+        #expect(desktop.copiedLinks.isEmpty)
+        let notification = try #require(desktop.notifications.first)
+        #expect(notification.title == "Could not copy a link to plan.pdf")
+        #expect(notification.body.contains("encrypted drives"))
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
+    @Test func cancellingTheExportWritesNothing() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = try fixture.saveEncryptedConnection()
+        let app = fixture.app()
+
+        await app.exportRcloneConfig(connection)
+
+        #expect(app.alert == nil)
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
+    @Test(arguments: ["unlocalfs-s3", "unlocalfs"])
+    func failedExportKeepsTheDestinationAndShowsAnAlertWithoutSecrets(remote: String) async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = try fixture.saveEncryptedConnection()
+        try remote.write(to: fixture.root.appending(path: "config-error"), atomically: true, encoding: .utf8)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let destination = fixture.root.appending(path: "My files rclone.conf")
+        try Data("original".utf8).write(to: destination)
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: destination, includesSecrets: true)
+        let app = fixture.app(desktop: desktop)
+
+        await app.exportRcloneConfig(connection)
+
+        let alert = try #require(app.alert)
+        #expect(alert.contains("Failed to create \(remote)"))
+        #expect(!alert.contains("saved-"))
+        #expect(!alert.contains("prepared-password"))
+        #expect(try String(contentsOf: destination, encoding: .utf8) == "original")
+        let config = try String(contentsOf: fixture.root.appending(path: "export-config"), encoding: .utf8)
+        #expect(!FileManager.default.fileExists(atPath: URL(filePath: config).deletingLastPathComponent().path))
+    }
+
+    @Test func unencryptedDrivesCannotExportAConfig() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.repository.save(connection, credentials: Credentials(accessKey: "saved-access", secretKey: "saved-secret"))
+        let export = ExportRcloneConfigUseCase(repository: fixture.repository, drives: fixture.service)
+
+        await #expect(throws: AppError.self) {
+            try await export.execute(connection, to: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
+        }
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
     @Test func loginFailureKeepsTheSystemStateAndShowsAnError() throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

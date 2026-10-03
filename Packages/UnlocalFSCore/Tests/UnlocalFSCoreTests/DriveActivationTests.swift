@@ -117,16 +117,22 @@ extension MountTests {
     }
 }
 
-private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, DriveActivationDesktopServices) async throws -> Void) async throws {
-    try await withDrive { drive in
-        let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: MemoryCredentialStorage())
-        try repository.save(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-        let desktop = await DriveActivationDesktopServices(paths: drive.paths)
+func withAppDrive(
+    folder: String = "", encrypted: Bool = false,
+    credentials: Credentials = Credentials(accessKey: "test-key", secretKey: "test-secret"),
+    credentialStorage: MemoryCredentialStorage = MemoryCredentialStorage(),
+    _ body: @MainActor @Sendable (Drive, AppViewModel, DriveDesktopServices) async throws -> Void
+) async throws {
+    try await withDrive(folder: folder, encrypted: encrypted) { drive in
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: credentialStorage)
+        try repository.save(drive.connection, credentials: credentials)
+        let desktop = await DriveDesktopServices(paths: drive.paths)
         let app = await AppViewModel(
             initialConnections: .success([drive.connection]), drives: drive.service,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drive.service),
             toggleDrive: ToggleDriveUseCase(repository: repository, drives: drive.service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drive.service),
+            exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drive.service),
             quit: QuitUseCase(drives: drive.service), desktop: desktop
         )
         await app.refresh()
@@ -134,11 +140,12 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     }
 }
 
-@MainActor private final class DriveActivationDesktopServices: DesktopServices {
+@MainActor final class DriveDesktopServices: DesktopServices {
     let paths: AppPaths
     var opensAtLogin = false
     var openedDrives: [UUID] = []
     var notificationTitles: [String] = []
+    var rcloneConfigDestination: RcloneConfigDestination?
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -148,5 +155,6 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) {}
+    func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination? { rcloneConfigDestination }
     func notify(title: String, body: String, fallbackToAlert: Bool) { notificationTitles.append(title) }
 }

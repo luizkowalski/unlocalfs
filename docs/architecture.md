@@ -20,6 +20,7 @@ flowchart LR
 | DeleteConnectionUseCase | Refuses active drives, removes the saved connection and cache |
 | ToggleDriveUseCase | Uses current drive status to connect, disconnect, or reconnect |
 | ShareFilesUseCase | Resolves selected files to drives and creates links; identifies the failed file |
+| ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
 | QuitUseCase | Refuses quit during an operation or while a drive remains active |
 
 `ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. Simple status, test, refresh, and activity operations use the gateway directly. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.

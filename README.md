@@ -14,7 +14,7 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and 
 ## Features
 
 - **Finder integration:** Open, edit, and save files in your S3 bucket like any other folder on your Mac.
-- **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them.
+- **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them. Export an rclone config to get your files back without UnlocalFS.
 - **Mount a folder as a drive:** Turn one folder in a bucket into its own drive.
 - **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
 - **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
