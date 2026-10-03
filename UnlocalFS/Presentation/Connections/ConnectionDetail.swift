@@ -240,7 +240,7 @@ private struct ToolButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .labelStyle(ToolLabelStyle())
+            .labelStyle(ToolLabelStyle(isDestructive: configuration.role == .destructive))
             .foregroundStyle(configuration.role == .destructive ? Color.red : Color.primary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -251,10 +251,12 @@ private struct ToolButtonStyle: ButtonStyle {
 }
 
 private struct ToolLabelStyle: LabelStyle {
+    let isDestructive: Bool
+
     func makeBody(configuration: Configuration) -> some View {
         VStack(spacing: 3) {
             configuration.icon.font(.system(size: 15)).frame(height: 18)
-            configuration.title.font(.caption).foregroundStyle(.secondary)
+            configuration.title.font(.caption).foregroundStyle(isDestructive ? Color.red : Color.secondary)
         }
     }
 }
