@@ -5,3 +5,6 @@ included:
 disabled_rules:
   - optional_data_string_conversion
 line_length: 180
+
+type_body_length:
+  - 300

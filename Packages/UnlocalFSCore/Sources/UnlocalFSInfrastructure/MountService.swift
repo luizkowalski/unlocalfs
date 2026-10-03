@@ -5,6 +5,8 @@ import UnlocalFSDomain
 public actor MountService: DriveGateway {
     private static let logMaxSize = "5M"
     private static let logMaxBackups = 2
+    private static let timeout = "5s"
+    private static let lowLevelTimeout = "10s"
 
     private let executable: URL
     private let helperDirectory: URL
@@ -30,7 +32,7 @@ public actor MountService: DriveGateway {
             _ = try await Command.run(executable, [
                 "lsf", connection.encrypted ? ":crypt:" : remote(connection), "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", "5s", "--timeout", "10s"
+                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
             throw redacted(error, credentials: credentials)
@@ -326,7 +328,7 @@ extension MountService {
             output = try await Command.run(executable, [
                 "link", "\(remote(connection))/\(path)", "--expire", expiry.rawValue, "--quiet",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", "5s", "--timeout", "10s"
+                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
         } catch {
             throw AppError("""
