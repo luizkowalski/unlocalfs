@@ -69,22 +69,23 @@ private struct ConnectionRow: View {
 
     @ViewBuilder private var icon: some View {
         if model.needsReconnect(connection) {
-            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+            Image(systemName: "exclamationmark.triangle").font(.system(size: 16)).foregroundStyle(.orange)
         } else {
             Group {
                 if connection.provider == .other {
-                    connection.provider.logo
+                    connection.provider.logo.font(.system(size: 18))
                 } else {
                     connection.provider.logo.resizable().scaledToFit()
                 }
             }
-            .frame(width: 16, height: 16)
+            .frame(width: 20, height: 20)
             .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
         }
     }
 
     var body: some View {
-        Label {
+        HStack(spacing: 10) {
+            icon.frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text(connection.name)
@@ -99,8 +100,6 @@ private struct ConnectionRow: View {
                 Text(model.statusText(connection)).font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
-        } icon: {
-            icon
         }
         .tag(connection.id)
         .contextMenu {
