@@ -23,7 +23,7 @@ import UnlocalFSDomain
     public let isDuplicate: Bool
     private let credentialsSource: UUID
     public let isNew: Bool
-    private let savedProvider: Provider?
+    private let savedBackend: Backend?
     private let connections: [Connection]
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway
@@ -42,7 +42,7 @@ import UnlocalFSDomain
         credentialsSource = draft.credentialsSource
         isDuplicate = draft.isDuplicate
         isNew = !connections.contains { $0.id == draft.id }
-        savedProvider = isNew || draft.isDuplicate ? nil : draft.connection.provider
+        savedBackend = isNew || draft.isDuplicate ? nil : draft.connection.backend
         self.connections = connections
         self.repository = repository
         self.drives = drives
@@ -55,14 +55,11 @@ import UnlocalFSDomain
         return isNew ? "Add connection" : "Edit connection"
     }
 
-    public var locksRemoteFolder: Bool { savedProvider == .sftp }
+    public var locksRemoteFolder: Bool { savedBackend?.locksFolderAfterSave ?? false }
 
     public var availableProviders: [Provider] {
-        switch savedProvider {
-        case nil: Provider.allCases
-        case .sftp: [.sftp]
-        default: Provider.allCases.filter { $0 != .sftp }
-        }
+        guard let savedBackend else { return Provider.allCases }
+        return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
     public var isLocked: Bool { testing || saving || !credentialsLoaded }

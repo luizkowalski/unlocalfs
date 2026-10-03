@@ -213,12 +213,16 @@ public actor MountService: DriveGateway {
     }
 
     private func remote(for connection: Connection, credentials: Credentials?) throws -> RcloneRemote {
-        guard connection.isSFTP else { return RcloneRemote(connection: connection, credentials: credentials) }
-        let sftp = connection.sftp
-        try requireReadableFile(sftp.trustedHostsPath, named: "trusted-hosts file")
-        if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: "private key file") }
-        let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
-        return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
+        switch connection.backend {
+        case .s3Compatible:
+            return RcloneRemote(connection: connection, credentials: credentials)
+        case .sftp:
+            let sftp = connection.sftp
+            try requireReadableFile(sftp.trustedHostsPath, named: "trusted-hosts file")
+            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: "private key file") }
+            let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
+            return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
+        }
     }
 
     private func requireReadableFile(_ path: String, named name: String) throws {
@@ -239,15 +243,20 @@ public actor MountService: DriveGateway {
     }
 
     private func diagnosed(_ error: AppError, connection: Connection) -> AppError {
-        let message = error.localizedDescription
-        guard connection.isSFTP, message.contains("knownhosts:") else { return error }
-        let reason = message.contains("key mismatch") ? "its host key changed" : "its host key is not trusted yet"
-        return AppError("""
-        Could not trust this server because \(reason). Check the server's host key fingerprint with its administrator, \
-        then fix its entry in \(connection.sftp.trustedHostsPath). UnlocalFS never changes this file.
+        switch connection.backend {
+        case .s3Compatible:
+            return error
+        case .sftp:
+            let message = error.localizedDescription
+            guard message.contains("knownhosts:") else { return error }
+            let reason = message.contains("key mismatch") ? "its host key changed" : "its host key is not trusted yet"
+            return AppError("""
+            Could not trust this server because \(reason). Check the server's host key fingerprint with its administrator, \
+            then fix its entry in \(connection.sftp.trustedHostsPath). UnlocalFS never changes this file.
 
-        \(message)
-        """)
+            \(message)
+            """)
+        }
     }
 
     private func redacted(_ error: any Error, credentials: Credentials) -> AppError {

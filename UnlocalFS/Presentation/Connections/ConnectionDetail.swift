@@ -74,7 +74,7 @@ struct ConnectionDetail: View {
                 .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 3) {
                 Text(connection.name).font(.title2.weight(.semibold))
-                Text(verbatim: "\(connection.provider.title) · \(connection.isSFTP ? connection.sftp.host : connection.bucket)").foregroundStyle(.secondary)
+                Text(verbatim: "\(connection.provider.title) · \(storageName)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     switch model.indicator(connection) {
                     case .working: ProgressView().controlSize(.mini)
@@ -124,14 +124,15 @@ struct ConnectionDetail: View {
             .padding(.horizontal, 14)
             Divider()
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
-                if connection.isSFTP {
-                    sftpDetails
-                } else {
+                switch connection.backend {
+                case .s3Compatible:
                     detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
                     Divider()
                     detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
                     Divider()
                     detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                case .sftp:
+                    sftpDetails
                 }
                 Divider()
                 detail("Encryption") { connection.encrypted ? Text("On") : Text("Off") }
@@ -140,6 +141,13 @@ struct ConnectionDetail: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
+    }
+
+    private var storageName: String {
+        switch connection.backend {
+        case .s3Compatible: connection.bucket
+        case .sftp: connection.sftp.host
+        }
     }
 
     @ViewBuilder private var sftpDetails: some View {

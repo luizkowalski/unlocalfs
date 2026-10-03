@@ -6,16 +6,28 @@ struct RcloneRemote {
     let credentials: Credentials?
     var agentSocket: String?
 
-    var type: String { connection.isSFTP ? "sftp" : "s3" }
+    var type: String {
+        switch connection.backend {
+        case .s3Compatible: "s3"
+        case .sftp: "sftp"
+        }
+    }
     var exportName: String { "unlocalfs-\(type)" }
     var path: String {
-        if connection.isSFTP { return connection.sftp.remotePath }
-        return connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)"
+        switch connection.backend {
+        case .s3Compatible: connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)"
+        case .sftp: connection.sftp.remotePath
+        }
     }
     var storage: String { ":\(type):\(path)" }
     var target: String { connection.encrypted ? ":crypt:" : storage }
 
-    var options: [String: String] { connection.isSFTP ? sftpOptions : s3Options }
+    var options: [String: String] {
+        switch connection.backend {
+        case .s3Compatible: s3Options
+        case .sftp: sftpOptions
+        }
+    }
 
     var environment: [String: String] {
         var environment = Dictionary(uniqueKeysWithValues: options.map { ("RCLONE_\(type.uppercased())_\($0.key.uppercased())", $0.value) })

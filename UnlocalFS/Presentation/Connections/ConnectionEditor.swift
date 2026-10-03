@@ -86,10 +86,9 @@ struct ConnectionEditor: View {
     private func connectionForm(errors: [ConnectionField: String]) -> some View {
         @Bindable var viewModel = viewModel
         return Form {
-            if viewModel.connection.isSFTP {
-                sftpSections(errors: errors)
-            } else {
-                s3Sections(errors: errors)
+            switch viewModel.connection.backend {
+            case .s3Compatible: s3Sections(errors: errors)
+            case .sftp: sftpSections(errors: errors)
             }
         }
     }

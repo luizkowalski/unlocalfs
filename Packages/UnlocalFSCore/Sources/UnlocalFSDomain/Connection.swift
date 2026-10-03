@@ -38,7 +38,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         sftp = try container.decodeIfPresent(SFTPSettings.self, forKey: .sftp) ?? sftp
     }
 
-    public var isSFTP: Bool { provider == .sftp }
+    public var backend: Backend { provider.backend }
+
+    public var folderPath: String {
+        switch backend {
+        case .s3Compatible: folder
+        case .sftp: sftp.remotePath
+        }
+    }
 
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
         connectsAutomatically && !status.isActive
@@ -54,7 +61,10 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
             field: .name, message: "Enter a drive name without slashes, colons, or control characters."
         )
         result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
-        result.issues += (isSFTP ? sftp.validate() : validateStorage()).issues
+        switch backend {
+        case .s3Compatible: result.issues += validateStorage().issues
+        case .sftp: result.issues += sftp.validate().issues
+        }
         return result
     }
 
@@ -122,6 +132,13 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var id: Self { self }
 
+    public var backend: Backend {
+        switch self {
+        case .other, .aws, .cloudflare, .minio, .wasabi, .digitalOcean: .s3Compatible
+        case .sftp: .sftp
+        }
+    }
+
     public var title: String {
         switch self {
         case .other: "S3 compatible"
@@ -185,26 +202,31 @@ public struct Credentials: Codable, Equatable, Sendable {
 
     public func pruned(for connection: Connection) -> Credentials {
         var credentials = self
-        if connection.isSFTP {
+        switch connection.backend {
+        case .s3Compatible:
+            credentials.password = ""
+            credentials.keyPassphrase = ""
+        case .sftp:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
+            if connection.sftp.authentication != .password { credentials.password = "" }
+            if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
         }
-        if !connection.isSFTP || connection.sftp.authentication != .password { credentials.password = "" }
-        if !connection.isSFTP || connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
         return credentials
     }
 
     public func validate(for connection: Connection) -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        if connection.isSFTP {
+        switch connection.backend {
+        case .s3Compatible:
+            result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
+            result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
+        case .sftp:
             result.check(
                 connection.sftp.authentication != .password || !password.isEmpty,
                 field: .password, message: "Password cannot be empty"
             )
-        } else {
-            result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
-            result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
         }
         if connection.encrypted {
             result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")

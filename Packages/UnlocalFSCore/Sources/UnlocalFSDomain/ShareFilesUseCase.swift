@@ -27,7 +27,7 @@ public struct ShareFilesUseCase: Sendable {
                 guard let drive = drives.remoteFile(file, among: connections) else {
                     throw AppError("The file is not in an UnlocalFS drive.")
                 }
-                guard !drive.connection.isSFTP else {
+                guard drive.connection.backend.supportsShareLinks else {
                     throw AppError("Links aren't available for SFTP drives.")
                 }
                 guard !drive.connection.encrypted else {

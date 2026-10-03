@@ -21,11 +21,10 @@ public struct SaveConnectionUseCase: Sendable {
     }
 
     private func requireSameStorage(_ previous: Connection, _ connection: Connection, credentials: Credentials) throws {
-        guard previous.isSFTP || connection.isSFTP else { return }
-        guard previous.isSFTP == connection.isSFTP, previous.encrypted == connection.encrypted,
-              previous.sftp.remotePath == connection.sftp.remotePath else {
-            throw AppError("Duplicate this drive to change its protocol, folder, or encryption.")
-        }
+        let duplicate = AppError("Duplicate this drive to change its protocol, folder, or encryption.")
+        guard previous.backend == connection.backend else { throw duplicate }
+        guard connection.backend.locksFolderAfterSave else { return }
+        guard previous.encrypted == connection.encrypted, previous.folderPath == connection.folderPath else { throw duplicate }
         if previous.encrypted, try repository.credentials(for: previous.id).encryptionPassword != credentials.encryptionPassword {
             throw AppError("You cannot change the encryption password of a saved drive. Duplicate the drive to use a new password.")
         }
