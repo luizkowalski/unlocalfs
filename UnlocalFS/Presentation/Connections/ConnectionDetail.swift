@@ -192,15 +192,14 @@ private struct CacheUsage: View {
                         ? Text("\($0.pendingBytes, format: .size) · ^[\($0.pendingUploads) file](inflect: true)")
                         : Text("None")
                 }
-                legend("Free cache", color: .secondary.opacity(0.4)) {
-                    Text(max(limit - $0.bytesCached, 0), format: .size)
-                }
+                legend("Free cache", color: .secondary.opacity(0.4)) { _ in Text(free, format: .size) }
             }
         }
     }
 
     private var pending: Int64 { status?.pendingBytes ?? 0 }
     private var cached: Int64 { max((status?.bytesCached ?? 0) - pending, 0) }
+    private var free: Int64 { max(limit - (status?.bytesCached ?? 0), 0) }
 
     private func share(_ bytes: Int64) -> Double {
         Double(bytes) / Double(max(limit, cached + pending))
