@@ -50,7 +50,7 @@ Private keys in OpenSSH format are supported, with or without a passphrase. Unlo
 
 **Test Connection** lists the folder. It shows that you can reach the folder, not that you can write to it. If a server refuses a write, the drive's activity list shows the failed upload.
 
-After you save an SFTP drive, you cannot change its server, port, username, folder, or encryption. Choose **Duplicate** to connect another server or folder. You can still change how you sign in and the trusted-hosts file. Drives saved with SFTP cannot be opened by older versions of UnlocalFS.
+After you save an SFTP drive, you cannot change its folder or encryption. Choose **Duplicate** to connect another folder. You can still change the host, port, username, how you sign in, and the trusted-hosts file. Before you point a drive at a different server, make sure the files in its cache belong there, because pending uploads go to the new server. Drives saved with SFTP cannot be opened by older versions of UnlocalFS.
 
 ## Test and save
 

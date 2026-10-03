@@ -16,7 +16,7 @@ flowchart LR
 
 | Use case | Behavior |
 | --- | --- |
-| SaveConnectionUseCase | Validates current saved names and credentials, refuses to redirect a saved SFTP drive to other storage, drops credentials the connection no longer uses, prepares credentials, then saves |
+| SaveConnectionUseCase | Validates current saved names and credentials, refuses to change a saved SFTP drive's protocol, folder, or encryption, drops credentials the connection no longer uses, prepares credentials, then saves |
 | DeleteConnectionUseCase | Refuses active drives, removes the saved connection and cache |
 | ToggleDriveUseCase | Uses current drive status to connect, disconnect, or reconnect |
 | ShareFilesUseCase | Resolves selected files to drives and creates links, refusing SFTP and encrypted drives before it loads credentials; identifies the failed file |

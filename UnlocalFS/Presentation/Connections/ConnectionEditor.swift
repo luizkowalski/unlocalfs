@@ -132,22 +132,20 @@ struct ConnectionEditor: View {
         return Section {
             nameField(errors: errors)
             providerPicker
-            Group {
-                validated(.host, error: errors[.host]) { TextField("Host", text: $viewModel.connection.sftp.host, prompt: Text(verbatim: "files.example.com")) }
-                validated(.port, error: errors[.port]) {
-                    TextField("Port", value: $viewModel.connection.sftp.port, format: .number.grouping(.never))
-                }
-                validated(.username, error: errors[.username]) { TextField("Username", text: $viewModel.connection.sftp.username) }
-                validated(.remotePath, error: errors[.remotePath]) {
-                    TextField("Remote folder", text: $viewModel.connection.sftp.remotePath, prompt: Text("Optional, for example /srv/files"))
-                }
+            validated(.host, error: errors[.host]) { TextField("Host", text: $viewModel.connection.sftp.host, prompt: Text(verbatim: "files.example.com")) }
+            validated(.port, error: errors[.port]) {
+                TextField("Port", value: $viewModel.connection.sftp.port, format: .number.grouping(.never))
             }
-            .disabled(viewModel.locksIdentity)
+            validated(.username, error: errors[.username]) { TextField("Username", text: $viewModel.connection.sftp.username) }
+            validated(.remotePath, error: errors[.remotePath]) {
+                TextField("Remote folder", text: $viewModel.connection.sftp.remotePath, prompt: Text("Optional, for example /srv/files"))
+            }
+            .disabled(viewModel.locksRemoteFolder)
         } header: {
             Text("Server")
         } footer: {
-            Text(viewModel.locksIdentity
-                 ? "To use a different server, account, or folder, duplicate this drive."
+            Text(viewModel.locksRemoteFolder
+                 ? "To use a different folder, duplicate this drive."
                  : "Leave the folder empty for your home folder. Start it with / for a path from the server’s root.")
                 .font(.caption).foregroundStyle(.secondary)
         }

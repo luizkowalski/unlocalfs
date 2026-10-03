@@ -255,7 +255,7 @@ import UnlocalFSPresentation
         }
     }
 
-    @Test func editingASavedSFTPDriveLocksItsIdentityAndKeepsItsProtocol() throws {
+    @Test func editingASavedSFTPDriveLocksItsFolderAndKeepsItsProtocol() throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = try fixture.sftpConnection()
@@ -264,7 +264,7 @@ import UnlocalFSPresentation
         editor.loadCredentials()
 
         #expect(editor.credentials.password == "saved-password")
-        #expect(editor.locksIdentity)
+        #expect(editor.locksRemoteFolder)
         #expect(editor.availableProviders == [.sftp])
     }
 
@@ -275,22 +275,22 @@ import UnlocalFSPresentation
         try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
 
         let saved = fixture.editor(draft: .init(connection: connection))
-        #expect(!saved.locksIdentity)
+        #expect(!saved.locksRemoteFolder)
         #expect(!saved.availableProviders.contains(.sftp))
         #expect(fixture.editor(draft: .init(connection: Connection())).availableProviders == Provider.allCases)
         #expect(fixture.editor(draft: .init(duplicating: connection)).availableProviders == Provider.allCases)
     }
 
-    @Test func duplicatingASFTPDriveUnlocksItsIdentityAndReloadsTheOriginalCredentials() async throws {
+    @Test func duplicatingASFTPDriveUnlocksItsFolderAndReloadsTheOriginalCredentials() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = try fixture.sftpConnection()
         try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
         let editor = fixture.editor(draft: .init(duplicating: connection))
         editor.loadCredentials()
-        editor.connection.sftp.host = "other.example.com"
+        editor.connection.sftp.remotePath = "/elsewhere"
 
-        #expect(!editor.locksIdentity)
+        #expect(!editor.locksRemoteFolder)
         #expect(editor.credentials.password == "saved-password")
         #expect(await editor.save())
         #expect(try fixture.repository.all().count == 2)
@@ -303,7 +303,7 @@ import UnlocalFSPresentation
         try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.loadCredentials()
-        editor.connection.sftp.host = "other.example.com"
+        editor.connection.sftp.remotePath = "/elsewhere"
 
         #expect(await editor.save() == false)
 

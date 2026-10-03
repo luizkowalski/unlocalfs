@@ -55,7 +55,7 @@ import UnlocalFSDomain
         return isNew ? "Add connection" : "Edit connection"
     }
 
-    public var locksIdentity: Bool { savedProvider == .sftp }
+    public var locksRemoteFolder: Bool { savedProvider == .sftp }
 
     public var availableProviders: [Provider] {
         switch savedProvider {

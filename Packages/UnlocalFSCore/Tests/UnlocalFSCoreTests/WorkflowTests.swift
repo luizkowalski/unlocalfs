@@ -68,6 +68,19 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func savedSFTPDriveKeepsEditingHostPortAndUsername() async throws {
+        try await withWorkflowFixture { repository, drives, _, _ in
+            var connection = sftpFixture()
+            try repository.save(connection, credentials: Credentials(password: "secret"))
+            connection.sftp.host = "other.example.com"
+            connection.sftp.port = 2222
+            connection.sftp.username = "other"
+            let saved = try await SaveConnectionUseCase(repository: repository, drives: drives)
+                .execute(connection, credentials: Credentials(password: "secret"))
+            #expect(saved == [connection])
+        }
+    }
+
     @Test func savedSFTPDriveKeepsEditingAuthenticationAndTrust() async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
             var connection = sftpFixture()
@@ -84,7 +97,7 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func duplicatingASFTPDriveAllowsANewServerUnderANewIdentity() async throws {
+    @Test func duplicatingASFTPDriveAllowsANewFolderUnderANewIdentity() async throws {
         try await withWorkflowFixture { repository, drives, paths, _ in
             let original = sftpFixture()
             try repository.save(original, credentials: Credentials(password: "secret"))
@@ -92,7 +105,6 @@ import UnlocalFSInfrastructure
             try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data("cached".utf8).write(to: cache)
             var draft = ConnectionDraft(duplicating: original)
-            draft.connection.sftp.host = "other.example.com"
             draft.connection.sftp.remotePath = "/elsewhere"
 
             let saved = try await SaveConnectionUseCase(repository: repository, drives: drives)
@@ -175,9 +187,6 @@ import UnlocalFSInfrastructure
 typealias Redirection = @Sendable (inout Connection) -> Void
 
 private let redirections: [Redirection] = [
-    { $0.sftp.host = "other.example.com" },
-    { $0.sftp.port = 2222 },
-    { $0.sftp.username = "other" },
     { $0.sftp.remotePath = "/elsewhere" },
     { $0.encrypted = true },
     { $0.provider = .other }
