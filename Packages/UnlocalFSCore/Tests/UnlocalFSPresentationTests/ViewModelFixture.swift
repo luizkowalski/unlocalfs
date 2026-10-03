@@ -124,7 +124,7 @@ final class MemoryCredentialStorage: CredentialStorage {
         let fallbackToAlert: Bool
     }
     var notifications: [Notification] = []
-    var rcloneConfigDestination: (url: URL, includesSecrets: Bool)?
+    var rcloneConfigDestination: RcloneConfigDestination?
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -138,7 +138,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }
-    func chooseRcloneConfigDestination(for connection: Connection) -> (url: URL, includesSecrets: Bool)? { rcloneConfigDestination }
+    func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination? { rcloneConfigDestination }
     func notify(title: String, body: String, fallbackToAlert: Bool) {
         notifications.append(Notification(title: title, body: body, fallbackToAlert: fallbackToAlert))
     }

@@ -24,7 +24,7 @@ import UserNotifications
         NSPasteboard.general.setString(links.map(\.absoluteString).joined(separator: "\n"), forType: .string)
     }
 
-    func chooseRcloneConfigDestination(for connection: Connection) -> (url: URL, includesSecrets: Bool)? {
+    func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination? {
         let panel = NSSavePanel()
         panel.title = "Export rclone Config"
         panel.message = "Use this file with rclone to read \(connection.name) without UnlocalFS."
@@ -41,7 +41,7 @@ import UserNotifications
         accessory.setFrameSize(accessory.fittingSize)
         panel.accessoryView = accessory
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
-        return (url, includesSecrets.state == .on)
+        return RcloneConfigDestination(url: url, includesSecrets: includesSecrets.state == .on)
     }
 
     func notify(title: String, body: String, fallbackToAlert: Bool) {

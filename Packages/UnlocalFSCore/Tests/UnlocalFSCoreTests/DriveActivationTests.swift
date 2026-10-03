@@ -149,6 +149,6 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) {}
-    func chooseRcloneConfigDestination(for connection: Connection) -> (url: URL, includesSecrets: Bool)? { nil }
+    func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination? { nil }
     func notify(title: String, body: String, fallbackToAlert: Bool) { notificationTitles.append(title) }
 }

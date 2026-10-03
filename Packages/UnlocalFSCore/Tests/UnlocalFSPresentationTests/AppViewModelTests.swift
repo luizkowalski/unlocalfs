@@ -165,7 +165,7 @@ import UnlocalFSPresentation
         let connection = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
         let destination = fixture.root.appending(path: "My files rclone.conf")
-        desktop.rcloneConfigDestination = (destination, false)
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: destination, includesSecrets: false)
         let app = fixture.app(desktop: desktop)
 
         await app.exportRcloneConfig(connection)
@@ -182,7 +182,7 @@ import UnlocalFSPresentation
         defer { fixture.remove() }
         let connection = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
-        desktop.rcloneConfigDestination = (fixture.root.appending(path: "My files rclone.conf"), true)
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
         let app = fixture.app(desktop: desktop)
 
         await app.exportRcloneConfig(connection)
@@ -213,7 +213,7 @@ import UnlocalFSPresentation
         let connection = try fixture.saveEncryptedConnection()
         FileManager.default.createFile(atPath: fixture.root.appending(path: "config-error").path, contents: nil)
         let desktop = TestDesktopServices(paths: fixture.paths)
-        desktop.rcloneConfigDestination = (fixture.root.appending(path: "My files rclone.conf"), true)
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
         let app = fixture.app(desktop: desktop)
 
         await app.exportRcloneConfig(connection)

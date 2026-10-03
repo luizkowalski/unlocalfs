@@ -7,7 +7,7 @@ extension MountTests {
     @Test func exportedConfigReadsFilesUploadedThroughTheDrive() async throws {
         try await withDrive(encrypted: true) { drive in
             let credentials = try await drive.service.prepareCredentials(
-                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse"))
+                encryptedDriveCredentials)
             try await drive.service.mount(drive.connection, credentials: credentials)
             try Data("top secret".utf8).write(to: drive.mounted.appendingPathComponent("secret plan.txt"))
             try await drive.waitForUploads(on: drive.service)
@@ -34,7 +34,7 @@ extension MountTests {
             let config = try exportLocation()
 
             try await drive.service.exportRcloneConfig(
-                drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse"),
+                drive.connection, credentials: encryptedDriveCredentials,
                 to: config)
 
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
@@ -51,9 +51,10 @@ extension MountTests {
             let remotes = try await dump(drive, config)
             let keys = Set(remotes.values.flatMap(\.keys))
             #expect(keys.isDisjoint(with: ["access_key_id", "secret_access_key", "session_token", "password"]))
-            let key = "test-key", secret = "test-secret", password = "correct horse"
-            _ = try await rclone(drive, config, "config", "update", "unlocalfs-s3", "access_key_id", key, "secret_access_key", secret)
-            _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password", password, "--obscure")
+            let credentials = encryptedDriveCredentials
+            _ = try await rclone(
+                drive, config, "config", "update", "unlocalfs-s3", "access_key_id", credentials.accessKey, "secret_access_key", credentials.secretKey)
+            _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password", credentials.encryptionPassword, "--obscure")
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
         }
     }
@@ -65,7 +66,7 @@ extension MountTests {
             try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: config.path)
 
             try await drive.service.exportRcloneConfig(
-                drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse"),
+                drive.connection, credentials: encryptedDriveCredentials,
                 to: config)
 
             #expect(try await Set(dump(drive, config).keys) == ["unlocalfs", "unlocalfs-s3"])
@@ -85,6 +86,8 @@ extension MountTests {
     }
 }
 
+private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse")
+
 private func exportLocation() throws -> URL {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("uf-export-\(UUID().uuidString)")
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -103,7 +106,7 @@ private func dump(_ drive: Drive, _ config: URL) async throws -> [String: [Strin
 }
 
 private func writeEncrypted(_ contents: String, named name: String, to storage: URL, executable: URL) async throws {
-    let password = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: "correct horse")
+    let password = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: encryptedDriveCredentials.encryptionPassword)
     _ = try await Command.run(
         executable, ["rcat", ":crypt:\(name)", "--config", "/dev/null"], input: contents,
         environment: [
