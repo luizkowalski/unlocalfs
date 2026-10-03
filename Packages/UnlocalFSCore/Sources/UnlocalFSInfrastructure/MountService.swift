@@ -175,7 +175,6 @@ public actor MountService: DriveGateway {
         processes[connection.id] = nil
         let pidFile = paths.pidFile(connection)
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
-        removeCache(connection)
     }
 
     private func control(_ connection: Connection, _ method: String) async throws -> Data {
