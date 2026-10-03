@@ -151,7 +151,6 @@ func withAppDrive(
 
     func setOpensAtLogin(_ enabled: Bool) { opensAtLogin = enabled }
     func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
-    func cacheLocation(_ connection: Connection) -> URL { paths.cache(connection) }
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) {}

@@ -5,7 +5,6 @@ import UnlocalFSDomain
     var opensAtLogin: Bool { get }
     func setOpensAtLogin(_ enabled: Bool) throws
     func mountLocation(_ connection: Connection) -> URL
-    func cacheLocation(_ connection: Connection) -> URL
     func openDrive(_ connection: Connection)
     func openLog(_ connection: Connection)
     func copyShareLinks(_ links: [URL])

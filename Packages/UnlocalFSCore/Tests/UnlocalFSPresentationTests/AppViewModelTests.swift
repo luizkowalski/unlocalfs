@@ -109,8 +109,37 @@ import UnlocalFSPresentation
         #expect(app.indicator(connection) == .idle)
         #expect(app.statusText(connection) == "1 upload pending")
         #expect(app.uploadNotice(connection) == "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again.")
-        #expect(app.isServing(connection))
-        #expect(app.cachedBytes(connection) == 2048)
+        #expect(app.servingStatus(connection)?.bytesCached == 2048)
+    }
+
+    @Test func pendingUploadsReportTheBytesWaitingToUpload() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.serve(connection, queued: 2, cached: 4096)
+        try fixture.queue(
+            #"{"name":"a.pdf","size":1500,"tries":1,"uploading":true}"#,
+            #"{"name":"b.pdf","size":500,"tries":0,"uploading":false}"#)
+        let app = fixture.app()
+
+        await app.refresh()
+
+        #expect(app.servingStatus(connection)?.pendingBytes == 2000)
+    }
+
+    @Test func uploadsInProgressAreNotReportedAsFailed() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.serve(connection, queued: 1)
+        try fixture.queue(#"{"name":"a.dmg","size":4096,"tries":1,"uploading":true}"#)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.refresh()
+
+        #expect(app.statusText(connection) == "1 upload pending")
+        #expect(desktop.notifications.isEmpty)
     }
 
     @Test func activeDriveShowsTheNetworkIsUnavailable() async throws {

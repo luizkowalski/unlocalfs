@@ -15,7 +15,6 @@ import UserNotifications
     }
 
     func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
-    func cacheLocation(_ connection: Connection) -> URL { paths.cache(connection) }
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }
     func openLog(_ connection: Connection) { NSWorkspace.shared.open(paths.log(connection)) }
 

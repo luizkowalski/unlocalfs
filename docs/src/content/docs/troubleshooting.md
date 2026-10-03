@@ -27,11 +27,11 @@ Select the drive to see pending uploads and retries. UnlocalFS sends a notificat
 
 The app will not disconnect while uploads are pending or need a retry. If you tried to disconnect, it sends a notification when uploads finish. Do not delete the cache while uploads are pending.
 
-Click **Open Log** to inspect the drive log. Logs are in `~/Library/Logs/UnlocalFS`.
+Click **Log** in the drive toolbar to inspect the drive log. Logs are in `~/Library/Logs/UnlocalFS`.
 
 ## Changes from another app do not appear
 
-Changes made through another app, drive, or Mac normally appear within 5 minutes. Choose **Refresh Files** in the app, sidebar menu, or menu bar to see them sooner.
+Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the sidebar menu or menu bar, to see them sooner.
 
 Avoid editing the same file through two drives at once: one save can overwrite the other.
 

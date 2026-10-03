@@ -16,8 +16,7 @@ import Testing
             return
         }
 
-        try Data(#"{"queue":[{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}]}"#.utf8)
-            .write(to: fixture.root.appending(path: "queue.json"))
+        try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         await viewModel.refresh(connection)
 
         let activity = try #require(viewModel.activity).get()

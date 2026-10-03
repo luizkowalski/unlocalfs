@@ -14,7 +14,7 @@ Turn on **Encrypt files** when you add a drive. UnlocalFS encrypts the content a
 
 You can read an encrypted drive with [rclone](https://rclone.org/) alone. This works on any computer, also when UnlocalFS or this Mac is no longer available. Make the recovery file now and keep it in a safe place.
 
-1. In UnlocalFS, right-click the drive and choose **Export rclone Config…**, or click **Export rclone Config…** below the drive details.
+1. In UnlocalFS, right-click the drive and choose **Export rclone Config…**, or click **Export** in the drive toolbar.
 2. Choose where to save the file. Select **Include keys and password** only if you want a file that works without anything else. Anyone with that file can read the drive, so store it like a password. rclone only obscures the password in the file. It does not encrypt it.
 3. Install rclone on the computer you use for recovery. On a Mac, run `brew install rclone`, or follow the [rclone install guide](https://rclone.org/install/).
 4. If you did not include the keys and password, add them now. The `read -s` commands keep them off the screen and out of your shell history:
