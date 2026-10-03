@@ -73,6 +73,20 @@ struct MountTests {
         }
     }
 
+    @Test func mountingRotatesAnOversizedLog() async throws {
+        try await withDrive { drive in
+            try drive.paths.prepare()
+            let log = drive.paths.log(drive.connection)
+            try Data(repeating: 120, count: 6 * 1024 * 1024).write(to: log)
+            try await drive.service.mount(
+                drive.connection,
+                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            try await drive.service.unmount(drive.connection)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: drive.paths.logs.path).count == 2)
+            #expect(try #require(log.resourceValues(forKeys: [.fileSizeKey]).fileSize) < 1024 * 1024)
+        }
+    }
+
     @Test(arguments: [(false, false), (true, false), (false, true), (true, true)])
     func reconnectPreservesCachedFilesWhenControlIsUnavailable(staleSocket: Bool, reopened: Bool) async throws {
         try await withDrive { drive in

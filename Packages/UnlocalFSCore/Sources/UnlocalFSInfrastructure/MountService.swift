@@ -3,6 +3,9 @@ import Foundation
 import UnlocalFSDomain
 
 public actor MountService: DriveGateway {
+    private static let logMaxSize = "5M"
+    private static let logMaxBackups = 2
+
     private let executable: URL
     private let helperDirectory: URL
     private let paths: AppPaths
@@ -59,15 +62,13 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
-        if !FileManager.default.fileExists(atPath: logURL.path) {
-            FileManager.default.createFile(atPath: logURL.path, contents: nil, attributes: [.posixPermissions: 0o600])
-        }
-        let log = try FileHandle(forWritingTo: logURL)
-        try log.seekToEnd()
+        let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
+        guard descriptor >= 0 else { throw AppError("Could not open the drive log: \(String(cString: strerror(errno)))") }
+        let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { try? log.close() }
         let process = Process()
         process.executableURL = executable
-        process.arguments = mountArguments(for: connection, mount: mount, socket: socket)
+        process.arguments = mountArguments(for: connection, mount: mount, socket: socket, log: logURL)
         process.environment = environment(connection, credentials: credentials)
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
@@ -188,7 +189,7 @@ public actor MountService: DriveGateway {
         connection.folder.isEmpty ? "\(base)\(connection.bucket)" : "\(base)\(connection.bucket)/\(connection.folder)"
     }
 
-    private func mountArguments(for connection: Connection, mount: URL, socket: URL) -> [String] {
+    private func mountArguments(for connection: Connection, mount: URL, socket: URL, log: URL) -> [String] {
         var arguments = [
             "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
@@ -196,7 +197,8 @@ public actor MountService: DriveGateway {
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--rc", "--rc-no-auth",
-            "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO"
+            "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO",
+            "--log-file", log.path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)"
         ]
         if connection.bandwidthLimit > 0 { arguments += ["--bwlimit", "\(connection.bandwidthLimit)B"] }
         if connection.readOnly { arguments.append("--read-only") }
