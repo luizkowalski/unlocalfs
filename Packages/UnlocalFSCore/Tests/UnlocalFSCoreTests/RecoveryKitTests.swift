@@ -53,8 +53,9 @@ extension MountTests {
             #expect(keys.isDisjoint(with: ["access_key_id", "secret_access_key", "session_token", "password"]))
             let credentials = encryptedDriveCredentials
             _ = try await rclone(
-                drive, config, "config", "update", "unlocalfs-s3", "access_key_id", credentials.accessKey, "secret_access_key", credentials.secretKey)
-            _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password", credentials.encryptionPassword, "--obscure")
+                drive, config, "config", "update", "unlocalfs-s3",
+                "access_key_id=\(credentials.accessKey)", "secret_access_key=\(credentials.secretKey)")
+            _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password=\(credentials.encryptionPassword)", "--obscure")
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
         }
     }
@@ -86,7 +87,7 @@ extension MountTests {
     }
 }
 
-private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "correct horse")
+private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
 
 private func exportLocation() throws -> URL {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("uf-export-\(UUID().uuidString)")

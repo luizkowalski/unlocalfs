@@ -20,11 +20,11 @@ You can read an encrypted drive with [rclone](https://rclone.org/) alone. This w
 4. If you did not include the keys and password, add them now. The `read -s` commands keep them off the screen and out of your shell history:
 
    ```sh
-   printf 'Access key: '; read -rs key; echo
-   printf 'Secret key: '; read -rs secret; echo
-   printf 'Encryption password: '; read -rs password; echo
-   rclone config update unlocalfs-s3 access_key_id "$key" secret_access_key "$secret" --config "My files rclone.conf"
-   rclone config update unlocalfs password "$password" --obscure --config "My files rclone.conf"
+   printf 'Access key: '; IFS= read -rs key; echo
+   printf 'Secret key: '; IFS= read -rs secret; echo
+   printf 'Encryption password: '; IFS= read -rs password; echo
+   rclone config update unlocalfs-s3 "access_key_id=$key" "secret_access_key=$secret" --config "My files rclone.conf"
+   rclone config update unlocalfs "password=$password" --obscure --config "My files rclone.conf"
    ```
 
 5. List the files, then copy them to a folder on your computer:
@@ -36,5 +36,5 @@ You can read an encrypted drive with [rclone](https://rclone.org/) alone. This w
 
 Replace `My files rclone.conf` with the path to your file. The `unlocalfs` remote is the drive with its files decrypted. The `unlocalfs-s3` remote is the storage with the encrypted data.
 
-- If the drive used temporary credentials with a session token, the token in the file expires. Add new keys as in step 4, and also run `rclone config update unlocalfs-s3 session_token "" --config "My files rclone.conf"`.
+- If the drive used temporary credentials with a session token, the token in the file expires. Add new keys as in step 4. Then set the new session token with `rclone config update unlocalfs-s3 "session_token=$token" --config "My files rclone.conf"`, or clear it with `session_token=` if the new keys have none.
 - Every exported file uses the same remote names. To put several drives in one rclone config, rename the sections first, for example to `photos` and `photos-s3`, and change the `remote` line of the crypt section to match.
