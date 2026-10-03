@@ -76,12 +76,7 @@ struct ConnectionDetail: View {
                 Text(connection.name).font(.title2.weight(.semibold))
                 Text(verbatim: "\(connection.provider.title) · \(storageName)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
-                    switch model.indicator(connection) {
-                    case .working: ProgressView().controlSize(.mini)
-                    case .attention: Circle().fill(Color.orange).frame(width: 7, height: 7)
-                    case .connected: Circle().fill(Color.green).frame(width: 7, height: 7)
-                    case .idle: Circle().fill(Color.secondary).frame(width: 7, height: 7)
-                    }
+                    StatusIndicator(indicator: model.indicator(connection))
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
                 }
                 .font(.callout)

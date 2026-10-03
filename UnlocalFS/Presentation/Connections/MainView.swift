@@ -67,20 +67,16 @@ private struct ConnectionRow: View {
     @Environment(AppViewModel.self) private var model
     let connection: Connection
 
-    @ViewBuilder private var icon: some View {
-        if model.needsReconnect(connection) {
-            Image(systemName: "exclamationmark.triangle").font(.system(size: 16)).foregroundStyle(.orange)
-        } else {
-            Group {
-                if connection.provider == .other {
-                    connection.provider.logo.font(.system(size: 18))
-                } else {
-                    connection.provider.logo.resizable().scaledToFit()
-                }
+    private var icon: some View {
+        Group {
+            if connection.provider == .other {
+                connection.provider.logo.font(.system(size: 18))
+            } else {
+                connection.provider.logo.resizable().scaledToFit()
             }
-            .frame(width: 20, height: 20)
-            .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
         }
+        .frame(width: 20, height: 20)
+        .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
     }
 
     var body: some View {
@@ -100,6 +96,10 @@ private struct ConnectionRow: View {
                 Text(model.statusText(connection)).font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
+            Spacer(minLength: 0)
+            StatusIndicator(indicator: model.indicator(connection), showsIdle: false)
+                .frame(width: 12)
+                .accessibilityHidden(true)
         }
         .tag(connection.id)
         .contextMenu {
