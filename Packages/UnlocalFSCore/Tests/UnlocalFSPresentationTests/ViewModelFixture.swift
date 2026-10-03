@@ -84,6 +84,10 @@ struct ViewModelFixture {
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
     }
 
+    func queue(_ items: String...) throws {
+        try Data(#"{"queue":[\#(items.joined(separator: ","))]}"#.utf8).write(to: root.appending(path: "queue.json"))
+    }
+
     func saveEncryptedConnection() throws -> Connection {
         var connection = connectionFixture()
         connection.encrypted = true
@@ -133,7 +137,6 @@ final class MemoryCredentialStorage: CredentialStorage {
     }
 
     func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
-    func cacheLocation(_ connection: Connection) -> URL { paths.cache(connection) }
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }

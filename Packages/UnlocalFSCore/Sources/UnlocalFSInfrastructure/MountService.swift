@@ -112,7 +112,8 @@ public actor MountService: DriveGateway {
             status.failedUploads = cache.erroredFiles
             if status.pendingUploads > 0 {
                 let queue = try await JSONDecoder().decode(UploadQueue.self, from: control(connection, "vfs/queue")).queue
-                status.failedUploads += queue.count { $0.tries > 0 }
+                status.failedUploads += queue.count { !$0.uploading && $0.tries > 0 }
+                status.pendingBytes = queue.reduce(0) { $0 + $1.size }
             }
             status.bytesCached = cache.bytesUsed
         } catch {

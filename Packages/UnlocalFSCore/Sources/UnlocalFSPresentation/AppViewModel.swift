@@ -248,12 +248,9 @@ extension AppViewModel {
         isActive(connection) && !networkAvailable
     }
 
-    public func isServing(_ connection: Connection) -> Bool {
-        statuses[connection.id]?.isRunning == true && !needsReconnect(connection)
-    }
-
-    public func cachedBytes(_ connection: Connection) -> Int64? {
-        isServing(connection) ? statuses[connection.id]?.bytesCached : nil
+    public func servingStatus(_ connection: Connection) -> MountStatus? {
+        guard let status = statuses[connection.id], status.isRunning, !status.needsReconnect else { return nil }
+        return status
     }
 
     public func problem(_ connection: Connection) -> String? {
@@ -312,7 +309,6 @@ extension AppViewModel {
     }
 
     public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
-    public func cacheLocation(_ connection: Connection) -> URL { desktop.cacheLocation(connection) }
 
     public func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
     public func openLog(_ connection: Connection) { desktop.openLog(connection) }
