@@ -211,6 +211,14 @@ import UnlocalFSInfrastructure
             } throws: { error in
                 error.localizedDescription.contains("ends with a space")
             }
+            connection = sftpFixture()
+            connection.encrypted = true
+            connection.sftp.remotePath = "/srv/files "
+            await #expect {
+                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
+            } throws: { error in
+                error.localizedDescription.contains("ends with a space")
+            }
             let root = try #require(fixtureRoot)
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
         }

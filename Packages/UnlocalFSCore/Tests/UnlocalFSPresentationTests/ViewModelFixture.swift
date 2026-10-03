@@ -42,6 +42,7 @@ struct ViewModelFixture {
                     shift
                 done
                 printf '%s' "$config" > '\(root.path)/export-config'
+                printf '%s\\n' "$arguments" >> '\(root.path)/config-arguments'
                 if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
                     printf 'Failed to create %s: %s' "$name" "$arguments" >&2
                     exit 1

@@ -137,6 +137,23 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func sftpSharingIsUnsupportedBeforeCredentialsAreLoaded() async throws {
+        try await withWorkflowFixture { _, drives, paths, _ in
+            let repository = SavedConnectionRepository(
+                store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage(readError: AppError("Keychain unavailable")))
+            let connection = sftpFixture()
+            try repository.save(connection, credentials: Credentials(password: "secret"))
+            let file = paths.mount(connection).appending(path: "plan.pdf")
+            await #expect {
+                _ = try await ShareFilesUseCase(repository: repository, drives: drives).execute([file], expiry: .day)
+            } throws: { error in
+                let message = error.localizedDescription
+                return (error as? ShareFileError)?.file == file && message.contains("SFTP") && !message.contains("Keychain")
+            }
+            #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
+        }
+    }
+
     @Test func quitRefusesAnActiveDrive() async throws {
         try await withWorkflowFixture { _, drives, paths, connection in
             try Data().write(to: paths.socket(connection))
