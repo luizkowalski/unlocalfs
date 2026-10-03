@@ -137,6 +137,60 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func failedConfigExportKeepsTheDestinationAndHidesCredentials() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return """
+            #!/bin/sh
+            if [ "$1" = 'obscure' ]; then printf 'obscured-token'; exit 0; fi
+            while [ $# -gt 0 ]; do
+                if [ "$1" = '--config' ]; then printf '%s' "$2" > '\(root.path)/export-config'; fi
+                printf '%s ' "$1" >&2
+                shift
+            done
+            exit 1
+            """
+        } operation: { service, connection in
+            var connection = connection
+            connection.encrypted = true
+            let destination = FileManager.default.temporaryDirectory.appendingPathComponent("uf-export-\(UUID().uuidString).conf")
+            defer { try? FileManager.default.removeItem(at: destination) }
+            try Data("original".utf8).write(to: destination)
+            let credentials = Credentials(
+                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: "private-password"
+            )
+            await #expect {
+                try await service.exportRcloneConfig(connection, credentials: credentials, to: destination)
+            } throws: { error in
+                !error.localizedDescription.contains("private-") && !error.localizedDescription.contains("obscured-")
+            }
+            #expect(try String(contentsOf: destination, encoding: .utf8) == "original")
+            let root = try #require(fixtureRoot)
+            let scratch = try URL(filePath: String(contentsOf: root.appendingPathComponent("export-config"), encoding: .utf8))
+            #expect(!FileManager.default.fileExists(atPath: scratch.deletingLastPathComponent().path))
+        }
+    }
+
+    @Test func configExportRefusesFoldersEndingInWhitespace() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return "#!/bin/sh\ntouch '\(root.path)/ran'\n"
+        } operation: { service, connection in
+            var connection = connection
+            connection.encrypted = true
+            connection.folder = "clients/acme "
+            await #expect {
+                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
+            } throws: { error in
+                error.localizedDescription.contains("ends with a space")
+            }
+            let root = try #require(fixtureRoot)
+            #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
+        }
+    }
+
     @Test func encryptedDrivesRefuseShareLinks() async throws {
         try await withFixture(script: "#!/bin/sh\nprintf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'\n") { service, connection in
             var connection = connection

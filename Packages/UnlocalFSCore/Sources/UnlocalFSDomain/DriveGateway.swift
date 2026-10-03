@@ -9,6 +9,7 @@ public protocol DriveGateway: Sendable {
     func status(_ connection: Connection) async -> MountStatus
     func activity(_ connection: Connection) async throws -> [FileActivity]
     func refresh(_ connection: Connection) async throws
+    func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws
     func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL
     func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)?
     func removeCache(_ connection: Connection)
