@@ -29,7 +29,7 @@ flowchart LR
 
 `UnlocalFSInfrastructure` depends on Domain. `SavedConnectionRepository` combines `ConnectionStore` and `CredentialStorage`. The application shares one repository instance. A lock serializes complete repository transactions. A failed credential save restores the previous JSON connection or removes a new connection. Delete removes the JSON connection before its credentials, so a failed write keeps both. `Keychain` implements credential storage.
 
-`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. It checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
+`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. `RcloneRemote` describes how rclone reaches a connection's storage: the target, S3 options, and environment. `MountCommand` builds the `nfsmount` arguments and environment from a remote and `AppPaths`. It checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
 
 JSON and Keychain encoding remain compatible with existing installations. Foundation Codable conformance stays on the value types to avoid duplicating unchanged schemas.
 
