@@ -4,7 +4,8 @@ import UnlocalFSDomain
 extension Provider {
     var logo: Image {
         switch self {
-        case .other, .sftp: Image(systemName: "server.rack")
+        case .other: Image(systemName: "server.rack")
+        case .sftp: Image(.sftp)
         case .aws: Image(.amazonS3)
         case .cloudflare: Image(.cloudflare)
         case .minio: Image(.minio)

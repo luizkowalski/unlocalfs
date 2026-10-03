@@ -99,7 +99,7 @@ struct ConnectionDetail: View {
     }
 
     @ViewBuilder private var logo: some View {
-        if connection.provider == .other || connection.isSFTP {
+        if connection.provider == .other {
             connection.provider.logo.font(.system(size: 30, weight: .light))
         } else {
             connection.provider.logo.resizable().scaledToFit()
