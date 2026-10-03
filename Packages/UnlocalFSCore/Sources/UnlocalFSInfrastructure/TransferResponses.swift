@@ -23,3 +23,14 @@ struct TransferStats: Decodable {
         var isUpload: Bool { dstFs != nil }
     }
 }
+
+struct VFSStats: Decodable {
+    let diskCache: DiskCache
+
+    struct DiskCache: Decodable {
+        let uploadsQueued: Int
+        let uploadsInProgress: Int
+        let erroredFiles: Int
+        let bytesUsed: Int64
+    }
+}

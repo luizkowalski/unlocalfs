@@ -3,8 +3,6 @@ import Foundation
 import UnlocalFSDomain
 
 public actor MountService: DriveGateway {
-    private static let logMaxSize = "5M"
-    private static let logMaxBackups = 2
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
 
@@ -28,12 +26,13 @@ public actor MountService: DriveGateway {
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
         let credentials = try await prepareCredentials(credentials)
+        let remote = RcloneRemote(connection: connection, credentials: credentials)
         do {
             _ = try await Command.run(executable, [
-                "lsf", connection.encrypted ? ":crypt:" : remote(connection), "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
+                "lsf", remote.target, "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
-            ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
+            ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
             throw redacted(error, credentials: credentials)
         }
@@ -64,14 +63,15 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
+        let command = MountCommand(remote: RcloneRemote(connection: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
         guard descriptor >= 0 else { throw AppError("Could not open the drive log: \(String(cString: strerror(errno)))") }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { try? log.close() }
         let process = Process()
         process.executableURL = executable
-        process.arguments = mountArguments(for: connection, mount: mount, socket: socket, log: logURL)
-        process.environment = environment(connection, credentials: credentials)
+        process.arguments = command.arguments
+        process.environment = environment(command.environment)
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = log
         process.standardError = log
@@ -187,26 +187,6 @@ public actor MountService: DriveGateway {
         ], environment: baseEnvironment, timeout: .seconds(4))
     }
 
-    private func remote(_ connection: Connection, base: String = ":s3:") -> String {
-        connection.folder.isEmpty ? "\(base)\(connection.bucket)" : "\(base)\(connection.bucket)/\(connection.folder)"
-    }
-
-    private func mountArguments(for connection: Connection, mount: URL, socket: URL, log: URL) -> [String] {
-        var arguments = [
-            "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
-            "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
-            "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
-            "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
-            "--rc", "--rc-no-auth",
-            "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO",
-            "--log-file", log.path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)"
-        ]
-        if connection.bandwidthLimit > 0 { arguments += ["--bwlimit", "\(connection.bandwidthLimit)B"] }
-        if connection.readOnly { arguments.append("--read-only") }
-        return arguments
-    }
-
     private func isRunning(_ connection: Connection) -> Bool? {
         guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8),
               let pid = pid_t(saved), pid > 0 else {
@@ -223,32 +203,8 @@ public actor MountService: DriveGateway {
          "LANG": "en_US.UTF-8"]
     }
 
-    private func environment(_ connection: Connection, credentials: Credentials) -> [String: String] {
-        var environment = baseEnvironment.merging(
-            s3Options(connection, credentials: credentials).map { ("RCLONE_S3_\($0.key.uppercased())", $0.value) }
-        ) { _, new in new }
-        environment["UNLOCALFS_VOLUME_NAME"] = connection.name
-        if connection.encrypted {
-            environment["RCLONE_CRYPT_REMOTE"] = remote(connection)
-            environment["RCLONE_CRYPT_PASSWORD"] = credentials.obscuredEncryptionPassword
-        }
-        return environment
-    }
-
-    private func s3Options(_ connection: Connection, credentials: Credentials?) -> [String: String] {
-        var options = [
-            "provider": connection.provider.rawValue,
-            "endpoint": connection.endpoint,
-            "region": connection.region,
-            "env_auth": "false",
-            "directory_markers": "true"
-        ]
-        if let credentials {
-            options["access_key_id"] = credentials.accessKey
-            options["secret_access_key"] = credentials.secretKey
-            options["session_token"] = credentials.sessionToken
-        }
-        return options
+    private func environment(_ variables: [String: String]) -> [String: String] {
+        baseEnvironment.merging(variables) { _, new in new }
     }
 
     private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
@@ -289,13 +245,14 @@ extension MountService {
         let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let config = scratch.appending(path: "rclone.conf")
+        let remote = RcloneRemote(connection: connection, credentials: prepared)
         var crypt = [
-            "remote": remote(connection, base: "unlocalfs-s3:"), "filename_encryption": "standard",
+            "remote": "unlocalfs-s3:\(remote.path)", "filename_encryption": "standard",
             "directory_name_encryption": "true", "filename_encoding": "base32"
         ]
         crypt["password"] = prepared?.obscuredEncryptionPassword
         do {
-            try await createRemote("unlocalfs-s3", type: "s3", options: s3Options(connection, credentials: prepared), config: config)
+            try await createRemote("unlocalfs-s3", type: "s3", options: remote.s3Options, config: config)
             try await createRemote("unlocalfs", type: "crypt", options: crypt, config: config)
         } catch {
             throw redacted(error, credentials: prepared ?? Credentials())
@@ -323,13 +280,14 @@ extension MountService {
                 throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
             }
         }
+        let remote = RcloneRemote(connection: connection, credentials: credentials)
         let output: Data
         do {
             output = try await Command.run(executable, [
-                "link", "\(remote(connection))/\(path)", "--expire", expiry.rawValue, "--quiet",
+                "link", "\(remote.storage)/\(path)", "--expire", expiry.rawValue, "--quiet",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
-            ], environment: environment(connection, credentials: credentials), timeout: .seconds(20))
+            ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
             throw AppError("""
             Could not create a link. If the file is still uploading, wait for it to finish.
@@ -383,16 +341,5 @@ private extension MountService {
             try await Task.sleep(for: .milliseconds(100))
         }
         throw error
-    }
-}
-
-private struct VFSStats: Decodable {
-    let diskCache: DiskCache
-
-    struct DiskCache: Decodable {
-        let uploadsQueued: Int
-        let uploadsInProgress: Int
-        let erroredFiles: Int
-        let bytesUsed: Int64
     }
 }
