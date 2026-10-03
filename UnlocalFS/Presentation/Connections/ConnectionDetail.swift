@@ -74,7 +74,7 @@ struct ConnectionDetail: View {
                 .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 3) {
                 Text(connection.name).font(.title2.weight(.semibold))
-                Text(verbatim: "\(connection.provider.title) · \(connection.bucket)").foregroundStyle(.secondary)
+                Text(verbatim: "\(connection.provider.title) · \(connection.isSFTP ? connection.sftp.host : connection.bucket)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     switch model.indicator(connection) {
                     case .working: ProgressView().controlSize(.mini)
@@ -124,11 +124,15 @@ struct ConnectionDetail: View {
             .padding(.horizontal, 14)
             Divider()
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
-                detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
-                Divider()
-                detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
-                Divider()
-                detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                if connection.isSFTP {
+                    sftpDetails
+                } else {
+                    detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
+                    Divider()
+                    detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
+                    Divider()
+                    detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                }
                 Divider()
                 detail("Encryption") { connection.encrypted ? Text("On") : Text("Off") }
             }
@@ -136,6 +140,16 @@ struct ConnectionDetail: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
+    }
+
+    @ViewBuilder private var sftpDetails: some View {
+        let sftp = connection.sftp
+        let server = "\(sftp.username)@\(sftp.host):\(sftp.port)"
+        detail("Server") { Text(verbatim: server).help(server) }
+        Divider()
+        detail("Folder") { sftp.remotePath.isEmpty ? Text("Home folder") : Text(verbatim: sftp.remotePath) }
+        Divider()
+        detail("Sign in with") { Text(sftp.authentication.title) }
     }
 
     private func detail(_ label: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {

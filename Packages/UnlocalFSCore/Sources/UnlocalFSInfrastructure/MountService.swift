@@ -26,7 +26,7 @@ public actor MountService: DriveGateway {
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
         let credentials = try await prepareCredentials(credentials)
-        let remote = RcloneRemote(connection: connection, credentials: credentials)
+        let remote = try remote(for: connection, credentials: credentials)
         do {
             _ = try await Command.run(executable, [
                 "lsf", remote.target, "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
@@ -34,17 +34,22 @@ public actor MountService: DriveGateway {
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
-            throw redacted(error, credentials: credentials)
+            throw diagnosed(redacted(error, credentials: credentials), connection: connection)
         }
     }
 
     public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
         var credentials = credentials
-        if !credentials.encryptionPassword.isEmpty, credentials.obscuredEncryptionPassword.isEmpty {
-            let output = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: credentials.encryptionPassword, environment: baseEnvironment)
-            credentials.obscuredEncryptionPassword = String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        }
+        if credentials.obscuredEncryptionPassword.isEmpty { credentials.obscuredEncryptionPassword = try await obscure(credentials.encryptionPassword) }
+        if credentials.obscuredPassword.isEmpty { credentials.obscuredPassword = try await obscure(credentials.password) }
+        if credentials.obscuredKeyPassphrase.isEmpty { credentials.obscuredKeyPassphrase = try await obscure(credentials.keyPassphrase) }
         return credentials
+    }
+
+    private func obscure(_ secret: String) async throws -> String {
+        guard !secret.isEmpty else { return "" }
+        let output = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: secret, environment: baseEnvironment)
+        return String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     public func mount(_ connection: Connection, credentials: Credentials) async throws {
@@ -63,7 +68,7 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
-        let command = MountCommand(remote: RcloneRemote(connection: connection, credentials: credentials), paths: paths)
+        let command = MountCommand(remote: try remote(for: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
         guard descriptor >= 0 else { throw AppError("Could not open the drive log: \(String(cString: strerror(errno)))") }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
@@ -207,11 +212,50 @@ public actor MountService: DriveGateway {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
+    private func remote(for connection: Connection, credentials: Credentials?) throws -> RcloneRemote {
+        guard connection.isSFTP else { return RcloneRemote(connection: connection, credentials: credentials) }
+        let sftp = connection.sftp
+        try requireReadableFile(sftp.trustedHostsPath, named: "trusted-hosts file")
+        if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: "private key file") }
+        let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
+        return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
+    }
+
+    private func requireReadableFile(_ path: String, named name: String) throws {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
+              FileManager.default.isReadableFile(atPath: path) else {
+            throw AppError("UnlocalFS cannot read the \(name): \(path)\nChoose a file that exists and that you can read.")
+        }
+    }
+
+    private func agentSocket(_ sftp: SFTPSettings) throws -> String {
+        let path = sftp.agentSocket.isEmpty ? ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
+        let type = path.flatMap { try? FileManager.default.attributesOfItem(atPath: $0)[.type] as? FileAttributeType }
+        guard let path, type == .typeSocket else {
+            throw AppError("ssh-agent is not available. Start your ssh-agent and load a key, or enter the agent's socket path in the connection.")
+        }
+        return path
+    }
+
+    private func diagnosed(_ error: AppError, connection: Connection) -> AppError {
+        let message = error.localizedDescription
+        guard connection.isSFTP, message.contains("knownhosts:") else { return error }
+        let reason = message.contains("key mismatch") ? "its host key changed" : "its host key is not trusted yet"
+        return AppError("""
+        Could not trust this server because \(reason). Check the server's host key fingerprint with its administrator, \
+        then fix its entry in \(connection.sftp.trustedHostsPath). UnlocalFS never changes this file.
+
+        \(message)
+        """)
+    }
+
     private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
         var message = error.localizedDescription
         let secrets = [
             credentials.accessKey, credentials.secretKey, credentials.sessionToken,
-            credentials.encryptionPassword, credentials.obscuredEncryptionPassword
+            credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
+            credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase
         ]
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
@@ -237,7 +281,7 @@ public actor MountService: DriveGateway {
 
 extension MountService {
     public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
-        guard connection.folder.last?.isWhitespace != true else {
+        guard RcloneRemote(connection: connection, credentials: nil).path.last?.isWhitespace != true else {
             throw AppError("This drive's folder ends with a space, which rclone config files cannot keep. Rename the folder to export a config.")
         }
         var prepared: Credentials?
@@ -247,12 +291,12 @@ extension MountService {
         let config = scratch.appending(path: "rclone.conf")
         let remote = RcloneRemote(connection: connection, credentials: prepared)
         var crypt = [
-            "remote": "unlocalfs-s3:\(remote.path)", "filename_encryption": "standard",
+            "remote": "\(remote.exportName):\(remote.path)", "filename_encryption": "standard",
             "directory_name_encryption": "true", "filename_encoding": "base32"
         ]
         crypt["password"] = prepared?.obscuredEncryptionPassword
         do {
-            try await createRemote("unlocalfs-s3", type: "s3", options: remote.s3Options, config: config)
+            try await createRemote(remote.exportName, type: remote.type, options: remote.options, config: config)
             try await createRemote("unlocalfs", type: "crypt", options: crypt, config: config)
         } catch {
             throw redacted(error, credentials: prepared ?? Credentials())

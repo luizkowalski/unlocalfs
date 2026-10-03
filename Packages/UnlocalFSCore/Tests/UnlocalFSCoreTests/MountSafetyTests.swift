@@ -122,6 +122,66 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func sftpErrorsAndCommandsDoNotExposeCredentials() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "uf-sftp-files-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let key = directory.appending(path: "id")
+        let hosts = directory.appending(path: "known_hosts")
+        try Data().write(to: key)
+        try Data().write(to: hosts)
+        let script = """
+        #!/bin/sh
+        case "$1" in
+            obscure) printf 'obscured-token' ;;
+            lsf)
+                printf '%s' "$*" > '\(directory.path)/arguments'
+                printf '%s' "Denied $RCLONE_SFTP_PASS $RCLONE_SFTP_KEY_FILE_PASS $RCLONE_CRYPT_PASSWORD private-ssh private-phrase private-password" >&2
+                exit 1 ;;
+        esac
+        """
+        try await withFixture(script: script) { service, _ in
+            var connection = sftpFixture()
+            connection.encrypted = true
+            connection.sftp.authentication = .privateKey
+            connection.sftp.keyFile = key.path
+            connection.sftp.trustedHostsFile = hosts.path
+            let credentials = Credentials(encryptionPassword: "private-password", password: "private-ssh", keyPassphrase: "private-phrase")
+            await #expect {
+                try await service.test(connection, credentials: credentials)
+            } throws: { error in
+                let message = error.localizedDescription
+                return message.contains("Denied") && !message.contains("private-") && !message.contains("obscured-")
+            }
+            let arguments = try String(contentsOf: directory.appending(path: "arguments"), encoding: .utf8)
+            #expect(!arguments.contains("private-") && !arguments.contains("obscured-"))
+        }
+    }
+
+    @Test func sftpTestRefusesUnreadableTrustAndKeyFilesWithoutRunningRclone() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return "#!/bin/sh\nif [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
+        } operation: { service, _ in
+            var connection = sftpFixture()
+            connection.sftp.trustedHostsFile = "/nonexistent/known_hosts"
+            await #expect { try await service.test(connection, credentials: Credentials(password: "secret")) } throws: {
+                $0.localizedDescription.contains("/nonexistent/known_hosts")
+            }
+            let root = try #require(fixtureRoot)
+            let hosts = root.appending(path: "known_hosts")
+            try Data().write(to: hosts)
+            connection.sftp.trustedHostsFile = hosts.path
+            connection.sftp.authentication = .privateKey
+            connection.sftp.keyFile = "/nonexistent/id"
+            await #expect { try await service.test(connection, credentials: Credentials()) } throws: {
+                $0.localizedDescription.contains("/nonexistent/id")
+            }
+            #expect(!FileManager.default.fileExists(atPath: root.appending(path: "ran").path))
+        }
+    }
+
     @Test func shareLinksNeedTheControlServiceToCheckUploads() async throws {
         let script = """
         #!/bin/sh
@@ -146,6 +206,14 @@ import UnlocalFSInfrastructure
             var connection = connection
             connection.encrypted = true
             connection.folder = "clients/acme "
+            await #expect {
+                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
+            } throws: { error in
+                error.localizedDescription.contains("ends with a space")
+            }
+            connection = sftpFixture()
+            connection.encrypted = true
+            connection.sftp.remotePath = "/srv/files "
             await #expect {
                 try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
             } throws: { error in

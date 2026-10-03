@@ -92,3 +92,69 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     connection.folder = folder
     return connection
 }
+
+@Suite struct SFTPValidationTests {
+    @Test(arguments: ["", "uploads", "/srv/files", "~/files", " spaced path /"])
+    func validSFTPConnectionHasNoIssues(remotePath: String) {
+        var connection = sftpFixture()
+        connection.sftp.remotePath = remotePath
+        #expect(connection.validate(credentials: Credentials(password: "secret"), confirmation: "", against: []).isValid)
+    }
+
+    @Test(arguments: [
+        (ConnectionField.host, sftpSettings { $0.host = " " }),
+        (.host, sftpSettings { $0.host = "bad host" }),
+        (.port, sftpSettings { $0.port = 0 }),
+        (.port, sftpSettings { $0.port = 65_536 }),
+        (.username, sftpSettings { $0.username = "" }),
+        (.remotePath, sftpSettings { $0.remotePath = "bad\nfolder" }),
+        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "" }),
+        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" }),
+        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "" }),
+        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "none" }),
+        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "known_hosts" })
+    ])
+    func invalidSFTPInputNamesTheField(field: ConnectionField, settings: SFTPSettings) {
+        var connection = sftpFixture()
+        connection.sftp = settings
+        #expect(connection.validate().issues.map(\.field) == [field])
+    }
+
+    @Test func passwordModeRequiresAPasswordButOtherModesDoNot() {
+        var connection = sftpFixture()
+        #expect(Credentials().validate(for: connection).issues.map(\.field) == [.password])
+        connection.sftp.authentication = .privateKey
+        connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
+        #expect(Credentials().validate(for: connection).isValid)
+        connection.sftp.authentication = .agent
+        #expect(Credentials().validate(for: connection).isValid)
+    }
+
+    @Test func inactiveAuthenticationInputsAreIgnored() {
+        var connection = sftpFixture()
+        connection.sftp.authentication = .agent
+        connection.sftp.keyFile = "not a path"
+        #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).isValid)
+    }
+
+    @Test func switchingBackToS3RestoresS3Validation() {
+        var connection = sftpFixture()
+        connection.provider = .other
+        #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).issues.map(\.field) == [.endpoint, .endpoint, .bucket, .accessKey, .secretKey])
+    }
+}
+
+private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {
+    var settings = sftpFixture().sftp
+    change(&settings)
+    return settings
+}
+
+func sftpFixture(name: String = "Server") -> Connection {
+    var connection = Connection()
+    connection.name = name
+    connection.provider = .sftp
+    connection.sftp.host = "files.example.com"
+    connection.sftp.username = "me"
+    return connection
+}
