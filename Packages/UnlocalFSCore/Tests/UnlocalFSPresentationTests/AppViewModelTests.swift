@@ -159,42 +159,6 @@ import UnlocalFSPresentation
         #expect(notification.fallbackToAlert)
     }
 
-    @Test func exportWithoutSecretsWritesTheConfigWithoutReadingSavedCredentials() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = try fixture.saveEncryptedConnection()
-        let desktop = TestDesktopServices(paths: fixture.paths)
-        let destination = fixture.root.appending(path: "My files rclone.conf")
-        desktop.rcloneConfigDestination = RcloneConfigDestination(url: destination, includesSecrets: false)
-        let app = fixture.app(desktop: desktop)
-
-        await app.exportRcloneConfig(connection)
-
-        #expect(app.alert == nil)
-        #expect(try String(contentsOf: destination, encoding: .utf8) == "[unlocalfs-s3]\n[unlocalfs]\n")
-        let arguments = try fixture.configArguments()
-        #expect(!arguments.contains("saved-"))
-        #expect(!arguments.contains("prepared-password"))
-    }
-
-    @Test func exportWithSecretsIncludesSavedKeysAndTheObscuredPassword() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = try fixture.saveEncryptedConnection()
-        let desktop = TestDesktopServices(paths: fixture.paths)
-        desktop.rcloneConfigDestination = RcloneConfigDestination(url: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
-        let app = fixture.app(desktop: desktop)
-
-        await app.exportRcloneConfig(connection)
-
-        #expect(app.alert == nil)
-        let arguments = try fixture.configArguments()
-        #expect(arguments.contains("access_key_id=saved-access"))
-        #expect(arguments.contains("secret_access_key=saved-secret"))
-        #expect(arguments.contains("password=prepared-password"))
-        #expect(!arguments.contains("saved-password"))
-    }
-
     @Test func cancellingTheExportWritesNothing() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
@@ -204,24 +168,30 @@ import UnlocalFSPresentation
         await app.exportRcloneConfig(connection)
 
         #expect(app.alert == nil)
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "config-arguments").path))
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
     }
 
-    @Test func failedExportShowsAnAlertWithoutSecrets() async throws {
+    @Test(arguments: ["unlocalfs-s3", "unlocalfs"])
+    func failedExportKeepsTheDestinationAndShowsAnAlertWithoutSecrets(remote: String) async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = try fixture.saveEncryptedConnection()
-        FileManager.default.createFile(atPath: fixture.root.appending(path: "config-error").path, contents: nil)
+        try remote.write(to: fixture.root.appending(path: "config-error"), atomically: true, encoding: .utf8)
         let desktop = TestDesktopServices(paths: fixture.paths)
-        desktop.rcloneConfigDestination = RcloneConfigDestination(url: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
+        let destination = fixture.root.appending(path: "My files rclone.conf")
+        try Data("original".utf8).write(to: destination)
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: destination, includesSecrets: true)
         let app = fixture.app(desktop: desktop)
 
         await app.exportRcloneConfig(connection)
 
         let alert = try #require(app.alert)
-        #expect(alert.contains("config"))
+        #expect(alert.contains("Failed to create \(remote)"))
         #expect(!alert.contains("saved-"))
         #expect(!alert.contains("prepared-password"))
+        #expect(try String(contentsOf: destination, encoding: .utf8) == "original")
+        let config = try String(contentsOf: fixture.root.appending(path: "export-config"), encoding: .utf8)
+        #expect(!FileManager.default.fileExists(atPath: URL(filePath: config).deletingLastPathComponent().path))
     }
 
     @Test func unencryptedDrivesCannotExportAConfig() async throws {
@@ -234,7 +204,7 @@ import UnlocalFSPresentation
         await #expect(throws: AppError.self) {
             try await export.execute(connection, to: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
         }
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "config-arguments").path))
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
     }
 
     @Test func loginFailureKeepsTheSystemStateAndShowsAnError() throws {

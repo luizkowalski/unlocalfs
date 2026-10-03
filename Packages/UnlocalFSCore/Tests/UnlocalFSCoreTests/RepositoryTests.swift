@@ -71,7 +71,14 @@ import UnlocalFSInfrastructure
 final class MemoryCredentialStorage: CredentialStorage {
     private let items = Mutex<[UUID: Credentials]>([:])
 
-    func read(_ id: UUID) throws -> Credentials? { items.withLock { $0[id] } }
+    private let readError: AppError?
+
+    init(readError: AppError? = nil) { self.readError = readError }
+
+    func read(_ id: UUID) throws -> Credentials? {
+        if let readError { throw readError }
+        return items.withLock { $0[id] }
+    }
     func save(_ credentials: Credentials, for id: UUID) throws { items.withLock { $0[id] = credentials } }
     func delete(_ id: UUID) throws { items.withLock { $0[id] = nil } }
 }

@@ -2,19 +2,22 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSPresentation
 
 extension MountTests {
-    @Test func exportedConfigReadsFilesUploadedThroughTheDrive() async throws {
-        try await withDrive(encrypted: true) { drive in
+    @MainActor @Test func exportedConfigReadsFilesUploadedThroughTheDrive() async throws {
+        try await withAppDrive(encrypted: true, credentials: encryptedDriveCredentials) { drive, app, desktop in
             let credentials = try await drive.service.prepareCredentials(
                 encryptedDriveCredentials)
             try await drive.service.mount(drive.connection, credentials: credentials)
             try Data("top secret".utf8).write(to: drive.mounted.appendingPathComponent("secret plan.txt"))
             try await drive.waitForUploads(on: drive.service)
             try await drive.service.unmount(drive.connection)
-            let config = try exportLocation()
+            let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
 
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
+            desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: true)
+            await app.exportRcloneConfig(drive.connection)
+            #expect(app.alert == nil)
 
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
             let remotes = try await dump(drive, config)
@@ -25,28 +28,33 @@ extension MountTests {
         }
     }
 
-    @Test(arguments: ["clients/acme", #"clients/a"b,c #1;x"#])
+    @MainActor @Test(arguments: ["clients/acme", #"clients/a"b,c #1;x"#])
     func exportedConfigReadsFolderDrives(folder: String) async throws {
-        try await withDrive(folder: folder, encrypted: true) { drive in
+        try await withAppDrive(folder: folder, encrypted: true, credentials: encryptedDriveCredentials) { drive, app, desktop in
             let storage = drive.bucket.appendingPathComponent(folder)
             try FileManager.default.createDirectory(at: storage, withIntermediateDirectories: true)
             try await writeEncrypted("top secret", named: "secret plan.txt", to: storage, executable: drive.executable)
-            let config = try exportLocation()
+            let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
 
-            try await drive.service.exportRcloneConfig(
-                drive.connection, credentials: encryptedDriveCredentials,
-                to: config)
+            desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: true)
+            await app.exportRcloneConfig(drive.connection)
+            #expect(app.alert == nil)
 
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
         }
     }
 
-    @Test func exportedConfigWithoutSecretsReadsTheDriveAfterAddingThem() async throws {
-        try await withDrive(encrypted: true) { drive in
+    @MainActor @Test func exportedConfigWithoutSecretsWorksWhenCredentialStorageIsUnavailable() async throws {
+        try await withAppDrive(
+            encrypted: true, credentials: encryptedDriveCredentials,
+            credentialStorage: MemoryCredentialStorage(readError: AppError("Keychain unavailable"))
+        ) { drive, app, desktop in
             try await writeEncrypted("top secret", named: "secret plan.txt", to: drive.bucket, executable: drive.executable)
-            let config = try exportLocation()
+            let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
 
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: nil, to: config)
+            desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: false)
+            await app.exportRcloneConfig(drive.connection)
+            #expect(app.alert == nil)
 
             let remotes = try await dump(drive, config)
             let keys = Set(remotes.values.flatMap(\.keys))
@@ -60,15 +68,15 @@ extension MountTests {
         }
     }
 
-    @Test func exportReplacesAnExistingFileAndKeepsItPrivate() async throws {
-        try await withDrive(encrypted: true) { drive in
-            let config = try exportLocation()
+    @MainActor @Test func exportReplacesAnExistingFileAndKeepsItPrivate() async throws {
+        try await withAppDrive(encrypted: true, credentials: encryptedDriveCredentials) { drive, app, desktop in
+            let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
             try Data("[other]\ntype = alias\nremote = /tmp\n".utf8).write(to: config)
             try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: config.path)
 
-            try await drive.service.exportRcloneConfig(
-                drive.connection, credentials: encryptedDriveCredentials,
-                to: config)
+            desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: true)
+            await app.exportRcloneConfig(drive.connection)
+            #expect(app.alert == nil)
 
             #expect(try await Set(dump(drive, config).keys) == ["unlocalfs", "unlocalfs-s3"])
             let permissions = try FileManager.default.attributesOfItem(atPath: config.path)[.posixPermissions] as? Int
@@ -88,12 +96,6 @@ extension MountTests {
 }
 
 private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
-
-private func exportLocation() throws -> URL {
-    let directory = FileManager.default.temporaryDirectory.appendingPathComponent("uf-export-\(UUID().uuidString)")
-    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-    return directory.appendingPathComponent("My files rclone.conf")
-}
 
 private func rclone(_ drive: Drive, _ config: URL, _ arguments: String...) async throws -> String {
     let output = try await Command.run(

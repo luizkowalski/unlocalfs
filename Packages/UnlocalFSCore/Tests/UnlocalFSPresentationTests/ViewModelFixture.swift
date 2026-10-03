@@ -35,16 +35,18 @@ struct ViewModelFixture {
                 esac
                 ;;
             config)
-                printf '%s\\n' "$@" >> '\(root.path)/config-arguments'
-                if [ -f '\(root.path)/config-error' ]; then
-                    printf '%s ' "$@" >&2
-                    exit 1
-                fi
                 name="$3"
+                arguments="$*"
                 while [ $# -gt 0 ]; do
-                    if [ "$1" = '--config' ]; then printf '[%s]\\n' "$name" >> "$2"; fi
+                    if [ "$1" = '--config' ]; then config="$2"; fi
                     shift
                 done
+                printf '%s' "$config" > '\(root.path)/export-config'
+                if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
+                    printf 'Failed to create %s: %s' "$name" "$arguments" >&2
+                    exit 1
+                fi
+                printf '[%s]\\n' "$name" >> "$config"
                 ;;
             *) exit 1 ;;
         esac
@@ -85,12 +87,9 @@ struct ViewModelFixture {
     func saveEncryptedConnection() throws -> Connection {
         var connection = connectionFixture()
         connection.encrypted = true
-        try repository.save(connection, credentials: Credentials(accessKey: "saved-access", secretKey: "saved-secret", encryptionPassword: "saved-password"))
+        try repository.save(connection, credentials: Credentials(
+            accessKey: "saved-access", secretKey: "saved-secret", sessionToken: "saved-token", encryptionPassword: "saved-password"))
         return connection
-    }
-
-    func configArguments() throws -> String {
-        try String(contentsOf: root.appending(path: "config-arguments"), encoding: .utf8)
     }
 
     func remove() { try? FileManager.default.removeItem(at: root) }
