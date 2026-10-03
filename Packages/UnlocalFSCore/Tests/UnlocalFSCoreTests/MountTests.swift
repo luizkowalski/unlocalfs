@@ -270,7 +270,7 @@ struct MountTests {
     }
 }
 
-private let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
 struct Drive {
