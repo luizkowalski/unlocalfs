@@ -216,15 +216,9 @@ public actor MountService: DriveGateway {
         guard connection.isSFTP else { return RcloneRemote(connection: connection, credentials: credentials) }
         let sftp = connection.sftp
         try requireReadableFile(sftp.trustedHostsPath, named: "trusted-hosts file")
-        switch sftp.authentication {
-        case .password:
-            return RcloneRemote(connection: connection, credentials: credentials)
-        case .privateKey:
-            try requireReadableFile(sftp.keyPath, named: "private key file")
-            return RcloneRemote(connection: connection, credentials: credentials)
-        case .agent:
-            return RcloneRemote(connection: connection, credentials: credentials, agentSocket: try agentSocket(sftp))
-        }
+        if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: "private key file") }
+        let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
+        return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
     }
 
     private func requireReadableFile(_ path: String, named name: String) throws {
@@ -236,9 +230,9 @@ public actor MountService: DriveGateway {
     }
 
     private func agentSocket(_ sftp: SFTPSettings) throws -> String {
-        let path = sftp.agentSocket.isEmpty ? getenv("SSH_AUTH_SOCK").map { String(cString: $0) } : sftp.agentSocketPath
-        var info = stat()
-        guard let path, stat(path, &info) == 0, info.st_mode & S_IFMT == S_IFSOCK else {
+        let path = sftp.agentSocket.isEmpty ? ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
+        let type = path.flatMap { try? FileManager.default.attributesOfItem(atPath: $0)[.type] as? FileAttributeType }
+        guard let path, type == .typeSocket else {
             throw AppError("ssh-agent is not available. Start your ssh-agent and load a key, or enter the agent's socket path in the connection.")
         }
         return path

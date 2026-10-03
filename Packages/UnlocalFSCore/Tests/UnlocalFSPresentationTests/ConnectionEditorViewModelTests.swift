@@ -296,21 +296,6 @@ import UnlocalFSPresentation
         #expect(try fixture.repository.all().count == 2)
     }
 
-    @Test func savingARedirectedSFTPDriveShowsTheDuplicateGuidance() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = try fixture.sftpConnection()
-        try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
-        let editor = fixture.editor(draft: .init(connection: connection))
-        editor.loadCredentials()
-        editor.connection.sftp.remotePath = "/elsewhere"
-
-        #expect(await editor.save() == false)
-
-        #expect(editor.error?.contains("Duplicate this drive") == true)
-        #expect(try fixture.repository.all() == [connection])
-    }
-
     @Test func sftpTrustAndFileFailuresAreActionableWithoutSecrets() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

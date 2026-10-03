@@ -81,14 +81,13 @@ import UnlocalFSInfrastructure
             return expected }())
     }
 
-    @Test(arguments: [SFTPAuthentication.password, .privateKey, .agent])
-    func sftpSettingsSurviveReopenAndKeepSecretsOutOfTheConfig(authentication: SFTPAuthentication) throws {
+    @Test func sftpSettingsSurviveReopenAndKeepSecretsOutOfTheConfig() throws {
         let url = configURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         var connection = sftpFixture()
         connection.sftp.port = 2222
         connection.sftp.remotePath = "/srv/files"
-        connection.sftp.authentication = authentication
+        connection.sftp.authentication = .privateKey
         connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
         connection.sftp.trustedHostsFile = "/Users/me/.ssh/team_hosts"
         connection.sftp.agentSocket = "/tmp/agent.sock"

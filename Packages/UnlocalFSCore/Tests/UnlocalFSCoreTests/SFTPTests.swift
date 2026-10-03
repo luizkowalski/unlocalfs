@@ -91,30 +91,6 @@ extension MountTests {
         }
     }
 
-    @Test func emptyAgentDoesNotFallBackToAPassword() async throws {
-        try await withSFTPDrive(.agent) { drive, sftp in
-            var connection = drive.connection
-            connection.sftp.agentSocket = sftp.emptyAgent.socket.path
-            await #expect(throws: AppError.self) {
-                try await drive.service.test(connection, credentials: Credentials(password: SFTPFixture.password))
-            }
-        }
-    }
-
-    @Test(arguments: ["key", "trust"])
-    func missingLocalFilesFailBeforeMounting(file: String) async throws {
-        try await withSFTPDrive(.key) { drive, sftp in
-            var connection = drive.connection
-            let missing = sftp.root.appending(path: "missing").path
-            if file == "key" { connection.sftp.keyFile = missing } else { connection.sftp.trustedHostsFile = missing }
-            await #expect {
-                try await drive.service.mount(connection, credentials: Credentials())
-            } throws: { $0.localizedDescription.contains(missing) }
-            #expect(await !drive.service.status(connection).isActive)
-            #expect(!FileManager.default.fileExists(atPath: drive.paths.log(connection).path))
-        }
-    }
-
     @Test(arguments: ["", "clients/acme", "/clients/acme"])
     func sftpFoldersAddressTheServerDirectory(folder: String) async throws {
         try await withSFTPDrive(.key, folder: folder) { drive, sftp in

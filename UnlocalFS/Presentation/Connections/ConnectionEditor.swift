@@ -164,9 +164,7 @@ struct ConnectionEditor: View {
                 validated(.keyFile, error: errors[.keyFile]) {
                     fileChooser("Private key", path: $viewModel.connection.sftp.keyFile, prompt: "~/.ssh/id_ed25519")
                 }
-                validated(.keyPassphrase, error: errors[.keyPassphrase]) {
-                    SecureField("Passphrase", text: $viewModel.credentials.keyPassphrase, prompt: Text("If the key has one"))
-                }
+                SecureField("Passphrase", text: $viewModel.credentials.keyPassphrase, prompt: Text("If the key has one"))
             case .agent:
                 TextField("Agent socket", text: $viewModel.connection.sftp.agentSocket, prompt: Text("Optional, uses your Mac’s agent"))
             }

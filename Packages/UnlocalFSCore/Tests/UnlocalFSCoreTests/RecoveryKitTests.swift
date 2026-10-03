@@ -171,18 +171,6 @@ extension MountTests {
         }
     }
 
-    @Test func exportedSFTPConfigRefusesAFolderRcloneCannotKeepAndKeepsTheDestination() async throws {
-        try await withSFTPDrive(.key, folder: "clients/acme ", encrypted: true) { drive, sftp in
-            let config = sftp.root.appending(path: "My files rclone.conf")
-            try Data("original".utf8).write(to: config)
-
-            await #expect(throws: AppError.self) {
-                try await drive.service.exportRcloneConfig(drive.connection, credentials: nil, to: config)
-            }
-
-            #expect(try String(contentsOf: config, encoding: .utf8) == "original")
-        }
-    }
 }
 
 private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")

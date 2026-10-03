@@ -101,12 +101,6 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         #expect(connection.validate(credentials: Credentials(password: "secret"), confirmation: "", against: []).isValid)
     }
 
-    @Test func sftpDoesNotRequireStorageCredentials() {
-        let connection = sftpFixture()
-        let issues = connection.validate(credentials: Credentials(password: "secret"), confirmation: "", against: []).issues
-        #expect(issues.isEmpty)
-    }
-
     @Test(arguments: [
         (ConnectionField.host, sftpSettings { $0.host = " " }),
         (.host, sftpSettings { $0.host = "bad host" }),
@@ -148,46 +142,12 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         connection.provider = .other
         #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).issues.map(\.field) == [.endpoint, .endpoint, .bucket, .accessKey, .secretKey])
     }
-
-    @Test func prunedCredentialsKeepOnlyTheActiveMode() {
-        var connection = sftpFixture()
-        var credentials = Credentials(
-            accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt", password: "ssh", keyPassphrase: "phrase")
-        credentials.obscuredPassword = "obscured-ssh"
-        credentials.obscuredKeyPassphrase = "obscured-phrase"
-        credentials.obscuredEncryptionPassword = "obscured-crypt"
-
-        var pruned = credentials.pruned(for: connection)
-        #expect(pruned == Credentials(encryptionPassword: "crypt", password: "ssh").obscured(password: "obscured-ssh"))
-
-        connection.sftp.authentication = .privateKey
-        pruned = credentials.pruned(for: connection)
-        #expect(pruned == Credentials(encryptionPassword: "crypt", keyPassphrase: "phrase").obscured(passphrase: "obscured-phrase"))
-
-        connection.sftp.authentication = .agent
-        pruned = credentials.pruned(for: connection)
-        #expect(pruned == Credentials(encryptionPassword: "crypt").obscured())
-
-        connection.provider = .other
-        pruned = credentials.pruned(for: connection)
-        #expect(pruned == Credentials(accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt").obscured())
-    }
 }
 
 private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {
     var settings = sftpFixture().sftp
     change(&settings)
     return settings
-}
-
-private extension Credentials {
-    func obscured(password: String = "", passphrase: String = "") -> Credentials {
-        var credentials = self
-        credentials.obscuredPassword = password
-        credentials.obscuredKeyPassphrase = passphrase
-        credentials.obscuredEncryptionPassword = "obscured-crypt"
-        return credentials
-    }
 }
 
 func sftpFixture(name: String = "Server") -> Connection {

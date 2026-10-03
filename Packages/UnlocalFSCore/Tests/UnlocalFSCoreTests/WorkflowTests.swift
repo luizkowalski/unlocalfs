@@ -97,6 +97,25 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test(arguments: [SFTPAuthentication.password, .privateKey, .agent])
+    func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication) async throws {
+        try await withWorkflowFixture { repository, drives, _, _ in
+            var connection = sftpFixture()
+            connection.encrypted = true
+            connection.sftp.authentication = authentication
+            connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
+            try repository.save(connection, credentials: Credentials(encryptionPassword: "crypt"))
+            _ = try await SaveConnectionUseCase(repository: repository, drives: drives).execute(
+                connection, credentials: Credentials(
+                    accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt",
+                    password: "ssh", keyPassphrase: "phrase"))
+            let saved = try repository.credentials(for: connection.id)
+            #expect(saved == Credentials(
+                encryptionPassword: "crypt", password: authentication == .password ? "ssh" : "",
+                keyPassphrase: authentication == .privateKey ? "phrase" : ""))
+        }
+    }
+
     @Test func duplicatingASFTPDriveAllowsANewFolderUnderANewIdentity() async throws {
         try await withWorkflowFixture { repository, drives, paths, _ in
             let original = sftpFixture()

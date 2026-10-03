@@ -64,7 +64,11 @@ struct RcloneRemote {
 }
 
 extension SFTPSettings {
-    var trustedHostsPath: String { NSString(string: trustedHostsFile).expandingTildeInPath }
-    var keyPath: String { NSString(string: keyFile).expandingTildeInPath }
-    var agentSocketPath: String { NSString(string: agentSocket).expandingTildeInPath }
+    var trustedHostsPath: String { trustedHostsFile.expandingTilde }
+    var keyPath: String { keyFile.expandingTilde }
+    var agentSocketPath: String { agentSocket.expandingTilde }
+}
+
+private extension String {
+    var expandingTilde: String { (self as NSString).expandingTildeInPath }
 }
