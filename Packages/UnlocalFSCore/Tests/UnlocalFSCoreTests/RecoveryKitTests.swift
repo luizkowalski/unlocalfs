@@ -96,97 +96,20 @@ extension MountTests {
     }
 }
 
-extension MountTests {
-    @Test(arguments: [SFTPLogin.password, .key, .protectedKey, .agent])
-    func exportedConfigReadsFilesUploadedThroughAnEncryptedSFTPDrive(login: SFTPLogin) async throws {
-        try await withSFTPDrive(login, encrypted: true) { drive, sftp in
-            let credentials = try await drive.service.prepareCredentials(sftp.credentials(login, encryptionPassword: encryptedDriveCredentials.encryptionPassword))
-            try await drive.service.mount(drive.connection, credentials: credentials)
-            try Data("top secret".utf8).write(to: drive.mounted.appending(path: "secret plan.txt"))
-            try await drive.waitForUploads(on: drive.service)
-            try await drive.service.unmount(drive.connection)
-            let config = sftp.root.appending(path: "My files rclone.conf")
+let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
 
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
-
-            let environment = ["SSH_AUTH_SOCK": sftp.agent.socket.path]
-            #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment) == "top secret")
-            let remote = try #require(try await dump(drive, config)["unlocalfs-sftp"])
-            #expect(remote["shell_type"] == "none" && remote["known_hosts_file"] == sftp.knownHosts.path)
-            #expect(remote["port"] == "\(SFTPFixture.port)" && remote["user"] == "test" && remote["host"] == "127.0.0.1")
-        }
-    }
-
-    @Test(arguments: [SFTPLogin.password, .protectedKey, .agent])
-    func exportedSFTPConfigWithoutSecretsRecoversOnceCredentialsAreSupplied(login: SFTPLogin) async throws {
-        try await withSFTPDrive(login, encrypted: true) { drive, sftp in
-            try await writeEncrypted("top secret", named: "secret plan.txt", to: sftp.served, executable: drive.executable)
-            let config = sftp.root.appending(path: "My files rclone.conf")
-
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: nil, to: config)
-
-            let remotes = try await dump(drive, config)
-            let keys = Set(remotes.values.flatMap(\.keys))
-            #expect(keys.isDisjoint(with: ["pass", "key_file_pass", "password"]))
-            #expect(!(try String(contentsOf: config, encoding: .utf8)).contains(SFTPFixture.password))
-            let environment = ["SSH_AUTH_SOCK": sftp.agent.socket.path]
-            await #expect(throws: (any Error).self) {
-                _ = try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment)
-            }
-            if login == .password { _ = try await rclone(drive, config, "config", "update", "unlocalfs-sftp", "pass=\(SFTPFixture.password)", "--obscure") }
-            if login == .protectedKey { _ = try await rclone(drive, config, "config", "update", "unlocalfs-sftp", "key_file_pass=\(SFTPFixture.passphrase)", "--obscure") }
-            _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password=\(encryptedDriveCredentials.encryptionPassword)", "--obscure")
-            #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment) == "top secret")
-        }
-    }
-
-    @Test func exportedSFTPConfigStillRefusesAChangedServerKey() async throws {
-        try await withSFTPDrive(.password, encrypted: true) { drive, sftp in
-            try await writeEncrypted("top secret", named: "secret plan.txt", to: sftp.served, executable: drive.executable)
-            let config = sftp.root.appending(path: "My files rclone.conf")
-            let credentials = try await drive.service.prepareCredentials(sftp.credentials(.password, encryptionPassword: encryptedDriveCredentials.encryptionPassword))
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
-            #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
-
-            try await sftp.restartServer(hostKey: "other-host")
-
-            await #expect {
-                _ = try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt")
-            } throws: { $0.localizedDescription.contains("knownhosts") }
-        }
-    }
-
-    @Test(arguments: ["clients/acme", "/clients/acme", #"clients/a"b,c #1;x"#, ""])
-    func exportedSFTPConfigKeepsTheRemoteFolder(folder: String) async throws {
-        try await withSFTPDrive(.key, folder: folder, encrypted: true) { drive, sftp in
-            let storage = sftp.served.appending(path: folder)
-            try FileManager.default.createDirectory(at: storage, withIntermediateDirectories: true)
-            try await writeEncrypted("top secret", named: "secret plan.txt", to: storage, executable: drive.executable)
-            let config = sftp.root.appending(path: "My files rclone.conf")
-            let credentials = try await drive.service.prepareCredentials(sftp.credentials(.key, encryptionPassword: encryptedDriveCredentials.encryptionPassword))
-
-            try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
-
-            #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
-        }
-    }
-
-}
-
-private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
-
-private func rclone(_ drive: Drive, _ config: URL, _ arguments: String..., environment: [String: String] = [:]) async throws -> String {
+func rclone(_ drive: Drive, _ config: URL, _ arguments: String..., environment: [String: String] = [:]) async throws -> String {
     let output = try await Command.run(
         drive.executable, arguments + ["--config", config.path],
         environment: ["HOME": URL.homeDirectory.path, "PATH": "/usr/bin:/bin"].merging(environment) { _, new in new })
     return String(decoding: output, as: UTF8.self)
 }
 
-private func dump(_ drive: Drive, _ config: URL) async throws -> [String: [String: String]] {
+func dump(_ drive: Drive, _ config: URL) async throws -> [String: [String: String]] {
     try await JSONDecoder().decode([String: [String: String]].self, from: Data(rclone(drive, config, "config", "dump").utf8))
 }
 
-private func writeEncrypted(_ contents: String, named name: String, to storage: URL, executable: URL) async throws {
+func writeEncrypted(_ contents: String, named name: String, to storage: URL, executable: URL) async throws {
     let password = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: encryptedDriveCredentials.encryptionPassword)
     _ = try await Command.run(
         executable, ["rcat", ":crypt:\(name)", "--config", "/dev/null"], input: contents,

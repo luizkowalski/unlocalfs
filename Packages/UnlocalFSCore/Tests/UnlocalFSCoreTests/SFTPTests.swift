@@ -4,7 +4,8 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-extension MountTests {
+@Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+struct SFTPTests {
     @Test(arguments: SFTPLogin.allCases)
     func sftpDriveAuthenticatesReadsAndWrites(login: SFTPLogin) async throws {
         try await withSFTPDrive(login) { drive, sftp in
@@ -56,37 +57,6 @@ extension MountTests {
             }
 
             #expect(try Data(contentsOf: trustedHosts) == before)
-            #expect(await !drive.service.status(connection).isActive)
-        }
-    }
-
-    @Test func agentSocketOverrideTakesPrecedenceOverTheEnvironment() async throws {
-        try await withSFTPDrive(.agent) { drive, sftp in
-            try await withAgentEnvironment(sftp.agent.socket.path) {
-                var connection = drive.connection
-                connection.sftp.agentSocket = ""
-                try await drive.service.test(connection, credentials: Credentials())
-                connection.sftp.agentSocket = sftp.emptyAgent.socket.path
-                await #expect(throws: AppError.self) {
-                    try await drive.service.test(connection, credentials: Credentials(password: SFTPFixture.password))
-                }
-            }
-        }
-    }
-
-    @Test(arguments: ["missing", "stale", "unset"])
-    func unavailableAgentFailsClearly(kind: String) async throws {
-        try await withSFTPDrive(.agent) { drive, sftp in
-            var connection = drive.connection
-            let socket = sftp.root.appending(path: "stale.sock")
-            try Self.leaveStaleSocket(at: socket)
-            connection.sftp.agentSocket = kind == "missing" ? sftp.root.appending(path: "none.sock").path : kind == "stale" ? socket.path : ""
-            try await withAgentEnvironment(nil) {
-                for attempt in [{ try await drive.service.test(connection, credentials: Credentials()) },
-                                { try await drive.service.mount(connection, credentials: Credentials()) }] {
-                    await #expect { try await attempt() } throws: { $0.localizedDescription.contains("ssh-agent") }
-                }
-            }
             #expect(await !drive.service.status(connection).isActive)
         }
     }
@@ -144,6 +114,40 @@ extension MountTests {
                 #expect(!String(decoding: arguments, as: UTF8.self).contains(secret))
                 #expect(!log.contains(secret))
             }
+        }
+    }
+}
+
+@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+struct SFTPAgentEnvironmentTests {
+    @Test func agentSocketOverrideTakesPrecedenceOverTheEnvironment() async throws {
+        try await withSFTPDrive(.agent) { drive, sftp in
+            try await withAgentEnvironment(sftp.agent.socket.path) {
+                var connection = drive.connection
+                connection.sftp.agentSocket = ""
+                try await drive.service.test(connection, credentials: Credentials())
+                connection.sftp.agentSocket = sftp.emptyAgent.socket.path
+                await #expect(throws: AppError.self) {
+                    try await drive.service.test(connection, credentials: Credentials(password: SFTPFixture.password))
+                }
+            }
+        }
+    }
+
+    @Test(arguments: ["missing", "stale", "unset"])
+    func unavailableAgentFailsClearly(kind: String) async throws {
+        try await withSFTPDrive(.agent) { drive, sftp in
+            var connection = drive.connection
+            let socket = sftp.root.appending(path: "stale.sock")
+            try Self.leaveStaleSocket(at: socket)
+            connection.sftp.agentSocket = kind == "missing" ? sftp.root.appending(path: "none.sock").path : kind == "stale" ? socket.path : ""
+            try await withAgentEnvironment(nil) {
+                for attempt in [{ try await drive.service.test(connection, credentials: Credentials()) },
+                                { try await drive.service.mount(connection, credentials: Credentials()) }] {
+                    await #expect { try await attempt() } throws: { $0.localizedDescription.contains("ssh-agent") }
+                }
+            }
+            #expect(await !drive.service.status(connection).isActive)
         }
     }
 
