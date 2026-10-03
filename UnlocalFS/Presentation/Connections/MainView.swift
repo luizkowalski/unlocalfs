@@ -67,6 +67,22 @@ private struct ConnectionRow: View {
     @Environment(AppViewModel.self) private var model
     let connection: Connection
 
+    @ViewBuilder private var icon: some View {
+        if model.needsReconnect(connection) {
+            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+        } else {
+            Group {
+                if connection.provider == .other {
+                    connection.provider.logo
+                } else {
+                    connection.provider.logo.resizable().scaledToFit()
+                }
+            }
+            .frame(width: 16, height: 16)
+            .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
+        }
+    }
+
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 3) {
@@ -84,13 +100,7 @@ private struct ConnectionRow: View {
             }
             .padding(.vertical, 4)
         } icon: {
-            if model.needsReconnect(connection) {
-                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-            } else if model.isActive(connection) {
-                Image(systemName: "externaldrive.fill.badge.icloud")
-            } else {
-                Image(systemName: "externaldrive").foregroundStyle(.secondary)
-            }
+            icon
         }
         .tag(connection.id)
         .contextMenu {
