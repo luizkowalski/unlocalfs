@@ -16,10 +16,10 @@ flowchart LR
 
 | Use case | Behavior |
 | --- | --- |
-| SaveConnectionUseCase | Validates current saved names and credentials, prepares credentials, then saves |
+| SaveConnectionUseCase | Validates current saved names and credentials, refuses to redirect a saved SFTP drive to other storage, drops credentials the connection no longer uses, prepares credentials, then saves |
 | DeleteConnectionUseCase | Refuses active drives, removes the saved connection and cache |
 | ToggleDriveUseCase | Uses current drive status to connect, disconnect, or reconnect |
-| ShareFilesUseCase | Resolves selected files to drives and creates links; identifies the failed file |
+| ShareFilesUseCase | Resolves selected files to drives and creates links, refusing SFTP and encrypted drives before it loads credentials; identifies the failed file |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
 | QuitUseCase | Refuses quit during an operation or while a drive remains active |
 
@@ -29,7 +29,7 @@ flowchart LR
 
 `UnlocalFSInfrastructure` depends on Domain. `SavedConnectionRepository` combines `ConnectionStore` and `CredentialStorage`. The application shares one repository instance. A lock serializes complete repository transactions. A failed credential save restores the previous JSON connection or removes a new connection. Delete removes the JSON connection before its credentials, so a failed write keeps both. `Keychain` implements credential storage.
 
-`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. `RcloneRemote` describes how rclone reaches a connection's storage: the target, S3 options, and environment. `MountCommand` builds the `nfsmount` arguments and environment from a remote and `AppPaths`. It checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
+`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. `RcloneRemote` describes how rclone reaches a connection's storage: the backend type, path, options, environment, and recovery export name. The provider selects the S3 or SFTP branch; both share one mount lifecycle, and crypt wraps either. SFTP checks the trusted-hosts and key files before every test and mount, passes only the ssh-agent socket it needs, and never edits the trusted-hosts file. `MountCommand` builds the `nfsmount` arguments and environment from a remote and `AppPaths`. It checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
 
 JSON and Keychain encoding remain compatible with existing installations. Foundation Codable conformance stays on the value types to avoid duplicating unchanged schemas.
 
@@ -43,6 +43,6 @@ JSON and Keychain encoding remain compatible with existing installations. Founda
 
 ## Verification
 
-`scripts/test.sh` runs the Domain, Infrastructure, and Presentation SwiftPM tests. `INTEGRATION=1` enables real rclone and isolated Keychain tests. Default tests use real repositories and drive services with stubs at process, credential, or macOS boundaries. `scripts/lint.sh` checks all layers.
+`scripts/test.sh` runs the Domain, Infrastructure, and Presentation SwiftPM tests. `INTEGRATION=1` enables real rclone, isolated Keychain tests, and SFTP tests against `rclone serve sftp` with generated keys, a private trusted-hosts file, and an isolated ssh-agent. Default tests use real repositories and drive services with stubs at process, credential, or macOS boundaries. `scripts/lint.sh` checks all layers.
 
 For a new workflow, place its rules in Domain, implement required integration behavior in Infrastructure, and inject it from Application. Keep view models responsible for the state the UI displays, and add a factory method when a view needs a new feature view model. Add abstractions when a real boundary requires them.

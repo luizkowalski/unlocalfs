@@ -7,21 +7,22 @@
 
 <h1 align="center">UnlocalFS</h1>
 
-UnlocalFS puts your S3 bucket in Finder. Add a bucket once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
+UnlocalFS puts your S3 bucket or SFTP server in Finder. Add a connection once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
 
-It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and any other S3-compatible storage.
+It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, and SFTP servers.
 
 ## Features
 
-- **Finder integration:** Open, edit, and save files in your S3 bucket like any other folder on your Mac.
+- **Finder integration:** Open, edit, and save files in your S3 bucket or on your SFTP server like any other folder on your Mac.
 - **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them. Export an rclone config to get your files back without UnlocalFS.
-- **Mount a folder as a drive:** Turn one folder in a bucket into its own drive.
+- **SFTP servers:** Sign in with a password, a private key, or ssh-agent. UnlocalFS only connects to servers listed in your trusted-hosts file.
+- **Mount a folder as a drive:** Turn one folder in a bucket or on a server into its own drive.
 - **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
 - **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
 - **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
 - **Notifications:** Get told when uploads fail, and when a drive you tried to disconnect finishes uploading.
-- **Sharing links:** Right-click a file in Finder to copy a link that expires after 1 hour, 1 day, or 7 days.
+- **Sharing links:** Right-click a file on an S3 drive in Finder to copy a link that expires after 1 hour, 1 day, or 7 days.
 - **Refresh files:** See changes made from other apps or Macs right away.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
 - **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
@@ -50,7 +51,7 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 mise install
 mise app               # builds dist/UnlocalFS.app
 mise test              # runs the core and view model tests
-mise test:integration  # also mounts a drive against a local S3 server and uses Keychain
+mise test:integration  # also mounts drives against local S3 and SFTP servers and uses Keychain
 mise lint              # runs SwiftLint
 mise xcode             # opens the project in Xcode
 ```

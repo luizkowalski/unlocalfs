@@ -18,7 +18,7 @@ You can also open the app once, then choose **System Settings → Privacy & Secu
 ## Connect a drive
 
 1. Click **Add Connection**.
-2. Enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
+2. For an SFTP server, choose **SFTP** and follow [SFTP connection settings](/connection-settings/#sftp). For S3, enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
 3. Enter your access key and secret key, then click **Test Connection** and **Save**.
 4. Click **Connect**, then **Open in Finder**.
 
