@@ -7,6 +7,8 @@ public actor MountService: DriveGateway {
     private static let logMaxBackups = 2
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
+    private static let readChunkStreams = 16
+    private static let readChunkSize = "4M"
 
     private let executable: URL
     private let helperDirectory: URL
@@ -195,8 +197,9 @@ public actor MountService: DriveGateway {
         var arguments = [
             "nfsmount", connection.encrypted ? ":crypt:" : remote(connection), mount.path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B",
+            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B", "--vfs-cache-max-age", "off",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
+            "--vfs-fast-fingerprint", "--vfs-read-chunk-streams", "\(Self.readChunkStreams)", "--vfs-read-chunk-size", Self.readChunkSize,
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(socket.path)", "--log-level", "INFO",
@@ -241,7 +244,8 @@ public actor MountService: DriveGateway {
             "endpoint": connection.endpoint,
             "region": connection.region,
             "env_auth": "false",
-            "directory_markers": "true"
+            "directory_markers": "true",
+            "no_check_bucket": "true"
         ]
         if let credentials {
             options["access_key_id"] = credentials.accessKey
@@ -383,16 +387,5 @@ private extension MountService {
             try await Task.sleep(for: .milliseconds(100))
         }
         throw error
-    }
-}
-
-private struct VFSStats: Decodable {
-    let diskCache: DiskCache
-
-    struct DiskCache: Decodable {
-        let uploadsQueued: Int
-        let uploadsInProgress: Int
-        let erroredFiles: Int
-        let bytesUsed: Int64
     }
 }

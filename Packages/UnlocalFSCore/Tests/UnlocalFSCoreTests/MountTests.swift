@@ -235,6 +235,7 @@ struct MountTests {
             let vfs = try #require(options["vfs"] as? [String: Any])
             #expect(vfs["CacheMaxSize"] as? Int64 == 512 << 20)
             #expect(vfs["CacheMinFreeSpace"] as? Int64 == expected)
+            #expect((vfs["CacheMaxAge"] as? NSNumber)?.doubleValue == Double(Int64.max))
             #expect(vfs["CacheMode"] as? String == "full")
             try await drive.service.unmount(connection)
         }

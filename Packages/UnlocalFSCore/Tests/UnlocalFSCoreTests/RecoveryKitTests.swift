@@ -22,6 +22,7 @@ extension MountTests {
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
             let remotes = try await dump(drive, config)
             #expect(remotes["unlocalfs-s3"]?["directory_markers"] == "true")
+            #expect(remotes["unlocalfs-s3"]?["no_check_bucket"] == "true")
             #expect(remotes["unlocalfs"]?["filename_encryption"] == "standard")
             #expect(remotes["unlocalfs"]?["directory_name_encryption"] == "true")
             #expect(remotes["unlocalfs"]?["filename_encoding"] == "base32")
