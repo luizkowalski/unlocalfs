@@ -127,6 +127,7 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drive.service),
             toggleDrive: ToggleDriveUseCase(repository: repository, drives: drive.service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drive.service),
+            exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drive.service),
             quit: QuitUseCase(drives: drive.service), desktop: desktop
         )
         await app.refresh()
@@ -148,5 +149,6 @@ private func withAppDrive(_ body: @MainActor @Sendable (Drive, AppViewModel, Dri
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) {}
+    func chooseRcloneConfigDestination(for connection: Connection) -> (url: URL, includesSecrets: Bool)? { nil }
     func notify(title: String, body: String, fallbackToAlert: Bool) { notificationTitles.append(title) }
 }

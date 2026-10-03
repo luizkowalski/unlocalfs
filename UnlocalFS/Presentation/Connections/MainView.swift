@@ -106,6 +106,9 @@ private struct ConnectionRow: View {
             Button("Edit Connection") { model.edit(connection) }
                 .disabled(!model.canEdit(connection))
             Button("Duplicate") { model.duplicate(connection) }
+            if connection.encrypted {
+                Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
+            }
             Divider()
             Button("Delete…", role: .destructive) { model.deleting = connection }
                 .disabled(!model.canEdit(connection))
@@ -193,6 +196,10 @@ private struct ConnectionDetail: View {
                     .disabled(!model.canEdit(connection))
                 Button("Duplicate") { model.duplicate(connection) }
                 Button("Open Log") { model.openLog(connection) }
+                if connection.encrypted {
+                    Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
+                        .help("Save a file that lets rclone read this drive without UnlocalFS")
+                }
                 Spacer()
                 Button("Delete…", role: .destructive) { model.deleting = connection }
                     .disabled(!model.canEdit(connection))

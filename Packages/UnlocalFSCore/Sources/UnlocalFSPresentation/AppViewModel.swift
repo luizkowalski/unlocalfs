@@ -23,6 +23,7 @@ import UnlocalFSDomain
     private let deleteConnection: DeleteConnectionUseCase
     private let toggleDrive: ToggleDriveUseCase
     private let shareFiles: ShareFilesUseCase
+    private let exportConfig: ExportRcloneConfigUseCase
     private let quit: QuitUseCase
     private let desktop: any DesktopServices
     private var refreshing = false
@@ -37,6 +38,7 @@ import UnlocalFSDomain
         deleteConnection: DeleteConnectionUseCase,
         toggleDrive: ToggleDriveUseCase,
         shareFiles: ShareFilesUseCase,
+        exportConfig: ExportRcloneConfigUseCase,
         quit: QuitUseCase,
         desktop: any DesktopServices
     ) {
@@ -44,6 +46,7 @@ import UnlocalFSDomain
         self.deleteConnection = deleteConnection
         self.toggleDrive = toggleDrive
         self.shareFiles = shareFiles
+        self.exportConfig = exportConfig
         self.quit = quit
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
@@ -148,6 +151,13 @@ import UnlocalFSDomain
         } catch {
             desktop.notify(title: "Could not copy share links", body: error.localizedDescription, fallbackToAlert: true)
         }
+    }
+
+    public func exportRcloneConfig(_ connection: Connection) async {
+        guard let destination = desktop.chooseRcloneConfigDestination(for: connection) else { return }
+        do {
+            try await exportConfig.execute(connection, to: destination.url, includesSecrets: destination.includesSecrets)
+        } catch { alert = error.localizedDescription }
     }
 
     public func refreshFiles(_ connection: Connection) async {

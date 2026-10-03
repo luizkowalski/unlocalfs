@@ -34,6 +34,18 @@ struct ViewModelFixture {
                     *) exit 1 ;;
                 esac
                 ;;
+            config)
+                printf '%s\\n' "$@" >> '\(root.path)/config-arguments'
+                if [ -f '\(root.path)/config-error' ]; then
+                    printf '%s ' "$@" >&2
+                    exit 1
+                fi
+                name="$3"
+                while [ $# -gt 0 ]; do
+                    if [ "$1" = '--config' ]; then printf '[%s]\\n' "$name" >> "$2"; fi
+                    shift
+                done
+                ;;
             *) exit 1 ;;
         esac
         """.write(to: executable, atomically: true, encoding: .utf8)
@@ -50,6 +62,7 @@ struct ViewModelFixture {
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
             toggleDrive: ToggleDriveUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
+            exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
             quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths)
         )
     }
@@ -67,6 +80,17 @@ struct ViewModelFixture {
         try Data().write(to: paths.socket(connection))
         let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"erroredFiles":\#(failed),"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
+    }
+
+    func saveEncryptedConnection() throws -> Connection {
+        var connection = connectionFixture()
+        connection.encrypted = true
+        try repository.save(connection, credentials: Credentials(accessKey: "saved-access", secretKey: "saved-secret", encryptionPassword: "saved-password"))
+        return connection
+    }
+
+    func configArguments() throws -> String {
+        try String(contentsOf: root.appending(path: "config-arguments"), encoding: .utf8)
     }
 
     func remove() { try? FileManager.default.removeItem(at: root) }
@@ -100,6 +124,7 @@ final class MemoryCredentialStorage: CredentialStorage {
         let fallbackToAlert: Bool
     }
     var notifications: [Notification] = []
+    var rcloneConfigDestination: (url: URL, includesSecrets: Bool)?
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -113,6 +138,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_ connection: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }
+    func chooseRcloneConfigDestination(for connection: Connection) -> (url: URL, includesSecrets: Bool)? { rcloneConfigDestination }
     func notify(title: String, body: String, fallbackToAlert: Bool) {
         notifications.append(Notification(title: title, body: body, fallbackToAlert: fallbackToAlert))
     }
