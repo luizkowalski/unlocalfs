@@ -166,7 +166,7 @@ private struct ConnectionDetail: View {
                             row("Cache", Text(tildePath(model.cacheLocation(connection))))
                             if let cached = model.cachedBytes(connection) {
                                 row("Cache size", HStack(spacing: 12) {
-                                    ProgressView(value: Double(cached), total: Double(connection.cacheLimit))
+                                    ProgressView(value: Double(min(cached, connection.cacheLimit)), total: Double(connection.cacheLimit))
                                         .tint(.green)
                                         .frame(maxWidth: 240)
                                         .accessibilityLabel("Cache size")
