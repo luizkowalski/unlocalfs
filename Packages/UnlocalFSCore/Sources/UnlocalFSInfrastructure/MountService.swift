@@ -307,9 +307,6 @@ extension MountService {
     }
 
     public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
-        guard !connection.encrypted else {
-            throw AppError("Links aren't available for encrypted drives because they would point to encrypted data.")
-        }
         if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
             let pending: [FileActivity]
             do {

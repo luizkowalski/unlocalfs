@@ -155,19 +155,6 @@ import UnlocalFSInfrastructure
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
         }
     }
-
-    @Test func encryptedDrivesRefuseShareLinks() async throws {
-        try await withFixture(script: "#!/bin/sh\nprintf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'\n") { service, connection in
-            var connection = connection
-            connection.encrypted = true
-            let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
-            await #expect {
-                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: credentials)
-            } throws: { error in
-                error is AppError && error.localizedDescription.contains("encrypted drives")
-            }
-        }
-    }
 }
 
 private func shutdownScript(phase: String, root: URL) -> String {

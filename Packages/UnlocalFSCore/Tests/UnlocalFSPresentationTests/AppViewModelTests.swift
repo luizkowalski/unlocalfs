@@ -159,6 +159,22 @@ import UnlocalFSPresentation
         #expect(notification.fallbackToAlert)
     }
 
+    @Test func sharingFromAnEncryptedDriveExplainsWhyWithoutCreatingALink() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = try fixture.saveEncryptedConnection()
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.copyShareLinks(for: [fixture.paths.mount(connection).appending(path: "plan.pdf")], expiry: .day)
+
+        #expect(desktop.copiedLinks.isEmpty)
+        let notification = try #require(desktop.notifications.first)
+        #expect(notification.title == "Could not copy a link to plan.pdf")
+        #expect(notification.body.contains("encrypted drives"))
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
     @Test func cancellingTheExportWritesNothing() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
