@@ -391,7 +391,11 @@ private struct S3Server {
     }
 
     func stop() {
-        if process.isRunning { process.terminate() }
+        if process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+            var info = siginfo_t()
+            waitid(P_PID, id_t(process.processIdentifier), &info, WEXITED | WNOWAIT)
+        }
         try? log.close()
     }
 }
