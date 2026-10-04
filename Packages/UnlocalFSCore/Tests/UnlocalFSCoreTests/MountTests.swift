@@ -88,6 +88,19 @@ struct MountTests {
         }
     }
 
+    @Test func connectingReusesAFolderNamedInDifferentCase() async throws {
+        try await withDrive { drive in
+            try FileManager.default.createDirectory(
+                at: drive.paths.mounts.appending(path: drive.connection.name.lowercased()),
+                withIntermediateDirectories: true)
+            try await drive.service.mount(
+                drive.connection,
+                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
     @Test(arguments: [(false, false), (true, false), (false, true), (true, true)])
     func reconnectPreservesCachedFilesWhenControlIsUnavailable(staleSocket: Bool, reopened: Bool) async throws {
         try await withDrive { drive in

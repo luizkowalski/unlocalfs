@@ -67,6 +67,9 @@ public actor MountService: DriveGateway {
         try paths.prepare()
         let mount = paths.mount(connection)
         try FileManager.default.createDirectory(at: mount, withIntermediateDirectories: true)
+        if let name = try mount.resourceValues(forKeys: [.nameKey]).name, name != mount.lastPathComponent {
+            try FileManager.default.moveItem(at: mount.deletingLastPathComponent().appending(path: name), to: mount)
+        }
         guard try FileManager.default.contentsOfDirectory(atPath: mount.path).isEmpty else {
             throw AppError(String(localized: .mountFolderContainsFiles(mount.path)))
         }
