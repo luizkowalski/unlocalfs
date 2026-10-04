@@ -122,12 +122,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-public enum ConnectionField: String, CaseIterable, Sendable {
-    case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
-    case serviceAccountKey = "Service account key"
-    case host = "Host", port = "Port", username = "Username", remotePath = "Remote folder"
-    case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
-    case encryptionPassword = "Encryption password", confirmation = "Confirm password"
+public enum ConnectionField: CaseIterable, Sendable {
+    case name, endpoint, bucket, folder, accessKey, secretKey
+    case serviceAccountKey
+    case host, port, username, remotePath
+    case password, keyFile, trustedHosts
+    case encryptionPassword, confirmation
 
     public var displayName: String {
         switch self {

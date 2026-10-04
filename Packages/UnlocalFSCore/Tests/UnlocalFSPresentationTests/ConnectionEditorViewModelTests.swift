@@ -126,7 +126,7 @@ import Testing
 
         #expect(editor.title == String(localized: .duplicateConnection))
         #expect(editor.connection.id != connection.id)
-        #expect(editor.connection.name == "My files copy")
+        #expect(editor.connection.name == String(localized: .duplicateName("My files")))
         #expect(editor.credentials == credentials)
         #expect(editor.confirmation == "password")
         #expect(!editor.isLocked)

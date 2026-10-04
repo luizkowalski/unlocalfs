@@ -8,7 +8,7 @@ import Testing
         connection.name = "Photos"
         let draft = ConnectionDraft(duplicating: connection)
         #expect(draft.id != connection.id)
-        #expect(draft.connection.name == "Photos copy")
+        #expect(draft.connection.name == String(localized: .duplicateName("Photos")))
         #expect(draft.credentialsSource == connection.id)
         #expect(draft.isDuplicate)
     }
