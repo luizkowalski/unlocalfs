@@ -239,6 +239,37 @@ import UnlocalFSPresentation
         #expect(!FileManager.default.fileExists(atPath: URL(filePath: config).deletingLastPathComponent().path))
     }
 
+    @Test(arguments: [true, false])
+    func sftpExportKeepsHostVerificationAndNeverReadsLocalFiles(includesSecrets: Bool) async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        var connection = try fixture.sftpConnection()
+        connection.encrypted = true
+        connection.sftp.remotePath = "/srv/files"
+        connection.sftp.authentication = .privateKey
+        connection.sftp.keyFile = "/nonexistent/id_ed25519"
+        connection.sftp.trustedHostsFile = "/nonexistent/known_hosts"
+        connection.sftp.agentSocket = "/tmp/agent.sock"
+        try fixture.repository.save(connection, credentials: Credentials(encryptionPassword: "saved-password", keyPassphrase: "saved-phrase"))
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let destination = fixture.root.appending(path: "My files rclone.conf")
+        desktop.rcloneConfigDestination = RcloneConfigDestination(url: destination, includesSecrets: includesSecrets)
+        let app = fixture.app(desktop: desktop)
+
+        await app.exportRcloneConfig(connection)
+
+        #expect(app.alert == nil)
+        let arguments = try String(contentsOf: fixture.root.appending(path: "config-arguments"), encoding: .utf8)
+        let sftp = try #require(arguments.split(separator: "\n").first { $0.hasPrefix("config create unlocalfs-sftp sftp") })
+        #expect(sftp.contains("host=files.example.com") && sftp.contains("user=me") && sftp.contains("shell_type=none"))
+        #expect(sftp.contains("known_hosts_file=/nonexistent/known_hosts") && sftp.contains("key_file=/nonexistent/id_ed25519"))
+        #expect(!sftp.contains("/tmp/agent.sock") && !sftp.contains("saved-"))
+        #expect(sftp.contains("key_file_pass=prepared-password") == includesSecrets)
+        #expect(arguments.contains("config create unlocalfs crypt") && arguments.contains("remote=unlocalfs-sftp:/srv/files"))
+        #expect(arguments.contains("password=prepared-password") == includesSecrets)
+        #expect(try String(contentsOf: destination, encoding: .utf8).contains("[unlocalfs-sftp]"))
+    }
+
     @Test func unencryptedDrivesCannotExportAConfig() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

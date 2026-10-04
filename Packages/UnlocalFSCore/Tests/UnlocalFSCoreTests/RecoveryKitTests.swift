@@ -96,20 +96,20 @@ extension MountTests {
     }
 }
 
-private let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
+let encryptedDriveCredentials = Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
 
-private func rclone(_ drive: Drive, _ config: URL, _ arguments: String...) async throws -> String {
+func rclone(_ drive: Drive, _ config: URL, _ arguments: String..., environment: [String: String] = [:]) async throws -> String {
     let output = try await Command.run(
         drive.executable, arguments + ["--config", config.path],
-        environment: ["HOME": URL.homeDirectory.path, "PATH": "/usr/bin:/bin"])
+        environment: ["HOME": URL.homeDirectory.path, "PATH": "/usr/bin:/bin"].merging(environment) { _, new in new })
     return String(decoding: output, as: UTF8.self)
 }
 
-private func dump(_ drive: Drive, _ config: URL) async throws -> [String: [String: String]] {
+func dump(_ drive: Drive, _ config: URL) async throws -> [String: [String: String]] {
     try await JSONDecoder().decode([String: [String: String]].self, from: Data(rclone(drive, config, "config", "dump").utf8))
 }
 
-private func writeEncrypted(_ contents: String, named name: String, to storage: URL, executable: URL) async throws {
+func writeEncrypted(_ contents: String, named name: String, to storage: URL, executable: URL) async throws {
     let password = try await Command.run(executable, ["obscure", "-", "--config", "/dev/null"], input: encryptedDriveCredentials.encryptionPassword)
     _ = try await Command.run(
         executable, ["rcat", ":crypt:\(name)", "--config", "/dev/null"], input: contents,

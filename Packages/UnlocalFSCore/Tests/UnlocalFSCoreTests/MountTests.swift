@@ -270,7 +270,7 @@ struct MountTests {
     }
 }
 
-private let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
 struct Drive {
@@ -296,9 +296,13 @@ struct Drive {
     }
 
     func waitForUploads(on service: MountService) async throws {
-        for _ in 0..<40 {
+        for _ in 0..<200 {
+            let queue = try? await control("vfs/queue")["queue"] as? [[String: Any]]
+            for item in (queue ?? []).compactMap({ $0["id"] as? Int }) {
+                _ = try? await control("vfs/queue-set-expiry", "id=\(item)", "expiry=-60", "relative=true")
+            }
             if await service.status(connection).pendingUploads == 0 { return }
-            try await Task.sleep(for: .milliseconds(500))
+            try await Task.sleep(for: .milliseconds(100))
         }
     }
 }

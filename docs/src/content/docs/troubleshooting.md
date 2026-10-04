@@ -15,6 +15,16 @@ Check that your credentials have access to the bucket and that your storage endp
 
 For encrypted drives, an incorrect password or unencrypted names in the top folder can prevent connection. See [Encryption](/encryption/).
 
+## An SFTP connection fails
+
+- **The server is unknown or its key changed.** UnlocalFS only connects to servers in your trusted-hosts file and never changes it. Check the server's fingerprint with its administrator. For a new server, connect once with `ssh user@host` and accept the fingerprint. For a changed key, find out why before you update the file.
+- **UnlocalFS cannot read a key or trusted-hosts file.** Check that the path in the connection exists and that you can read it.
+- **ssh-agent is not available.** Start an agent and load a key with `ssh-add`, or enter the agent's socket in the connection. UnlocalFS does not start an agent, and it does not fall back to a password.
+- **Sign-in fails.** Check the username, password, or key passphrase. The server must accept the sign-in option you chose.
+- **A folder is not found.** An empty folder means your home folder. A folder that starts with `/` is a path from the server's root.
+
+Test Connection shows that UnlocalFS can list the folder. It does not check write permission. If uploads fail, the drive's activity list shows the error and blocks an unsafe disconnect.
+
 ## A drive needs reconnecting
 
 Click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects using the same cache. Recovery stops if the drive cannot eject or the old service cannot stop. Close files open on the drive before trying again.
@@ -37,7 +47,7 @@ Avoid editing the same file through two drives at once: one save can overwrite t
 
 ## Share link services are missing
 
-Open UnlocalFS once. Enable the entries in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**. Links require a connected, unencrypted drive and an uploaded file.
+Open UnlocalFS once. Enable the entries in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**. Links require a connected, unencrypted S3 drive and an uploaded file. SFTP drives do not support links.
 
 ## Finder adds .DS_Store files
 

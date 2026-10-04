@@ -28,8 +28,8 @@ import UserNotifications
         panel.title = "Export rclone Config"
         panel.message = "Use this file with rclone to read \(connection.name) without UnlocalFS."
         panel.nameFieldStringValue = "\(connection.name) rclone.conf"
-        let includesSecrets = NSButton(checkboxWithTitle: "Include keys and password", target: nil, action: nil)
-        let caption = NSTextField(wrappingLabelWithString: "Anyone with the file can read this drive. The password is only obscured, not encrypted.")
+        let includesSecrets = NSButton(checkboxWithTitle: Self.secretsTitle(for: connection), target: nil, action: nil)
+        let caption = NSTextField(wrappingLabelWithString: Self.exportCaption(for: connection))
         caption.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         caption.textColor = .secondaryLabelColor
         caption.preferredMaxLayoutWidth = 360
@@ -41,6 +41,26 @@ import UserNotifications
         panel.accessoryView = accessory
         guard panel.runModal() == .OK, let url = panel.url else { return nil }
         return RcloneConfigDestination(url: url, includesSecrets: includesSecrets.state == .on)
+    }
+
+    private static func secretsTitle(for connection: Connection) -> String {
+        switch connection.backend {
+        case .s3Compatible: "Include keys and password"
+        case .sftp: "Include saved passwords"
+        }
+    }
+
+    private static func exportCaption(for connection: Connection) -> String {
+        switch connection.backend {
+        case .s3Compatible:
+            return "Anyone with the file can read this drive. The password is only obscured, not encrypted."
+        case .sftp:
+            let dependency = connection.sftp.authentication == .agent ? "needs a running ssh-agent" : "private key file"
+            return """
+            Anyone with the file can read this drive. Passwords are only obscured, not encrypted. \
+            The file points to your trusted-hosts file and \(dependency). Copy them to the other Mac and adjust the paths.
+            """
+        }
     }
 
     func notify(title: String, body: String, fallbackToAlert: Bool) {

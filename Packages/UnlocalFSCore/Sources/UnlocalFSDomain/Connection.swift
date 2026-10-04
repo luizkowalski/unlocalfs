@@ -15,6 +15,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var connectsAutomatically = false
     public var readOnly = false
     public var encrypted = false
+    public var sftp = SFTPSettings()
 
     public init() {}
 
@@ -34,21 +35,41 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? readOnly
         encrypted = try container.decodeIfPresent(Bool.self, forKey: .encrypted) ?? encrypted
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
+        sftp = try container.decodeIfPresent(SFTPSettings.self, forKey: .sftp) ?? sftp
+    }
+
+    public var backend: Backend { provider.backend }
+
+    public var folderPath: String {
+        switch backend {
+        case .s3Compatible: folder
+        case .sftp: sftp.remotePath
+        }
     }
 
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
         connectsAutomatically && !status.isActive
     }
 
+    private static let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
+
     public func validate() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
         result.check(!name.isBlank, field: .name, message: "Name cannot be empty")
         result.check(
-            name != "." && name != ".." && name.rangeOfCharacter(from: forbiddenNameCharacters) == nil,
+            name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
             field: .name, message: "Enter a drive name without slashes, colons, or control characters."
         )
         result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
+        switch backend {
+        case .s3Compatible: result.issues += validateStorage().issues
+        case .sftp: result.issues += sftp.validate().issues
+        }
+        return result
+    }
+
+    private func validateStorage() -> ValidationResult<ConnectionField> {
+        var result = ValidationResult<ConnectionField>()
         let url = URL(string: endpoint)
         result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: "Endpoint must be a valid URL")
         let validEndpoint = URLComponents(string: endpoint).map { url in
@@ -63,7 +84,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         result.check(!bucket.isBlank, field: .bucket, message: "Bucket cannot be empty")
         result.check(
             bucket != "." && bucket != ".." &&
-                bucket.rangeOfCharacter(from: forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
+                bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
             field: .bucket, message: "Enter the bucket name, without a path."
         )
         result.check(
@@ -95,6 +116,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
 public enum ConnectionField: String, CaseIterable, Sendable {
     case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
+    case host = "Host", port = "Port", username = "Username", remotePath = "Remote folder"
+    case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
     case encryptionPassword = "Encryption password", confirmation = "Confirm password"
 }
 
@@ -105,8 +128,16 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
     case minio = "Minio"
     case wasabi = "Wasabi"
     case digitalOcean = "DigitalOcean"
+    case sftp = "SFTP"
 
     public var id: Self { self }
+
+    public var backend: Backend {
+        switch self {
+        case .other, .aws, .cloudflare, .minio, .wasabi, .digitalOcean: .s3Compatible
+        case .sftp: .sftp
+        }
+    }
 
     public var title: String {
         switch self {
@@ -116,6 +147,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .minio: "MinIO"
         case .wasabi: "Wasabi"
         case .digitalOcean: "DigitalOcean Spaces"
+        case .sftp: "SFTP"
         }
     }
 }
@@ -130,12 +162,29 @@ public struct Credentials: Codable, Equatable, Sendable {
         }
     }
     public var obscuredEncryptionPassword = ""
+    public var password: String {
+        didSet {
+            if password != oldValue { obscuredPassword = "" }
+        }
+    }
+    public var obscuredPassword = ""
+    public var keyPassphrase: String {
+        didSet {
+            if keyPassphrase != oldValue { obscuredKeyPassphrase = "" }
+        }
+    }
+    public var obscuredKeyPassphrase = ""
 
-    public init(accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "") {
+    public init(
+        accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
+        password: String = "", keyPassphrase: String = ""
+    ) {
         self.accessKey = accessKey
         self.secretKey = secretKey
         self.sessionToken = sessionToken
         self.encryptionPassword = encryptionPassword
+        self.password = password
+        self.keyPassphrase = keyPassphrase
     }
 
     public init(from decoder: any Decoder) throws {
@@ -145,12 +194,40 @@ public struct Credentials: Codable, Equatable, Sendable {
         sessionToken = try container.decode(String.self, forKey: .sessionToken)
         encryptionPassword = try container.decodeIfPresent(String.self, forKey: .encryptionPassword) ?? ""
         obscuredEncryptionPassword = try container.decodeIfPresent(String.self, forKey: .obscuredEncryptionPassword) ?? ""
+        password = try container.decodeIfPresent(String.self, forKey: .password) ?? ""
+        obscuredPassword = try container.decodeIfPresent(String.self, forKey: .obscuredPassword) ?? ""
+        keyPassphrase = try container.decodeIfPresent(String.self, forKey: .keyPassphrase) ?? ""
+        obscuredKeyPassphrase = try container.decodeIfPresent(String.self, forKey: .obscuredKeyPassphrase) ?? ""
+    }
+
+    public func pruned(for connection: Connection) -> Credentials {
+        var credentials = self
+        switch connection.backend {
+        case .s3Compatible:
+            credentials.password = ""
+            credentials.keyPassphrase = ""
+        case .sftp:
+            credentials.accessKey = ""
+            credentials.secretKey = ""
+            credentials.sessionToken = ""
+            if connection.sftp.authentication != .password { credentials.password = "" }
+            if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
+        }
+        return credentials
     }
 
     public func validate(for connection: Connection) -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
-        result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
+        switch connection.backend {
+        case .s3Compatible:
+            result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
+            result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
+        case .sftp:
+            result.check(
+                connection.sftp.authentication != .password || !password.isEmpty,
+                field: .password, message: "Password cannot be empty"
+            )
+        }
         if connection.encrypted {
             result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")
         }
@@ -161,8 +238,4 @@ public struct Credentials: Codable, Equatable, Sendable {
 public struct AppError: LocalizedError, Sendable {
     public let errorDescription: String?
     public init(_ message: String) { errorDescription = message }
-}
-
-private extension String {
-    var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }

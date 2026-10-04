@@ -74,14 +74,9 @@ struct ConnectionDetail: View {
                 .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 3) {
                 Text(connection.name).font(.title2.weight(.semibold))
-                Text(verbatim: "\(connection.provider.title) · \(connection.bucket)").foregroundStyle(.secondary)
+                Text(verbatim: "\(connection.provider.title) · \(storageName)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
-                    switch model.indicator(connection) {
-                    case .working: ProgressView().controlSize(.mini)
-                    case .attention: Circle().fill(Color.orange).frame(width: 7, height: 7)
-                    case .connected: Circle().fill(Color.green).frame(width: 7, height: 7)
-                    case .idle: Circle().fill(Color.secondary).frame(width: 7, height: 7)
-                    }
+                    StatusIndicator(indicator: model.indicator(connection))
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
                 }
                 .font(.callout)
@@ -124,11 +119,16 @@ struct ConnectionDetail: View {
             .padding(.horizontal, 14)
             Divider()
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
-                detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
-                Divider()
-                detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
-                Divider()
-                detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                switch connection.backend {
+                case .s3Compatible:
+                    detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
+                    Divider()
+                    detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
+                    Divider()
+                    detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                case .sftp:
+                    sftpDetails
+                }
                 Divider()
                 detail("Encryption") { connection.encrypted ? Text("On") : Text("Off") }
             }
@@ -136,6 +136,23 @@ struct ConnectionDetail: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
+    }
+
+    private var storageName: String {
+        switch connection.backend {
+        case .s3Compatible: connection.bucket
+        case .sftp: connection.sftp.host
+        }
+    }
+
+    @ViewBuilder private var sftpDetails: some View {
+        let sftp = connection.sftp
+        let server = "\(sftp.username)@\(sftp.host):\(sftp.port)"
+        detail("Server") { Text(verbatim: server).help(server) }
+        Divider()
+        detail("Folder") { sftp.remotePath.isEmpty ? Text("Home folder") : Text(verbatim: sftp.remotePath) }
+        Divider()
+        detail("Sign in with") { Text(sftp.authentication.title) }
     }
 
     private func detail(_ label: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {
@@ -223,7 +240,7 @@ private struct ToolButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .labelStyle(ToolLabelStyle())
+            .labelStyle(ToolLabelStyle(isDestructive: configuration.role == .destructive))
             .foregroundStyle(configuration.role == .destructive ? Color.red : Color.primary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -234,10 +251,12 @@ private struct ToolButtonStyle: ButtonStyle {
 }
 
 private struct ToolLabelStyle: LabelStyle {
+    let isDestructive: Bool
+
     func makeBody(configuration: Configuration) -> some View {
         VStack(spacing: 3) {
             configuration.icon.font(.system(size: 15)).frame(height: 18)
-            configuration.title.font(.caption).foregroundStyle(.secondary)
+            configuration.title.font(.caption).foregroundStyle(isDestructive ? Color.red : Color.secondary)
         }
     }
 }

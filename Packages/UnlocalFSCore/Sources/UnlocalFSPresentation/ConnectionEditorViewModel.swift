@@ -5,7 +5,7 @@ import UnlocalFSDomain
 @MainActor @Observable public final class ConnectionEditorViewModel {
     public var connection: Connection {
         didSet {
-            if testInputs(connection) != testInputs(oldValue) { tested = false }
+            if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp { tested = false }
         }
     }
     public var credentials = Credentials() {
@@ -23,6 +23,7 @@ import UnlocalFSDomain
     public let isDuplicate: Bool
     private let credentialsSource: UUID
     public let isNew: Bool
+    private let savedBackend: Backend?
     private let connections: [Connection]
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway
@@ -41,6 +42,7 @@ import UnlocalFSDomain
         credentialsSource = draft.credentialsSource
         isDuplicate = draft.isDuplicate
         isNew = !connections.contains { $0.id == draft.id }
+        savedBackend = isNew || draft.isDuplicate ? nil : draft.connection.backend
         self.connections = connections
         self.repository = repository
         self.drives = drives
@@ -51,6 +53,13 @@ import UnlocalFSDomain
     public var title: String {
         if isDuplicate { return "Duplicate connection" }
         return isNew ? "Add connection" : "Edit connection"
+    }
+
+    public var locksRemoteFolder: Bool { savedBackend?.locksFolderAfterSave ?? false }
+
+    public var availableProviders: [Provider] {
+        guard let savedBackend else { return Provider.allCases }
+        return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
     public var isLocked: Bool { testing || saving || !credentialsLoaded }

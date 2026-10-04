@@ -35,7 +35,7 @@ struct MainView: View {
                 ContentUnavailableView {
                     Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
                 } description: {
-                    Text("Connect an S3 bucket and use its files from your Mac.")
+                    Text("Connect an S3 bucket or an SFTP server and use its files from your Mac.")
                 } actions: {
                     Button("Add Connection") { model.edit(Connection()) }
                         .buttonStyle(.borderedProminent)
@@ -67,8 +67,21 @@ private struct ConnectionRow: View {
     @Environment(AppViewModel.self) private var model
     let connection: Connection
 
+    private var icon: some View {
+        Group {
+            if connection.provider == .other {
+                connection.provider.logo.font(.system(size: 18))
+            } else {
+                connection.provider.logo.resizable().scaledToFit()
+            }
+        }
+        .frame(width: 20, height: 20)
+        .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
+    }
+
     var body: some View {
-        Label {
+        HStack(spacing: 10) {
+            icon.frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text(connection.name)
@@ -83,14 +96,10 @@ private struct ConnectionRow: View {
                 Text(model.statusText(connection)).font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
-        } icon: {
-            if model.needsReconnect(connection) {
-                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-            } else if model.isActive(connection) {
-                Image(systemName: "externaldrive.fill.badge.icloud")
-            } else {
-                Image(systemName: "externaldrive").foregroundStyle(.secondary)
-            }
+            Spacer(minLength: 0)
+            StatusIndicator(indicator: model.indicator(connection), showsIdle: false)
+                .frame(width: 12)
+                .accessibilityHidden(true)
         }
         .tag(connection.id)
         .contextMenu {

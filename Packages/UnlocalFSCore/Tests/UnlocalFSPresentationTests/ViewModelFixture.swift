@@ -42,6 +42,7 @@ struct ViewModelFixture {
                     shift
                 done
                 printf '%s' "$config" > '\(root.path)/export-config'
+                printf '%s\\n' "$arguments" >> '\(root.path)/config-arguments'
                 if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
                     printf 'Failed to create %s: %s' "$name" "$arguments" >&2
                     exit 1
@@ -96,7 +97,24 @@ struct ViewModelFixture {
         return connection
     }
 
+    func sftpConnection() throws -> Connection {
+        let hosts = root.appending(path: "known_hosts")
+        try Data().write(to: hosts)
+        var connection = sftpConnectionFixture()
+        connection.sftp.trustedHostsFile = hosts.path
+        return connection
+    }
+
     func remove() { try? FileManager.default.removeItem(at: root) }
+}
+
+func sftpConnectionFixture() -> Connection {
+    var connection = Connection()
+    connection.name = "Server"
+    connection.provider = .sftp
+    connection.sftp.host = "files.example.com"
+    connection.sftp.username = "me"
+    return connection
 }
 
 func connectionFixture() -> Connection {
