@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+@Suite(.timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPRecoveryTests {
     @Test(arguments: [SFTPLogin.password, .key, .protectedKey, .agent])
     func exportedConfigReadsFilesUploadedThroughAnEncryptedSFTPDrive(login: SFTPLogin) async throws {

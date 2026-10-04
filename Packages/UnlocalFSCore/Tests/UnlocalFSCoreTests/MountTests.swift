@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
 @Suite(
-    .serialized,
+    .timeLimit(.minutes(2)),
     .enabled(
         if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
 )
@@ -128,7 +128,10 @@ struct MountTests {
             try await drive.service.mount(drive.connection, credentials: credentials)
             let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
             _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
-            try await Task.sleep(for: .seconds(4))
+            for _ in 0..<40 {
+                if await drive.service.status(drive.connection).needsReconnect { break }
+                try await Task.sleep(for: .milliseconds(250))
+            }
             let unhealthy = await drive.service.status(drive.connection)
             #expect(unhealthy.isMounted)
             #expect(unhealthy.needsReconnect)
@@ -286,6 +289,10 @@ struct Drive {
         MountService(executable: executable, helperDirectory: helpers, paths: paths)
     }
 
+    func service(environment: [String: String]) -> MountService {
+        MountService(executable: executable, helperDirectory: helpers, paths: paths, environment: environment)
+    }
+
     func control(_ method: String, _ parameters: String...) async throws -> [String: Any] {
         let data = try await Command.run(
             executable,
@@ -303,6 +310,18 @@ struct Drive {
             }
             if await service.status(connection).pendingUploads == 0 { return }
             try await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
+    func disconnect() async {
+        guard await service.status(connection).isActive else { return }
+        try? await waitForUploads(on: service)
+        try? await service.unmount(connection)
+        if await service.status(connection).isMounted {
+            _ = try? await Command.run(URL(filePath: "/sbin/umount"), ["-f", mounted.path], timeout: .seconds(10))
+        }
+        if let pid = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8), let id = pid_t(pid) {
+            kill(id, SIGKILL)
         }
     }
 }
@@ -335,13 +354,10 @@ func withDrive(
     do {
         try await body(drive)
     } catch {
-        try? await Task.sleep(for: .seconds(6))
-        if await drive.service.status(connection).isMounted {
-            _ = try? await Command.run(URL(filePath: "/sbin/umount"), [drive.mounted.path], timeout: .seconds(10))
-        }
-        try? await drive.service.unmount(connection)
+        await drive.disconnect()
         throw error
     }
+    await drive.disconnect()
     try FileManager.default.removeItem(at: root)
 }
 

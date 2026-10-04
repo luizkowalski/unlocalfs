@@ -52,15 +52,13 @@ private func fetchActivity(queue: String, stats: String = "{}") async throws -> 
     try Data(stats.utf8).write(to: root.appendingPathComponent("stats.json"))
     let binary = root.appendingPathComponent("rclone")
     let script = """
-    #!/bin/sh
     case "$4" in
         vfs/queue) cat '\(root.path)/queue.json' ;;
         core/stats) cat '\(root.path)/stats.json' ;;
         *) exit 1 ;;
     esac
     """
-    try script.write(to: binary, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: binary.path)
+    try writeRcloneStub(script, to: binary)
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
     let service = MountService(executable: binary, helperDirectory: root, paths: paths)
     return try await service.activity(fixture())

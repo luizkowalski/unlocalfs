@@ -4,7 +4,7 @@ import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+@Suite(.timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPTests {
     @Test(arguments: SFTPLogin.allCases)
     func sftpDriveAuthenticatesReadsAndWrites(login: SFTPLogin) async throws {
@@ -121,18 +121,17 @@ struct SFTPTests {
     }
 }
 
-@Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
+@Suite(.timeLimit(.minutes(2)), .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPAgentEnvironmentTests {
     @Test func agentSocketOverrideTakesPrecedenceOverTheEnvironment() async throws {
         try await withSFTPDrive(.agent) { drive, sftp in
-            try await withAgentEnvironment(sftp.agent.socket.path) {
-                var connection = drive.connection
-                connection.sftp.agentSocket = ""
-                try await drive.service.test(connection, credentials: Credentials())
-                connection.sftp.agentSocket = sftp.emptyAgent.socket.path
-                await #expect(throws: AppError.self) {
-                    try await drive.service.test(connection, credentials: Credentials(password: SFTPFixture.password))
-                }
+            let service = drive.service(environment: ["SSH_AUTH_SOCK": sftp.agent.socket.path])
+            var connection = drive.connection
+            connection.sftp.agentSocket = ""
+            try await service.test(connection, credentials: Credentials())
+            connection.sftp.agentSocket = sftp.emptyAgent.socket.path
+            await #expect(throws: AppError.self) {
+                try await service.test(connection, credentials: Credentials(password: SFTPFixture.password))
             }
         }
     }
@@ -144,13 +143,12 @@ struct SFTPAgentEnvironmentTests {
             let socket = sftp.root.appending(path: "stale.sock")
             try Self.leaveStaleSocket(at: socket)
             connection.sftp.agentSocket = kind == "missing" ? sftp.root.appending(path: "none.sock").path : kind == "stale" ? socket.path : ""
-            try await withAgentEnvironment(nil) {
-                for attempt in [{ try await drive.service.test(connection, credentials: Credentials()) },
-                                { try await drive.service.mount(connection, credentials: Credentials()) }] {
-                    await #expect { try await attempt() } throws: { $0.localizedDescription.contains("ssh-agent") }
-                }
+            let service = drive.service(environment: [:])
+            for attempt in [{ try await service.test(connection, credentials: Credentials()) },
+                            { try await service.mount(connection, credentials: Credentials()) }] {
+                await #expect { try await attempt() } throws: { $0.localizedDescription.contains("ssh-agent") }
             }
-            #expect(await !drive.service.status(connection).isActive)
+            #expect(await !service.status(connection).isActive)
         }
     }
 
@@ -167,13 +165,4 @@ struct SFTPAgentEnvironmentTests {
         }
         try #require(result == 0)
     }
-}
-
-private func withAgentEnvironment(_ socket: String?, _ body: () async throws -> Void) async throws {
-    let previous = getenv("SSH_AUTH_SOCK").map { String(cString: $0) }
-    defer {
-        if let previous { setenv("SSH_AUTH_SOCK", previous, 1) } else { unsetenv("SSH_AUTH_SOCK") }
-    }
-    if let socket { setenv("SSH_AUTH_SOCK", socket, 1) } else { unsetenv("SSH_AUTH_SOCK") }
-    try await body()
 }

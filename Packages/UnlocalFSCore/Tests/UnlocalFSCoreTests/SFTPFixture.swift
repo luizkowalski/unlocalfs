@@ -124,11 +124,13 @@ struct SFTPServer {
         process.standardOutput = log
         process.standardError = log
         try process.run()
-        while process.isRunning, !((try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false) {
+        let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false }
+        for _ in 0..<500 where process.isRunning && !serving() {
             try await Task.sleep(for: .milliseconds(20))
         }
+        if !serving() { process.terminate() }
         try #require(
-            process.isRunning,
+            process.isRunning && serving(),
             "SFTP fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
         )
     }
@@ -186,13 +188,10 @@ func withSFTPDrive(
     do {
         try await body(drive, &sftp)
     } catch {
-        try? await Task.sleep(for: .seconds(6))
-        if await drive.service.status(connection).isMounted {
-            _ = try? await Command.run(URL(filePath: "/sbin/umount"), [drive.mounted.path], timeout: .seconds(10))
-        }
-        try? await drive.service.unmount(connection)
+        await drive.disconnect()
         throw error
     }
+    await drive.disconnect()
     try FileManager.default.removeItem(at: root)
 }
 

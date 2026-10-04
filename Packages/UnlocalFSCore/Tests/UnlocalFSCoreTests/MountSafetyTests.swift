@@ -5,7 +5,7 @@ import UnlocalFSDomain
 
 @Suite struct MountSafetyTests {
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
-        try await withFixture(script: "#!/bin/sh\necho 'Control unavailable' >&2\nexit 1\n") { service, connection in
+        try await withFixture(script: "echo 'Control unavailable' >&2\nexit 1\n") { service, connection in
             let before = await service.status(connection)
             #expect(before.needsReconnect)
             #expect(!before.isRunning)
@@ -27,7 +27,6 @@ import UnlocalFSDomain
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
         try await withFixture(script: """
-        #!/bin/sh
         if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
         printf '%s' '{"diskCache":{\(cache),"bytesUsed":42}}'
         """) { service, connection in
@@ -42,7 +41,6 @@ import UnlocalFSDomain
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withFixture { root in
             """
-            #!/bin/sh
             if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
             pending=0
             if [ -f '\(root.path)/checked' ]; then pending=1; fi
@@ -59,7 +57,6 @@ import UnlocalFSDomain
     @Test func disconnectKeepsTheServiceAliveWhenUploadStatusBecomesUnavailable() async throws {
         try await withFixture { root in
             """
-            #!/bin/sh
             if [ "$4" = 'core/quit' ]; then rm "$3"; exit 0; fi
             if [ -f '\(root.path)/checked' ]; then echo 'Control unavailable' >&2; exit 1; fi
             touch '\(root.path)/checked'
@@ -97,11 +94,10 @@ import UnlocalFSDomain
     func connectionErrorsDoNotExposeCredentials(command: String, passwordRepetitions: Int) async throws {
         let password = String(repeating: "private-password", count: passwordRepetitions)
         let script = """
-        #!/bin/sh
         case "$1" in
             rc)
                 if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; else printf '{}'; fi ;;
-            obscure) cat >/dev/null; printf 'obscured-token' ;;
+            obscure) printf 'obscured-token' ;;
             \(command))
                 printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
                 exit 1 ;;
@@ -130,9 +126,8 @@ import UnlocalFSDomain
         try Data().write(to: key)
         try Data().write(to: hosts)
         let script = """
-        #!/bin/sh
         case "$1" in
-            obscure) cat >/dev/null; printf 'obscured-token' ;;
+            obscure) printf 'obscured-token' ;;
             lsf)
                 printf '%s' "$*" > '\(directory.path)/arguments'
                 printf '%s' "Denied $RCLONE_SFTP_PASS $RCLONE_SFTP_KEY_FILE_PASS $RCLONE_CRYPT_PASSWORD private-ssh private-phrase private-password" >&2
@@ -161,7 +156,7 @@ import UnlocalFSDomain
         var fixtureRoot: URL?
         try await withFixture { root in
             fixtureRoot = root
-            return "#!/bin/sh\nif [ \"$1\" = 'obscure' ]; then cat >/dev/null; fi\nif [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
+            return "if [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
         } operation: { service, _ in
             var connection = sftpFixture()
             connection.sftp.trustedHostsFile = "/nonexistent/known_hosts"
@@ -186,7 +181,6 @@ import UnlocalFSDomain
         try await withFixture { root in
             fixtureRoot = root
             return """
-            #!/bin/sh
             touch '\(root.path)/ran'
             if [ "$1" = 'link' ]; then printf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'; fi
             """
@@ -205,7 +199,7 @@ import UnlocalFSDomain
         var fixtureRoot: URL?
         try await withFixture { root in
             fixtureRoot = root
-            return "#!/bin/sh\ntouch '\(root.path)/ran'\n"
+            return "touch '\(root.path)/ran'\n"
         } operation: { service, connection in
             var connection = connection
             connection.encrypted = true
@@ -231,7 +225,6 @@ import UnlocalFSDomain
 
 private func shutdownScript(phase: String, root: URL) -> String {
     """
-    #!/bin/sh
     if [ "$4" = 'core/quit' ]; then
         if [ '\(phase)' = 'after' ]; then rm "$3"; fi
         echo 'Quit failed'
@@ -262,7 +255,6 @@ private func withFixture(script: (URL) -> String, operation: (MountService, Conn
     let connection = fixture()
     FileManager.default.createFile(atPath: paths.socket(connection).path, contents: Data())
     let binary = root.appendingPathComponent("rclone-fixture")
-    try script(root).write(to: binary, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: binary.path)
+    try writeRcloneStub(script(root), to: binary)
     try await operation(MountService(executable: binary, helperDirectory: root, paths: paths), connection)
 }

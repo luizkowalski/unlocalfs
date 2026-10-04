@@ -20,11 +20,13 @@ struct S3Server {
         process.standardOutput = log
         process.standardError = log
         try process.run()
-        while process.isRunning, !((try? String(contentsOf: logURL, encoding: .utf8))?.contains("Starting s3 server") ?? false) {
+        let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("Starting s3 server") ?? false }
+        for _ in 0..<500 where process.isRunning && !serving() {
             try await Task.sleep(for: .milliseconds(20))
         }
+        if !serving() { process.terminate() }
         try #require(
-            process.isRunning,
+            process.isRunning && serving(),
             "S3 fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
         )
     }
