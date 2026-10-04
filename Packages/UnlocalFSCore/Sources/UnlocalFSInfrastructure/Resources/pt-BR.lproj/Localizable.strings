@@ -1,1 +1,36 @@
 /* Brazilian Portuguese translations. */
+
+/* MountService */
+"This drive is already connecting." = "Esta unidade já está conectando.";
+"This drive is already running. Disconnect it first." = "Esta unidade já está em execução. Desconecte-a primeiro.";
+"The mount folder contains files. Move them before connecting: %@" = "A pasta de montagem contém arquivos. Mova-os antes de conectar: %1$@";
+"Could not open the drive log: %@" = "Não foi possível abrir o log da unidade: %1$@";
+"The drive could not mount. Open its log for details." = "A unidade não pôde ser montada. Abra o log dela para detalhes.";
+"The drive took too long to mount. Open its log for details." = "A unidade demorou demais para montar. Abra o log dela para detalhes.";
+"The drive's control service is unavailable. Reconnect to restore the drive. Its cache will be kept." = "O serviço de controle da unidade está indisponível. Reconecte para restaurá-la. O cache será mantido.";
+"The drive's control service is unavailable. Its cache will be kept.\n\n%@" = "O serviço de controle da unidade está indisponível. O cache será mantido.\n\n%1$@";
+"Could not stop the old drive service because its process could not be identified. The cache was kept." = "Não foi possível parar o serviço antigo da unidade porque o processo dele não pôde ser identificado. O cache foi mantido.";
+"UnlocalFS cannot read the %@: %@\nChoose a file that exists and that you can read." = "O UnlocalFS não consegue ler o %1$@: %2$@\nEscolha um arquivo que exista e que você possa ler.";
+"trusted-hosts file" = "arquivo de hosts confiáveis";
+"private key file" = "arquivo de chave privada";
+"ssh-agent is not available. Start your ssh-agent and load a key, or enter the agent's socket path in the connection." = "O ssh-agent não está disponível. Inicie seu ssh-agent e carregue uma chave, ou informe o caminho do socket do agente na conexão.";
+"its host key changed" = "a chave de host do servidor mudou";
+"its host key is not trusted yet" = "a chave de host do servidor ainda não é confiável";
+"Could not trust this server because %@. Check the server's host key fingerprint with its administrator, then fix its entry in %@. UnlocalFS never changes this file.\n\n%@" = "Não foi possível confiar neste servidor porque %1$@. Confira a impressão digital da host key com o administrador do servidor e corrija a entrada em %2$@. O UnlocalFS nunca altera esse arquivo.\n\n%3$@";
+"This drive's folder ends with a space, which rclone config files cannot keep. Rename the folder to export a config." = "A pasta desta unidade termina com um espaço, o que arquivos de configuração do rclone não suportam. Renomeie a pasta para exportar uma configuração.";
+"Reconnect the drive to create links. UnlocalFS can only create links through a connected drive." = "Reconecte a unidade para criar links. O UnlocalFS só pode criar links por uma unidade conectada.";
+"Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n%@" = "Reconecte a unidade para criar links. O UnlocalFS não conseguiu verificar se o arquivo ainda está sendo enviado.\n\n%1$@";
+"This file is still uploading. Wait for it to finish, then copy the link again." = "Este arquivo ainda está sendo enviado. Aguarde o término e copie o link novamente.";
+"Could not create a link. If the file is still uploading, wait for it to finish.\n\n%@" = "Não foi possível criar o link. Se o arquivo ainda estiver sendo enviado, aguarde o término.\n\n%1$@";
+"Could not create a link. Try again." = "Não foi possível criar o link. Tente novamente.";
+"Could not eject the drive. Close files using it and try again.\n\n%@" = "Não foi possível ejetar a unidade. Feche os arquivos em uso nela e tente novamente.\n\n%1$@";
+"The drive is still mounted. Close files using it and try again." = "A unidade ainda está montada. Feche os arquivos em uso nela e tente novamente.";
+"The drive is still stopping. Wait a moment and try disconnecting again." = "A unidade ainda está parando. Aguarde um instante e tente desconectar novamente.";
+
+/* Command */
+"The command timed out. Try again." = "O comando expirou. Tente novamente.";
+"The command failed. Try again." = "O comando falhou. Tente novamente.";
+
+/* Keychain */
+"Keychain returned unexpected data." = "O Keychain retornou dados inesperados.";
+"Keychain error %@" = "Erro do Keychain %1$@";

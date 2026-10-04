@@ -3,6 +3,8 @@ import Testing
 import UnlocalFSDomain
 
 @Suite struct ConnectionRulesTests {
+    init() { pinEnglish() }
+
     @Test func duplicateUsesANewIdentityAndKeepsTheCredentialsSource() {
         var connection = Connection()
         connection.name = "Photos"

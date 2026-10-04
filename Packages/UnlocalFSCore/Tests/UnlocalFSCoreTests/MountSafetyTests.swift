@@ -4,6 +4,8 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
 @Suite struct MountSafetyTests {
+    init() { pinEnglish() }
+
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
         try await withFixture(script: "#!/bin/sh\necho 'Control unavailable' >&2\nexit 1\n") { service, connection in
             let before = await service.status(connection)

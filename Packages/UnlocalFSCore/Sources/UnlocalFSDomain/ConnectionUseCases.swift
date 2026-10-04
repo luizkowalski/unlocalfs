@@ -21,12 +21,12 @@ public struct SaveConnectionUseCase: Sendable {
     }
 
     private func requireSameStorage(_ previous: Connection, _ connection: Connection, credentials: Credentials) throws {
-        let duplicate = AppError("Duplicate this drive to change its protocol, folder, or encryption.")
+        let duplicate = AppError(L10n.duplicateChangesLockedAttributes)
         guard previous.backend == connection.backend else { throw duplicate }
         guard connection.backend.locksFolderAfterSave else { return }
         guard previous.encrypted == connection.encrypted, previous.folderPath == connection.folderPath else { throw duplicate }
         if previous.encrypted, try repository.credentials(for: previous.id).encryptionPassword != credentials.encryptionPassword {
-            throw AppError("You cannot change the encryption password of a saved drive. Duplicate the drive to use a new password.")
+            throw AppError(L10n.encryptionPasswordImmutable)
         }
     }
 }
@@ -41,7 +41,7 @@ public struct DeleteConnectionUseCase: Sendable {
     }
 
     public func execute(_ connection: Connection) async throws -> [Connection] {
-        guard await !drives.status(connection).isActive else { throw AppError("Disconnect this drive before deleting it.") }
+        guard await !drives.status(connection).isActive else { throw AppError(L10n.disconnectBeforeDelete) }
         try repository.delete(connection.id)
         drives.removeCache(connection)
         return try repository.all()

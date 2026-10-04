@@ -32,9 +32,9 @@ public struct QuitUseCase: Sendable {
     public init(drives: any DriveGateway) { self.drives = drives }
 
     public func execute(connections: [Connection], operationInProgress: Bool) async throws {
-        guard !operationInProgress else { throw AppError("Wait for the current operation to finish before quitting.") }
+        guard !operationInProgress else { throw AppError(L10n.waitBeforeQuitting) }
         for connection in connections where await drives.status(connection).isActive {
-            throw AppError("Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar.")
+            throw AppError(L10n.disconnectBeforeQuitting)
         }
     }
 }

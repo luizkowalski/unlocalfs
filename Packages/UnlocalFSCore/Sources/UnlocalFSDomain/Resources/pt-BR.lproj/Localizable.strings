@@ -1,1 +1,83 @@
 /* Brazilian Portuguese translations. */
+
+/* Connection validation */
+"Name cannot be empty" = "O nome não pode ficar vazio";
+"Enter a drive name without slashes, colons, or control characters." = "Informe um nome de unidade sem barras, dois-pontos ou caracteres de controle.";
+"Enter a shorter drive name. The limit is 120 bytes." = "Informe um nome de unidade mais curto. O limite é de 120 bytes.";
+"Endpoint must be a valid URL" = "O endpoint precisa ser uma URL válida";
+"Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query." = "Informe um endpoint de serviço HTTP ou HTTPS sem bucket, credenciais ou consulta.";
+"Bucket cannot be empty" = "O bucket não pode ficar vazio";
+"Enter the bucket name, without a path." = "Informe o nome do bucket, sem caminho.";
+"Enter a folder path like clients/acme, or leave it empty to use the whole bucket." = "Informe um caminho de pasta como clientes/acme, ou deixe vazio para usar o bucket inteiro.";
+"A drive with that name already exists." = "Já existe uma unidade com esse nome.";
+"The passwords do not match." = "As senhas não coincidem.";
+"Access key cannot be empty" = "A chave de acesso não pode ficar vazia";
+"Secret key cannot be empty" = "A chave secreta não pode ficar vazia";
+"Password cannot be empty" = "A senha não pode ficar vazia";
+"Import a service-account key" = "Importe uma chave de conta de serviço";
+"Encryption password cannot be empty" = "A senha de criptografia não pode ficar vazia";
+
+/* Duplicate-name suffix */
+"%1$@ copy" = "%1$@ — cópia";
+
+/* Provider titles (brand names keep their English values) */
+"S3 compatible" = "Compatível com S3";
+"Amazon S3" = "Amazon S3";
+"Cloudflare R2" = "Cloudflare R2";
+"MinIO" = "MinIO";
+"Wasabi" = "Wasabi";
+"DigitalOcean Spaces" = "DigitalOcean Spaces";
+"SFTP" = "SFTP";
+"Google Cloud Storage" = "Google Cloud Storage";
+
+/* ConnectionField display labels */
+"Name" = "Nome";
+"Endpoint" = "Endpoint";
+"Bucket" = "Bucket";
+"Folder" = "Pasta";
+"Access key" = "Chave de acesso";
+"Secret key" = "Chave secreta";
+"Service account key" = "Chave de conta de serviço";
+"Host" = "Servidor";
+"Port" = "Porta";
+"Username" = "Usuário";
+"Remote folder" = "Pasta remota";
+"Password" = "Senha";
+"Private key" = "Chave privada";
+"Trusted hosts" = "Hosts confiáveis";
+"Encryption password" = "Senha de criptografia";
+"Confirm password" = "Confirmar senha";
+
+/* SFTP authentication titles */
+"SSH agent" = "Agente SSH";
+
+/* SFTPSettings validation */
+"Enter the server's host name or IP address." = "Informe o nome do servidor ou o endereço IP.";
+"Enter a port from 1 to 65535." = "Informe uma porta de 1 a 65535.";
+"Enter the username for this server." = "Informe o usuário deste servidor.";
+"Enter a folder path without control characters, or leave it empty for your home folder." = "Informe um caminho de pasta sem caracteres de controle, ou deixe vazio para usar sua pasta pessoal.";
+"Enter the full path of your private key file, for example ~/.ssh/id_ed25519." = "Informe o caminho completo do seu arquivo de chave privada, por exemplo ~/.ssh/id_ed25519.";
+"Enter the full path of your trusted-hosts file, for example %@." = "Informe o caminho completo do seu arquivo de hosts confiáveis, por exemplo %1$@.";
+
+/* Use-case refusals */
+"Duplicate this drive to change its protocol, folder, or encryption." = "Duplique esta unidade para mudar o protocolo, a pasta ou a criptografia.";
+"You cannot change the encryption password of a saved drive. Duplicate the drive to use a new password." = "Não é possível mudar a senha de criptografia de uma unidade salva. Duplique a unidade para usar uma nova senha.";
+"Disconnect this drive before deleting it." = "Desconecte esta unidade antes de excluí-la.";
+"The file is not in an UnlocalFS drive." = "O arquivo não está em uma unidade do UnlocalFS.";
+"Links aren't available for %@ drives." = "Links não estão disponíveis para unidades %1$@.";
+"Links aren't available for encrypted drives because they would point to encrypted data." = "Links não estão disponíveis para unidades criptografadas porque apontariam para dados criptografados.";
+"Wait for the current operation to finish before quitting." = "Aguarde a operação atual terminar antes de sair.";
+"Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar." = "Desconecte suas unidades antes de sair. Isso preserva os envios pendentes. Fechar a janela mantém o UnlocalFS na barra de menus.";
+"Only encrypted drives can export an rclone config." = "Somente unidades criptografadas podem exportar uma configuração do rclone.";
+
+/* Service account keys */
+"Not a service-account key. Choose the JSON key you downloaded from Google Cloud." = "Não é uma chave de conta de serviço. Escolha a chave JSON que você baixou do Google Cloud.";
+
+/* Mount lifecycle */
+"Uploads are still in progress. Wait for them to finish before disconnecting." = "Há envios em andamento. Aguarde o término deles antes de desconectar.";
+"Some files could not upload and need a retry. Keep UnlocalFS running until uploads finish." = "Alguns arquivos não puderam ser enviados e precisam tentar novamente. Mantenha o UnlocalFS em execução até que os envios terminem.";
+
+/* Share-link expiry */
+"1 hour" = "1 hora";
+"1 day" = "1 dia";
+"7 days" = "7 dias";

@@ -5,9 +5,9 @@ public enum ShareLinkExpiry: String, Sendable {
 
     public var title: String {
         switch self {
-        case .hour: "1 hour"
-        case .day: "1 day"
-        case .week: "7 days"
+        case .hour: L10n.oneHour
+        case .day: L10n.oneDay
+        case .week: L10n.sevenDays
         }
     }
 }

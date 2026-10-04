@@ -57,12 +57,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public func validate() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!name.isBlank, field: .name, message: "Name cannot be empty")
+        result.check(!name.isBlank, field: .name, message: L10n.nameEmpty)
         result.check(
             name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
-            field: .name, message: "Enter a drive name without slashes, colons, or control characters."
+            field: .name, message: L10n.nameHasForbiddenCharacters
         )
-        result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
+        result.check(name.utf8.count <= 120, field: .name, message: L10n.nameTooLong)
         switch backend {
         case .s3Compatible: result.issues += validateEndpoint().issues + validateBucket().issues
         case .gcs: result.issues += validateBucket().issues
@@ -74,7 +74,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     private func validateEndpoint() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
         let url = URL(string: endpoint)
-        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: "Endpoint must be a valid URL")
+        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: L10n.endpointInvalidURL)
         let validEndpoint = URLComponents(string: endpoint).map { url in
             ["http", "https"].contains(url.scheme) &&
                 url.host?.isEmpty == false && url.user == nil && url.password == nil &&
@@ -82,23 +82,23 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         } ?? false
         result.check(
             validEndpoint, field: .endpoint,
-            message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."
+            message: L10n.endpointNotDirect
         )
         return result
     }
 
     private func validateBucket() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!bucket.isBlank, field: .bucket, message: "Bucket cannot be empty")
+        result.check(!bucket.isBlank, field: .bucket, message: L10n.bucketEmpty)
         result.check(
             bucket != "." && bucket != ".." &&
                 bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
-            field: .bucket, message: "Enter the bucket name, without a path."
+            field: .bucket, message: L10n.bucketHasPath
         )
         result.check(
             (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .folder, message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."
+            field: .folder, message: L10n.folderPathInvalid
         )
         return result
     }
@@ -107,7 +107,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate()
         result.check(
             !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
-            field: .name, message: "A drive with that name already exists."
+            field: .name, message: L10n.nameAlreadyExists
         )
         return result
     }
@@ -116,7 +116,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate(against: connections)
         result.issues += credentials.validate(for: self).issues
         if encrypted, !connections.contains(where: { $0.id == id }) {
-            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: "The passwords do not match.")
+            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: L10n.passwordsDoNotMatch)
         }
         return result
     }
@@ -128,6 +128,29 @@ public enum ConnectionField: String, CaseIterable, Sendable {
     case host = "Host", port = "Port", username = "Username", remotePath = "Remote folder"
     case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
     case encryptionPassword = "Encryption password", confirmation = "Confirm password"
+
+    /// Localized display label. Raw values stay stable identifiers because the
+    /// editor renders them via `Text(field.rawValue)` until it adopts this.
+    public var displayName: String {
+        switch self {
+        case .name: L10n.fieldName
+        case .endpoint: L10n.fieldEndpoint
+        case .bucket: L10n.fieldBucket
+        case .folder: L10n.fieldFolder
+        case .accessKey: L10n.fieldAccessKey
+        case .secretKey: L10n.fieldSecretKey
+        case .serviceAccountKey: L10n.fieldServiceAccountKey
+        case .host: L10n.fieldHost
+        case .port: L10n.fieldPort
+        case .username: L10n.fieldUsername
+        case .remotePath: L10n.fieldRemoteFolder
+        case .password: L10n.fieldPassword
+        case .keyFile: L10n.fieldPrivateKey
+        case .trustedHosts: L10n.fieldTrustedHosts
+        case .encryptionPassword: L10n.fieldEncryptionPassword
+        case .confirmation: L10n.fieldConfirmPassword
+        }
+    }
 }
 
 public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -152,14 +175,14 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .other: "S3 compatible"
-        case .aws: "Amazon S3"
-        case .cloudflare: "Cloudflare R2"
-        case .minio: "MinIO"
-        case .wasabi: "Wasabi"
-        case .digitalOcean: "DigitalOcean Spaces"
-        case .sftp: "SFTP"
-        case .googleCloudStorage: "Google Cloud Storage"
+        case .other: L10n.providerS3Compatible
+        case .aws: L10n.providerAmazonS3
+        case .cloudflare: L10n.providerCloudflareR2
+        case .minio: L10n.providerMinIO
+        case .wasabi: L10n.providerWasabi
+        case .digitalOcean: L10n.providerDigitalOceanSpaces
+        case .sftp: L10n.providerSFTP
+        case .googleCloudStorage: L10n.providerGoogleCloudStorage
         }
     }
 }
@@ -244,18 +267,18 @@ public struct Credentials: Codable, Equatable, Sendable {
         var result = ValidationResult<ConnectionField>()
         switch connection.backend {
         case .s3Compatible:
-            result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
-            result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
+            result.check(!accessKey.isBlank, field: .accessKey, message: L10n.accessKeyEmpty)
+            result.check(!secretKey.isBlank, field: .secretKey, message: L10n.secretKeyEmpty)
         case .sftp:
             result.check(
                 connection.sftp.authentication != .password || !password.isEmpty,
-                field: .password, message: "Password cannot be empty"
+                field: .password, message: L10n.passwordEmpty
             )
         case .gcs:
-            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: "Import a service-account key")
+            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: L10n.importServiceAccountKey)
         }
         if connection.encrypted {
-            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")
+            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: L10n.encryptionPasswordEmpty)
         }
         return result
     }

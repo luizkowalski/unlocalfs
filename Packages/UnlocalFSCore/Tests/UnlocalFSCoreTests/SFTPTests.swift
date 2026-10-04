@@ -6,6 +6,8 @@ import UnlocalFSInfrastructure
 
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPTests {
+    init() { pinEnglish() }
+
     @Test(arguments: SFTPLogin.allCases)
     func sftpDriveAuthenticatesReadsAndWrites(login: SFTPLogin) async throws {
         try await withSFTPDrive(login) { drive, sftp in
@@ -120,6 +122,8 @@ struct SFTPTests {
 
 @Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPAgentEnvironmentTests {
+    init() { pinEnglish() }
+
     @Test func agentSocketOverrideTakesPrecedenceOverTheEnvironment() async throws {
         try await withSFTPDrive(.agent) { drive, sftp in
             try await withAgentEnvironment(sftp.agent.socket.path) {

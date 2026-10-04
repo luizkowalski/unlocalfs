@@ -15,7 +15,7 @@ public struct Keychain: CredentialStorage {
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound { return nil }
         try check(status)
-        guard let data = result as? Data else { throw AppError("Keychain returned unexpected data.") }
+        guard let data = result as? Data else { throw AppError(L10n.keychainUnexpectedData) }
         return try JSONDecoder().decode(Credentials.self, from: data)
     }
 
@@ -43,7 +43,7 @@ public struct Keychain: CredentialStorage {
 
     private func check(_ status: OSStatus) throws {
         guard status == errSecSuccess else {
-            throw AppError(SecCopyErrorMessageString(status, nil) as String? ?? "Keychain error \(status)")
+            throw AppError(SecCopyErrorMessageString(status, nil) as String? ?? L10n.keychainError(String(status)))
         }
     }
 }

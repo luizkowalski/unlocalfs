@@ -12,6 +12,8 @@ private let badBucket = "Enter the bucket name, without a path."
 private let badFolder = "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."
 
 @Suite struct ConnectionValidationTests {
+    init() { pinEnglish() }
+
     @Test(arguments: [
         (false, Credentials(), [ConnectionField.accessKey, .secretKey]),
         (true, Credentials(accessKey: " \t", secretKey: "\n", encryptionPassword: " "), [.accessKey, .secretKey, .encryptionPassword]),

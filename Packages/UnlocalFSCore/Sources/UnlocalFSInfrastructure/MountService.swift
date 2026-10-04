@@ -53,24 +53,24 @@ public actor MountService: DriveGateway {
     }
 
     public func mount(_ connection: Connection, credentials: Credentials) async throws {
-        guard !starting.contains(connection.id) else { throw AppError("This drive is already connecting.") }
+        guard !starting.contains(connection.id) else { throw AppError(L10n.alreadyConnecting) }
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
-        guard await !status(connection).isActive else { throw AppError("This drive is already running. Disconnect it first.") }
+        guard await !status(connection).isActive else { throw AppError(L10n.alreadyRunning) }
         let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
         let mount = paths.mount(connection)
         try FileManager.default.createDirectory(at: mount, withIntermediateDirectories: true)
         guard try FileManager.default.contentsOfDirectory(atPath: mount.path).isEmpty else {
-            throw AppError("The mount folder contains files. Move them before connecting: \(mount.path)")
+            throw AppError(L10n.mountFolderContainsFiles(mount.path))
         }
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
         let command = MountCommand(remote: try remote(for: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
-        guard descriptor >= 0 else { throw AppError("Could not open the drive log: \(String(cString: strerror(errno)))") }
+        guard descriptor >= 0 else { throw AppError(L10n.couldNotOpenLog(String(cString: strerror(errno)))) }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { try? log.close() }
         let process = Process()
@@ -92,13 +92,13 @@ public actor MountService: DriveGateway {
             if isMounted(mount) { return }
             guard process.isRunning else {
                 processes[connection.id] = nil
-                throw AppError("The drive could not mount. Open its log for details.")
+                throw AppError(L10n.couldNotMount)
             }
             try await Task.sleep(for: .milliseconds(250))
         }
         process.terminate()
         processes[connection.id] = nil
-        throw AppError("The drive took too long to mount. Open its log for details.")
+        throw AppError(L10n.mountTimedOut)
     }
 
     public func status(_ connection: Connection) async -> MountStatus {
@@ -108,7 +108,7 @@ public actor MountService: DriveGateway {
         status.isRunning = running == true
         guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             if status.isActive {
-                status.controlError = "The drive's control service is unavailable. Reconnect to restore the drive. Its cache will be kept."
+                status.controlError = L10n.controlServiceUnavailableReconnect
             }
             return status
         }
@@ -126,7 +126,7 @@ public actor MountService: DriveGateway {
             status.bytesCached = cache.bytesUsed
         } catch {
             if status.isMounted || running != false {
-                status.controlError = "The drive's control service is unavailable. Its cache will be kept.\n\n\(error.localizedDescription)"
+                status.controlError = L10n.controlServiceUnavailable(error.localizedDescription)
             }
         }
         return status
@@ -166,7 +166,7 @@ public actor MountService: DriveGateway {
         let current = await status(connection)
         if let error = current.controlError, !recovering { throw AppError(error) }
         if current.needsReconnect, isRunning(connection) == nil {
-            throw AppError("Could not stop the old drive service because its process could not be identified. The cache was kept.")
+            throw AppError(L10n.couldNotStopOldService)
         }
         try current.requireSafeDisconnect()
         if current.isMounted { try await eject(connection, force: !current.isRunning) }
@@ -218,8 +218,8 @@ public actor MountService: DriveGateway {
             return RcloneRemote(connection: connection, credentials: credentials)
         case .sftp:
             let sftp = connection.sftp
-            try requireReadableFile(sftp.trustedHostsPath, named: "trusted-hosts file")
-            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: "private key file") }
+            try requireReadableFile(sftp.trustedHostsPath, named: L10n.trustedHostsFileName)
+            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: L10n.privateKeyFileName) }
             let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
             return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
         }
@@ -229,7 +229,7 @@ public actor MountService: DriveGateway {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
               FileManager.default.isReadableFile(atPath: path) else {
-            throw AppError("UnlocalFS cannot read the \(name): \(path)\nChoose a file that exists and that you can read.")
+            throw AppError(L10n.cannotReadFile(name, path))
         }
     }
 
@@ -237,7 +237,7 @@ public actor MountService: DriveGateway {
         let path = sftp.agentSocket.isEmpty ? ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
         let type = path.flatMap { try? FileManager.default.attributesOfItem(atPath: $0)[.type] as? FileAttributeType }
         guard let path, type == .typeSocket else {
-            throw AppError("ssh-agent is not available. Start your ssh-agent and load a key, or enter the agent's socket path in the connection.")
+            throw AppError(L10n.agentUnavailable)
         }
         return path
     }
@@ -249,13 +249,8 @@ public actor MountService: DriveGateway {
         case .sftp:
             let message = error.localizedDescription
             guard message.contains("knownhosts:") else { return error }
-            let reason = message.contains("key mismatch") ? "its host key changed" : "its host key is not trusted yet"
-            return AppError("""
-            Could not trust this server because \(reason). Check the server's host key fingerprint with its administrator, \
-            then fix its entry in \(connection.sftp.trustedHostsPath). UnlocalFS never changes this file.
-
-            \(message)
-            """)
+            let reason = message.contains("key mismatch") ? L10n.hostKeyChanged : L10n.hostKeyNotTrusted
+            return AppError(L10n.untrustedHost(reason, trustedHostsPath: connection.sftp.trustedHostsPath, details: message))
         }
     }
 
@@ -292,7 +287,7 @@ public actor MountService: DriveGateway {
 extension MountService {
     public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
         guard RcloneRemote(connection: connection, credentials: nil).path.last?.isWhitespace != true else {
-            throw AppError("This drive's folder ends with a space, which rclone config files cannot keep. Rename the folder to export a config.")
+            throw AppError(L10n.folderEndsWithSpace)
         }
         var prepared: Credentials?
         if let credentials { prepared = try await prepareCredentials(credentials) }
@@ -324,16 +319,16 @@ extension MountService {
 
     public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            throw AppError("Reconnect the drive to create links. UnlocalFS can only create links through a connected drive.")
+            throw AppError(L10n.reconnectForLinks)
         }
         let pending: [FileActivity]
         do {
             pending = try await activity(connection)
         } catch {
-            throw AppError("Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n\(error.localizedDescription)")
+            throw AppError(L10n.reconnectToCheckUploads(error.localizedDescription))
         }
         if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
-            throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
+            throw AppError(L10n.fileStillUploading)
         }
         let remote = RcloneRemote(connection: connection, credentials: credentials)
         let output: Data
@@ -344,15 +339,11 @@ extension MountService {
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
-            throw AppError("""
-            Could not create a link. If the file is still uploading, wait for it to finish.
-
-            \(redacted(error, credentials: credentials).localizedDescription)
-            """)
+            throw AppError(L10n.couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription))
         }
         guard let link = URL(string: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)),
               ["http", "https"].contains(link.scheme) else {
-            throw AppError("Could not create a link. Try again.")
+            throw AppError(L10n.couldNotCreateLink)
         }
         return link
     }
@@ -363,17 +354,17 @@ private extension MountService {
         do {
             _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
         } catch {
-            throw AppError("Could not eject the drive. Close files using it and try again.\n\n\(error.localizedDescription)")
+            throw AppError(L10n.couldNotEject(error.localizedDescription))
         }
         for _ in 0..<20 {
             if !isMounted(paths.mount(connection)) { return }
             try await Task.sleep(for: .milliseconds(100))
         }
-        throw AppError("The drive is still mounted. Close files using it and try again.")
+        throw AppError(L10n.driveStillMounted)
     }
 
     func stop(_ connection: Connection) async throws {
-        var quitError: any Error = AppError("The drive is still stopping. Wait a moment and try disconnecting again.")
+        var quitError: any Error = AppError(L10n.driveStillStopping)
         do {
             _ = try await control(connection, "core/quit")
         } catch {
