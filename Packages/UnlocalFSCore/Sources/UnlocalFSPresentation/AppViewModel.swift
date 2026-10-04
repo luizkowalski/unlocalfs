@@ -16,6 +16,7 @@ import UnlocalFSDomain
     public var deleting: Connection?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
+    public private(set) var appLanguage: AppLanguage
     private var networkAvailable = true
     private var sleeping = false
 
@@ -50,6 +51,7 @@ import UnlocalFSDomain
         self.quit = quit
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
+        appLanguage = AppLanguage.stored()
         switch initialConnections {
         case .success(let connections):
             self.connections = connections
@@ -169,6 +171,16 @@ import UnlocalFSDomain
     public func checkAgain(_ connection: Connection) async {
         errors[connection.id] = nil
         await refresh()
+    }
+
+    public func setAppLanguage(_ language: AppLanguage) {
+        appLanguage = language
+        let defaults = UserDefaults.standard
+        if language == .system {
+            defaults.removeObject(forKey: "AppleLanguages")
+        } else {
+            defaults.set([language.rawValue], forKey: "AppleLanguages")
+        }
     }
 
     public func setOpensAtLogin(_ enabled: Bool) {
