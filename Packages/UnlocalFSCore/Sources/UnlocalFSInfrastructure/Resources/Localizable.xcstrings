@@ -285,7 +285,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "A unidade ainda está parando. Aguarde um instante e tente desconectar novamente."
+            "value": "A unidade ainda está encerrando. Aguarde um instante e tente desconectar novamente."
           }
         }
       }
@@ -319,7 +319,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "A pasta desta unidade termina com um espaço, o que arquivos de configuração do rclone não suportam. Renomeie a pasta para exportar uma configuração."
+            "value": "A pasta desta unidade termina com um espaço, que os arquivos de configuração do rclone não conseguem preservar. Renomeie a pasta para exportar uma configuração."
           }
         }
       }
@@ -370,7 +370,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erro do Keychain %1$d"
+            "value": "Erro do chaveiro %1$d"
           }
         }
       },
@@ -388,7 +388,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Keychain retornou dados inesperados."
+            "value": "O chaveiro retornou dados inesperados."
           }
         }
       }

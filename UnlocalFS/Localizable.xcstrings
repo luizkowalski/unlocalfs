@@ -2,18 +2,18 @@
   "sourceLanguage": "en",
   "strings": {
     "%@": {},
-    "%@ · ^[%@ file](inflect: true)": {
+    "%@ · ^[%lld file](inflect: true)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · ^[%2$@ file](inflect: true)"
+            "value": "%1$@ · ^[%2$lld file](inflect: true)"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ · ^[%2$@ arquivo](inflect: true)"
+            "value": "%1$@ · ^[%2$lld arquivo](inflect: true)"
           }
         }
       }
@@ -104,7 +104,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade e usar a chave de conta de serviço. A senha é apenas ofuscada, não criptografada."
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade e usar a chave da conta de serviço. A senha é apenas ofuscada, não criptografada."
           }
         }
       }
@@ -196,7 +196,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ em cache"
+            "value": "de %1$@ em cache"
           }
         }
       }
@@ -525,7 +525,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Exportar config do rclone"
+            "value": "Exportar configuração do rclone"
           }
         }
       }
@@ -608,7 +608,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Servidor"
+            "value": "Host"
           }
         }
       },
@@ -660,7 +660,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Incluir chave de conta de serviço"
+            "value": "Incluir chave da conta de serviço"
           }
         }
       }
@@ -701,7 +701,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registro"
+            "value": "Log"
           }
         }
       },
@@ -1085,7 +1085,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salva um arquivo que permite ao rclone ler esta unidade sem o UnlocalFS"
+            "value": "Salvar um arquivo que permite ao rclone ler esta unidade sem o UnlocalFS"
           }
         }
       }
@@ -1168,7 +1168,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra as alterações feitas nesta unidade por outros apps ou Macs"
+            "value": "Mostrar as alterações feitas nesta unidade por outros apps ou Macs"
           }
         }
       }
@@ -1329,7 +1329,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Aguardando novo envio"
+            "value": "Aguardando nova tentativa de envio"
           }
         }
       }

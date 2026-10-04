@@ -202,7 +202,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Informe um endpoint de serviço HTTP ou HTTPS sem bucket, credenciais ou consulta."
+            "value": "Informe um endpoint de serviço HTTP ou HTTPS sem bucket, credenciais ou parâmetros de consulta."
           }
         }
       }
@@ -219,7 +219,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alguns arquivos não puderam ser enviados e precisam tentar novamente. Mantenha o UnlocalFS em execução até que os envios terminem."
+            "value": "Alguns arquivos não puderam ser enviados e precisam de uma nova tentativa. Mantenha o UnlocalFS em execução até que os envios terminem."
           }
         }
       }
@@ -344,7 +344,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Servidor"
+            "value": "Host"
           }
         }
       },
@@ -434,7 +434,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chave de conta de serviço"
+            "value": "Chave da conta de serviço"
           }
         }
       },
@@ -522,7 +522,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Informe o nome do servidor ou o endereço IP."
+            "value": "Informe o nome do host ou o endereço IP do servidor."
           }
         }
       }
