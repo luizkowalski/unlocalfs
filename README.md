@@ -7,14 +7,15 @@
 
 <h1 align="center">UnlocalFS</h1>
 
-UnlocalFS puts your S3 bucket or SFTP server in Finder. Add a connection once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
+UnlocalFS puts your S3 or Google Cloud Storage bucket, or your SFTP server, in Finder. Add a connection once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
 
-It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, and SFTP servers.
+It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, Google Cloud Storage, and SFTP servers.
 
 ## Features
 
-- **Finder integration:** Open, edit, and save files in your S3 bucket or on your SFTP server like any other folder on your Mac.
+- **Finder integration:** Open, edit, and save files in your bucket or on your SFTP server like any other folder on your Mac.
 - **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them. Export an rclone config to get your files back without UnlocalFS.
+- **Google Cloud Storage:** Sign in with a service-account key. UnlocalFS keeps it in your Keychain.
 - **SFTP servers:** Sign in with a password, a private key, or ssh-agent. UnlocalFS only connects to servers listed in your trusted-hosts file.
 - **Mount a folder as a drive:** Turn one folder in a bucket or on a server into its own drive.
 - **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
@@ -51,7 +52,7 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 mise install
 mise app               # builds dist/UnlocalFS.app
 mise test              # runs the core and view model tests
-mise test:integration  # also mounts drives against local S3 and SFTP servers and uses Keychain
+mise test:integration  # also mounts drives against local S3 and SFTP servers and uses Keychain; set UNLOCALFS_GCS_BUCKET and UNLOCALFS_GCS_KEY_FILE to test a real GCS bucket
 mise lint              # runs SwiftLint
 mise xcode             # opens the project in Xcode
 ```
