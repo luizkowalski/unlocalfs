@@ -5,6 +5,8 @@ import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 
 @MainActor @Suite struct AppViewModelTests {
+    init() { pinEnglish() }
+
     @Test func activatingACheckingDriveDoesNothing() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

@@ -5,6 +5,8 @@ import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 
 @MainActor @Suite struct ConnectionEditorViewModelTests {
+    init() { pinEnglish() }
+
     @Test func invalidConnectionShowsFieldErrorsWithoutSaving() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
