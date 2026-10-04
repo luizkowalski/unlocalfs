@@ -102,6 +102,21 @@ import UnlocalFSInfrastructure
         #expect(!json.contains("hunter2"))
     }
 
+    @Test func gcsKeySurvivesReopenAndStaysOutOfTheConfig() throws {
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        var connection = gcsFixture()
+        connection.folder = "clients/acme"
+        let credentials = Credentials(serviceAccountKey: serviceAccountJSON)
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
+        try repository.save(connection, credentials: credentials)
+
+        let reopened = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
+        #expect(try reopened.all() == [connection])
+        #expect(try repository.credentials(for: connection.id) == credentials)
+        #expect(try !String(contentsOf: url, encoding: .utf8).contains("BEGIN PRIVATE KEY"))
+    }
+
     @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {
         let credentials = try JSONDecoder().decode(Credentials.self, from: Data(#"{"accessKey":"a","secretKey":"b","sessionToken":""}"#.utf8))
         #expect(credentials == Credentials(accessKey: "a", secretKey: "b"))
@@ -125,6 +140,24 @@ func sftpFixture(name: String = "Server") -> Connection {
     connection.sftp.username = "me"
     return connection
 }
+
+func gcsFixture(name: String = "Bucket") -> Connection {
+    var connection = Connection()
+    connection.name = name
+    connection.provider = .googleCloudStorage
+    connection.bucket = "my-bucket"
+    return connection
+}
+
+let serviceAccountJSON = """
+{
+  "type": "service_account",
+  "project_id": "demo",
+  "client_email": "drive@demo.iam.gserviceaccount.com",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nnot-a-real-key\\n-----END PRIVATE KEY-----\\n"
+}
+"""
 
 private func configURL() -> URL {
     FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/config.json")

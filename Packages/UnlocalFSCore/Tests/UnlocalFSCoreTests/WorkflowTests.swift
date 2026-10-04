@@ -168,18 +168,18 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func sftpSharingIsUnsupportedBeforeCredentialsAreLoaded() async throws {
+    @Test(arguments: [sftpFixture(), gcsFixture()])
+    func sharingIsUnsupportedBeforeCredentialsAreLoaded(connection: Connection) async throws {
         try await withWorkflowFixture { _, drives, paths, _ in
             let repository = SavedConnectionRepository(
                 store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage(readError: AppError("Keychain unavailable")))
-            let connection = sftpFixture()
-            try repository.save(connection, credentials: Credentials(password: "secret"))
+            try repository.save(connection, credentials: Credentials(password: "secret", serviceAccountKey: serviceAccountJSON))
             let file = paths.mount(connection).appending(path: "plan.pdf")
             await #expect {
                 _ = try await ShareFilesUseCase(repository: repository, drives: drives).execute([file], expiry: .day)
             } throws: { error in
                 let message = error.localizedDescription
-                return (error as? ShareFileError)?.file == file && message.contains("SFTP") && !message.contains("Keychain")
+                return (error as? ShareFileError)?.file == file && message.contains(connection.provider.title) && !message.contains("Keychain")
             }
             #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
         }

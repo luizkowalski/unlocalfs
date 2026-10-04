@@ -10,12 +10,13 @@ struct RcloneRemote {
         switch connection.backend {
         case .s3Compatible: "s3"
         case .sftp: "sftp"
+        case .gcs: "gcs"
         }
     }
     var exportName: String { "unlocalfs-\(type)" }
     var path: String {
         switch connection.backend {
-        case .s3Compatible: connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)"
+        case .s3Compatible, .gcs: connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)"
         case .sftp: connection.sftp.remotePath
         }
     }
@@ -26,6 +27,7 @@ struct RcloneRemote {
         switch connection.backend {
         case .s3Compatible: s3Options
         case .sftp: sftpOptions
+        case .gcs: gcsOptions
         }
     }
 
@@ -53,6 +55,12 @@ struct RcloneRemote {
             options["secret_access_key"] = credentials.secretKey
             options["session_token"] = credentials.sessionToken
         }
+        return options
+    }
+
+    private var gcsOptions: [String: String] {
+        var options = ["bucket_policy_only": "true", "no_check_bucket": "true", "directory_markers": "true"]
+        options["service_account_credentials"] = credentials?.serviceAccountKey
         return options
     }
 

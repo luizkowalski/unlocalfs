@@ -82,6 +82,13 @@ import UnlocalFSDomain
         } catch { self.error = error.localizedDescription }
     }
 
+    public func importServiceAccountKey(_ result: Result<URL, any Error>) {
+        do {
+            credentials.serviceAccountKey = try ServiceAccountKey(importing: Data(contentsOf: result.get())).json
+            error = nil
+        } catch { self.error = error.localizedDescription }
+    }
+
     public func test() async {
         guard validate() else { return }
         testing = true

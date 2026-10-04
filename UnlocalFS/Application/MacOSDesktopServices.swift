@@ -47,6 +47,7 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible: "Include keys and password"
         case .sftp: "Include saved passwords"
+        case .gcs: "Include service-account key"
         }
     }
 
@@ -54,6 +55,8 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible:
             return "Anyone with the file can read this drive. The password is only obscured, not encrypted."
+        case .gcs:
+            return "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted."
         case .sftp:
             let dependency = connection.sftp.authentication == .agent ? "needs a running ssh-agent" : "private key file"
             return """

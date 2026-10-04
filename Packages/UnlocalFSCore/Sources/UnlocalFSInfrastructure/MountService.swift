@@ -214,7 +214,7 @@ public actor MountService: DriveGateway {
 
     private func remote(for connection: Connection, credentials: Credentials?) throws -> RcloneRemote {
         switch connection.backend {
-        case .s3Compatible:
+        case .s3Compatible, .gcs:
             return RcloneRemote(connection: connection, credentials: credentials)
         case .sftp:
             let sftp = connection.sftp
@@ -244,7 +244,7 @@ public actor MountService: DriveGateway {
 
     private func diagnosed(_ error: AppError, connection: Connection) -> AppError {
         switch connection.backend {
-        case .s3Compatible:
+        case .s3Compatible, .gcs:
             return error
         case .sftp:
             let message = error.localizedDescription
@@ -264,7 +264,8 @@ public actor MountService: DriveGateway {
         let secrets = [
             credentials.accessKey, credentials.secretKey, credentials.sessionToken,
             credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
-            credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase
+            credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
+            credentials.serviceAccountKey
         ]
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")

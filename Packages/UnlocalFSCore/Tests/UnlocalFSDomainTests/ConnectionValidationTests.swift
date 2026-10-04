@@ -144,6 +144,39 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     }
 }
 
+@Suite struct GCSValidationTests {
+    @Test(arguments: [
+        "", "not json", "[]",
+        #"{"type":"authorized_user","client_email":"a@b.c","private_key":"k"}"#,
+        #"{"type":"service_account","private_key":"k"}"#,
+        #"{"type":"service_account","client_email":"a@b.c"}"#,
+        #"{"type":"service_account","client_email":"","private_key":"k"}"#
+    ])
+    func filesThatAreNotServiceAccountKeysAreRejected(json: String) {
+        #expect(throws: AppError.self) { try ServiceAccountKey(importing: Data(json.utf8)) }
+    }
+
+    @Test func validKeyShowsItsEmailAndCompactsToOneLineKeepingEveryField() throws {
+        let key = try ServiceAccountKey(importing: Data(serviceAccountJSON.utf8))
+        #expect(key.email == "drive@demo.iam.gserviceaccount.com")
+        #expect(!key.json.contains("\n"))
+        let fields = try #require(try JSONSerialization.jsonObject(with: Data(key.json.utf8)) as? [String: String])
+        #expect(fields["project_id"] == "demo" && fields["token_uri"] == "https://oauth2.googleapis.com/token")
+        #expect(fields["private_key"] == "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n")
+        #expect(ServiceAccountKey(json: key.json)?.email == key.email)
+    }
+
+    @Test func connectionNeedsABucketAndAKeyButNoEndpoint() throws {
+        var connection = gcsFixture()
+        #expect(connection.validate().isValid)
+        #expect(Credentials().validate(for: connection).issues.map(\.field) == [.serviceAccountKey])
+        let key = try ServiceAccountKey(importing: Data(serviceAccountJSON.utf8))
+        #expect(Credentials(serviceAccountKey: key.json).validate(for: connection).isValid)
+        connection.bucket = "a/b"
+        #expect(connection.validate().issues.map(\.field) == [.bucket])
+    }
+}
+
 private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {
     var settings = sftpFixture().sftp
     change(&settings)
@@ -158,3 +191,21 @@ func sftpFixture(name: String = "Server") -> Connection {
     connection.sftp.username = "me"
     return connection
 }
+
+func gcsFixture(name: String = "Bucket") -> Connection {
+    var connection = Connection()
+    connection.name = name
+    connection.provider = .googleCloudStorage
+    connection.bucket = "my-bucket"
+    return connection
+}
+
+let serviceAccountJSON = """
+{
+  "type": "service_account",
+  "project_id": "demo",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n",
+  "client_email": "drive@demo.iam.gserviceaccount.com",
+  "token_uri": "https://oauth2.googleapis.com/token"
+}
+"""
