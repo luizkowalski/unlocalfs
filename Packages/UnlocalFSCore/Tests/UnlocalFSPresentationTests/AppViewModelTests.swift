@@ -1,12 +1,10 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
+@testable import UnlocalFSDomain
 import UnlocalFSInfrastructure
-import UnlocalFSPresentation
+@testable import UnlocalFSPresentation
 
 @MainActor @Suite struct AppViewModelTests {
-    init() { pinEnglish() }
-
     @Test func activatingACheckingDriveDoesNothing() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
@@ -19,7 +17,7 @@ import UnlocalFSPresentation
 
         #expect(desktop.openedDrives.isEmpty)
         #expect(app.problem(connection) == nil)
-        #expect(app.statusText(connection) == "Checking…")
+        #expect(app.statusText(connection) == String(localized: .checking))
     }
 
     @Test func activatingAnEjectedDriveKeepsItsServiceRunning() async throws {
@@ -79,7 +77,7 @@ import UnlocalFSPresentation
 
         #expect(await !app.canQuit())
 
-        #expect(app.alert?.hasPrefix("Disconnect your drives before quitting.") == true)
+        #expect(app.alert == String(localized: .disconnectBeforeQuitting))
     }
 
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
@@ -94,9 +92,9 @@ import UnlocalFSPresentation
         await app.refresh()
 
         #expect(app.indicator(connection) == .attention)
-        #expect(app.statusText(connection) == "Upload needs attention")
+        #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
         #expect(app.uploadNotice(connection) == nil)
-        #expect(desktop.notifications.map(\.title) == ["Uploads failed on My files"])
+        #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
     }
 
     @Test func pendingUploadsOnAnEjectedDriveAskToKeepTheAppRunning() async throws {
@@ -109,8 +107,8 @@ import UnlocalFSPresentation
         await app.refresh()
 
         #expect(app.indicator(connection) == .idle)
-        #expect(app.statusText(connection) == "1 upload pending")
-        #expect(app.uploadNotice(connection) == "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again.")
+        #expect(app.statusText(connection) == String(localized: .uploadsPending(1)))
+        #expect(app.uploadNotice(connection) == String(localized: .uploadsPendingKeepAppRunning))
         #expect(app.servingStatus(connection)?.bytesCached == 2048)
     }
 
@@ -140,7 +138,7 @@ import UnlocalFSPresentation
 
         await app.refresh()
 
-        #expect(app.statusText(connection) == "1 upload pending")
+        #expect(app.statusText(connection) == String(localized: .uploadsPending(1)))
         #expect(desktop.notifications.isEmpty)
     }
 
@@ -155,7 +153,7 @@ import UnlocalFSPresentation
 
         #expect(app.isOffline(connection))
         #expect(app.indicator(connection) == .attention)
-        #expect(app.statusText(connection) == "Network unavailable")
+        #expect(app.statusText(connection) == String(localized: .networkUnavailable))
     }
 
     @Test func checkAgainClearsTheErrorAndReloadsTheStatus() async throws {
@@ -166,12 +164,12 @@ import UnlocalFSPresentation
         let app = fixture.app()
         await app.refreshFiles(connection)
         #expect(app.problem(connection) != nil)
-        #expect(app.statusText(connection) == "Needs attention")
+        #expect(app.statusText(connection) == String(localized: .needsAttention))
 
         await app.checkAgain(connection)
 
         #expect(app.problem(connection) == nil)
-        #expect(app.statusText(connection) == "Disconnected")
+        #expect(app.statusText(connection) == String(localized: .disconnected))
     }
 
     @Test func failedShareKeepsTheClipboardAndReportsTheFile() async throws {
@@ -186,7 +184,7 @@ import UnlocalFSPresentation
 
         #expect(desktop.copiedLinks == [previousLink])
         let notification = try #require(desktop.notifications.first)
-        #expect(notification.title == "Could not copy a link to outside.jpg")
+        #expect(notification.title == String(localized: .couldNotCopyLink("outside.jpg")))
         #expect(notification.fallbackToAlert)
     }
 
@@ -201,8 +199,8 @@ import UnlocalFSPresentation
 
         #expect(desktop.copiedLinks.isEmpty)
         let notification = try #require(desktop.notifications.first)
-        #expect(notification.title == "Could not copy a link to plan.pdf")
-        #expect(notification.body.contains("encrypted drives"))
+        #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
+        #expect(notification.body == String(localized: .linksUnavailableEncrypted))
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
     }
 

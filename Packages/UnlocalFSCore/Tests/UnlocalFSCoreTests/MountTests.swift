@@ -9,8 +9,6 @@ import UnlocalFSInfrastructure
         if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
 )
 struct MountTests {
-    init() { pinEnglish() }
-
     @Test func s3DriveReadsUploadsSurvivesReopeningAndUnmountsSafely() async throws {
         try await withDrive { drive in
             try Data("hello from S3".utf8).write(

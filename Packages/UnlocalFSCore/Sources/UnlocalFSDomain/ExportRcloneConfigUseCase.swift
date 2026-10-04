@@ -10,7 +10,7 @@ public struct ExportRcloneConfigUseCase: Sendable {
     }
 
     public func execute(_ connection: Connection, to destination: URL, includesSecrets: Bool) async throws {
-        guard connection.encrypted else { throw AppError(L10n.onlyEncryptedExportConfig) }
+        guard connection.encrypted else { throw AppError(String(localized: .onlyEncryptedExportConfig)) }
         let credentials = includesSecrets ? try repository.credentials(for: connection.id) : nil
         try await drives.exportRcloneConfig(connection, credentials: credentials, to: destination)
     }

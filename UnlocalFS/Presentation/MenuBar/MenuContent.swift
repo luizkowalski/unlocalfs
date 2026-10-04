@@ -5,7 +5,6 @@ import UnlocalFSPresentation
 struct MenuContent: View {
     @Environment(AppViewModel.self) private var model
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Button("Open UnlocalFS") {
@@ -29,11 +28,7 @@ struct MenuContent: View {
             }
         }
         Divider()
-        Button("Settings…") {
-            NSApp.setActivationPolicy(.regular)
-            NSApp.activate()
-            openSettings()
-        }
+        Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
         Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }

@@ -1,11 +1,9 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
 @Suite struct MountSafetyTests {
-    init() { pinEnglish() }
-
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
         try await withFixture(script: "#!/bin/sh\necho 'Control unavailable' >&2\nexit 1\n") { service, connection in
             let before = await service.status(connection)
@@ -14,7 +12,7 @@ import UnlocalFSInfrastructure
             await #expect {
                 try await service.reconnect(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
             } throws: { error in
-                error is AppError && error.localizedDescription.contains("Could not stop the old drive service")
+                error is AppError && error.localizedDescription == String(localized: .couldNotStopOldService)
             }
             let after = await service.status(connection)
             #expect(after.isActive)
@@ -196,7 +194,7 @@ import UnlocalFSInfrastructure
             await #expect {
                 _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: Credentials(accessKey: "key", secretKey: "secret"))
             } throws: { error in
-                error is AppError && error.localizedDescription.contains("Reconnect the drive")
+                error is AppError && error.localizedDescription == String(localized: .reconnectForLinks)
             }
             let root = try #require(fixtureRoot)
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
@@ -215,7 +213,7 @@ import UnlocalFSInfrastructure
             await #expect {
                 try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
             } throws: { error in
-                error.localizedDescription.contains("ends with a space")
+                error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
             connection = sftpFixture()
             connection.encrypted = true
@@ -223,7 +221,7 @@ import UnlocalFSInfrastructure
             await #expect {
                 try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
             } throws: { error in
-                error.localizedDescription.contains("ends with a space")
+                error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
             let root = try #require(fixtureRoot)
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))

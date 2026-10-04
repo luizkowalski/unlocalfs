@@ -51,8 +51,8 @@ import UnlocalFSDomain
     }
 
     public var title: String {
-        if isDuplicate { return L10n.duplicateConnection }
-        return isNew ? L10n.addConnection : L10n.editConnection
+        if isDuplicate { return String(localized: .duplicateConnection) }
+        return isNew ? String(localized: .addConnection) : String(localized: .editConnection)
     }
 
     public var locksRemoteFolder: Bool { savedBackend?.locksFolderAfterSave ?? false }

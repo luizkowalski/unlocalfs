@@ -2,12 +2,10 @@ import Darwin
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
 @Suite(.enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPTests {
-    init() { pinEnglish() }
-
     @Test(arguments: SFTPLogin.allCases)
     func sftpDriveAuthenticatesReadsAndWrites(login: SFTPLogin) async throws {
         try await withSFTPDrive(login) { drive, sftp in
@@ -50,12 +48,15 @@ struct SFTPTests {
             let trustedHosts = URL(filePath: connection.sftp.trustedHostsFile)
             let before = try Data(contentsOf: trustedHosts)
             let credentials = sftp.credentials(.password)
+            let expected = trust == "unknown"
+                ? String(localized: .hostKeyNotTrusted(trustedHosts.path, ""))
+                : String(localized: .hostKeyChanged(trustedHosts.path, ""))
 
             for attempt in [{ try await drive.service.test(connection, credentials: credentials) },
                             { try await drive.service.mount(connection, credentials: credentials) }] {
                 await #expect {
                     try await attempt()
-                } throws: { $0.localizedDescription.contains("fingerprint") && $0.localizedDescription.contains(trustedHosts.path) }
+                } throws: { $0.localizedDescription.hasPrefix(expected) }
             }
 
             #expect(try Data(contentsOf: trustedHosts) == before)
@@ -122,8 +123,6 @@ struct SFTPTests {
 
 @Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run"))
 struct SFTPAgentEnvironmentTests {
-    init() { pinEnglish() }
-
     @Test func agentSocketOverrideTakesPrecedenceOverTheEnvironment() async throws {
         try await withSFTPDrive(.agent) { drive, sftp in
             try await withAgentEnvironment(sftp.agent.socket.path) {

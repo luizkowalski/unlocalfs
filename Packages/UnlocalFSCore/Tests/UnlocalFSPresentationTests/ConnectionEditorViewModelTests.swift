@@ -1,12 +1,10 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
-import UnlocalFSInfrastructure
-import UnlocalFSPresentation
+@testable import UnlocalFSDomain
+@testable import UnlocalFSInfrastructure
+@testable import UnlocalFSPresentation
 
 @MainActor @Suite struct ConnectionEditorViewModelTests {
-    init() { pinEnglish() }
-
     @Test func invalidConnectionShowsFieldErrorsWithoutSaving() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
@@ -37,7 +35,7 @@ import UnlocalFSPresentation
         #expect(editor.firstInvalidField == nil)
         await editor.test()
 
-        #expect(editor.fieldErrors[.bucket] == "Bucket cannot be empty")
+        #expect(editor.fieldErrors[.bucket] == String(localized: .bucketEmpty))
         #expect(editor.firstInvalidField == .bucket)
         #expect(!editor.tested)
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
@@ -72,8 +70,8 @@ import UnlocalFSPresentation
         await editor.test()
 
         #expect(editor.firstInvalidField == .name)
-        #expect(editor.fieldErrors[.name] == "A drive with that name already exists.")
-        #expect(editor.fieldErrors[.folder] == "Enter a folder path like clients/acme, or leave it empty to use the whole bucket.")
+        #expect(editor.fieldErrors[.name] == String(localized: .nameAlreadyExists))
+        #expect(editor.fieldErrors[.folder] == String(localized: .folderPathInvalid))
     }
 
     @Test func staleEditorNameListShowsTheSaveErrorAndKeepsTheApp() async throws {
@@ -87,7 +85,7 @@ import UnlocalFSPresentation
 
         #expect(await editor.save() == false)
 
-        #expect(editor.error == "A drive with that name already exists.")
+        #expect(editor.error == String(localized: .nameAlreadyExists))
         #expect(editor.fieldErrors.isEmpty)
         #expect(try fixture.repository.all() == [saved])
         #expect(app.connections.isEmpty)
@@ -126,7 +124,7 @@ import UnlocalFSPresentation
         let editor = fixture.editor(draft: try #require(app.editor), app: app)
         editor.loadCredentials()
 
-        #expect(editor.title == "Duplicate connection")
+        #expect(editor.title == String(localized: .duplicateConnection))
         #expect(editor.connection.id != connection.id)
         #expect(editor.connection.name == "My files copy")
         #expect(editor.credentials == credentials)
@@ -146,7 +144,7 @@ import UnlocalFSPresentation
         await editor.test()
 
         #expect(editor.firstInvalidField == .confirmation)
-        #expect(editor.fieldErrors[.confirmation] == "The passwords do not match.")
+        #expect(editor.fieldErrors[.confirmation] == String(localized: .passwordsDoNotMatch))
         #expect(!editor.tested)
     }
 
@@ -310,7 +308,7 @@ import UnlocalFSPresentation
         await editor.test()
 
         var error = try #require(editor.error)
-        #expect(error.contains("fingerprint") && error.contains(connection.sftp.trustedHostsFile))
+        #expect(error.hasPrefix(String(localized: .hostKeyNotTrusted(connection.sftp.trustedHostsPath, ""))))
         #expect(!error.contains("sftp-secret"))
         #expect(!editor.tested)
 

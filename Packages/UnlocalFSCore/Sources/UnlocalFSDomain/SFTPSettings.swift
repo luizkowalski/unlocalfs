@@ -9,9 +9,9 @@ public enum SFTPAuthentication: String, Codable, CaseIterable, Identifiable, Sen
 
     public var title: String {
         switch self {
-        case .password: L10n.authenticationPassword
-        case .privateKey: L10n.authenticationPrivateKey
-        case .agent: L10n.authenticationAgent
+        case .password: String(localized: .password)
+        case .privateKey: String(localized: .privateKey)
+        case .agent: String(localized: .authenticationAgent)
         }
     }
 }
@@ -35,26 +35,26 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
         let separators = CharacterSet.whitespacesAndNewlines.union(.controlCharacters)
         result.check(
             !host.isBlank && host.rangeOfCharacter(from: separators) == nil,
-            field: .host, message: L10n.hostMissing
+            field: .host, message: String(localized: .hostMissing)
         )
-        result.check((1...65_535).contains(port), field: .port, message: L10n.portOutOfRange)
+        result.check((1...65_535).contains(port), field: .port, message: String(localized: .portOutOfRange))
         result.check(
             !username.isBlank && username.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .username, message: L10n.usernameMissing
+            field: .username, message: String(localized: .usernameMissing)
         )
         result.check(
             remotePath.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .remotePath, message: L10n.remotePathInvalid
+            field: .remotePath, message: String(localized: .remotePathInvalid)
         )
         if authentication == .privateKey {
             result.check(
                 Self.isFullPath(keyFile), field: .keyFile,
-                message: L10n.keyFileNotFullPath
+                message: String(localized: .keyFileNotFullPath)
             )
         }
         result.check(
             Self.isFullPath(trustedHostsFile), field: .trustedHosts,
-            message: L10n.trustedHostsNotFullPath(Self.defaultTrustedHostsFile)
+            message: String(localized: .trustedHostsNotFullPath(Self.defaultTrustedHostsFile))
         )
         return result
     }

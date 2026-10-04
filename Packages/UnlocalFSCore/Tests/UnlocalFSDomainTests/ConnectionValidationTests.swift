@@ -1,19 +1,17 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
+@testable import UnlocalFSDomain
 
-private let emptyName = "Name cannot be empty"
-private let badName = "Enter a drive name without slashes, colons, or control characters."
-private let longName = "Enter a shorter drive name. The limit is 120 bytes."
-private let invalidURL = "Endpoint must be a valid URL"
-private let badEndpoint = "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."
-private let emptyBucket = "Bucket cannot be empty"
-private let badBucket = "Enter the bucket name, without a path."
-private let badFolder = "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."
+private let emptyName = String(localized: .nameEmpty)
+private let badName = String(localized: .nameHasForbiddenCharacters)
+private let longName = String(localized: .nameTooLong)
+private let invalidURL = String(localized: .endpointInvalidURL)
+private let badEndpoint = String(localized: .endpointNotDirect)
+private let emptyBucket = String(localized: .bucketEmpty)
+private let badBucket = String(localized: .bucketHasPath)
+private let badFolder = String(localized: .folderPathInvalid)
 
 @Suite struct ConnectionValidationTests {
-    init() { pinEnglish() }
-
     @Test(arguments: [
         (false, Credentials(), [ConnectionField.accessKey, .secretKey]),
         (true, Credentials(accessKey: " \t", secretKey: "\n", encryptionPassword: " "), [.accessKey, .secretKey, .encryptionPassword]),

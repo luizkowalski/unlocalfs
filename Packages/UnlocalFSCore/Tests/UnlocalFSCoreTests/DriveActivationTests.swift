@@ -2,7 +2,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
-import UnlocalFSPresentation
+@testable import UnlocalFSPresentation
 
 extension MountTests {
     @MainActor @Test func activatingADisconnectedDriveConnectsAndOpensFinder() async throws {
@@ -111,7 +111,7 @@ extension MountTests {
             try await drive.waitForUploads(on: drive.service)
             await app.refresh()
 
-            #expect(desktop.notificationTitles == ["\(drive.connection.name) finished uploading"])
+            #expect(desktop.notificationTitles == [String(localized: .finishedUploading(drive.connection.name))])
             try await drive.service.unmount(drive.connection)
         }
     }

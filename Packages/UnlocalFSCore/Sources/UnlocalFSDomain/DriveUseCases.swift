@@ -32,9 +32,9 @@ public struct QuitUseCase: Sendable {
     public init(drives: any DriveGateway) { self.drives = drives }
 
     public func execute(connections: [Connection], operationInProgress: Bool) async throws {
-        guard !operationInProgress else { throw AppError(L10n.waitBeforeQuitting) }
+        guard !operationInProgress else { throw AppError(String(localized: .waitBeforeQuitting)) }
         for connection in connections where await drives.status(connection).isActive {
-            throw AppError(L10n.disconnectBeforeQuitting)
+            throw AppError(String(localized: .disconnectBeforeQuitting))
         }
     }
 }

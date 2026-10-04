@@ -53,24 +53,24 @@ public actor MountService: DriveGateway {
     }
 
     public func mount(_ connection: Connection, credentials: Credentials) async throws {
-        guard !starting.contains(connection.id) else { throw AppError(L10n.alreadyConnecting) }
+        guard !starting.contains(connection.id) else { throw AppError(String(localized: .alreadyConnecting)) }
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
-        guard await !status(connection).isActive else { throw AppError(L10n.alreadyRunning) }
+        guard await !status(connection).isActive else { throw AppError(String(localized: .alreadyRunning)) }
         let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
         let mount = paths.mount(connection)
         try FileManager.default.createDirectory(at: mount, withIntermediateDirectories: true)
         guard try FileManager.default.contentsOfDirectory(atPath: mount.path).isEmpty else {
-            throw AppError(L10n.mountFolderContainsFiles(mount.path))
+            throw AppError(String(localized: .mountFolderContainsFiles(mount.path)))
         }
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
         let command = MountCommand(remote: try remote(for: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
-        guard descriptor >= 0 else { throw AppError(L10n.couldNotOpenLog(String(cString: strerror(errno)))) }
+        guard descriptor >= 0 else { throw AppError(String(localized: .couldNotOpenLog(String(cString: strerror(errno))))) }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { try? log.close() }
         let process = Process()
@@ -92,13 +92,13 @@ public actor MountService: DriveGateway {
             if isMounted(mount) { return }
             guard process.isRunning else {
                 processes[connection.id] = nil
-                throw AppError(L10n.couldNotMount)
+                throw AppError(String(localized: .couldNotMount))
             }
             try await Task.sleep(for: .milliseconds(250))
         }
         process.terminate()
         processes[connection.id] = nil
-        throw AppError(L10n.mountTimedOut)
+        throw AppError(String(localized: .mountTimedOut))
     }
 
     public func status(_ connection: Connection) async -> MountStatus {
@@ -108,7 +108,7 @@ public actor MountService: DriveGateway {
         status.isRunning = running == true
         guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             if status.isActive {
-                status.controlError = L10n.controlServiceUnavailableReconnect
+                status.controlError = String(localized: .controlServiceUnavailableReconnect)
             }
             return status
         }
@@ -126,7 +126,7 @@ public actor MountService: DriveGateway {
             status.bytesCached = cache.bytesUsed
         } catch {
             if status.isMounted || running != false {
-                status.controlError = L10n.controlServiceUnavailable(error.localizedDescription)
+                status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))
             }
         }
         return status
@@ -166,7 +166,7 @@ public actor MountService: DriveGateway {
         let current = await status(connection)
         if let error = current.controlError, !recovering { throw AppError(error) }
         if current.needsReconnect, isRunning(connection) == nil {
-            throw AppError(L10n.couldNotStopOldService)
+            throw AppError(String(localized: .couldNotStopOldService))
         }
         try current.requireSafeDisconnect()
         if current.isMounted { try await eject(connection, force: !current.isRunning) }
@@ -218,18 +218,18 @@ public actor MountService: DriveGateway {
             return RcloneRemote(connection: connection, credentials: credentials)
         case .sftp:
             let sftp = connection.sftp
-            try requireReadableFile(sftp.trustedHostsPath, named: L10n.trustedHostsFileName)
-            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, named: L10n.privateKeyFileName) }
+            try requireReadableFile(sftp.trustedHostsPath, failure: { .cannotReadTrustedHostsFile($0) })
+            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
             let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
             return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
         }
     }
 
-    private func requireReadableFile(_ path: String, named name: String) throws {
+    private func requireReadableFile(_ path: String, failure: (String) -> LocalizedStringResource) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
               FileManager.default.isReadableFile(atPath: path) else {
-            throw AppError(L10n.cannotReadFile(name, path))
+            throw AppError(String(localized: failure(path)))
         }
     }
 
@@ -237,7 +237,7 @@ public actor MountService: DriveGateway {
         let path = sftp.agentSocket.isEmpty ? ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
         let type = path.flatMap { try? FileManager.default.attributesOfItem(atPath: $0)[.type] as? FileAttributeType }
         guard let path, type == .typeSocket else {
-            throw AppError(L10n.agentUnavailable)
+            throw AppError(String(localized: .agentUnavailable))
         }
         return path
     }
@@ -249,8 +249,12 @@ public actor MountService: DriveGateway {
         case .sftp:
             let message = error.localizedDescription
             guard message.contains("knownhosts:") else { return error }
-            let reason = message.contains("key mismatch") ? L10n.hostKeyChanged : L10n.hostKeyNotTrusted
-            return AppError(L10n.untrustedHost(reason, trustedHostsPath: connection.sftp.trustedHostsPath, details: message))
+            let trustedHostsPath = connection.sftp.trustedHostsPath
+            return AppError(
+                message.contains("key mismatch")
+                    ? String(localized: .hostKeyChanged(trustedHostsPath, message))
+                    : String(localized: .hostKeyNotTrusted(trustedHostsPath, message))
+            )
         }
     }
 
@@ -287,7 +291,7 @@ public actor MountService: DriveGateway {
 extension MountService {
     public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
         guard RcloneRemote(connection: connection, credentials: nil).path.last?.isWhitespace != true else {
-            throw AppError(L10n.folderEndsWithSpace)
+            throw AppError(String(localized: .folderEndsWithSpace))
         }
         var prepared: Credentials?
         if let credentials { prepared = try await prepareCredentials(credentials) }
@@ -319,16 +323,16 @@ extension MountService {
 
     public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            throw AppError(L10n.reconnectForLinks)
+            throw AppError(String(localized: .reconnectForLinks))
         }
         let pending: [FileActivity]
         do {
             pending = try await activity(connection)
         } catch {
-            throw AppError(L10n.reconnectToCheckUploads(error.localizedDescription))
+            throw AppError(String(localized: .reconnectToCheckUploads(error.localizedDescription)))
         }
         if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
-            throw AppError(L10n.fileStillUploading)
+            throw AppError(String(localized: .fileStillUploading))
         }
         let remote = RcloneRemote(connection: connection, credentials: credentials)
         let output: Data
@@ -339,11 +343,11 @@ extension MountService {
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
-            throw AppError(L10n.couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription))
+            throw AppError(String(localized: .couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription)))
         }
         guard let link = URL(string: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)),
               ["http", "https"].contains(link.scheme) else {
-            throw AppError(L10n.couldNotCreateLink)
+            throw AppError(String(localized: .couldNotCreateLink))
         }
         return link
     }
@@ -354,17 +358,17 @@ private extension MountService {
         do {
             _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
         } catch {
-            throw AppError(L10n.couldNotEject(error.localizedDescription))
+            throw AppError(String(localized: .couldNotEject(error.localizedDescription)))
         }
         for _ in 0..<20 {
             if !isMounted(paths.mount(connection)) { return }
             try await Task.sleep(for: .milliseconds(100))
         }
-        throw AppError(L10n.driveStillMounted)
+        throw AppError(String(localized: .driveStillMounted))
     }
 
     func stop(_ connection: Connection) async throws {
-        var quitError: any Error = AppError(L10n.driveStillStopping)
+        var quitError: any Error = AppError(String(localized: .driveStillStopping))
         do {
             _ = try await control(connection, "core/quit")
         } catch {

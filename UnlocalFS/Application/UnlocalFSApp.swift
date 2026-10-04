@@ -34,9 +34,6 @@ import UnlocalFSPresentation
                 .disabled(delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true)
             }
         }
-        Settings {
-            SettingsView().environment(delegate.model)
-        }
         MenuBarExtra {
             MenuContent().environment(delegate.model)
         } label: {

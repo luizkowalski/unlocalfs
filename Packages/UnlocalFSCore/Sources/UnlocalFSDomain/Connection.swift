@@ -57,12 +57,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public func validate() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!name.isBlank, field: .name, message: L10n.nameEmpty)
+        result.check(!name.isBlank, field: .name, message: String(localized: .nameEmpty))
         result.check(
             name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
-            field: .name, message: L10n.nameHasForbiddenCharacters
+            field: .name, message: String(localized: .nameHasForbiddenCharacters)
         )
-        result.check(name.utf8.count <= 120, field: .name, message: L10n.nameTooLong)
+        result.check(name.utf8.count <= 120, field: .name, message: String(localized: .nameTooLong))
         switch backend {
         case .s3Compatible: result.issues += validateEndpoint().issues + validateBucket().issues
         case .gcs: result.issues += validateBucket().issues
@@ -74,7 +74,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     private func validateEndpoint() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
         let url = URL(string: endpoint)
-        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: L10n.endpointInvalidURL)
+        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: String(localized: .endpointInvalidURL))
         let validEndpoint = URLComponents(string: endpoint).map { url in
             ["http", "https"].contains(url.scheme) &&
                 url.host?.isEmpty == false && url.user == nil && url.password == nil &&
@@ -82,23 +82,23 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         } ?? false
         result.check(
             validEndpoint, field: .endpoint,
-            message: L10n.endpointNotDirect
+            message: String(localized: .endpointNotDirect)
         )
         return result
     }
 
     private func validateBucket() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!bucket.isBlank, field: .bucket, message: L10n.bucketEmpty)
+        result.check(!bucket.isBlank, field: .bucket, message: String(localized: .bucketEmpty))
         result.check(
             bucket != "." && bucket != ".." &&
                 bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
-            field: .bucket, message: L10n.bucketHasPath
+            field: .bucket, message: String(localized: .bucketHasPath)
         )
         result.check(
             (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .folder, message: L10n.folderPathInvalid
+            field: .folder, message: String(localized: .folderPathInvalid)
         )
         return result
     }
@@ -107,7 +107,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate()
         result.check(
             !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
-            field: .name, message: L10n.nameAlreadyExists
+            field: .name, message: String(localized: .nameAlreadyExists)
         )
         return result
     }
@@ -116,7 +116,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate(against: connections)
         result.issues += credentials.validate(for: self).issues
         if encrypted, !connections.contains(where: { $0.id == id }) {
-            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: L10n.passwordsDoNotMatch)
+            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: String(localized: .passwordsDoNotMatch))
         }
         return result
     }
@@ -129,26 +129,24 @@ public enum ConnectionField: String, CaseIterable, Sendable {
     case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
     case encryptionPassword = "Encryption password", confirmation = "Confirm password"
 
-    /// Localized display label. Raw values stay stable identifiers because the
-    /// editor renders them via `Text(field.rawValue)` until it adopts this.
     public var displayName: String {
         switch self {
-        case .name: L10n.fieldName
-        case .endpoint: L10n.fieldEndpoint
-        case .bucket: L10n.fieldBucket
-        case .folder: L10n.fieldFolder
-        case .accessKey: L10n.fieldAccessKey
-        case .secretKey: L10n.fieldSecretKey
-        case .serviceAccountKey: L10n.fieldServiceAccountKey
-        case .host: L10n.fieldHost
-        case .port: L10n.fieldPort
-        case .username: L10n.fieldUsername
-        case .remotePath: L10n.fieldRemoteFolder
-        case .password: L10n.fieldPassword
-        case .keyFile: L10n.fieldPrivateKey
-        case .trustedHosts: L10n.fieldTrustedHosts
-        case .encryptionPassword: L10n.fieldEncryptionPassword
-        case .confirmation: L10n.fieldConfirmPassword
+        case .name: String(localized: .fieldName)
+        case .endpoint: String(localized: .fieldEndpoint)
+        case .bucket: String(localized: .fieldBucket)
+        case .folder: String(localized: .fieldFolder)
+        case .accessKey: String(localized: .fieldAccessKey)
+        case .secretKey: String(localized: .fieldSecretKey)
+        case .serviceAccountKey: String(localized: .fieldServiceAccountKey)
+        case .host: String(localized: .fieldHost)
+        case .port: String(localized: .fieldPort)
+        case .username: String(localized: .fieldUsername)
+        case .remotePath: String(localized: .fieldRemoteFolder)
+        case .password: String(localized: .password)
+        case .keyFile: String(localized: .privateKey)
+        case .trustedHosts: String(localized: .fieldTrustedHosts)
+        case .encryptionPassword: String(localized: .fieldEncryptionPassword)
+        case .confirmation: String(localized: .fieldConfirmPassword)
         }
     }
 }
@@ -175,14 +173,14 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .other: L10n.providerS3Compatible
-        case .aws: L10n.providerAmazonS3
-        case .cloudflare: L10n.providerCloudflareR2
-        case .minio: L10n.providerMinIO
-        case .wasabi: L10n.providerWasabi
-        case .digitalOcean: L10n.providerDigitalOceanSpaces
-        case .sftp: L10n.providerSFTP
-        case .googleCloudStorage: L10n.providerGoogleCloudStorage
+        case .other: String(localized: .providerS3Compatible)
+        case .aws: String(localized: .providerAmazonS3)
+        case .cloudflare: String(localized: .providerCloudflareR2)
+        case .minio: String(localized: .providerMinIO)
+        case .wasabi: String(localized: .providerWasabi)
+        case .digitalOcean: String(localized: .providerDigitalOceanSpaces)
+        case .sftp: String(localized: .providerSFTP)
+        case .googleCloudStorage: String(localized: .providerGoogleCloudStorage)
         }
     }
 }
@@ -267,18 +265,18 @@ public struct Credentials: Codable, Equatable, Sendable {
         var result = ValidationResult<ConnectionField>()
         switch connection.backend {
         case .s3Compatible:
-            result.check(!accessKey.isBlank, field: .accessKey, message: L10n.accessKeyEmpty)
-            result.check(!secretKey.isBlank, field: .secretKey, message: L10n.secretKeyEmpty)
+            result.check(!accessKey.isBlank, field: .accessKey, message: String(localized: .accessKeyEmpty))
+            result.check(!secretKey.isBlank, field: .secretKey, message: String(localized: .secretKeyEmpty))
         case .sftp:
             result.check(
                 connection.sftp.authentication != .password || !password.isEmpty,
-                field: .password, message: L10n.passwordEmpty
+                field: .password, message: String(localized: .passwordEmpty)
             )
         case .gcs:
-            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: L10n.importServiceAccountKey)
+            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
         }
         if connection.encrypted {
-            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: L10n.encryptionPasswordEmpty)
+            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty))
         }
         return result
     }

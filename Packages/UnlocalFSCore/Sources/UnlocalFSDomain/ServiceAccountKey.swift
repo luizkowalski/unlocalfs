@@ -10,7 +10,7 @@ public struct ServiceAccountKey: Equatable, Sendable {
               let email = fields["client_email"] as? String, !email.isEmpty,
               let privateKey = fields["private_key"] as? String, !privateKey.isEmpty,
               let compact = try? JSONSerialization.data(withJSONObject: fields, options: .withoutEscapingSlashes) else {
-            throw AppError(L10n.notAServiceAccountKey)
+            throw AppError(String(localized: .notAServiceAccountKey))
         }
         self.email = email
         json = String(decoding: compact, as: UTF8.self)

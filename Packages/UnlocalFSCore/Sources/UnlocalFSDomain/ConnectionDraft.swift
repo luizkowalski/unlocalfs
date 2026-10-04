@@ -14,7 +14,7 @@ public struct ConnectionDraft: Identifiable, Sendable {
     public init(duplicating connection: Connection) {
         self.connection = connection
         self.connection.id = UUID()
-        self.connection.name = L10n.duplicateName(connection.name)
+        self.connection.name = String(localized: .duplicateName(connection.name))
         credentialsSource = connection.id
     }
 }

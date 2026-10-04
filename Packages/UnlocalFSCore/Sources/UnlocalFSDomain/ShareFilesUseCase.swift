@@ -25,13 +25,13 @@ public struct ShareFilesUseCase: Sendable {
         for file in files {
             do {
                 guard let drive = drives.remoteFile(file, among: connections) else {
-                    throw AppError(L10n.fileNotInDrive)
+                    throw AppError(String(localized: .fileNotInDrive))
                 }
                 guard drive.connection.backend.supportsShareLinks else {
-                    throw AppError(L10n.linksUnavailable(for: drive.connection.provider.title))
+                    throw AppError(String(localized: .linksUnavailable(drive.connection.provider.title)))
                 }
                 guard !drive.connection.encrypted else {
-                    throw AppError(L10n.linksUnavailableEncrypted)
+                    throw AppError(String(localized: .linksUnavailableEncrypted))
                 }
                 let link = try await drives.shareLink(
                     for: drive.connection, path: drive.path, expiry: expiry, credentials: repository.credentials(for: drive.connection.id)

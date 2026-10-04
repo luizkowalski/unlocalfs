@@ -64,12 +64,19 @@ import UserNotifications
         case .gcs:
             return String(localized: "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.")
         case .sftp:
-            let dependency = connection.sftp.authentication == .agent
-                ? String(localized: "needs a running ssh-agent")
-                : String(localized: "private key file")
-            let warning = String(localized: "Anyone with the file can read this drive. Passwords are only obscured, not encrypted.")
-            let recovery = String(localized: "The file points to your trusted-hosts file and \(dependency). Copy them to the other Mac and adjust the paths.")
-            return "\(warning) \(recovery)"
+            return connection.sftp.authentication == .agent
+                ? String(
+                    localized: """
+                    Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your \
+                    trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path.
+                    """
+                )
+                : String(
+                    localized: """
+                    Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your \
+                    trusted-hosts file and private key file. Copy them to the other Mac and adjust the paths.
+                    """
+                )
         }
     }
 

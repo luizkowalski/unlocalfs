@@ -16,7 +16,6 @@ import UnlocalFSDomain
     public var deleting: Connection?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
-    public private(set) var appLanguage: AppLanguage
     private var networkAvailable = true
     private var sleeping = false
 
@@ -51,7 +50,6 @@ import UnlocalFSDomain
         self.quit = quit
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
-        appLanguage = AppLanguage.stored()
         switch initialConnections {
         case .success(let connections):
             self.connections = connections
@@ -145,13 +143,13 @@ import UnlocalFSDomain
             let links = try await shareFiles.execute(files, expiry: expiry)
             desktop.copyShareLinks(links)
             desktop.notify(
-                title: links.count == 1 ? L10n.linkCopied : L10n.linksCopied(String(links.count)),
-                body: L10n.anyoneCanDownload(for: expiry.title), fallbackToAlert: false
+                title: String(localized: .linksCopied(links.count)),
+                body: String(localized: .anyoneCanDownload(expiry.title)), fallbackToAlert: false
             )
         } catch let error as ShareFileError {
-            desktop.notify(title: L10n.couldNotCopyLink(to: error.file.lastPathComponent), body: error.localizedDescription, fallbackToAlert: true)
+            desktop.notify(title: String(localized: .couldNotCopyLink(error.file.lastPathComponent)), body: error.localizedDescription, fallbackToAlert: true)
         } catch {
-            desktop.notify(title: L10n.couldNotCopyShareLinks, body: error.localizedDescription, fallbackToAlert: true)
+            desktop.notify(title: String(localized: .couldNotCopyShareLinks), body: error.localizedDescription, fallbackToAlert: true)
         }
     }
 
@@ -171,16 +169,6 @@ import UnlocalFSDomain
     public func checkAgain(_ connection: Connection) async {
         errors[connection.id] = nil
         await refresh()
-    }
-
-    public func setAppLanguage(_ language: AppLanguage) {
-        appLanguage = language
-        let defaults = UserDefaults.standard
-        if language == .system {
-            defaults.removeObject(forKey: "AppleLanguages")
-        } else {
-            defaults.set([language.rawValue], forKey: "AppleLanguages")
-        }
     }
 
     public func setOpensAtLogin(_ enabled: Bool) {
@@ -272,8 +260,8 @@ extension AppViewModel {
     public func uploadNotice(_ connection: Connection) -> String? {
         guard let status = statuses[connection.id], status.pendingUploads > 0, status.failedUploads == 0 else { return nil }
         return status.isMounted
-            ? L10n.uploadsPendingKeepDriveConnected
-            : L10n.uploadsPendingKeepAppRunning
+            ? String(localized: .uploadsPendingKeepDriveConnected)
+            : String(localized: .uploadsPendingKeepAppRunning)
     }
 
     public func canToggle(_ connection: Connection) -> Bool {
@@ -298,16 +286,16 @@ extension AppViewModel {
 
     public func statusText(_ connection: Connection) -> String {
         switch condition(connection) {
-        case .working: L10n.working
-        case .needsReconnect: L10n.needsReconnect
-        case .needsAttention: L10n.needsAttention
-        case .checking: L10n.checking
-        case .offline: L10n.networkUnavailable
-        case .uploadFailed: L10n.uploadNeedsAttention
-        case .uploading(let count): L10n.uploadsPending(count)
-        case .connected: L10n.connected
-        case .ejected: L10n.ejected
-        case .disconnected: L10n.disconnected
+        case .working: String(localized: .working)
+        case .needsReconnect: String(localized: .needsReconnect)
+        case .needsAttention: String(localized: .needsAttention)
+        case .checking: String(localized: .checking)
+        case .offline: String(localized: .networkUnavailable)
+        case .uploadFailed: String(localized: .uploadNeedsAttention)
+        case .uploading(let count): String(localized: .uploadsPending(count))
+        case .connected: String(localized: .connected)
+        case .ejected: String(localized: .ejected)
+        case .disconnected: String(localized: .disconnected)
         }
     }
 
@@ -316,8 +304,8 @@ extension AppViewModel {
     }
 
     public func toggleTitle(_ connection: Connection) -> String {
-        if needsReconnect(connection) { return L10n.reconnect }
-        return isActive(connection) ? L10n.disconnect : L10n.connect
+        if needsReconnect(connection) { return String(localized: .reconnect) }
+        return isActive(connection) ? String(localized: .disconnect) : String(localized: .connect)
     }
 
     public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
@@ -346,12 +334,12 @@ private extension AppViewModel {
 
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
-            notify(title: L10n.uploadsFailed(on: connection.name), body: L10n.uploadsFailedBody)
+            notify(title: String(localized: .uploadsFailed(connection.name)), body: String(localized: .uploadsFailedBody))
         }
         if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
             notifiedFailures.remove(connection.id)
             if waitingToDisconnect.remove(connection.id) != nil {
-                notify(title: L10n.finishedUploading(connection.name), body: L10n.canDisconnectNow)
+                notify(title: String(localized: .finishedUploading(connection.name)), body: String(localized: .canDisconnectNow))
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }

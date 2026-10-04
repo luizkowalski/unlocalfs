@@ -109,16 +109,6 @@
         }
       }
     },
-    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas."
-          }
-        }
-      }
-    },
     "Anyone with the file can read this drive. The password is only obscured, not encrypted.": {
       "localizations": {
         "pt-BR": {
@@ -167,7 +157,8 @@
             "value": "Bucket"
           }
         }
-      }
+      },
+      "comment": "Field label: cloud storage bucket name; may stay untranslated"
     },
     "Cache": {
       "localizations": {
@@ -177,7 +168,8 @@
             "value": "Cache"
           }
         }
-      }
+      },
+      "comment": "Section header: local cache settings"
     },
     "Cache limit": {
       "localizations": {
@@ -217,7 +209,8 @@
             "value": "Cancelar"
           }
         }
-      }
+      },
+      "comment": "Button label"
     },
     "Check Again": {
       "localizations": {
@@ -287,7 +280,8 @@
             "value": "Conexão"
           }
         }
-      }
+      },
+      "comment": "Segmented control label: pane with the connection details"
     },
     "Connection needs attention": {
       "localizations": {
@@ -317,7 +311,8 @@
             "value": "Credenciais"
           }
         }
-      }
+      },
+      "comment": "Section header: access keys and passwords"
     },
     "Credentials are stored in your Mac’s Keychain.": {
       "localizations": {
@@ -337,7 +332,8 @@
             "value": "Padrão"
           }
         }
-      }
+      },
+      "comment": "Value shown when the region field is empty"
     },
     "Delete": {
       "localizations": {
@@ -347,7 +343,8 @@
             "value": "Excluir"
           }
         }
-      }
+      },
+      "comment": "Toolbar button, destructive: delete the connection"
     },
     "Delete %@?": {
       "localizations": {
@@ -417,7 +414,8 @@
             "value": "Duplicar"
           }
         }
-      }
+      },
+      "comment": "Button: make a copy of the connection"
     },
     "Duplicate Connection…": {
       "localizations": {
@@ -437,7 +435,8 @@
             "value": "Editar"
           }
         }
-      }
+      },
+      "comment": "Toolbar button: edit the connection"
     },
     "Edit Connection": {
       "localizations": {
@@ -507,17 +506,8 @@
             "value": "Endpoint"
           }
         }
-      }
-    },
-    "English": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "English"
-          }
-        }
-      }
+      },
+      "comment": "Field label: service endpoint URL; may stay untranslated"
     },
     "Export": {
       "localizations": {
@@ -527,7 +517,8 @@
             "value": "Exportar"
           }
         }
-      }
+      },
+      "comment": "Toolbar button: export an rclone config file for the drive"
     },
     "Export rclone Config": {
       "localizations": {
@@ -577,7 +568,8 @@
             "value": "Pasta"
           }
         }
-      }
+      },
+      "comment": "Field label: folder inside the bucket or on the server"
     },
     "Free cache": {
       "localizations": {
@@ -587,7 +579,8 @@
             "value": "Cache livre"
           }
         }
-      }
+      },
+      "comment": "Legend of the cache chart: cache space still free (adjective, not a command)"
     },
     "General": {
       "localizations": {
@@ -607,7 +600,8 @@
             "value": "Pasta pessoal"
           }
         }
-      }
+      },
+      "comment": "Value: the user's home folder on the SFTP server"
     },
     "Host": {
       "localizations": {
@@ -617,7 +611,8 @@
             "value": "Servidor"
           }
         }
-      }
+      },
+      "comment": "Field label: host name of the SFTP server"
     },
     "If the key has one": {
       "localizations": {
@@ -637,7 +632,8 @@
             "value": "Importar chave…"
           }
         }
-      }
+      },
+      "comment": "Button: import a service-account key file"
     },
     "Include keys and password": {
       "localizations": {
@@ -677,7 +673,8 @@
             "value": "Manter livre"
           }
         }
-      }
+      },
+      "comment": "Label: minimum free disk space to keep (verb phrase)"
     },
     "Keep free on disk": {
       "localizations": {
@@ -685,26 +682,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Manter livre no disco"
-          }
-        }
-      }
-    },
-    "Language": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idioma"
-          }
-        }
-      }
-    },
-    "Language changes take effect the next time you open UnlocalFS.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As alterações de idioma valem na próxima vez que você abrir o UnlocalFS."
           }
         }
       }
@@ -727,7 +704,8 @@
             "value": "Registro"
           }
         }
-      }
+      },
+      "comment": "Toolbar button: open the drive log file (noun)"
     },
     "Mount point": {
       "localizations": {
@@ -758,17 +736,8 @@
             "value": "Nome"
           }
         }
-      }
-    },
-    "needs a running ssh-agent": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "precisa de um ssh-agent em execução"
-          }
-        }
-      }
+      },
+      "comment": "Field label: name of the connection"
     },
     "Network unavailable. Cached files are kept.": {
       "localizations": {
@@ -818,7 +787,8 @@
             "value": "Nenhum"
           }
         }
-      }
+      },
+      "comment": "Value shown when there are no pending uploads"
     },
     "Not set": {
       "localizations": {
@@ -828,7 +798,8 @@
             "value": "Não definido"
           }
         }
-      }
+      },
+      "comment": "Value shown when a limit is not configured"
     },
     "Off": {
       "localizations": {
@@ -838,7 +809,8 @@
             "value": "Desativado"
           }
         }
-      }
+      },
+      "comment": "Value of a setting that is switched off"
     },
     "OK": {
       "localizations": {
@@ -858,7 +830,8 @@
             "value": "Ativado"
           }
         }
-      }
+      },
+      "comment": "Value of a setting that is switched on"
     },
     "Open": {
       "localizations": {
@@ -868,7 +841,8 @@
             "value": "Abrir"
           }
         }
-      }
+      },
+      "comment": "Toolbar button: open the drive in Finder"
     },
     "Open at Login": {
       "localizations": {
@@ -908,7 +882,8 @@
             "value": "Opcional"
           }
         }
-      }
+      },
+      "comment": "Placeholder of an optional field"
     },
     "Optional, for example /srv/files": {
       "localizations": {
@@ -978,17 +953,8 @@
             "value": "Porta"
           }
         }
-      }
-    },
-    "Português (Brasil)": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Português (Brasil)"
-          }
-        }
-      }
+      },
+      "comment": "Field label: network port number"
     },
     "Private key": {
       "localizations": {
@@ -996,16 +962,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chave privada"
-          }
-        }
-      }
-    },
-    "private key file": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "arquivo de chave privada"
           }
         }
       }
@@ -1018,7 +974,8 @@
             "value": "Provedor"
           }
         }
-      }
+      },
+      "comment": "Picker label: storage provider"
     },
     "Queued for upload": {
       "localizations": {
@@ -1068,7 +1025,8 @@
             "value": "Atualizar"
           }
         }
-      }
+      },
+      "comment": "Toolbar button: reload the file listing of the drive"
     },
     "Refresh Files": {
       "localizations": {
@@ -1088,7 +1046,8 @@
             "value": "Região"
           }
         }
-      }
+      },
+      "comment": "Field label: cloud storage region"
     },
     "Remote folder": {
       "localizations": {
@@ -1108,7 +1067,8 @@
             "value": "Substituir…"
           }
         }
-      }
+      },
+      "comment": "Button: replace the imported service-account key"
     },
     "Save": {
       "localizations": {
@@ -1148,7 +1108,8 @@
             "value": "Seção"
           }
         }
-      }
+      },
+      "comment": "Accessibility label of the segmented control that switches editor panes"
     },
     "Select files in an UnlocalFS drive.": {
       "localizations": {
@@ -1168,7 +1129,8 @@
             "value": "Servidor"
           }
         }
-      }
+      },
+      "comment": "Label of the SFTP server address, and section header"
     },
     "Server trust": {
       "localizations": {
@@ -1198,17 +1160,8 @@
             "value": "Ajustes"
           }
         }
-      }
-    },
-    "Settings…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajustes…"
-          }
-        }
-      }
+      },
+      "comment": "Segmented control label: pane with the connection options"
     },
     "Show changes made to this drive from other apps or Macs": {
       "localizations": {
@@ -1238,17 +1191,8 @@
             "value": "Armazenamento"
           }
         }
-      }
-    },
-    "System": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sistema"
-          }
-        }
-      }
+      },
+      "comment": "Section header: where the files are stored"
     },
     "Test Connection": {
       "localizations": {
@@ -1256,16 +1200,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Testar conexão"
-          }
-        }
-      }
-    },
-    "The file points to your trusted-hosts file and %@. Copy them to the other Mac and adjust the paths.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O arquivo aponta para o seu arquivo de trusted-hosts e %1$@. Copie-os para o outro Mac e ajuste os caminhos."
           }
         }
       }
@@ -1436,6 +1370,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seu armazenamento, no Finder"
+          }
+        }
+      }
+    },
+    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e precisa de um ssh-agent em execução. Copie o arquivo de hosts confiáveis para o outro Mac e ajuste o caminho."
+          }
+        }
+      }
+    },
+    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and private key file. Copy them to the other Mac and adjust the paths.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e para o arquivo de chave privada. Copie-os para o outro Mac e ajuste os caminhos."
           }
         }
       }

@@ -4,7 +4,7 @@ public struct UploadsPendingError: LocalizedError, Sendable {
     public init() {}
 
     public var errorDescription: String? {
-        L10n.uploadsPending
+        String(localized: .uploadsInProgress)
     }
 }
 
@@ -23,7 +23,7 @@ public struct MountStatus: Equatable, Sendable {
 
     public func requireSafeDisconnect() throws {
         guard failedUploads == 0 else {
-            throw AppError(L10n.failedUploadsNeedRetry)
+            throw AppError(String(localized: .failedUploadsNeedRetry))
         }
         guard pendingUploads == 0 else { throw UploadsPendingError() }
     }
