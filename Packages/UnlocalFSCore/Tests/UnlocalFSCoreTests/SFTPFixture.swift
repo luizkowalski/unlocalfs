@@ -55,6 +55,7 @@ struct SFTPFixture {
 
     mutating func restartServer(hostKey name: String) async throws {
         server.stop()
+        try await waitUntil { server.exited }
         server = try await SFTPServer(executable: executable, root: root, hostKey: keys.appending(path: name), port: port)
     }
 
@@ -133,11 +134,13 @@ struct SFTPServer {
         )
     }
 
+    var exited: Bool {
+        var info = siginfo_t()
+        return waitid(P_PID, id_t(process.processIdentifier), &info, WEXITED | WNOHANG | WNOWAIT) == -1 || info.si_pid != 0
+    }
+
     func stop() {
-        if process.isRunning {
-            process.terminate()
-            process.waitUntilExit()
-        }
+        if process.isRunning { process.terminate() }
         try? log.close()
     }
 }
