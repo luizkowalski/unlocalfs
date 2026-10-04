@@ -2,6 +2,7 @@
   "sourceLanguage": "en",
   "strings": {
     "Copy Share Link (1 Hour)": {
+      "extractionState": "manual",
       "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
       "localizations": {
         "pt-BR": {
@@ -13,6 +14,7 @@
       }
     },
     "Copy Share Link (1 Day)": {
+      "extractionState": "manual",
       "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
       "localizations": {
         "pt-BR": {
@@ -24,6 +26,7 @@
       }
     },
     "Copy Share Link (7 Days)": {
+      "extractionState": "manual",
       "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
       "localizations": {
         "pt-BR": {

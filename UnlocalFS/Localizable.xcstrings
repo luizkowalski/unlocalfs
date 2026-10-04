@@ -1,1399 +1,1515 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@": {},
-    "%@ · ^[%lld file](inflect: true)": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · ^[%2$lld file](inflect: true)"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@" : {
+
+    },
+    "%@ · ^[%@ file](inflect: true)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · ^[%2$@ file](inflect: true)"
+          }
+        }
+      }
+    },
+    "%@ · ^[%lld file](inflect: true)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · ^[%2$lld file](inflect: true)"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · ^[%2$lld arquivo](inflect: true)"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · ^[%2$lld arquivo](inflect: true)"
           }
         }
       }
     },
-    "%@ of %@": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ de %2$@"
+    "%@ of %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ de %2$@"
           }
         }
       }
     },
-    "%@/s": {},
-    "Access key": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chave de acesso"
+    "%@/s" : {
+
+    },
+    "Access key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave de acesso"
           }
         }
       }
     },
-    "Activity": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atividade"
+    "Activity" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade"
           }
         }
       }
     },
-    "Activity unavailable": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atividade indisponível"
+    "Activity unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade indisponível"
           }
         }
       }
     },
-    "Add connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adicionar conexão"
+    "Add connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar conexão"
           }
         }
       }
     },
-    "Add Connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adicionar conexão"
+    "Add Connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar conexão"
           }
         }
       }
     },
-    "Advanced": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avançado"
+    "Advanced" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avançado"
           }
         }
       }
     },
-    "Agent socket": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Socket do agente"
+    "Agent socket" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Socket do agente"
           }
         }
       }
     },
-    "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade e usar a chave da conta de serviço. A senha é apenas ofuscada, não criptografada."
+    "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade e usar a chave da conta de serviço. A senha é apenas ofuscada, não criptografada."
           }
         }
       }
     },
-    "Anyone with the file can read this drive. The password is only obscured, not encrypted.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. A senha é apenas ofuscada, não criptografada."
+    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e precisa de um ssh-agent em execução. Copie o arquivo de hosts confiáveis para o outro Mac e ajuste o caminho."
           }
         }
       }
     },
-    "Authentication": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Autenticação"
+    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and private key file. Copy them to the other Mac and adjust the paths." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e para o arquivo de chave privada. Copie-os para o outro Mac e ajuste os caminhos."
           }
         }
       }
     },
-    "Bandwidth limit": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Limite de banda"
+    "Anyone with the file can read this drive. The password is only obscured, not encrypted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. A senha é apenas ofuscada, não criptografada."
           }
         }
       }
     },
-    "Bandwidth limits uploads and downloads. Parallel transfers controls how many files can move at once.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O limite de banda restringe envios e downloads. As transferências paralelas controlam quantos arquivos podem ser movidos de uma vez."
+    "Authentication" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autenticação"
           }
         }
       }
     },
-    "Bucket": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bucket"
+    "Bandwidth limit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de banda"
           }
         }
-      },
-      "comment": "Field label: cloud storage bucket name; may stay untranslated"
+      }
     },
-    "Cache": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cache"
+    "Bandwidth limits uploads and downloads. Parallel transfers controls how many files can move at once." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O limite de banda restringe envios e downloads. As transferências paralelas controlam quantos arquivos podem ser movidos de uma vez."
           }
         }
-      },
-      "comment": "Section header: local cache settings"
+      }
     },
-    "Cache limit": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Limite de cache"
+    "Bucket" : {
+      "comment" : "Field label: cloud storage bucket name; may stay untranslated",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bucket"
           }
         }
       }
     },
-    "Cached files": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Arquivos em cache"
+    "Cache" : {
+      "comment" : "Section header: local cache settings",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache"
           }
         }
       }
     },
-    "cached of %@": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "de %1$@ em cache"
+    "Cache limit" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de cache"
           }
         }
       }
     },
-    "Cancel": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancelar"
+    "Cached files" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arquivos em cache"
           }
         }
-      },
-      "comment": "Button label"
+      }
     },
-    "Check Again": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verificar novamente"
+    "cached of %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "de %1$@ em cache"
           }
         }
       }
     },
-    "Checking activity…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verificando atividade…"
+    "Cancel" : {
+      "comment" : "Button label",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
           }
         }
       }
     },
-    "Choose…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolher…"
+    "Check Again" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificar novamente"
           }
         }
       }
     },
-    "Confirm password": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confirmar senha"
+    "Checking activity…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificando atividade…"
           }
         }
       }
     },
-    "Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conecte um bucket do S3 ou do Google Cloud Storage, ou um servidor SFTP, e use os arquivos dele no seu Mac."
+    "Choose…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher…"
           }
         }
       }
     },
-    "Connect on start up": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conectar ao iniciar"
+    "Confirm password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmar senha"
           }
         }
       }
     },
-    "Connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conexão"
+    "Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte um bucket do S3 ou do Google Cloud Storage, ou um servidor SFTP, e use os arquivos dele no seu Mac."
           }
         }
-      },
-      "comment": "Segmented control label: pane with the connection details"
+      }
     },
-    "Connection needs attention": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A conexão precisa de atenção"
+    "Connect on start up" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar ao iniciar"
           }
         }
       }
     },
-    "Connection successful": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conexão bem-sucedida"
+    "Connection" : {
+      "comment" : "Segmented control label: pane with the connection details",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexão"
           }
         }
       }
     },
-    "Credentials": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Credenciais"
+    "Connection needs attention" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A conexão precisa de atenção"
           }
         }
-      },
-      "comment": "Section header: access keys and passwords"
+      }
     },
-    "Credentials are stored in your Mac’s Keychain.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As credenciais ficam armazenadas no chaveiro do seu Mac."
+    "Connection successful" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conexão bem-sucedida"
           }
         }
       }
     },
-    "Default": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Padrão"
+    "Credentials" : {
+      "comment" : "Section header: access keys and passwords",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credenciais"
           }
         }
-      },
-      "comment": "Value shown when the region field is empty"
+      }
     },
-    "Delete": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir"
+    "Credentials are stored in your Mac’s Keychain." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As credenciais ficam armazenadas no chaveiro do seu Mac."
           }
         }
-      },
-      "comment": "Toolbar button, destructive: delete the connection"
+      }
     },
-    "Delete %@?": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir %@?"
+    "Default" : {
+      "comment" : "Value shown when the region field is empty",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Padrão"
           }
         }
       }
     },
-    "Delete Connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir conexão"
+    "Delete" : {
+      "comment" : "Toolbar button, destructive: delete the connection",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir"
           }
         }
       }
     },
-    "Delete Connection…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir conexão…"
+    "Delete %@?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir %@?"
           }
         }
       }
     },
-    "Delete…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir…"
+    "Delete Connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir conexão"
           }
         }
       }
     },
-    "Disconnect your drives before quitting.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desconecte suas unidades antes de sair."
+    "Delete Connection…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir conexão…"
           }
         }
       }
     },
-    "Downloading": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Baixando"
+    "Delete…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir…"
           }
         }
       }
     },
-    "Duplicate": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duplicar"
+    "Disconnect your drives before quitting." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconecte suas unidades antes de sair."
           }
         }
-      },
-      "comment": "Button: make a copy of the connection"
+      }
     },
-    "Duplicate Connection…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duplicar conexão…"
+    "Downloading" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixando"
           }
         }
       }
     },
-    "Edit": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editar"
+    "Duplicate" : {
+      "comment" : "Button: make a copy of the connection",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicar"
           }
         }
-      },
-      "comment": "Toolbar button: edit the connection"
+      }
     },
-    "Edit Connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editar conexão"
+    "Duplicate Connection…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicar conexão…"
           }
         }
       }
     },
-    "Edit Connection…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Editar conexão…"
+    "Edit" : {
+      "comment" : "Toolbar button: edit the connection",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar"
           }
         }
       }
     },
-    "Encrypt files": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Criptografar arquivos"
+    "Edit Connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar conexão"
           }
         }
       }
     },
-    "Encrypted drive": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unidade criptografada"
+    "Edit Connection…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar conexão…"
           }
         }
       }
     },
-    "Encryption": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Criptografia"
+    "Encrypt files" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criptografar arquivos"
           }
         }
       }
     },
-    "Encryption password": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Senha de criptografia"
+    "Encrypted drive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unidade criptografada"
           }
         }
       }
     },
-    "Endpoint": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Endpoint"
+    "Encryption" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criptografia"
           }
         }
-      },
-      "comment": "Field label: service endpoint URL; may stay untranslated"
+      }
     },
-    "Export": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exportar"
+    "Encryption password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senha de criptografia"
           }
         }
-      },
-      "comment": "Toolbar button: export an rclone config file for the drive"
+      }
     },
-    "Export rclone Config": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exportar configuração do rclone"
+    "Endpoint" : {
+      "comment" : "Field label: service endpoint URL; may stay untranslated",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endpoint"
           }
         }
       }
     },
-    "Export rclone Config…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exportar configuração do rclone…"
+    "Export" : {
+      "comment" : "Toolbar button: export an rclone config file for the drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar"
           }
         }
       }
     },
-    "Files and names are encrypted before they upload. Without the password, nobody can read them, including you.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os arquivos e os nomes são criptografados antes do envio. Sem a senha, ninguém consegue lê-los, nem mesmo você."
+    "Export rclone Config" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar configuração do rclone"
           }
         }
       }
     },
-    "Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Os arquivos que você abriu há mais tempo são removidos primeiro. Arquivos abertos e envios pendentes permanecem, então o cache pode passar do limite."
+    "Export rclone Config…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exportar configuração do rclone…"
           }
         }
       }
     },
-    "Folder": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pasta"
+    "Files and names are encrypted before they upload. Without the password, nobody can read them, including you." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os arquivos e os nomes são criptografados antes do envio. Sem a senha, ninguém consegue lê-los, nem mesmo você."
           }
         }
-      },
-      "comment": "Field label: folder inside the bucket or on the server"
+      }
     },
-    "Free cache": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cache livre"
+    "Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os arquivos que você abriu há mais tempo são removidos primeiro. Arquivos abertos e envios pendentes permanecem, então o cache pode passar do limite."
           }
         }
-      },
-      "comment": "Legend of the cache chart: cache space still free (adjective, not a command)"
+      }
     },
-    "General": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geral"
+    "Folder" : {
+      "comment" : "Field label: folder inside the bucket or on the server",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta"
           }
         }
       }
     },
-    "Home folder": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pasta pessoal"
+    "Free cache" : {
+      "comment" : "Legend of the cache chart: cache space still free (adjective, not a command)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache livre"
           }
         }
-      },
-      "comment": "Value: the user's home folder on the SFTP server"
+      }
     },
-    "Host": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Host"
+    "General" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geral"
           }
         }
-      },
-      "comment": "Field label: host name of the SFTP server"
+      }
     },
-    "If the key has one": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se a chave tiver uma"
+    "Home folder" : {
+      "comment" : "Value: the user's home folder on the SFTP server",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta pessoal"
           }
         }
       }
     },
-    "Import key…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importar chave…"
+    "Host" : {
+      "comment" : "Field label: host name of the SFTP server",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Host"
           }
         }
-      },
-      "comment": "Button: import a service-account key file"
+      }
     },
-    "Include keys and password": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incluir chaves e senha"
+    "If the key has one" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se a chave tiver uma"
           }
         }
       }
     },
-    "Include saved passwords": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incluir senhas salvas"
+    "Import key…" : {
+      "comment" : "Button: import a service-account key file",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar chave…"
           }
         }
       }
     },
-    "Include service-account key": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Incluir chave da conta de serviço"
+    "Include keys and password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir chaves e senha"
           }
         }
       }
     },
-    "Keep free": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manter livre"
+    "Include saved passwords" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir senhas salvas"
           }
         }
-      },
-      "comment": "Label: minimum free disk space to keep (verb phrase)"
+      }
     },
-    "Keep free on disk": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manter livre no disco"
+    "Include service-account key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir chave da conta de serviço"
           }
         }
       }
     },
-    "Leave the folder empty for your home folder. Start it with / for a path from the server’s root.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deixe a pasta vazia para usar sua pasta pessoal. Comece com / para um caminho a partir da raiz do servidor."
+    "Keep free" : {
+      "comment" : "Label: minimum free disk space to keep (verb phrase)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manter livre"
           }
         }
       }
     },
-    "Log": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Log"
+    "Keep free on disk" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manter livre no disco"
           }
         }
-      },
-      "comment": "Toolbar button: open the drive log file (noun)"
+      }
     },
-    "Mount point": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ponto de montagem"
+    "Leave the folder empty for your home folder. Start it with / for a path from the server’s root." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deixe a pasta vazia para usar sua pasta pessoal. Comece com / para um caminho a partir da raiz do servidor."
           }
         }
       }
     },
-    "My storage": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meu armazenamento"
+    "Log" : {
+      "comment" : "Toolbar button: open the drive log file (noun)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log"
           }
         }
       }
     },
-    "my-bucket": {},
-    "Name": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nome"
+    "Mount point" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponto de montagem"
           }
         }
-      },
-      "comment": "Field label: name of the connection"
+      }
     },
-    "Network unavailable. Cached files are kept.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rede indisponível. Os arquivos em cache são mantidos."
+    "My storage" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meu armazenamento"
           }
         }
       }
     },
-    "New Connection…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nova conexão…"
+    "my-bucket" : {
+
+    },
+    "Name" : {
+      "comment" : "Field label: name of the connection",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nome"
           }
         }
       }
     },
-    "No connections yet": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenhuma conexão ainda"
+    "Network unavailable. Cached files are kept." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rede indisponível. Os arquivos em cache são mantidos."
           }
         }
       }
     },
-    "No transfers in progress": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenhuma transferência em andamento"
+    "New Connection…" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova conexão…"
           }
         }
       }
     },
-    "None": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenhum"
+    "No connections yet" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma conexão ainda"
           }
         }
-      },
-      "comment": "Value shown when there are no pending uploads"
+      }
     },
-    "Not set": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não definido"
+    "No transfers in progress" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma transferência em andamento"
           }
         }
-      },
-      "comment": "Value shown when a limit is not configured"
+      }
     },
-    "Off": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desativado"
+    "None" : {
+      "comment" : "Value shown when there are no pending uploads",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum"
           }
         }
-      },
-      "comment": "Value of a setting that is switched off"
+      }
     },
-    "OK": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OK"
+    "Not set" : {
+      "comment" : "Value shown when a limit is not configured",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não definido"
           }
         }
       }
     },
-    "On": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ativado"
+    "Off" : {
+      "comment" : "Value of a setting that is switched off",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativado"
           }
         }
-      },
-      "comment": "Value of a setting that is switched on"
+      }
     },
-    "Open": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir"
+    "OK" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
-      },
-      "comment": "Toolbar button: open the drive in Finder"
+      }
     },
-    "Open at Login": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir ao iniciar sessão"
+    "On" : {
+      "comment" : "Value of a setting that is switched on",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativado"
           }
         }
       }
     },
-    "Open in Finder": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir no Finder"
+    "Open" : {
+      "comment" : "Toolbar button: open the drive in Finder",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
           }
         }
       }
     },
-    "Open UnlocalFS": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir UnlocalFS"
+    "Open at Login" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir ao iniciar sessão"
           }
         }
       }
     },
-    "Optional": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opcional"
+    "Open in Finder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir no Finder"
           }
         }
-      },
-      "comment": "Placeholder of an optional field"
+      }
     },
-    "Optional, for example /srv/files": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opcional, por exemplo /srv/files"
+    "Open UnlocalFS" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir UnlocalFS"
           }
         }
       }
     },
-    "Optional, for example clients/acme": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opcional, por exemplo clientes/acme"
+    "Optional" : {
+      "comment" : "Placeholder of an optional field",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional"
           }
         }
       }
     },
-    "Optional, uses your Mac’s agent": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Opcional, usa o agente do seu Mac"
+    "Optional, for example /srv/files" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional, por exemplo /srv/files"
           }
         }
       }
     },
-    "Parallel transfers": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transferências paralelas"
+    "Optional, for example clients/acme" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional, por exemplo clientes/acme"
           }
         }
       }
     },
-    "Passphrase": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Frase secreta"
+    "Optional, uses your Mac’s agent" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional, usa o agente do seu Mac"
           }
         }
       }
     },
-    "Password": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Senha"
+    "Parallel transfers" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transferências paralelas"
           }
         }
       }
     },
-    "Port": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Porta"
+    "Passphrase" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frase secreta"
           }
         }
-      },
-      "comment": "Field label: network port number"
+      }
     },
-    "Private key": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chave privada"
+    "Password" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senha"
           }
         }
       }
     },
-    "Provider": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Provedor"
+    "Port" : {
+      "comment" : "Field label: network port number",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porta"
           }
         }
-      },
-      "comment": "Picker label: storage provider"
+      }
     },
-    "Queued for upload": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na fila para envio"
+    "Private key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave privada"
           }
         }
       }
     },
-    "Quit UnlocalFS": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sair do UnlocalFS"
+    "Provider" : {
+      "comment" : "Picker label: storage provider",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provedor"
           }
         }
       }
     },
-    "Read-only": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Somente leitura"
+    "Queued for upload" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na fila para envio"
           }
         }
       }
     },
-    "Reconnect": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reconectar"
+    "Quit UnlocalFS" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair do UnlocalFS"
           }
         }
       }
     },
-    "Refresh": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atualizar"
+    "Read-only" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Somente leitura"
           }
         }
-      },
-      "comment": "Toolbar button: reload the file listing of the drive"
+      }
     },
-    "Refresh Files": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atualizar arquivos"
+    "Reconnect" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconectar"
           }
         }
       }
     },
-    "Region": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Região"
+    "Refresh" : {
+      "comment" : "Toolbar button: reload the file listing of the drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar"
           }
         }
-      },
-      "comment": "Field label: cloud storage region"
+      }
     },
-    "Remote folder": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pasta remota"
+    "Refresh Files" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar arquivos"
           }
         }
       }
     },
-    "Replace…": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Substituir…"
+    "Region" : {
+      "comment" : "Field label: cloud storage region",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Região"
           }
         }
-      },
-      "comment": "Button: replace the imported service-account key"
+      }
     },
-    "Save": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvar"
+    "Remote folder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasta remota"
           }
         }
       }
     },
-    "Save a file that lets rclone read this drive without UnlocalFS": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvar um arquivo que permite ao rclone ler esta unidade sem o UnlocalFS"
+    "Replace…" : {
+      "comment" : "Button: replace the imported service-account key",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Substituir…"
           }
         }
       }
     },
-    "Secret key": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chave secreta"
+    "Save" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar"
           }
         }
       }
     },
-    "Section": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seção"
+    "Save a file that lets rclone read this drive without UnlocalFS" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar um arquivo que permite ao rclone ler esta unidade sem o UnlocalFS"
           }
         }
-      },
-      "comment": "Accessibility label of the segmented control that switches editor panes"
+      }
     },
-    "Select files in an UnlocalFS drive.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Selecione arquivos em uma unidade do UnlocalFS."
+    "Secret key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave secreta"
           }
         }
       }
     },
-    "Server": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Servidor"
+    "Section" : {
+      "comment" : "Accessibility label of the segmented control that switches editor panes",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seção"
           }
         }
-      },
-      "comment": "Label of the SFTP server address, and section header"
+      }
     },
-    "Server trust": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Confiança do servidor"
+    "Select files in an UnlocalFS drive." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione arquivos em uma unidade do UnlocalFS."
           }
         }
       }
     },
-    "Session token": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Token de sessão"
+    "Server" : {
+      "comment" : "Label of the SFTP server address, and section header",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servidor"
           }
         }
       }
     },
-    "Settings": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajustes"
+    "Server trust" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confiança do servidor"
           }
         }
-      },
-      "comment": "Segmented control label: pane with the connection options"
+      }
     },
-    "Show changes made to this drive from other apps or Macs": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrar as alterações feitas nesta unidade por outros apps ou Macs"
+    "Session token" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Token de sessão"
           }
         }
       }
     },
-    "Sign in with": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrar com"
+    "Settings" : {
+      "comment" : "Segmented control label: pane with the connection options",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
           }
         }
       }
     },
-    "Storage": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Armazenamento"
+    "Show changes made to this drive from other apps or Macs" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar as alterações feitas nesta unidade por outros apps ou Macs"
           }
         }
-      },
-      "comment": "Section header: where the files are stored"
+      }
     },
-    "Test Connection": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Testar conexão"
+    "Sign in with" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar com"
           }
         }
       }
     },
-    "The key file stays where it is. A passphrase is stored in your Mac’s Keychain.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O arquivo de chave fica onde está. Uma frase secreta fica armazenada no chaveiro do seu Mac."
+    "Storage" : {
+      "comment" : "Section header: where the files are stored",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Armazenamento"
           }
         }
       }
     },
-    "The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A chave fica armazenada no chaveiro do seu Mac. Dê à conta de serviço dela o papel Storage Object User no bucket."
+    "Test Connection" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Testar conexão"
           }
         }
       }
     },
-    "This removes the saved connection, credentials, and local file cache. Remote files are kept.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Isso remove a conexão salva, as credenciais e o cache local de arquivos. Os arquivos remotos são mantidos."
+    "The key file stays where it is. A passphrase is stored in your Mac’s Keychain." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O arquivo de chave fica onde está. Uma frase secreta fica armazenada no chaveiro do seu Mac."
           }
         }
       }
     },
-    "To use a different folder, duplicate this drive.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Para usar uma pasta diferente, duplique esta unidade."
+    "The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A chave fica armazenada no chaveiro do seu Mac. Dê à conta de serviço dela o papel Storage Object User no bucket."
           }
         }
       }
     },
-    "Trusted hosts": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hosts confiáveis"
+    "This removes the saved connection, credentials, and local file cache. Remote files are kept." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Isso remove a conexão salva, as credenciais e o cache local de arquivos. Os arquivos remotos são mantidos."
           }
         }
       }
     },
-    "UnlocalFS is still running": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O UnlocalFS ainda está em execução"
+    "To use a different folder, duplicate this drive." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para usar uma pasta diferente, duplique esta unidade."
           }
         }
       }
     },
-    "UnlocalFS only connects to servers listed in this file and never changes it. Connect once with ssh and check the fingerprint to add a server.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O UnlocalFS só se conecta a servidores listados neste arquivo e nunca o altera. Conecte uma vez pelo ssh e confira a impressão digital para adicionar um servidor."
+    "Trusted hosts" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hosts confiáveis"
           }
         }
       }
     },
-    "Uploading": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviando"
+    "UnlocalFS is still running" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O UnlocalFS ainda está em execução"
           }
         }
       }
     },
-    "us-east-1 or auto": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "us-east-1 ou auto"
+    "UnlocalFS only connects to servers listed in this file and never changes it. Connect once with ssh and check the fingerprint to add a server." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O UnlocalFS só se conecta a servidores listados neste arquivo e nunca o altera. Conecte uma vez pelo ssh e confira a impressão digital para adicionar um servidor."
           }
         }
       }
     },
-    "Use the endpoint without the bucket name. For Cloudflare R2, use region auto.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use o endpoint sem o nome do bucket. Para o Cloudflare R2, use a região auto."
+    "Uploading" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando"
           }
         }
       }
     },
-    "Use this file with rclone to read %@ without UnlocalFS.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use este arquivo com o rclone para ler %1$@ sem o UnlocalFS."
+    "us-east-1 or auto" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "us-east-1 ou auto"
           }
         }
       }
     },
-    "Uses a key loaded in your ssh-agent. Nothing is stored for this option.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa uma chave carregada no seu ssh-agent. Nada é armazenado para esta opção."
+    "Use the endpoint without the bucket name. For Cloudflare R2, use region auto." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use o endpoint sem o nome do bucket. Para o Cloudflare R2, use a região auto."
           }
         }
       }
     },
-    "Waiting to retry upload": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aguardando nova tentativa de envio"
+    "Use this file with rclone to read %@ without UnlocalFS." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use este arquivo com o rclone para ler %1$@ sem o UnlocalFS."
           }
         }
       }
     },
-    "Waiting to upload": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aguardando envio"
+    "Uses a key loaded in your ssh-agent. Nothing is stored for this option." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa uma chave carregada no seu ssh-agent. Nada é armazenado para esta opção."
           }
         }
       }
     },
-    "You cannot change this after you add a drive.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não é possível mudar isso depois de adicionar uma unidade."
+    "Waiting to retry upload" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando nova tentativa de envio"
           }
         }
       }
     },
-    "Your password is stored in your Mac’s Keychain.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sua senha fica armazenada no chaveiro do seu Mac."
+    "Waiting to upload" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando envio"
           }
         }
       }
     },
-    "Your storage, in Finder": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seu armazenamento, no Finder"
+    "You cannot change this after you add a drive." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível mudar isso depois de adicionar uma unidade."
           }
         }
       }
     },
-    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e precisa de um ssh-agent em execução. Copie o arquivo de hosts confiáveis para o outro Mac e ajuste o caminho."
+    "Your password is stored in your Mac’s Keychain." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua senha fica armazenada no chaveiro do seu Mac."
           }
         }
       }
     },
-    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and private key file. Copy them to the other Mac and adjust the paths.": {
-      "localizations": {
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e para o arquivo de chave privada. Copie-os para o outro Mac e ajuste os caminhos."
+    "Your storage, in Finder" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu armazenamento, no Finder"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

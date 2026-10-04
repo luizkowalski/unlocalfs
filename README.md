@@ -50,14 +50,13 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 
 ```sh
 mise install
-mise app               # builds dist/UnlocalFS.app
-mise test              # runs the core and view model tests
-mise test:integration  # also mounts drives against local S3 and SFTP servers and uses Keychain; set UNLOCALFS_GCS_BUCKET and UNLOCALFS_GCS_KEY_FILE to test a real GCS bucket
-mise lint              # runs SwiftLint
-mise xcode             # opens the project in Xcode
+mise app    # builds dist/UnlocalFS.app
+mise test   # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain; set UNLOCALFS_GCS_BUCKET and UNLOCALFS_GCS_KEY_FILE to test a real GCS bucket
+mise lint   # runs SwiftLint
+mise xcode  # opens the project in Xcode
 ```
 
-The tasks wrap the scripts in `scripts/`, which is what CI runs. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+The tasks wrap the scripts in `scripts/`. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 

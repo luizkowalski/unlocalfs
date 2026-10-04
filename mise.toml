@@ -1,5 +1,6 @@
 [tools]
 swiftlint = "0.65.1"
+xcbeautify = "3.2.1"
 xcodegen = "2.46.0"
 
 [tasks.app]
@@ -8,14 +9,8 @@ dir = "{{ config_root }}"
 run = "scripts/build-app.sh"
 
 [tasks.test]
-description = "Test the macOS app core and view models"
+description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"
 dir = "{{ config_root }}"
-run = "scripts/test.sh"
-
-[tasks."test:integration"]
-description = "Also test the bundled rclone against a local S3 server, the NFS client, and Keychain"
-dir = "{{ config_root }}"
-env = { INTEGRATION = "1" }
 run = "scripts/test.sh"
 
 [tasks.xcode]

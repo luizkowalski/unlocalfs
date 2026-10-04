@@ -39,17 +39,8 @@ jobs:
             xcode: "26.3"
           - os: macos-26
             xcode: "26.6"
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
     steps:
       - uses: actions/checkout@v7
-
-      - name: Cache Swift packages
-        uses: actions/cache@v6
-        with:
-          path: Packages/UnlocalFSCore/.build
-          key: spm-${{ matrix.os }}-${{ matrix.xcode }}-${{ hashFiles('Packages/UnlocalFSCore/Package.resolved') }}
-          restore-keys: spm-${{ matrix.os }}-${{ matrix.xcode }}-
 
       - name: Cache rclone
         uses: actions/cache@v6
@@ -57,10 +48,19 @@ jobs:
           path: .build/rclone
           key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
 
+      - name: Fetch rclone
+        run: echo "TEST_RUNNER_RCLONE_BINARY=$(scripts/fetch-rclone.sh)" >> "$GITHUB_ENV"
+
       - name: Test
+        uses: mxcl/xcodebuild@v3
         env:
-          INTEGRATION: "1"
-        run: scripts/test.sh
+          TEST_RUNNER_UNLOCALFS_TEST_KEYCHAIN: "1"
+        with:
+          xcode: ${{ matrix.xcode }}
+          platform: macOS
+          working-directory: Packages/UnlocalFSCore
+          scheme: UnlocalFSCore-Package
+          verbosity: xcbeautify
 
       - name: Upload logs
         if: failure()

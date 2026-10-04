@@ -3,10 +3,18 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
-if [ "${INTEGRATION:-0}" = "1" ]; then
-    RCLONE_BINARY="${RCLONE_BINARY:-$("$root/scripts/fetch-rclone.sh")}"
-    export RCLONE_BINARY
-    export UNLOCALFS_TEST_KEYCHAIN="${UNLOCALFS_TEST_KEYCHAIN:-1}"
-fi
+export TEST_RUNNER_RCLONE_BINARY="${RCLONE_BINARY:-$("$root/scripts/fetch-rclone.sh")}"
+export TEST_RUNNER_UNLOCALFS_TEST_KEYCHAIN=1
+for variable in UNLOCALFS_GCS_BUCKET UNLOCALFS_GCS_KEY_FILE; do
+    if [ -n "${!variable:-}" ]; then
+        export "TEST_RUNNER_$variable=${!variable}"
+    fi
+done
 
-exec swift test --package-path "$root/Packages/UnlocalFSCore" "$@"
+cd "$root/Packages/UnlocalFSCore"
+xcodebuild \
+    -scheme UnlocalFSCore-Package \
+    -destination "platform=macOS" \
+    -derivedDataPath .build/xcode \
+    -disableAutomaticPackageResolution \
+    test "$@" | xcbeautify
