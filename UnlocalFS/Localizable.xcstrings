@@ -1230,6 +1230,16 @@
           }
         }
       }
+    },
+    "Settings…": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
