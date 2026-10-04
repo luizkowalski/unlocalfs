@@ -93,8 +93,8 @@ import UnlocalFSPresentation
             if !allowed {
                 sender.activate()
                 let alert = NSAlert()
-                alert.messageText = "UnlocalFS is still running"
-                alert.informativeText = model.alert ?? "Disconnect your drives before quitting."
+                alert.messageText = String(localized: "UnlocalFS is still running")
+                alert.informativeText = model.alert ?? String(localized: "Disconnect your drives before quitting.")
                 model.alert = nil
                 alert.runModal()
             }
@@ -114,7 +114,7 @@ extension AppDelegate {
     @objc func copyShareLink(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
               !files.isEmpty, let expiry = userData.flatMap(ShareLinkExpiry.init) else {
-            error.pointee = "Select files in an UnlocalFS drive."
+            error.pointee = String(localized: "Select files in an UnlocalFS drive.") as NSString
             return
         }
         shareRequester = requester == NSRunningApplication.current ? nil : requester

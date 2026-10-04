@@ -13,6 +13,13 @@ struct ConnectionEditor: View {
 
     private enum Pane: String, CaseIterable {
         case connection = "Connection", settings = "Settings"
+
+        var displayName: String {
+            switch self {
+            case .connection: String(localized: "Connection")
+            case .settings: String(localized: "Settings")
+            }
+        }
     }
 
     init(viewModel: ConnectionEditorViewModel) {
@@ -31,7 +38,7 @@ struct ConnectionEditor: View {
                 Text(viewModel.title).font(.title2.bold())
                 Spacer()
                 Picker("Section", selection: $pane) {
-                    ForEach(Pane.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    ForEach(Pane.allCases, id: \.self) { Text($0.displayName).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -168,7 +175,7 @@ struct ConnectionEditor: View {
                 validated(.password, error: errors[.password]) { SecureField("Password", text: $viewModel.credentials.password) }
             case .privateKey:
                 validated(.keyFile, error: errors[.keyFile]) {
-                    fileChooser("Private key", path: $viewModel.connection.sftp.keyFile, prompt: "~/.ssh/id_ed25519")
+                    fileChooser(String(localized: "Private key"), path: $viewModel.connection.sftp.keyFile, prompt: "~/.ssh/id_ed25519")
                 }
                 SecureField("Passphrase", text: $viewModel.credentials.keyPassphrase, prompt: Text("If the key has one"))
             case .agent:
@@ -185,7 +192,7 @@ struct ConnectionEditor: View {
         @Bindable var viewModel = viewModel
         return Section {
             validated(.trustedHosts, error: errors[.trustedHosts]) {
-                fileChooser("Trusted hosts", path: $viewModel.connection.sftp.trustedHostsFile, prompt: SFTPSettings.defaultTrustedHostsFile)
+                fileChooser(String(localized: "Trusted hosts"), path: $viewModel.connection.sftp.trustedHostsFile, prompt: SFTPSettings.defaultTrustedHostsFile)
             }
         } header: {
             Text("Server trust")
@@ -307,7 +314,7 @@ struct ConnectionEditor: View {
                 }
             }
         } label: {
-            Text(field.rawValue).foregroundStyle(error == nil ? Color.primary : Color.red)
+            Text(field.displayName).foregroundStyle(error == nil ? Color.primary : Color.red)
         }
     }
 
