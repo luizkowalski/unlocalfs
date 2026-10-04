@@ -40,9 +40,11 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var backend: Backend { provider.backend }
 
+    public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
+
     public var folderPath: String {
         switch backend {
-        case .s3Compatible: folder
+        case .s3Compatible, .gcs: folder
         case .sftp: sftp.remotePath
         }
     }
@@ -62,13 +64,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         )
         result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
         switch backend {
-        case .s3Compatible: result.issues += validateStorage().issues
+        case .s3Compatible: result.issues += validateEndpoint().issues + validateBucket().issues
+        case .gcs: result.issues += validateBucket().issues
         case .sftp: result.issues += sftp.validate().issues
         }
         return result
     }
 
-    private func validateStorage() -> ValidationResult<ConnectionField> {
+    private func validateEndpoint() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
         let url = URL(string: endpoint)
         result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: "Endpoint must be a valid URL")
@@ -81,6 +84,11 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
             validEndpoint, field: .endpoint,
             message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."
         )
+        return result
+    }
+
+    private func validateBucket() -> ValidationResult<ConnectionField> {
+        var result = ValidationResult<ConnectionField>()
         result.check(!bucket.isBlank, field: .bucket, message: "Bucket cannot be empty")
         result.check(
             bucket != "." && bucket != ".." &&
@@ -116,6 +124,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
 public enum ConnectionField: String, CaseIterable, Sendable {
     case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
+    case serviceAccountKey = "Service account key"
     case host = "Host", port = "Port", username = "Username", remotePath = "Remote folder"
     case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
     case encryptionPassword = "Encryption password", confirmation = "Confirm password"
@@ -129,6 +138,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
     case wasabi = "Wasabi"
     case digitalOcean = "DigitalOcean"
     case sftp = "SFTP"
+    case googleCloudStorage = "GCS"
 
     public var id: Self { self }
 
@@ -136,6 +146,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .other, .aws, .cloudflare, .minio, .wasabi, .digitalOcean: .s3Compatible
         case .sftp: .sftp
+        case .googleCloudStorage: .gcs
         }
     }
 
@@ -148,6 +159,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .wasabi: "Wasabi"
         case .digitalOcean: "DigitalOcean Spaces"
         case .sftp: "SFTP"
+        case .googleCloudStorage: "Google Cloud Storage"
         }
     }
 }
@@ -174,10 +186,12 @@ public struct Credentials: Codable, Equatable, Sendable {
         }
     }
     public var obscuredKeyPassphrase = ""
+    public var serviceAccountKey: String
+    public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
-        password: String = "", keyPassphrase: String = ""
+        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = ""
     ) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -185,6 +199,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         self.encryptionPassword = encryptionPassword
         self.password = password
         self.keyPassphrase = keyPassphrase
+        self.serviceAccountKey = serviceAccountKey
     }
 
     public init(from decoder: any Decoder) throws {
@@ -198,6 +213,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         obscuredPassword = try container.decodeIfPresent(String.self, forKey: .obscuredPassword) ?? ""
         keyPassphrase = try container.decodeIfPresent(String.self, forKey: .keyPassphrase) ?? ""
         obscuredKeyPassphrase = try container.decodeIfPresent(String.self, forKey: .obscuredKeyPassphrase) ?? ""
+        serviceAccountKey = try container.decodeIfPresent(String.self, forKey: .serviceAccountKey) ?? ""
     }
 
     public func pruned(for connection: Connection) -> Credentials {
@@ -206,12 +222,20 @@ public struct Credentials: Codable, Equatable, Sendable {
         case .s3Compatible:
             credentials.password = ""
             credentials.keyPassphrase = ""
+            credentials.serviceAccountKey = ""
         case .sftp:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
+            credentials.serviceAccountKey = ""
             if connection.sftp.authentication != .password { credentials.password = "" }
             if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
+        case .gcs:
+            credentials.accessKey = ""
+            credentials.secretKey = ""
+            credentials.sessionToken = ""
+            credentials.password = ""
+            credentials.keyPassphrase = ""
         }
         return credentials
     }
@@ -227,6 +251,8 @@ public struct Credentials: Codable, Equatable, Sendable {
                 connection.sftp.authentication != .password || !password.isEmpty,
                 field: .password, message: "Password cannot be empty"
             )
+        case .gcs:
+            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: "Import a service-account key")
         }
         if connection.encrypted {
             result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")

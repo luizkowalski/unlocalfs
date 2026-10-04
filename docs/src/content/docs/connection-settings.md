@@ -3,7 +3,7 @@ title: Connection settings
 description: Understand the storage and credential fields for a drive.
 ---
 
-Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** as the provider to connect a server; the S3 sections below do not apply to it.
+Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server or **Google Cloud Storage** to connect a GCS bucket; the S3 sections below do not apply to them.
 
 ## Storage
 
@@ -29,6 +29,20 @@ A folder changes what the drive shows. It does not restrict what your credential
 | Session token | Required when using temporary credentials that include a token. Otherwise leave empty. |
 
 Credentials are stored in your Mac’s Keychain. Temporary credentials stop working when they expire; update them in the connection before connecting again.
+
+## Google Cloud Storage
+
+| Field | What to enter |
+| --- | --- |
+| Bucket | The bucket name, without a folder path. |
+| Folder | An optional path inside the bucket, such as `clients/acme`. Leave empty for the whole bucket. |
+| Service account key | Click **Import key…** and choose the JSON key file you downloaded from Google Cloud. |
+
+To create the key, open **IAM & Admin → Service Accounts** in the Google Cloud console, create a service account, and give it the **Storage Object User** role on the bucket. Then choose **Keys → Add key → Create new key → JSON**. That role is enough to list, read, write, rename, and delete files. UnlocalFS does not need access to the bucket's settings.
+
+UnlocalFS stores the key in your Mac's Keychain and shows only the service account's email. Delete the downloaded file after you import it. Anyone with the key can use the service account.
+
+**Test Connection** lists the folder. It shows that you can reach the bucket, not that you can write to it. Links are not available for Google Cloud Storage drives. Drives saved with Google Cloud Storage cannot be opened by older versions of UnlocalFS.
 
 ## SFTP
 

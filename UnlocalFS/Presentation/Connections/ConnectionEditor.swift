@@ -1,11 +1,13 @@
 import AppKit
 import SwiftUI
 import UnlocalFSDomain
+import UniformTypeIdentifiers
 import UnlocalFSPresentation
 
 struct ConnectionEditor: View {
     @State private var viewModel: ConnectionEditorViewModel
     @State private var pane = Pane.connection
+    @State private var importingKey = false
     @FocusState private var focus: ConnectionField?
     @Environment(\.dismiss) private var dismiss
 
@@ -89,6 +91,12 @@ struct ConnectionEditor: View {
             switch viewModel.connection.backend {
             case .s3Compatible: s3Sections(errors: errors)
             case .sftp: sftpSections(errors: errors)
+            case .gcs: gcsSections(errors: errors)
+            }
+        }
+        .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { result in
+            Task {
+                viewModel.importServiceAccountKey(await MacOSDesktopServices.readServiceAccountKey(result))
             }
         }
     }
@@ -100,8 +108,7 @@ struct ConnectionEditor: View {
             providerPicker
             validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $viewModel.connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
             TextField("Region", text: $viewModel.connection.region, prompt: Text("us-east-1 or auto"))
-            validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
-            validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+            bucketFields(errors: errors)
         } header: {
             Text("Storage")
         } footer: {
@@ -308,5 +315,40 @@ struct ConnectionEditor: View {
         guard let field = viewModel.firstInvalidField else { return }
         pane = field == .encryptionPassword || field == .confirmation ? .settings : .connection
         focus = field
+    }
+}
+
+private extension ConnectionEditor {
+    @ViewBuilder func bucketFields(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
+        validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+    }
+
+    @ViewBuilder func gcsSections(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        Section {
+            nameField(errors: errors)
+            providerPicker
+            bucketFields(errors: errors)
+        } header: {
+            Text("Storage")
+        }
+        Section {
+            validated(.serviceAccountKey, error: errors[.serviceAccountKey]) {
+                let email = viewModel.credentials.serviceAccountEmail
+                HStack {
+                    if let email {
+                        Text(verbatim: email).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                    }
+                    Button(email == nil ? "Import key…" : "Replace…") { importingKey = true }
+                }
+            }
+        } header: {
+            Text("Credentials")
+        } footer: {
+            Text("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
     }
 }

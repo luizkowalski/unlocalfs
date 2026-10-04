@@ -91,16 +91,19 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test(arguments: ["lsf", "link"])
-    func connectionErrorsDoNotExposeCredentials(command: String) async throws {
+    @Test(arguments: [
+        ("lsf", 1), ("link", 1), ("lsf", 8192)
+    ])
+    func connectionErrorsDoNotExposeCredentials(command: String, passwordRepetitions: Int) async throws {
+        let password = String(repeating: "private-password", count: passwordRepetitions)
         let script = """
         #!/bin/sh
         case "$1" in
             rc)
                 if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; else printf '{}'; fi ;;
-            obscure) printf 'obscured-token' ;;
+            obscure) cat >/dev/null; printf 'obscured-token' ;;
             \(command))
-                printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD private-password" >&2
+                printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
                 exit 1 ;;
         esac
         """
@@ -108,7 +111,7 @@ import UnlocalFSInfrastructure
             var connection = connection
             connection.encrypted = command == "lsf"
             let credentials = Credentials(
-                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: "private-password"
+                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: password
             )
             await #expect {
                 if connection.encrypted {
@@ -133,7 +136,7 @@ import UnlocalFSInfrastructure
         let script = """
         #!/bin/sh
         case "$1" in
-            obscure) printf 'obscured-token' ;;
+            obscure) cat >/dev/null; printf 'obscured-token' ;;
             lsf)
                 printf '%s' "$*" > '\(directory.path)/arguments'
                 printf '%s' "Denied $RCLONE_SFTP_PASS $RCLONE_SFTP_KEY_FILE_PASS $RCLONE_CRYPT_PASSWORD private-ssh private-phrase private-password" >&2

@@ -120,8 +120,10 @@ struct ConnectionDetail: View {
             Divider()
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
                 switch connection.backend {
+                case .gcs:
+                    bucketDetail
                 case .s3Compatible:
-                    detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
+                    bucketDetail
                     Divider()
                     detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
                     Divider()
@@ -140,9 +142,13 @@ struct ConnectionDetail: View {
 
     private var storageName: String {
         switch connection.backend {
-        case .s3Compatible: connection.bucket
+        case .s3Compatible, .gcs: connection.bucket
         case .sftp: connection.sftp.host
         }
+    }
+
+    private var bucketDetail: some View {
+        detail("Bucket") { Text(connection.bucketPath) }
     }
 
     @ViewBuilder private var sftpDetails: some View {

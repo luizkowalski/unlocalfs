@@ -15,6 +15,14 @@ Check that your credentials have access to the bucket and that your storage endp
 
 For encrypted drives, an incorrect password or unencrypted names in the top folder can prevent connection. See [Encryption](/encryption/).
 
+## A Google Cloud Storage connection fails
+
+- **The key is not accepted.** Import the JSON key file you downloaded from Google Cloud. Check that the service account and its key still exist.
+- **Access is denied.** Give the service account the **Storage Object User** role on the bucket. Check the bucket name.
+- **Uploads fail.** Check that the role is on the bucket and that the key is not expired or disabled. The drive's activity list shows the error.
+
+Test Connection shows that UnlocalFS can list the folder. It does not check write permission.
+
 ## An SFTP connection fails
 
 - **The server is unknown or its key changed.** UnlocalFS only connects to servers in your trusted-hosts file and never changes it. Check the server's fingerprint with its administrator. For a new server, connect once with `ssh user@host` and accept the fingerprint. For a changed key, find out why before you update the file.

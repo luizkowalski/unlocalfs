@@ -17,7 +17,7 @@ You can read an encrypted drive with [rclone](https://rclone.org/) alone. This w
 1. In UnlocalFS, right-click the drive and choose **Export rclone Config…**, or click **Export** in the drive toolbar.
 2. Choose where to save the file. Select **Include keys and password** only if you want a file that works without anything else. Anyone with that file can read the drive, so store it like a password. rclone only obscures the password in the file. It does not encrypt it.
 3. Install rclone on the computer you use for recovery. On a Mac, run `brew install rclone`, or follow the [rclone install guide](https://rclone.org/install/).
-4. If you did not include the keys and password, add them now. For an SFTP drive, use the SFTP steps below. The `read -s` commands keep them off the screen and out of your shell history:
+4. If you did not include the keys and password, add them now. For an SFTP or Google Cloud Storage drive, use the steps for that storage below. The `read -s` commands keep them off the screen and out of your shell history:
 
    ```sh
    printf 'Access key: '; IFS= read -rs key; echo
@@ -38,6 +38,16 @@ Replace `My files rclone.conf` with the path to your file. The `unlocalfs` remot
 
 - If the drive used temporary credentials with a session token, the token in the file expires. Add new keys as in step 4. Then set the new session token with `rclone config update unlocalfs-s3 "session_token=$token" --config "My files rclone.conf"`, or clear it with `session_token=` if the new keys have none.
 - Every exported file uses the same remote names. To put several drives in one rclone config, rename the sections first, for example to `photos` and `photos-s3`, and change the `remote` line of the crypt section to match.
+
+## Recover a Google Cloud Storage drive
+
+An exported config has two remotes: `unlocalfs-gcs` for the bucket and `unlocalfs` for the decrypted files. With **Include service-account key**, the key is in the file, so anyone with the file can use the service account. Without it, add the key from the JSON file you downloaded from Google Cloud, then the encryption password:
+
+```sh
+printf 'Encryption password: '; IFS= read -rs password; echo
+rclone config update unlocalfs-gcs "service_account_file=/path/to/key.json" --config "My files rclone.conf"
+rclone config update unlocalfs "password=$password" --obscure --config "My files rclone.conf"
+```
 
 ## Recover an SFTP drive
 

@@ -6,6 +6,7 @@ extension Provider {
         switch self {
         case .other: Image(systemName: "server.rack")
         case .sftp: Image(.sftp)
+        case .googleCloudStorage: Image(.gcs)
         case .aws: Image(.amazonS3)
         case .cloudflare: Image(.cloudflare)
         case .minio: Image(.minio)

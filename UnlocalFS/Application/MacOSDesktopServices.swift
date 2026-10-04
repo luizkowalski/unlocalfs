@@ -18,6 +18,12 @@ import UserNotifications
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }
     func openLog(_ connection: Connection) { NSWorkspace.shared.open(paths.log(connection)) }
 
+    nonisolated static func readServiceAccountKey(_ result: Result<URL, any Error>) async -> Result<Data, any Error> {
+        await Task.detached {
+            Result { try Data(contentsOf: result.get()) }
+        }.value
+    }
+
     func copyShareLinks(_ links: [URL]) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(links.map(\.absoluteString).joined(separator: "\n"), forType: .string)
@@ -47,6 +53,7 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible: "Include keys and password"
         case .sftp: "Include saved passwords"
+        case .gcs: "Include service-account key"
         }
     }
 
@@ -54,6 +61,8 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible:
             return "Anyone with the file can read this drive. The password is only obscured, not encrypted."
+        case .gcs:
+            return "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted."
         case .sftp:
             let dependency = connection.sftp.authentication == .agent ? "needs a running ssh-agent" : "private key file"
             return """
