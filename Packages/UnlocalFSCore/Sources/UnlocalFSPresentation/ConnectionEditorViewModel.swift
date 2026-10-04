@@ -82,9 +82,9 @@ import UnlocalFSDomain
         } catch { self.error = error.localizedDescription }
     }
 
-    public func importServiceAccountKey(_ result: Result<URL, any Error>) {
+    public func importServiceAccountKey(_ result: Result<Data, any Error>) {
         do {
-            credentials.serviceAccountKey = try ServiceAccountKey(importing: Data(contentsOf: result.get())).json
+            credentials.serviceAccountKey = try ServiceAccountKey(importing: result.get()).json
             error = nil
         } catch { self.error = error.localizedDescription }
     }

@@ -94,7 +94,11 @@ struct ConnectionEditor: View {
             case .gcs: gcsSections(errors: errors)
             }
         }
-        .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { viewModel.importServiceAccountKey($0) }
+        .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { result in
+            Task {
+                viewModel.importServiceAccountKey(await MacOSDesktopServices.readServiceAccountKey(result))
+            }
+        }
     }
 
     @ViewBuilder private func s3Sections(errors: [ConnectionField: String]) -> some View {

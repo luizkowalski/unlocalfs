@@ -18,6 +18,12 @@ import UserNotifications
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }
     func openLog(_ connection: Connection) { NSWorkspace.shared.open(paths.log(connection)) }
 
+    nonisolated static func readServiceAccountKey(_ result: Result<URL, any Error>) async -> Result<Data, any Error> {
+        await Task.detached {
+            Result { try Data(contentsOf: result.get()) }
+        }.value
+    }
+
     func copyShareLinks(_ links: [URL]) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(links.map(\.absoluteString).joined(separator: "\n"), forType: .string)
