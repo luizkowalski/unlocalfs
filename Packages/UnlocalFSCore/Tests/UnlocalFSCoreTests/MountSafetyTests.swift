@@ -201,11 +201,13 @@ import UnlocalFSDomain
             fixtureRoot = root
             return "touch '\(root.path)/ran'\n"
         } operation: { service, connection in
+            let root = try #require(fixtureRoot)
+            let config = root.appendingPathComponent("rclone.conf")
             var connection = connection
             connection.encrypted = true
             connection.folder = "clients/acme "
             await #expect {
-                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
+                try await service.exportRcloneConfig(connection, credentials: nil, to: config)
             } throws: { error in
                 error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
@@ -213,12 +215,12 @@ import UnlocalFSDomain
             connection.encrypted = true
             connection.sftp.remotePath = "/srv/files "
             await #expect {
-                try await service.exportRcloneConfig(connection, credentials: nil, to: URL(filePath: "/tmp/unused.conf"))
+                try await service.exportRcloneConfig(connection, credentials: nil, to: config)
             } throws: { error in
                 error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
-            let root = try #require(fixtureRoot)
             #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
+            #expect(!FileManager.default.fileExists(atPath: config.path))
         }
     }
 }

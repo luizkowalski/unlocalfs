@@ -125,9 +125,7 @@ struct SFTPServer {
         process.standardError = log
         try process.run()
         let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false }
-        for _ in 0..<500 where process.isRunning && !serving() {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil { !process.isRunning || serving() }
         if !serving() { process.terminate() }
         try #require(
             process.isRunning && serving(),
@@ -155,9 +153,7 @@ struct SSHAgent {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
-        for _ in 0..<500 where !FileManager.default.fileExists(atPath: socket.path) {
-            try await Task.sleep(for: .milliseconds(10))
-        }
+        try await waitUntil(timeout: .seconds(5)) { FileManager.default.fileExists(atPath: socket.path) }
         for key in keys {
             _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
         }

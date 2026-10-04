@@ -129,10 +129,7 @@ struct MountTests {
             try await drive.service.mount(drive.connection, credentials: credentials)
             let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
             _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
-            for _ in 0..<40 {
-                if await drive.service.status(drive.connection).needsReconnect { break }
-                try await Task.sleep(for: .milliseconds(250))
-            }
+            try await waitUntil { await drive.service.status(drive.connection).needsReconnect }
             let unhealthy = await drive.service.status(drive.connection)
             #expect(unhealthy.isMounted)
             #expect(unhealthy.needsReconnect)
@@ -304,13 +301,12 @@ struct Drive {
     }
 
     func waitForUploads(on service: MountService) async throws {
-        for _ in 0..<200 {
+        try await waitUntil(timeout: .seconds(20)) {
             let queue = try? await control("vfs/queue")["queue"] as? [[String: Any]]
             for item in (queue ?? []).compactMap({ $0["id"] as? Int }) {
                 _ = try? await control("vfs/queue-set-expiry", "id=\(item)", "expiry=-60", "relative=true")
             }
-            if await service.status(connection).pendingUploads == 0 { return }
-            try await Task.sleep(for: .milliseconds(100))
+            return await service.status(connection).pendingUploads == 0
         }
     }
 
@@ -366,20 +362,14 @@ private func verifyUploadProgress(_ drive: Drive, service: MountService) async t
     _ = try await drive.control("core/bwlimit", "rate=1M")
     try Data(repeating: 42, count: 8 * 1024 * 1024).write(
         to: drive.mounted.appendingPathComponent("large.bin"))
-    var sawProgress = false
-    for _ in 0..<80 {
-        sawProgress = try await service.activity(drive.connection).contains {
+    let sawProgress = try await waitUntil(timeout: .seconds(20)) {
+        try await service.activity(drive.connection).contains {
             $0.path == "large.bin" && $0.state == .uploading && ($0.bytesTransferred ?? 0) > 0
                 && $0.size == 8 * 1024 * 1024
         }
-        if sawProgress { break }
-        try await Task.sleep(for: .milliseconds(250))
     }
     #expect(sawProgress)
-    for _ in 0..<80 {
-        if try await service.activity(drive.connection).isEmpty { break }
-        try await Task.sleep(for: .milliseconds(250))
-    }
+    try await waitUntil(timeout: .seconds(20)) { try await service.activity(drive.connection).isEmpty }
     #expect(try await service.activity(drive.connection).isEmpty)
     #expect(await service.status(drive.connection).isMounted)
 }

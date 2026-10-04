@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 
-extension MountTests {
+extension DriveFeatureTests {
     @MainActor @Test func exportedConfigReadsFilesUploadedThroughTheDrive() async throws {
         try await withAppDrive(encrypted: true, credentials: encryptedDriveCredentials) { drive, app, desktop in
             let credentials = try await drive.service.prepareCredentials(

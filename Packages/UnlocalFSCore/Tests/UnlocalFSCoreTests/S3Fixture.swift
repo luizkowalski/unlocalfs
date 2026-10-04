@@ -21,9 +21,7 @@ struct S3Server {
         process.standardError = log
         try process.run()
         let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("Starting s3 server") ?? false }
-        for _ in 0..<500 where process.isRunning && !serving() {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await waitUntil { !process.isRunning || serving() }
         if !serving() { process.terminate() }
         try #require(
             process.isRunning && serving(),
