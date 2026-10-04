@@ -1,4 +1,5 @@
 mise.local.toml
+Signing.local.xcconfig
 .build/
 dist/
 .DS_Store

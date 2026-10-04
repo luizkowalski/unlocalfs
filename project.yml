@@ -30,22 +30,20 @@ targets:
         product: UnlocalFSInfrastructure
       - package: UnlocalFSCore
         product: UnlocalFSPresentation
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.luizkowalski.unlocalfs
         INFOPLIST_FILE: UnlocalFS/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         RCLONE_VERSION: 1.75.1
         RCLONE_SHA256_ARM64: c61d7a371c62bcbbe882c3423aa4b8bf63485c248dd0f692997b8f0c3f6d0c6f
         RCLONE_SHA256_AMD64: 29253d0288b8fbbac46baad6e5f6add6cb01d462c79f10805bbd4631c4cdf82c
-      configs:
-        Debug:
-          CODE_SIGN_IDENTITY: "Apple Development"
-          DEVELOPMENT_TEAM: 7YZ5F9UWH2
     postBuildScripts:
       - name: Embed rclone
         shell: /bin/bash
