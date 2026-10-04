@@ -222,6 +222,7 @@ private func withWorkflowFixture(
     try """
     #!/bin/sh
     printf '%s\\n' "$1" >> '\(root.path)/process-calls'
+    if [ "$1" = 'obscure' ]; then cat >/dev/null; fi
     if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
     if [ "$1" = 'rc' ]; then printf '%s' '{"diskCache":{"uploadsQueued":1,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}'; fi
     """.write(to: executable, atomically: true, encoding: .utf8)

@@ -325,7 +325,7 @@ func withDrive(
         logs: root.appendingPathComponent("logs")
     )
     var connection = connection ?? fixture(folder: folder)
-    connection.endpoint = "http://127.0.0.1:19753"
+    connection.endpoint = server.endpoint
     connection.encrypted = encrypted
     connection.readOnly = readOnly
     let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)

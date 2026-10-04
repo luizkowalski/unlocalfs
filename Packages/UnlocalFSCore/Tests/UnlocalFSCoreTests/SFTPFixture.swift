@@ -26,7 +26,7 @@ struct SFTPFixture {
     var protectedKey: URL { keys.appending(path: "client-protected") }
 
     init(executable: URL, root: URL) async throws {
-        let port = try Self.freePort()
+        let port = try freePort()
         self.port = port
         self.root = root
         self.executable = executable
@@ -51,20 +51,6 @@ struct SFTPFixture {
         agent = try await startedAgent
         emptyAgent = try await startedEmptyAgent
         server = try await startedServer
-    }
-
-    private static func freePort() throws -> Int {
-        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-        defer { close(descriptor) }
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_addr.s_addr = inet_addr("127.0.0.1")
-        let size = socklen_t(MemoryLayout<sockaddr_in>.size)
-        let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) } }
-        try #require(bound == 0)
-        var length = size
-        _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) } }
-        return Int(UInt16(bigEndian: address.sin_port))
     }
 
     mutating func restartServer(hostKey name: String) async throws {
@@ -208,4 +194,18 @@ func withSFTPDrive(
         throw error
     }
     try FileManager.default.removeItem(at: root)
+}
+
+func freePort() throws -> Int {
+    let descriptor = socket(AF_INET, SOCK_STREAM, 0)
+    defer { close(descriptor) }
+    var address = sockaddr_in()
+    address.sin_family = sa_family_t(AF_INET)
+    address.sin_addr.s_addr = inet_addr("127.0.0.1")
+    let size = socklen_t(MemoryLayout<sockaddr_in>.size)
+    let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) } }
+    try #require(bound == 0)
+    var length = size
+    _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) } }
+    return Int(UInt16(bigEndian: address.sin_port))
 }

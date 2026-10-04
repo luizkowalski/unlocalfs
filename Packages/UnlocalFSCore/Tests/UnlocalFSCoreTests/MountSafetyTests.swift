@@ -161,7 +161,7 @@ import UnlocalFSDomain
         var fixtureRoot: URL?
         try await withFixture { root in
             fixtureRoot = root
-            return "#!/bin/sh\nif [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
+            return "#!/bin/sh\nif [ \"$1\" = 'obscure' ]; then cat >/dev/null; fi\nif [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
         } operation: { service, _ in
             var connection = sftpFixture()
             connection.sftp.trustedHostsFile = "/nonexistent/known_hosts"
