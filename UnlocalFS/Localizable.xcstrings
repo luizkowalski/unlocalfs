@@ -1240,6 +1240,146 @@
           }
         }
       }
+    },
+    "Confirm password": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmar senha"
+          }
+        }
+      }
+    },
+    "Remote folder": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasta remota"
+          }
+        }
+      }
+    },
+    "Cache limit": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limite de cache"
+          }
+        }
+      }
+    },
+    "Export rclone Config": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exportar config do rclone"
+          }
+        }
+      }
+    },
+    "Use this file with rclone to read %@ without UnlocalFS.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use este arquivo com o rclone para ler %1$@ sem o UnlocalFS."
+          }
+        }
+      }
+    },
+    "Include keys and password": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluir chaves e senha"
+          }
+        }
+      }
+    },
+    "Include saved passwords": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluir senhas salvas"
+          }
+        }
+      }
+    },
+    "Include service-account key": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluir chave de conta de serviço"
+          }
+        }
+      }
+    },
+    "Anyone with the file can read this drive. The password is only obscured, not encrypted.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. A senha é apenas ofuscada, não criptografada."
+          }
+        }
+      }
+    },
+    "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade e usar a chave de conta de serviço. A senha é apenas ofuscada, não criptografada."
+          }
+        }
+      }
+    },
+    "needs a running ssh-agent": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "precisa de um ssh-agent em execução"
+          }
+        }
+      }
+    },
+    "private key file": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "arquivo de chave privada"
+          }
+        }
+      }
+    },
+    "Anyone with the file can read this drive. Passwords are only obscured, not encrypted.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas."
+          }
+        }
+      }
+    },
+    "The file points to your trusted-hosts file and %@. Copy them to the other Mac and adjust the paths.": {
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O arquivo aponta para o seu arquivo de trusted-hosts e %1$@. Copie-os para o outro Mac e ajuste os caminhos."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
