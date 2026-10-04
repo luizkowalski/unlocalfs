@@ -92,7 +92,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test(arguments: [
-        ("lsf", 1), ("link", 1), ("lsf", 8192)
+        ("lsf", 1), ("lsf", 8192)
     ])
     func connectionErrorsDoNotExposeCredentials(command: String, passwordRepetitions: Int) async throws {
         let password = String(repeating: "private-password", count: passwordRepetitions)
@@ -114,11 +114,7 @@ import UnlocalFSInfrastructure
                 accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: password
             )
             await #expect {
-                if connection.encrypted {
-                    try await service.test(connection, credentials: credentials)
-                } else {
-                    _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: credentials)
-                }
+                try await service.test(connection, credentials: credentials)
             } throws: { error in
                 !error.localizedDescription.contains("private-") && !error.localizedDescription.contains("obscured-") && error.localizedDescription.contains("Denied")
             }
@@ -185,18 +181,23 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func shareLinksNeedTheControlServiceToCheckUploads() async throws {
-        let script = """
-        #!/bin/sh
-        if [ "$1" = 'rc' ]; then echo 'Control unavailable' >&2; exit 1; fi
-        printf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'
-        """
-        try await withFixture(script: script) { service, connection in
+    @Test func shareLinksRefuseDisconnectedDrivesWithoutRunningRclone() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return """
+            #!/bin/sh
+            touch '\(root.path)/ran'
+            if [ "$1" = 'link' ]; then printf 'https://s3.example.com/my-bucket/a.txt?X-Amz-Signature=abc'; fi
+            """
+        } operation: { service, connection in
             await #expect {
                 _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: Credentials(accessKey: "key", secretKey: "secret"))
             } throws: { error in
                 error is AppError && error.localizedDescription.contains("Reconnect the drive")
             }
+            let root = try #require(fixtureRoot)
+            #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("ran").path))
         }
     }
 

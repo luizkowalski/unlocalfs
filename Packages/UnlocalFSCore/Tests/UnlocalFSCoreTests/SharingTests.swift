@@ -29,14 +29,17 @@ extension MountTests {
             let storage = drive.bucket.appending(path: folder)
             try FileManager.default.createDirectory(at: storage, withIntermediateDirectories: true)
             try Data("shared plan".utf8).write(to: storage.appending(path: "trip plan.txt"))
+            let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
+            try await drive.service.mount(drive.connection, credentials: credentials)
             let link = try await drive.service.shareLink(
                 for: drive.connection, path: "trip plan.txt", expiry: .day,
-                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+                credentials: credentials)
             let (data, response) = try await URLSession.shared.data(from: link)
             #expect((response as? HTTPURLResponse)?.statusCode == 200)
             #expect(String(decoding: data, as: UTF8.self) == "shared plan")
             let expires = URLComponents(url: link, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "X-Amz-Expires" }
             #expect(expires?.value == "86400")
+            try await drive.service.unmount(drive.connection)
         }
     }
 }

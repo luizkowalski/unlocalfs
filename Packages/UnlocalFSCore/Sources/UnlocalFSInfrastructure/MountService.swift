@@ -323,16 +323,17 @@ extension MountService {
     }
 
     public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
-        if FileManager.default.fileExists(atPath: paths.socket(connection).path) {
-            let pending: [FileActivity]
-            do {
-                pending = try await activity(connection)
-            } catch {
-                throw AppError("Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n\(error.localizedDescription)")
-            }
-            if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
-                throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
-            }
+        guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
+            throw AppError("Reconnect the drive to create links. UnlocalFS can only create links through a connected drive.")
+        }
+        let pending: [FileActivity]
+        do {
+            pending = try await activity(connection)
+        } catch {
+            throw AppError("Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n\(error.localizedDescription)")
+        }
+        if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
+            throw AppError("This file is still uploading. Wait for it to finish, then copy the link again.")
         }
         let remote = RcloneRemote(connection: connection, credentials: credentials)
         let output: Data

@@ -59,6 +59,15 @@ mise xcode             # opens the project in Xcode
 
 The tasks wrap the scripts in `scripts/`, which is what CI runs. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
+Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
+
+```xcconfig
+CODE_SIGN_IDENTITY = Apple Development: Your Name (CERTIFICATE_ID)
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+```
+
+Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build. `SIGN_IDENTITY` overrides the certificate when using `scripts/build-app.sh`; it does not affect Cmd+R.
+
 The app uses Clean Architecture with MVVM and Observation:
 
 - `UnlocalFSDomain` owns connection rules, repository and drive interfaces, and save, delete, toggle, share, and quit use cases.
