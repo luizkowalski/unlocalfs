@@ -4,6 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
 @Suite(
+    .serialized,
     .timeLimit(.minutes(2)),
     .enabled(
         if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
