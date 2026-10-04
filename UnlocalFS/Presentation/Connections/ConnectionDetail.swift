@@ -94,7 +94,7 @@ struct ConnectionDetail: View {
     }
 
     @ViewBuilder private var logo: some View {
-        if connection.provider.logoIsSymbol {
+        if connection.provider == .other {
             connection.provider.logo.font(.system(size: 30, weight: .light))
         } else {
             connection.provider.logo.resizable().scaledToFit()
@@ -148,7 +148,7 @@ struct ConnectionDetail: View {
     }
 
     private var bucketDetail: some View {
-        detail("Bucket") { Text(connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)") }
+        detail("Bucket") { Text(connection.bucketPath) }
     }
 
     @ViewBuilder private var sftpDetails: some View {

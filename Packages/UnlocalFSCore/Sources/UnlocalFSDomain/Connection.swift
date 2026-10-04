@@ -40,6 +40,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var backend: Backend { provider.backend }
 
+    public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
+
     public var folderPath: String {
         switch backend {
         case .s3Compatible, .gcs: folder

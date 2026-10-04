@@ -4,22 +4,15 @@ public struct ServiceAccountKey: Equatable, Sendable {
     public let email: String
     public let json: String
 
-    private struct Fields: Decodable {
-        let type: String
-        let clientEmail: String
-        let privateKey: String
-    }
-
     public init(importing data: Data) throws {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        guard let fields = try? decoder.decode(Fields.self, from: data),
-              fields.type == "service_account", !fields.clientEmail.isEmpty, !fields.privateKey.isEmpty,
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let compact = try? JSONSerialization.data(withJSONObject: object, options: .withoutEscapingSlashes) else {
+        guard let fields = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              fields["type"] as? String == "service_account",
+              let email = fields["client_email"] as? String, !email.isEmpty,
+              let privateKey = fields["private_key"] as? String, !privateKey.isEmpty,
+              let compact = try? JSONSerialization.data(withJSONObject: fields, options: .withoutEscapingSlashes) else {
             throw AppError("Not a service-account key. Choose the JSON key you downloaded from Google Cloud.")
         }
-        email = fields.clientEmail
+        self.email = email
         json = String(decoding: compact, as: UTF8.self)
     }
 

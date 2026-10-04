@@ -104,8 +104,7 @@ struct ConnectionEditor: View {
             providerPicker
             validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $viewModel.connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
             TextField("Region", text: $viewModel.connection.region, prompt: Text("us-east-1 or auto"))
-            validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
-            validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+            bucketFields(errors: errors)
         } header: {
             Text("Storage")
         } footer: {
@@ -316,23 +315,29 @@ struct ConnectionEditor: View {
 }
 
 private extension ConnectionEditor {
+    @ViewBuilder func bucketFields(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
+        validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+    }
+
     @ViewBuilder func gcsSections(errors: [ConnectionField: String]) -> some View {
         @Bindable var viewModel = viewModel
         Section {
             nameField(errors: errors)
             providerPicker
-            validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
-            validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
+            bucketFields(errors: errors)
         } header: {
             Text("Storage")
         }
         Section {
             validated(.serviceAccountKey, error: errors[.serviceAccountKey]) {
+                let email = viewModel.credentials.serviceAccountEmail
                 HStack {
-                    if let email = viewModel.credentials.serviceAccountEmail {
+                    if let email {
                         Text(verbatim: email).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
                     }
-                    Button(viewModel.credentials.serviceAccountKey.isEmpty ? "Import key…" : "Replace…") { importingKey = true }
+                    Button(email == nil ? "Import key…" : "Replace…") { importingKey = true }
                 }
             }
         } header: {

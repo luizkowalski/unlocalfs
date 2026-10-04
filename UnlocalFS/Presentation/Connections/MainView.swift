@@ -69,7 +69,7 @@ private struct ConnectionRow: View {
 
     private var icon: some View {
         Group {
-            if connection.provider.logoIsSymbol {
+            if connection.provider == .other {
                 connection.provider.logo.font(.system(size: 18))
             } else {
                 connection.provider.logo.resizable().scaledToFit()

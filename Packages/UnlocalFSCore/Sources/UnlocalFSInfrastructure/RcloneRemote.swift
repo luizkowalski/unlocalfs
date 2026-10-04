@@ -16,7 +16,7 @@ struct RcloneRemote {
     var exportName: String { "unlocalfs-\(type)" }
     var path: String {
         switch connection.backend {
-        case .s3Compatible, .gcs: connection.folder.isEmpty ? connection.bucket : "\(connection.bucket)/\(connection.folder)"
+        case .s3Compatible, .gcs: connection.bucketPath
         case .sftp: connection.sftp.remotePath
         }
     }
