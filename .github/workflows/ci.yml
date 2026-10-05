@@ -49,12 +49,10 @@ jobs:
           key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
 
       - name: Fetch rclone
-        run: echo "TEST_RUNNER_RCLONE_BINARY=$(scripts/fetch-rclone.sh)" >> "$GITHUB_ENV"
+        run: scripts/fetch-rclone.sh
 
       - name: Test
         uses: mxcl/xcodebuild@v3
-        env:
-          TEST_RUNNER_UNLOCALFS_TEST_KEYCHAIN: "1"
         with:
           xcode: ${{ matrix.xcode }}
           action: test

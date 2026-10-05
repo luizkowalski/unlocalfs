@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-@Suite(.enabled(if: ProcessInfo.processInfo.environment["UNLOCALFS_TEST_KEYCHAIN"] == "1", "Set UNLOCALFS_TEST_KEYCHAIN=1 to run"))
+@Suite
 struct KeychainTests {
     @Test func credentialsCanBeSavedUpdatedReadAndDeleted() throws {
         let keychain = Keychain(service: "app.unlocalfs.tests.\(UUID().uuidString)")

@@ -4,12 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 
-@Suite(
-    .serialized,
-    .timeLimit(.minutes(2)),
-    .enabled(
-        if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
-)
+@Suite(.serialized, .timeLimit(.minutes(2)))
 struct DriveFeatureTests {
     @MainActor @Test func activatingADisconnectedDriveConnectsAndOpensFinder() async throws {
         try await withAppDrive { drive, app, desktop in

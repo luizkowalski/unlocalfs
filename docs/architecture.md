@@ -43,6 +43,6 @@ JSON and Keychain encoding remain compatible with existing installations. Founda
 
 ## Verification
 
-`scripts/test.sh` runs the Domain, Infrastructure, and Presentation SwiftPM tests with real rclone, isolated Keychain tests, and SFTP tests against `rclone serve sftp` with generated keys, a private trusted-hosts file, and an isolated ssh-agent. Real GCS tests run only when `UNLOCALFS_GCS_BUCKET` and `UNLOCALFS_GCS_KEY_FILE` name a scratch bucket and a service-account key. Default tests use real repositories and drive services with stubs at process, credential, or macOS boundaries. `scripts/lint.sh` checks all layers.
+`xcodebuild test` runs all Domain, Infrastructure, and Presentation tests, including real rclone, isolated Keychain tests, and SFTP tests against `rclone serve sftp` with generated keys, a private trusted-hosts file, and an isolated ssh-agent. Test fixtures fetch the pinned rclone binary automatically. GCS tests use synthetic credentials and local process boundaries; they never require a real bucket. Tests use real repositories and drive services with stubs at process, credential, or macOS boundaries. `scripts/test.sh` wraps the same test run for `mise test`. `scripts/lint.sh` checks all layers.
 
 For a new workflow, place its rules in Domain, implement required integration behavior in Infrastructure, and inject it from Application. Keep view models responsible for the state the UI displays, and add a factory method when a view needs a new feature view model. Add abstractions when a real boundary requires them.

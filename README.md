@@ -51,7 +51,7 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 ```sh
 mise install
 mise app    # builds dist/UnlocalFS.app
-mise test   # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain; set UNLOCALFS_GCS_BUCKET and UNLOCALFS_GCS_KEY_FILE to test a real GCS bucket
+mise test   # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain
 mise lint   # runs SwiftLint
 mise xcode  # opens the project in Xcode
 ```

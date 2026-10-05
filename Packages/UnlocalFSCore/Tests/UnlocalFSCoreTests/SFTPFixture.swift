@@ -171,7 +171,7 @@ func withSFTPDrive(
     _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false,
     _ body: (Drive, inout SFTPFixture) async throws -> Void
 ) async throws {
-    let executable = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"]))
+    let executable = try await rcloneExecutable.value
     let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
     var sftp = try await SFTPFixture(executable: executable, root: root)
     defer { sftp.stop() }

@@ -3,12 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-@Suite(
-    .serialized,
-    .timeLimit(.minutes(2)),
-    .enabled(
-        if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
-)
+@Suite(.serialized, .timeLimit(.minutes(2)))
 struct MountTests {
     @Test func s3DriveReadsUploadsSurvivesReopeningAndUnmountsSafely() async throws {
         try await withDrive { drive in
@@ -287,6 +282,12 @@ struct MountTests {
 let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
+let rcloneExecutable = Task {
+    let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.sh")
+    let output = try await Command.run(script, [])
+    return URL(fileURLWithPath: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+}
+
 struct Drive {
     let executable: URL
     let bucket: URL
@@ -340,8 +341,7 @@ func withDrive(
     folder: String = "", encrypted: Bool = false, readOnly: Bool = false, connection: Connection? = nil,
     _ body: (Drive) async throws -> Void
 ) async throws {
-    let executable = URL(
-        fileURLWithPath: try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"]))
+    let executable = try await rcloneExecutable.value
     let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
     let bucket = root.appendingPathComponent("source/my-bucket")
     try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: true)
