@@ -34,7 +34,7 @@ Read the [user guide](https://unlocalfs.luizkowalski.net) for installation, conn
 
 ## Install
 
-Download the latest `UnlocalFS-<version>.zip` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), unzip it, and move **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
+Download the latest `UnlocalFS-<version>.dmg` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), open it, and drag **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
 
 The app is not notarized yet, so macOS blocks it the first time. Remove the quarantine flag:
 
@@ -74,7 +74,7 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 
 Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build.
 
-`mise app` generates the Xcode project and calls `xcodebuild build` directly. CI and releases use the same Release build settings and write the app into `dist/`. Releases set the version from the tag and use the signing certificate configured in GitHub.
+`mise app` runs `scripts/build-app.sh`, which generates the Xcode project and builds the app into `dist/`. CI and releases run the same script. Releases set the version from the tag and use the signing certificate configured in GitHub.
 
 The app uses Clean Architecture with MVVM and Observation:
 

@@ -9,59 +9,40 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-26
-    timeout-minutes: 60
+    runs-on: macos-27
+    timeout-minutes: 5
     env:
       TAG: ${{ github.event.release.tag_name }}
       DEVELOPER_DIR: /Applications/Xcode_26.6.app
+      SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
     steps:
       - uses: actions/checkout@v7
 
       - name: Install XcodeGen
         run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
 
-      - name: Generate project
-        run: xcodegen generate --quiet
-
       - name: Import signing certificate
         if: vars.SIGN_IDENTITY != ''
+        uses: apple-actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7.0.0
+        with:
+          p12-file-base64: ${{ secrets.DEVELOPER_ID_P12 }}
+          p12-password: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+
+      - name: Configure signing
+        if: vars.SIGN_IDENTITY != ''
         env:
-          P12: ${{ secrets.DEVELOPER_ID_P12 }}
-          P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
-        run: |
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          password="$(uuidgen)"
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          echo "$P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$P12_PASSWORD" -T /usr/bin/codesign
-          rm "$RUNNER_TEMP/cert.p12"
-          security set-key-partition-list -S apple-tool:,apple: -k "$password" "$keychain"
-          security list-keychains -d user -s "$keychain" login.keychain-db
+          TEAM_ID: ${{ vars.TEAM_ID }}
+        run: printf 'CODE_SIGN_IDENTITY = %s\nDEVELOPMENT_TEAM = %s\nOTHER_CODE_SIGN_FLAGS = --timestamp\n' "$SIGN_IDENTITY" "$TEAM_ID" > Signing.local.xcconfig
 
       - name: Build
-        env:
-          SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
-          BUILD_NUMBER: ${{ github.run_number }}
+        run: scripts/build-app.sh MARKETING_VERSION="${TAG#v}" CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      - name: Make DMG
         run: |
-          settings=()
-          if [ -n "$SIGN_IDENTITY" ]; then
-            settings+=(CODE_SIGN_IDENTITY="$SIGN_IDENTITY" OTHER_CODE_SIGN_FLAGS=--timestamp)
-          fi
-          xcodebuild build \
-            -project UnlocalFS.xcodeproj \
-            -scheme UnlocalFS \
-            -configuration Release \
-            -destination 'generic/platform=macOS' \
-            -derivedDataPath .build/xcode \
-            -disableAutomaticPackageResolution \
-            -quiet \
-            CONFIGURATION_BUILD_DIR="$PWD/dist" \
-            MARKETING_VERSION="${TAG#v}" \
-            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
-            "${settings[@]}"
-          codesign --verify --deep --strict dist/UnlocalFS.app
+          mkdir "$RUNNER_TEMP/dmg"
+          ditto dist/UnlocalFS.app "$RUNNER_TEMP/dmg/UnlocalFS.app"
+          ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
+          hdiutil create -srcdir "$RUNNER_TEMP/dmg" -volname UnlocalFS -format UDZO "UnlocalFS-${TAG#v}.dmg"
 
       - name: Notarize
         if: vars.SIGN_IDENTITY != ''
@@ -70,22 +51,12 @@ jobs:
           PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
           TEAM_ID: ${{ vars.TEAM_ID }}
         run: |
-          ditto -c -k --keepParent dist/UnlocalFS.app "$RUNNER_TEMP/notarize.zip"
-          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$PASSWORD" --wait
-          xcrun stapler staple dist/UnlocalFS.app
-
-      - name: Package
-        run: |
-          cd dist
-          zip="UnlocalFS-${TAG#v}.zip"
-          ditto -c -k --keepParent UnlocalFS.app "$zip"
-          shasum -a 256 "$zip" > "$zip.sha256"
+          dmg="UnlocalFS-${TAG#v}.dmg"
+          codesign --sign "$SIGN_IDENTITY" --timestamp "$dmg"
+          xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$PASSWORD" --wait
+          xcrun stapler staple "$dmg"
 
       - name: Upload
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" dist/UnlocalFS-*.zip dist/UnlocalFS-*.zip.sha256 --clobber
-
-      - name: Remove signing keychain
-        if: always() && vars.SIGN_IDENTITY != ''
-        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+        run: gh release upload "$TAG" UnlocalFS-*.dmg --clobber

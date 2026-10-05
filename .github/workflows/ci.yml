@@ -39,6 +39,8 @@ jobs:
             xcode: "26.3"
           - os: macos-26
             xcode: "26.6"
+          - os: macos-27
+            xcode: "27.0"
     steps:
       - uses: actions/checkout@v7
 
@@ -89,18 +91,5 @@ jobs:
       - name: Install XcodeGen
         run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
 
-      - name: Generate project
-        run: xcodegen generate --quiet
-
       - name: Build
-        run: |
-          xcodebuild build \
-            -project UnlocalFS.xcodeproj \
-            -scheme UnlocalFS \
-            -configuration Release \
-            -destination 'generic/platform=macOS' \
-            -derivedDataPath .build/xcode \
-            -disableAutomaticPackageResolution \
-            -quiet \
-            CONFIGURATION_BUILD_DIR="$PWD/dist"
-          codesign --verify --deep --strict dist/UnlocalFS.app
+        run: scripts/build-app.sh
