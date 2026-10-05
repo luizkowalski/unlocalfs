@@ -36,7 +36,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Test
-        run: swift test --package-path Packages/UnlocalFSCore
+        working-directory: Packages/UnlocalFSCore
+        run: xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS -quiet
 
       - name: Upload logs
         if: failure()

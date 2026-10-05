@@ -50,11 +50,19 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 
 ```sh
 mise install
-mise app                                          # builds dist/UnlocalFS.app
-swift test --package-path Packages/UnlocalFSCore  # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain
-swiftlint lint --strict                           # runs SwiftLint
-mise xcode                                        # opens the project in Xcode
+mise app                 # builds dist/UnlocalFS.app
+swiftlint lint --strict  # runs SwiftLint
+mise xcode               # opens the project in Xcode
 ```
+
+Run all tests, including drives mounted against local S3 and SFTP servers and Keychain:
+
+```sh
+cd Packages/UnlocalFSCore
+xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
+```
+
+The tests use `xcodebuild` and not `swift test`, because before Xcode 27 only `xcodebuild` generates the Swift symbols for the String Catalogs.
 
 CI runs these same commands. It runs every test on macOS 15, 26, and 27, then lints and builds the app, for every pull request and every push to `main`. Publishing a GitHub release builds the app with `mise app` and attaches a DMG to the release. The release tag sets the app version.
 
