@@ -57,6 +57,8 @@ jobs:
           TEST_RUNNER_UNLOCALFS_TEST_KEYCHAIN: "1"
         with:
           xcode: ${{ matrix.xcode }}
+          action: test
+          configuration: Debug
           platform: macOS
           working-directory: Packages/UnlocalFSCore
           scheme: UnlocalFSCore-Package

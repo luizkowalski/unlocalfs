@@ -56,7 +56,9 @@ mise lint   # runs SwiftLint
 mise xcode  # opens the project in Xcode
 ```
 
-The tasks wrap the scripts in `scripts/`. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+The tasks wrap the scripts in `scripts/`. `mise test` runs `scripts/test.sh`, which uses `xcodebuild test`. CI uses `mxcl/xcodebuild` to run the same package scheme in Debug, including the S3, SFTP, and Keychain tests.
+
+CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 

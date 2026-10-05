@@ -157,13 +157,9 @@ public actor MountService: DriveGateway {
         return (queued + transferring).sorted(using: KeyPathComparator(\.path, comparator: .localizedStandard))
     }
 
-    public func refresh(_ connection: Connection) async throws {
-        _ = try await control(connection, "vfs/forget")
-    }
+    public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
 
-    public func unmount(_ connection: Connection) async throws {
-        try await disconnect(connection, recovering: false)
-    }
+    public func unmount(_ connection: Connection) async throws { try await disconnect(connection, recovering: false) }
 
     public func reconnect(_ connection: Connection, credentials: Credentials) async throws {
         try await disconnect(connection, recovering: true)
