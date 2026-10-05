@@ -56,7 +56,12 @@ mise lint   # runs SwiftLint
 mise xcode  # opens the project in Xcode
 ```
 
-The tasks wrap the scripts in `scripts/`. `mise test` runs `scripts/test.sh`, which uses `xcodebuild test`. CI uses `mxcl/xcodebuild` to run the same package scheme in Debug, including the S3, SFTP, and Keychain tests.
+`mise test` calls `xcodebuild test` directly. CI uses `mxcl/xcodebuild` to run the same package scheme in Debug, including the S3, SFTP, and Keychain tests. To run without Mise:
+
+```sh
+cd Packages/UnlocalFSCore
+xcodebuild test -scheme UnlocalFSCore-Package -configuration Debug -destination 'platform=macOS'
+```
 
 CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
 
@@ -67,7 +72,9 @@ CODE_SIGN_IDENTITY = Apple Development: Your Name (CERTIFICATE_ID)
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
 ```
 
-Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build. `SIGN_IDENTITY` overrides the certificate when using `scripts/build-app.sh`; it does not affect Cmd+R.
+Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build.
+
+`mise app` generates the Xcode project and calls `xcodebuild build` directly. CI and releases use the same Release build settings and write the app into `dist/`. Releases set the version from the tag and use the signing certificate configured in GitHub.
 
 The app uses Clean Architecture with MVVM and Observation:
 

@@ -86,13 +86,21 @@ jobs:
           path: .build/rclone
           key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
 
+      - name: Install XcodeGen
+        run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
+
+      - name: Generate project
+        run: xcodegen generate --quiet
+
       - name: Build
-        run: scripts/build-app.sh
-
-      - name: Package
-        run: ditto -c -k --keepParent dist/UnlocalFS.app dist/UnlocalFS.zip
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: UnlocalFS
-          path: dist/UnlocalFS.zip
+        run: |
+          xcodebuild build \
+            -project UnlocalFS.xcodeproj \
+            -scheme UnlocalFS \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath .build/xcode \
+            -disableAutomaticPackageResolution \
+            -quiet \
+            CONFIGURATION_BUILD_DIR="$PWD/dist"
+          codesign --verify --deep --strict dist/UnlocalFS.app

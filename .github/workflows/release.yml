@@ -17,6 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install XcodeGen
+        run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
+
+      - name: Generate project
+        run: xcodegen generate --quiet
+
       - name: Import signing certificate
         if: vars.SIGN_IDENTITY != ''
         env:
@@ -37,9 +43,25 @@ jobs:
       - name: Build
         env:
           SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
-          VERSION: ${{ github.event.release.tag_name }}
           BUILD_NUMBER: ${{ github.run_number }}
-        run: VERSION="${VERSION#v}" scripts/build-app.sh
+        run: |
+          settings=()
+          if [ -n "$SIGN_IDENTITY" ]; then
+            settings+=(CODE_SIGN_IDENTITY="$SIGN_IDENTITY" OTHER_CODE_SIGN_FLAGS=--timestamp)
+          fi
+          xcodebuild build \
+            -project UnlocalFS.xcodeproj \
+            -scheme UnlocalFS \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath .build/xcode \
+            -disableAutomaticPackageResolution \
+            -quiet \
+            CONFIGURATION_BUILD_DIR="$PWD/dist" \
+            MARKETING_VERSION="${TAG#v}" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            "${settings[@]}"
+          codesign --verify --deep --strict dist/UnlocalFS.app
 
       - name: Notarize
         if: vars.SIGN_IDENTITY != ''

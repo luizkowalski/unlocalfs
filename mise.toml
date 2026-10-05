@@ -6,12 +6,32 @@ xcodegen = "2.46.0"
 [tasks.app]
 description = "Build the universal macOS app into dist/"
 dir = "{{ config_root }}"
-run = "scripts/build-app.sh"
+run = '''
+xcodegen generate --quiet
+xcodebuild build \
+    -project UnlocalFS.xcodeproj \
+    -scheme UnlocalFS \
+    -configuration Release \
+    -destination 'generic/platform=macOS' \
+    -derivedDataPath .build/xcode \
+    -disableAutomaticPackageResolution \
+    -quiet \
+    CONFIGURATION_BUILD_DIR="$PWD/dist"
+codesign --verify --deep --strict dist/UnlocalFS.app
+'''
 
 [tasks.test]
 description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"
-dir = "{{ config_root }}"
-run = "scripts/test.sh"
+dir = "{{ config_root }}/Packages/UnlocalFSCore"
+shell = "bash -o pipefail -c"
+run = '''
+xcodebuild test \
+    -scheme UnlocalFSCore-Package \
+    -configuration Debug \
+    -destination 'platform=macOS' \
+    -derivedDataPath .build/xcode \
+    -disableAutomaticPackageResolution | xcbeautify
+'''
 
 [tasks.xcode]
 description = "Generate the Xcode project and open it"
