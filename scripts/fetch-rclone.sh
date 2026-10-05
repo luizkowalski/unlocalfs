@@ -22,7 +22,7 @@ binary="$cache/$name/rclone"
 if [ ! -x "$binary" ]; then
     mkdir -p "$cache"
     curl -fsSL --retry 3 --retry-all-errors "https://github.com/rclone/rclone/releases/download/v$version/$name.zip" -o "$cache/$name.zip"
-    echo "$checksum  $cache/$name.zip" | shasum -a 256 -c - >&2
+    echo "$checksum  $cache/$name.zip" | shasum -a 256 -c --quiet - >&2
     ditto -x -k "$cache/$name.zip" "$cache"
     rm "$cache/$name.zip"
 fi

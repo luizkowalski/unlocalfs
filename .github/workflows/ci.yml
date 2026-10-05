@@ -37,7 +37,7 @@ jobs:
 
       - name: Test
         working-directory: Packages/UnlocalFSCore
-        run: xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS -quiet
+        run: xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
 
       - name: Upload logs
         if: failure()
