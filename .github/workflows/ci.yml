@@ -75,10 +75,10 @@ jobs:
             ~/Library/Logs/DiagnosticReports
 
   build:
-    runs-on: macos-26
+    runs-on: macos-27
     timeout-minutes: 5
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app
     steps:
       - uses: actions/checkout@v7
 
