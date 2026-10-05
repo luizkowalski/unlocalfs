@@ -50,20 +50,13 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 
 ```sh
 mise install
-mise app    # builds dist/UnlocalFS.app
-mise test   # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain
-mise lint   # runs SwiftLint
-mise xcode  # opens the project in Xcode
+mise app                                          # builds dist/UnlocalFS.app
+swift test --package-path Packages/UnlocalFSCore  # runs all tests, mounts drives against local S3 and SFTP servers, and uses Keychain
+swiftlint lint --strict                           # runs SwiftLint
+mise xcode                                        # opens the project in Xcode
 ```
 
-`mise test` calls `xcodebuild test` directly. CI uses `mxcl/xcodebuild` to run the same package scheme in Debug, including the S3, SFTP, and Keychain tests. To run without Mise:
-
-```sh
-cd Packages/UnlocalFSCore
-xcodebuild test -scheme UnlocalFSCore-Package -configuration Debug -destination 'platform=macOS'
-```
-
-CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+CI runs these same commands. It runs every test on macOS 15, 26, and 27, then lints and builds the app, for every pull request and every push to `main`. Publishing a GitHub release builds the app with `mise app` and attaches a DMG to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 
@@ -74,7 +67,7 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 
 Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build.
 
-`mise app` runs `scripts/build-app.sh`, which generates the Xcode project and builds the app into `dist/`. CI and releases run the same script. Releases set the version from the tag and use the signing certificate configured in GitHub.
+Releases use the signing certificate configured in GitHub.
 
 The app uses Clean Architecture with MVVM and Observation:
 

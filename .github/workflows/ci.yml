@@ -16,21 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: SwiftLint
-        run: |
-          version="$(sed -nE 's/^swiftlint[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' mise.toml)"
-          docker run --rm -v "$PWD:/work" -w /work "ghcr.io/realm/swiftlint:$version" lint --strict
-
   test:
-    name: test (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
+    name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -41,34 +30,19 @@ jobs:
             xcode: "26.6"
           - os: macos-27
             xcode: "27.0"
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
     steps:
       - uses: actions/checkout@v7
 
-      - name: Cache rclone
-        uses: actions/cache@v6
-        with:
-          path: .build/rclone
-          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
-
-      - name: Fetch rclone
-        run: scripts/fetch-rclone.sh
-
       - name: Test
-        uses: mxcl/xcodebuild@v3
-        with:
-          xcode: ${{ matrix.xcode }}
-          action: test
-          configuration: Debug
-          platform: macOS
-          working-directory: Packages/UnlocalFSCore
-          scheme: UnlocalFSCore-Package
-          verbosity: xcbeautify
+        run: swift test --package-path Packages/UnlocalFSCore
 
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-logs-${{ matrix.os }}-${{ matrix.xcode }}
+          name: test-logs-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
             /tmp/uf-*/**/*.log
@@ -76,20 +50,16 @@ jobs:
 
   build:
     runs-on: macos-27
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
-      DEVELOPER_DIR: /Applications/Xcode_27.0.app
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app
     steps:
       - uses: actions/checkout@v7
 
-      - name: Cache rclone
-        uses: actions/cache@v6
-        with:
-          path: .build/rclone
-          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
 
-      - name: Install XcodeGen
-        run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
+      - name: Lint
+        run: swiftlint lint --strict
 
       - name: Build
-        run: scripts/build-app.sh
+        run: mise run app

@@ -18,8 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install XcodeGen
-        run: scripts/install-xcodegen.sh >> "$GITHUB_PATH"
+      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
 
       - name: Import signing certificate
         if: vars.SIGN_IDENTITY != ''
@@ -35,7 +34,7 @@ jobs:
         run: printf 'CODE_SIGN_IDENTITY = %s\nDEVELOPMENT_TEAM = %s\nOTHER_CODE_SIGN_FLAGS = --timestamp\n' "$SIGN_IDENTITY" "$TEAM_ID" > Signing.local.xcconfig
 
       - name: Build
-        run: scripts/build-app.sh MARKETING_VERSION="${TAG#v}" CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+        run: mise run app MARKETING_VERSION="${TAG#v}" CURRENT_PROJECT_VERSION="${{ github.run_number }}"
 
       - name: Make DMG
         run: |

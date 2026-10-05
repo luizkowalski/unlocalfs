@@ -1,25 +1,23 @@
 [tools]
 swiftlint = "0.65.1"
-xcbeautify = "3.2.1"
 xcodegen = "2.46.0"
 
 [tasks.app]
 description = "Build the universal macOS app into dist/"
 dir = "{{ config_root }}"
-run = "scripts/build-app.sh"
-
-[tasks.test]
-description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"
-dir = "{{ config_root }}/Packages/UnlocalFSCore"
-shell = "bash -o pipefail -c"
-run = '''
-xcodebuild test \
-    -scheme UnlocalFSCore-Package \
-    -configuration Debug \
-    -destination 'platform=macOS' \
+run = [
+    "xcodegen generate --quiet",
+    '''
+xcodebuild build \
+    -project UnlocalFS.xcodeproj \
+    -scheme UnlocalFS \
+    -configuration Release \
+    -destination 'generic/platform=macOS' \
     -derivedDataPath .build/xcode \
-    -disableAutomaticPackageResolution | xcbeautify
-'''
+    -disableAutomaticPackageResolution \
+    -quiet \
+    CONFIGURATION_BUILD_DIR="$PWD/dist"''',
+]
 
 [tasks.xcode]
 description = "Generate the Xcode project and open it"
