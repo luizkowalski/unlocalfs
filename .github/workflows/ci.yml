@@ -28,7 +28,7 @@ jobs:
             xcode: "26.3"
           - os: macos-26
             xcode: "26.6"
-          - os: macos-27
+          - os: xcode-27
             xcode: "27.0"
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
@@ -50,7 +50,7 @@ jobs:
             ~/Library/Logs/DiagnosticReports
 
   build:
-    runs-on: macos-27
+    runs-on: xcode-27
     timeout-minutes: 10
     env:
       DEVELOPER_DIR: /Applications/Xcode_27.0.app
