@@ -75,7 +75,7 @@ private struct ConnectionRow: View {
             if connection.provider == .other {
                 connection.provider.logo.font(.system(size: 18))
             } else {
-                connection.provider.logo.resizable().scaledToFit()
+                connection.provider.logo.renderingMode(.template).resizable().scaledToFit()
             }
         }
         .frame(width: 20, height: 20)

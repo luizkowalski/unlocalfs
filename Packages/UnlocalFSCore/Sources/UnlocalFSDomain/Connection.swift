@@ -152,16 +152,18 @@ public enum ConnectionField: CaseIterable, Sendable {
 }
 
 public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case other = "Other"
     case aws = "AWS"
     case cloudflare = "Cloudflare"
+    case digitalOcean = "DigitalOcean"
+    case googleCloudStorage = "GCS"
     case minio = "Minio"
     case wasabi = "Wasabi"
-    case digitalOcean = "DigitalOcean"
+    case other = "Other"
     case sftp = "SFTP"
-    case googleCloudStorage = "GCS"
 
     public var id: Self { self }
+
+    public var isGeneric: Bool { self == .other || self == .sftp }
 
     public var backend: Backend {
         switch self {
