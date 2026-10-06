@@ -306,6 +306,18 @@
         }
       }
     },
+    "Connect" : {
+      "comment" : "Menu item: connect the drive (verb)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar"
+          }
+        }
+      }
+    },
     "Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac." : {
       "localizations" : {
         "pt-BR" : {
@@ -444,6 +456,53 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Excluir…"
+          }
+        }
+      }
+    },
+    "Disconnect" : {
+      "comment" : "Menu item: disconnect the drive (verb)",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconectar"
+          }
+        }
+      }
+    },
+    "Disconnect All" : {
+      "comment" : "Confirmation button: disconnect every connected drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconectar todas"
+          }
+        }
+      }
+    },
+    "Disconnect All…" : {
+      "comment" : "Menu item: ask to disconnect every connected drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconectar todas…"
+          }
+        }
+      }
+    },
+    "Disconnect all drives?" : {
+      "comment" : "Confirmation title before disconnecting every connected drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconectar todas as unidades?"
           }
         }
       }

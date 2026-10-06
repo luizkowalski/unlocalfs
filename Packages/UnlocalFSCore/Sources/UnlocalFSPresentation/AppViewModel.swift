@@ -14,6 +14,7 @@ import UnlocalFSDomain
     public var alert: String?
     public var editor: ConnectionDraft?
     public var deleting: Connection?
+    public var isConfirmingDisconnectAll = false
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
     private var networkAvailable = true
@@ -136,6 +137,16 @@ import UnlocalFSDomain
             errors[connection.id] = error.localizedDescription
         }
         update(await drives.status(connection), for: connection)
+    }
+
+    public func requestDisconnectAll() {
+        isConfirmingDisconnectAll = connections.contains(where: canDisconnect)
+    }
+
+    public func disconnectAll() async {
+        for connection in connections where canDisconnect(connection) {
+            await toggle(connection)
+        }
     }
 
     public func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
@@ -266,6 +277,14 @@ extension AppViewModel {
 
     public func canToggle(_ connection: Connection) -> Bool {
         !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
+    }
+
+    public func canConnect(_ connection: Connection) -> Bool {
+        canToggle(connection) && !isActive(connection)
+    }
+
+    public func canDisconnect(_ connection: Connection) -> Bool {
+        canToggle(connection) && isActive(connection) && !needsReconnect(connection)
     }
 
     public func canOpen(_ connection: Connection) -> Bool {

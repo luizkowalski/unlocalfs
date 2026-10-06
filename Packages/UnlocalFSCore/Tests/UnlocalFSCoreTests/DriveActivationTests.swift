@@ -99,6 +99,19 @@ struct DriveFeatureTests {
         }
     }
 
+    @MainActor @Test func disconnectAllDisconnectsAConnectedDrive() async throws {
+        try await withAppDrive { drive, app, _ in
+            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            await app.refresh()
+
+            await app.disconnectAll()
+
+            #expect(app.problem(drive.connection) == nil)
+            #expect(!app.isActive(drive.connection))
+            #expect(await !drive.service.status(drive.connection).isActive)
+        }
+    }
+
     @MainActor @Test func openingADriveKeepsItsUploadCompletionNotification() async throws {
         try await withAppDrive { drive, app, desktop in
             try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
