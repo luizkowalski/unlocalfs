@@ -69,10 +69,22 @@ jobs:
           path: .build/rclone
           key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
 
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - name: Install tools
+        run: brew install xcodegen swiftlint
 
       - name: Lint
         run: swiftlint lint --strict
 
+      - name: Generate project
+        run: xcodegen generate --quiet
+
       - name: Build
-        run: mise run app
+        run: |
+          xcodebuild build \
+            -project UnlocalFS.xcodeproj \
+            -scheme UnlocalFS \
+            -configuration Release \
+            -destination generic/platform=macOS \
+            -derivedDataPath .build/xcode \
+            -disableAutomaticPackageResolution \
+            -quiet

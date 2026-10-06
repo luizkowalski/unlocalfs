@@ -9,16 +9,17 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-27
-    timeout-minutes: 5
+    runs-on: xcode-27
+    timeout-minutes: 15
     env:
       TAG: ${{ github.event.release.tag_name }}
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app
       SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
     steps:
       - uses: actions/checkout@v7
 
-      - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
+      - name: Install tools
+        run: brew install xcodegen
 
       - name: Import signing certificate
         if: vars.SIGN_IDENTITY != ''
@@ -33,8 +34,22 @@ jobs:
           TEAM_ID: ${{ vars.TEAM_ID }}
         run: printf 'CODE_SIGN_IDENTITY = %s\nDEVELOPMENT_TEAM = %s\nOTHER_CODE_SIGN_FLAGS = --timestamp\n' "$SIGN_IDENTITY" "$TEAM_ID" > Signing.local.xcconfig
 
+      - name: Generate project
+        run: xcodegen generate --quiet
+
       - name: Build
-        run: mise run app MARKETING_VERSION="${TAG#v}" CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+        run: |
+          xcodebuild build \
+            -project UnlocalFS.xcodeproj \
+            -scheme UnlocalFS \
+            -configuration Release \
+            -destination generic/platform=macOS \
+            -derivedDataPath .build/xcode \
+            -disableAutomaticPackageResolution \
+            -quiet \
+            CONFIGURATION_BUILD_DIR="$PWD/dist" \
+            MARKETING_VERSION="${TAG#v}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}"
 
       - name: Make DMG
         run: |
