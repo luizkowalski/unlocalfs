@@ -215,15 +215,6 @@ struct ConnectionEditor: View {
         return validated(.name, error: errors[.name]) { TextField("Name", text: $viewModel.connection.name, prompt: Text("My storage")) }
     }
 
-    private var providerPicker: some View {
-        @Bindable var viewModel = viewModel
-        return Picker("Provider", selection: $viewModel.connection.provider) {
-            ForEach(viewModel.availableProviders) { provider in
-                Label { Text(provider.title) } icon: { provider.logo }.tag(provider)
-            }
-        }
-    }
-
     private func fileChooser(_ title: String, path: Binding<String>, prompt: String) -> some View {
         HStack {
             TextField(title, text: path, prompt: Text(verbatim: prompt))
@@ -356,6 +347,21 @@ private extension ConnectionEditor {
         } footer: {
             Text("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.")
                 .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    var providerPicker: some View {
+        @Bindable var viewModel = viewModel
+        let providers = viewModel.availableProviders
+        return Picker("Provider", selection: $viewModel.connection.provider) {
+            Section { providerOptions(providers.filter { !$0.isGeneric }) }
+            Section { providerOptions(providers.filter(\.isGeneric)) }
+        }
+    }
+
+    func providerOptions(_ providers: [Provider]) -> some View {
+        ForEach(providers) { provider in
+            Label { Text(provider.title) } icon: { provider.logo.renderingMode(.template) }.tag(provider)
         }
     }
 }
