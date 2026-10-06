@@ -156,6 +156,65 @@ import UnlocalFSInfrastructure
         #expect(app.statusText(connection) == String(localized: .networkUnavailable))
     }
 
+    @Test func connectAndDisconnectFollowTheConnectionState() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let idle = connectionFixture()
+        let connected = connectionFixture()
+        try ConnectionStore(url: fixture.paths.config).save(idle)
+        try fixture.serve(connected)
+        let app = fixture.app()
+
+        await app.refresh()
+
+        #expect(app.canConnect(idle))
+        #expect(!app.canDisconnect(idle))
+        #expect(!app.canConnect(connected))
+        #expect(app.canDisconnect(connected))
+    }
+
+    @Test func driveThatNeedsReconnectCanNeitherConnectNorDisconnect() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try ConnectionStore(url: fixture.paths.config).save(connection)
+        try Data().write(to: fixture.paths.socket(connection))
+        let app = fixture.app()
+
+        await app.refresh()
+
+        #expect(app.needsReconnect(connection))
+        #expect(!app.canConnect(connection))
+        #expect(!app.canDisconnect(connection))
+    }
+
+    @Test func disconnectAllWithNothingConnectedDoesNotAsk() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        try ConnectionStore(url: fixture.paths.config).save(connectionFixture())
+        let app = fixture.app()
+        await app.refresh()
+
+        app.requestDisconnectAll()
+
+        #expect(!app.isConfirmingDisconnectAll)
+    }
+
+    @Test func disconnectAllAsksWhenAnyDriveIsConnected() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let idle = connectionFixture()
+        let connected = connectionFixture()
+        try ConnectionStore(url: fixture.paths.config).save(idle)
+        try fixture.serve(connected)
+        let app = fixture.app()
+        await app.refresh()
+
+        app.requestDisconnectAll()
+
+        #expect(app.isConfirmingDisconnectAll)
+    }
+
     @Test func checkAgainClearsTheErrorAndReloadsTheStatus() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

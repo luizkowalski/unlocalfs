@@ -60,6 +60,9 @@ struct MainView: View {
         } message: { _ in
             Text("This removes the saved connection, credentials, and local file cache. Remote files are kept.")
         }
+        .confirmationDialog("Disconnect all drives?", isPresented: $model.isConfirmingDisconnectAll, titleVisibility: .visible) {
+            Button("Disconnect All") { Task { await model.disconnectAll() } }
+        }
     }
 }
 
@@ -103,14 +106,20 @@ private struct ConnectionRow: View {
         }
         .tag(connection.id)
         .contextMenu {
-            Button("Open in Finder") { model.openDrive(connection) }
-                .disabled(!model.canOpen(connection))
-            Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
-                .disabled(!model.canOpen(connection))
+            Button("Connect") { Task { await model.activate(connection) } }
+                .disabled(!model.canConnect(connection))
+            Button("Disconnect") { Task { await model.toggle(connection) } }
+                .disabled(!model.canDisconnect(connection))
+            Button("Disconnect All…") { model.requestDisconnectAll() }
             if model.needsReconnect(connection) {
                 Button("Reconnect") { Task { await model.toggle(connection) } }
                     .disabled(!model.canToggle(connection))
             }
+            Divider()
+            Button("Open in Finder") { model.openDrive(connection) }
+                .disabled(!model.canOpen(connection))
+            Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
+                .disabled(!model.canOpen(connection))
             Divider()
             Button("Edit Connection") { model.edit(connection) }
                 .disabled(!model.canEdit(connection))
