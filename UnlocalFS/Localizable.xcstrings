@@ -484,17 +484,6 @@
         }
       }
     },
-    "Disconnect All…" : {
-      "comment" : "Menu item: ask to disconnect every connected drive",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desconectar todas…"
-          }
-        }
-      }
-    },
     "Disconnect all drives?" : {
       "comment" : "Confirmation title before disconnecting every connected drive",
       "extractionState" : "stale",
@@ -503,6 +492,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desconectar todas as unidades?"
+          }
+        }
+      }
+    },
+    "Disconnect All…" : {
+      "comment" : "Menu item: ask to disconnect every connected drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desconectar todas…"
           }
         }
       }
