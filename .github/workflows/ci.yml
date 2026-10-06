@@ -16,21 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: SwiftLint
-        run: |
-          version="$(sed -nE 's/^swiftlint[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' mise.toml)"
-          docker run --rm -v "$PWD:/work" -w /work "ghcr.io/realm/swiftlint:$version" lint --strict
-
   test:
-    name: test (${{ matrix.os }}, Xcode ${{ matrix.xcode }})
+    name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -39,44 +28,38 @@ jobs:
             xcode: "26.3"
           - os: macos-26
             xcode: "26.6"
+          - os: xcode-27
+            xcode: "27.0"
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
     steps:
       - uses: actions/checkout@v7
 
-      - name: Cache Swift packages
-        uses: actions/cache@v6
-        with:
-          path: Packages/UnlocalFSCore/.build
-          key: spm-${{ matrix.os }}-${{ matrix.xcode }}-${{ hashFiles('Packages/UnlocalFSCore/Package.resolved') }}
-          restore-keys: spm-${{ matrix.os }}-${{ matrix.xcode }}-
-
       - name: Cache rclone
         uses: actions/cache@v6
         with:
           path: .build/rclone
-          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
+          key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
 
       - name: Test
-        env:
-          INTEGRATION: "1"
-        run: scripts/test.sh
+        working-directory: Packages/UnlocalFSCore
+        run: xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
 
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-logs-${{ matrix.os }}-${{ matrix.xcode }}
+          name: test-logs-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
             /tmp/uf-*/**/*.log
             ~/Library/Logs/DiagnosticReports
 
   build:
-    runs-on: macos-26
-    timeout-minutes: 5
+    runs-on: xcode-27
+    timeout-minutes: 10
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.6.app
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app
     steps:
       - uses: actions/checkout@v7
 
@@ -84,15 +67,24 @@ jobs:
         uses: actions/cache@v6
         with:
           path: .build/rclone
-          key: rclone-${{ runner.arch }}-${{ hashFiles('project.yml', 'scripts/fetch-rclone.sh') }}
+          key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
+
+      - name: Install tools
+        run: brew install xcodegen swiftlint
+
+      - name: Lint
+        run: swiftlint lint --strict
+
+      - name: Generate project
+        run: xcodegen generate --quiet
 
       - name: Build
-        run: scripts/build-app.sh
-
-      - name: Package
-        run: ditto -c -k --keepParent dist/UnlocalFS.app dist/UnlocalFS.zip
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: UnlocalFS
-          path: dist/UnlocalFS.zip
+        run: |
+          xcodebuild build \
+            -project UnlocalFS.xcodeproj \
+            -scheme UnlocalFS \
+            -configuration Release \
+            -destination generic/platform=macOS \
+            -derivedDataPath .build/xcode \
+            -disableAutomaticPackageResolution \
+            -quiet

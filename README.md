@@ -34,7 +34,7 @@ Read the [user guide](https://unlocalfs.luizkowalski.net) for installation, conn
 
 ## Install
 
-Download the latest `UnlocalFS-<version>.zip` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), unzip it, and move **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
+Download the latest `UnlocalFS-<version>.dmg` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), open it, and drag **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
 
 The app is not notarized yet, so macOS blocks it the first time. Remove the quarantine flag:
 
@@ -50,14 +50,14 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 
 ```sh
 mise install
-mise app               # builds dist/UnlocalFS.app
-mise test              # runs the core and view model tests
-mise test:integration  # also mounts drives against local S3 and SFTP servers and uses Keychain; set UNLOCALFS_GCS_BUCKET and UNLOCALFS_GCS_KEY_FILE to test a real GCS bucket
-mise lint              # runs SwiftLint
-mise xcode             # opens the project in Xcode
+mise xcode               # opens the project in Xcode; build and run with Cmd+R
+mise test                # runs all tests
+swiftlint lint --strict  # runs SwiftLint
 ```
 
-The tasks wrap the scripts in `scripts/`, which is what CI runs. CI lints, runs every test on macOS 15 and 26, and builds the app for every pull request and every push to `main`. Publishing a GitHub release builds the app and attaches it to the release. The release tag sets the app version.
+`mise test` runs all tests, including drives mounted against local S3 and SFTP servers and Keychain, with `xcodebuild test -scheme UnlocalFSCore-Package` in `Packages/UnlocalFSCore`. The tests use `xcodebuild` and not `swift test`, because before Xcode 27 only `xcodebuild` generates the Swift symbols for the String Catalogs.
+
+CI does not use Mise. It runs the same `xcodebuild test` command on macOS 15, 26, and 27, then lints and builds the app with Xcode 27, for every pull request and every push to `main`. Publishing a GitHub release builds the app with Xcode 27 and attaches a DMG to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 
@@ -66,7 +66,9 @@ CODE_SIGN_IDENTITY = Apple Development: Your Name (CERTIFICATE_ID)
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
 ```
 
-Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build. `SIGN_IDENTITY` overrides the certificate when using `scripts/build-app.sh`; it does not affect Cmd+R.
+Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build.
+
+Releases use the signing certificate configured in GitHub.
 
 The app uses Clean Architecture with MVVM and Observation:
 

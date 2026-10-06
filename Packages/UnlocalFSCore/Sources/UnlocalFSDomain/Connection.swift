@@ -57,12 +57,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public func validate() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!name.isBlank, field: .name, message: "Name cannot be empty")
+        result.check(!name.isBlank, field: .name, message: String(localized: .nameEmpty))
         result.check(
             name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
-            field: .name, message: "Enter a drive name without slashes, colons, or control characters."
+            field: .name, message: String(localized: .nameHasForbiddenCharacters)
         )
-        result.check(name.utf8.count <= 120, field: .name, message: "Enter a shorter drive name. The limit is 120 bytes.")
+        result.check(name.utf8.count <= 120, field: .name, message: String(localized: .nameTooLong))
         switch backend {
         case .s3Compatible: result.issues += validateEndpoint().issues + validateBucket().issues
         case .gcs: result.issues += validateBucket().issues
@@ -74,7 +74,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     private func validateEndpoint() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
         let url = URL(string: endpoint)
-        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: "Endpoint must be a valid URL")
+        result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: String(localized: .endpointInvalidURL))
         let validEndpoint = URLComponents(string: endpoint).map { url in
             ["http", "https"].contains(url.scheme) &&
                 url.host?.isEmpty == false && url.user == nil && url.password == nil &&
@@ -82,23 +82,23 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         } ?? false
         result.check(
             validEndpoint, field: .endpoint,
-            message: "Enter an HTTP or HTTPS service endpoint without a bucket, credentials, or query."
+            message: String(localized: .endpointNotDirect)
         )
         return result
     }
 
     private func validateBucket() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        result.check(!bucket.isBlank, field: .bucket, message: "Bucket cannot be empty")
+        result.check(!bucket.isBlank, field: .bucket, message: String(localized: .bucketEmpty))
         result.check(
             bucket != "." && bucket != ".." &&
                 bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
-            field: .bucket, message: "Enter the bucket name, without a path."
+            field: .bucket, message: String(localized: .bucketHasPath)
         )
         result.check(
             (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .folder, message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."
+            field: .folder, message: String(localized: .folderPathInvalid)
         )
         return result
     }
@@ -107,7 +107,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate()
         result.check(
             !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
-            field: .name, message: "A drive with that name already exists."
+            field: .name, message: String(localized: .nameAlreadyExists)
         )
         return result
     }
@@ -116,18 +116,39 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate(against: connections)
         result.issues += credentials.validate(for: self).issues
         if encrypted, !connections.contains(where: { $0.id == id }) {
-            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: "The passwords do not match.")
+            result.check(confirmation == credentials.encryptionPassword, field: .confirmation, message: String(localized: .passwordsDoNotMatch))
         }
         return result
     }
 }
 
-public enum ConnectionField: String, CaseIterable, Sendable {
-    case name = "Name", endpoint = "Endpoint", bucket = "Bucket", folder = "Folder", accessKey = "Access key", secretKey = "Secret key"
-    case serviceAccountKey = "Service account key"
-    case host = "Host", port = "Port", username = "Username", remotePath = "Remote folder"
-    case password = "Password", keyFile = "Private key", trustedHosts = "Trusted hosts"
-    case encryptionPassword = "Encryption password", confirmation = "Confirm password"
+public enum ConnectionField: CaseIterable, Sendable {
+    case name, endpoint, bucket, folder, accessKey, secretKey
+    case serviceAccountKey
+    case host, port, username, remotePath
+    case password, keyFile, trustedHosts
+    case encryptionPassword, confirmation
+
+    public var displayName: String {
+        switch self {
+        case .name: String(localized: .fieldName)
+        case .endpoint: String(localized: .fieldEndpoint)
+        case .bucket: String(localized: .fieldBucket)
+        case .folder: String(localized: .fieldFolder)
+        case .accessKey: String(localized: .fieldAccessKey)
+        case .secretKey: String(localized: .fieldSecretKey)
+        case .serviceAccountKey: String(localized: .fieldServiceAccountKey)
+        case .host: String(localized: .fieldHost)
+        case .port: String(localized: .fieldPort)
+        case .username: String(localized: .fieldUsername)
+        case .remotePath: String(localized: .fieldRemoteFolder)
+        case .password: String(localized: .password)
+        case .keyFile: String(localized: .privateKey)
+        case .trustedHosts: String(localized: .fieldTrustedHosts)
+        case .encryptionPassword: String(localized: .fieldEncryptionPassword)
+        case .confirmation: String(localized: .fieldConfirmPassword)
+        }
+    }
 }
 
 public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
@@ -152,14 +173,14 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .other: "S3 compatible"
-        case .aws: "Amazon S3"
-        case .cloudflare: "Cloudflare R2"
-        case .minio: "MinIO"
-        case .wasabi: "Wasabi"
-        case .digitalOcean: "DigitalOcean Spaces"
-        case .sftp: "SFTP"
-        case .googleCloudStorage: "Google Cloud Storage"
+        case .other: String(localized: .providerS3Compatible)
+        case .aws: String(localized: .providerAmazonS3)
+        case .cloudflare: String(localized: .providerCloudflareR2)
+        case .minio: String(localized: .providerMinIO)
+        case .wasabi: String(localized: .providerWasabi)
+        case .digitalOcean: String(localized: .providerDigitalOceanSpaces)
+        case .sftp: String(localized: .providerSFTP)
+        case .googleCloudStorage: String(localized: .providerGoogleCloudStorage)
         }
     }
 }
@@ -244,18 +265,18 @@ public struct Credentials: Codable, Equatable, Sendable {
         var result = ValidationResult<ConnectionField>()
         switch connection.backend {
         case .s3Compatible:
-            result.check(!accessKey.isBlank, field: .accessKey, message: "Access key cannot be empty")
-            result.check(!secretKey.isBlank, field: .secretKey, message: "Secret key cannot be empty")
+            result.check(!accessKey.isBlank, field: .accessKey, message: String(localized: .accessKeyEmpty))
+            result.check(!secretKey.isBlank, field: .secretKey, message: String(localized: .secretKeyEmpty))
         case .sftp:
             result.check(
                 connection.sftp.authentication != .password || !password.isEmpty,
-                field: .password, message: "Password cannot be empty"
+                field: .password, message: String(localized: .passwordEmpty)
             )
         case .gcs:
-            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: "Import a service-account key")
+            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
         }
         if connection.encrypted {
-            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: "Encryption password cannot be empty")
+            result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty))
         }
         return result
     }

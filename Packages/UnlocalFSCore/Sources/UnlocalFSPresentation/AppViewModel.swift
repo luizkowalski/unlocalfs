@@ -143,13 +143,13 @@ import UnlocalFSDomain
             let links = try await shareFiles.execute(files, expiry: expiry)
             desktop.copyShareLinks(links)
             desktop.notify(
-                title: links.count == 1 ? "Link copied" : "\(links.count) links copied",
-                body: "Anyone with the link can download for \(expiry.title).", fallbackToAlert: false
+                title: String(localized: .linksCopied(links.count)),
+                body: String(localized: .anyoneCanDownload(expiry.title)), fallbackToAlert: false
             )
         } catch let error as ShareFileError {
-            desktop.notify(title: "Could not copy a link to \(error.file.lastPathComponent)", body: error.localizedDescription, fallbackToAlert: true)
+            desktop.notify(title: String(localized: .couldNotCopyLink(error.file.lastPathComponent)), body: error.localizedDescription, fallbackToAlert: true)
         } catch {
-            desktop.notify(title: "Could not copy share links", body: error.localizedDescription, fallbackToAlert: true)
+            desktop.notify(title: String(localized: .couldNotCopyShareLinks), body: error.localizedDescription, fallbackToAlert: true)
         }
     }
 
@@ -260,8 +260,8 @@ extension AppViewModel {
     public func uploadNotice(_ connection: Connection) -> String? {
         guard let status = statuses[connection.id], status.pendingUploads > 0, status.failedUploads == 0 else { return nil }
         return status.isMounted
-            ? "Uploads pending. Keep this drive connected until uploads finish."
-            : "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again."
+            ? String(localized: .uploadsPendingKeepDriveConnected)
+            : String(localized: .uploadsPendingKeepAppRunning)
     }
 
     public func canToggle(_ connection: Connection) -> Bool {
@@ -286,16 +286,16 @@ extension AppViewModel {
 
     public func statusText(_ connection: Connection) -> String {
         switch condition(connection) {
-        case .working: "Working…"
-        case .needsReconnect: "Needs reconnect"
-        case .needsAttention: "Needs attention"
-        case .checking: "Checking…"
-        case .offline: "Network unavailable"
-        case .uploadFailed: "Upload needs attention"
-        case .uploading(let count): String(AttributedString(localized: "^[\(count) upload](inflect: true) pending").characters)
-        case .connected: "Connected"
-        case .ejected: "Ejected · disconnect to stop"
-        case .disconnected: "Disconnected"
+        case .working: String(localized: .working)
+        case .needsReconnect: String(localized: .needsReconnect)
+        case .needsAttention: String(localized: .needsAttention)
+        case .checking: String(localized: .checking)
+        case .offline: String(localized: .networkUnavailable)
+        case .uploadFailed: String(localized: .uploadNeedsAttention)
+        case .uploading(let count): String(localized: .uploadsPending(count))
+        case .connected: String(localized: .connected)
+        case .ejected: String(localized: .ejected)
+        case .disconnected: String(localized: .disconnected)
         }
     }
 
@@ -304,8 +304,8 @@ extension AppViewModel {
     }
 
     public func toggleTitle(_ connection: Connection) -> String {
-        if needsReconnect(connection) { return "Reconnect" }
-        return isActive(connection) ? "Disconnect" : "Connect"
+        if needsReconnect(connection) { return String(localized: .reconnect) }
+        return isActive(connection) ? String(localized: .disconnect) : String(localized: .connect)
     }
 
     public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
@@ -334,12 +334,12 @@ private extension AppViewModel {
 
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
-            notify(title: "Uploads failed on \(connection.name)", body: "Some files could not upload. Keep the drive connected while UnlocalFS tries again.")
+            notify(title: String(localized: .uploadsFailed(connection.name)), body: String(localized: .uploadsFailedBody))
         }
         if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
             notifiedFailures.remove(connection.id)
             if waitingToDisconnect.remove(connection.id) != nil {
-                notify(title: "\(connection.name) finished uploading", body: "You can disconnect it now.")
+                notify(title: String(localized: .finishedUploading(connection.name)), body: String(localized: .canDisconnectNow))
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }

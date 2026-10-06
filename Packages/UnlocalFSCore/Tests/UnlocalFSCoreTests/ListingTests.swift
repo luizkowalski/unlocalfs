@@ -17,10 +17,7 @@ extension MountTests {
             try Data("new".utf8).write(to: docs.appendingPathComponent("new.txt"))
             #expect(try FileManager.default.contentsOfDirectory(atPath: mountedDocs.path) == ["old.txt"])
             try await drive.service.refresh(drive.connection)
-            for _ in 0..<20 {
-                if try FileManager.default.contentsOfDirectory(atPath: mountedDocs.path).contains("new.txt") { break }
-                try await Task.sleep(for: .milliseconds(500))
-            }
+            try await waitUntil { try FileManager.default.contentsOfDirectory(atPath: mountedDocs.path).contains("new.txt") }
             #expect(try FileManager.default.contentsOfDirectory(atPath: mountedDocs.path).sorted() == ["new.txt", "old.txt"])
             try await drive.service.unmount(drive.connection)
         }

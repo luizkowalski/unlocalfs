@@ -9,9 +9,9 @@ public enum SFTPAuthentication: String, Codable, CaseIterable, Identifiable, Sen
 
     public var title: String {
         switch self {
-        case .password: "Password"
-        case .privateKey: "Private key"
-        case .agent: "SSH agent"
+        case .password: String(localized: .password)
+        case .privateKey: String(localized: .privateKey)
+        case .agent: String(localized: .authenticationAgent)
         }
     }
 }
@@ -35,26 +35,26 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
         let separators = CharacterSet.whitespacesAndNewlines.union(.controlCharacters)
         result.check(
             !host.isBlank && host.rangeOfCharacter(from: separators) == nil,
-            field: .host, message: "Enter the server's host name or IP address."
+            field: .host, message: String(localized: .hostMissing)
         )
-        result.check((1...65_535).contains(port), field: .port, message: "Enter a port from 1 to 65535.")
+        result.check((1...65_535).contains(port), field: .port, message: String(localized: .portOutOfRange))
         result.check(
             !username.isBlank && username.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .username, message: "Enter the username for this server."
+            field: .username, message: String(localized: .usernameMissing)
         )
         result.check(
             remotePath.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .remotePath, message: "Enter a folder path without control characters, or leave it empty for your home folder."
+            field: .remotePath, message: String(localized: .remotePathInvalid)
         )
         if authentication == .privateKey {
             result.check(
                 Self.isFullPath(keyFile), field: .keyFile,
-                message: "Enter the full path of your private key file, for example ~/.ssh/id_ed25519."
+                message: String(localized: .keyFileNotFullPath)
             )
         }
         result.check(
             Self.isFullPath(trustedHostsFile), field: .trustedHosts,
-            message: "Enter the full path of your trusted-hosts file, for example \(Self.defaultTrustedHostsFile)."
+            message: String(localized: .trustedHostsNotFullPath(Self.defaultTrustedHostsFile))
         )
         return result
     }

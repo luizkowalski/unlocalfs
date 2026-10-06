@@ -4,7 +4,7 @@ public struct UploadsPendingError: LocalizedError, Sendable {
     public init() {}
 
     public var errorDescription: String? {
-        "Uploads are still in progress. Wait for them to finish before disconnecting."
+        String(localized: .uploadsInProgress)
     }
 }
 
@@ -23,7 +23,7 @@ public struct MountStatus: Equatable, Sendable {
 
     public func requireSafeDisconnect() throws {
         guard failedUploads == 0 else {
-            throw AppError("Some files could not upload and need a retry. Keep UnlocalFS running until uploads finish.")
+            throw AppError(String(localized: .failedUploadsNeedRetry))
         }
         guard pendingUploads == 0 else { throw UploadsPendingError() }
     }

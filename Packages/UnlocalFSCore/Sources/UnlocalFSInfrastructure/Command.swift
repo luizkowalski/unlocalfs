@@ -11,7 +11,7 @@ public enum Command {
             group.addTask { try await execute(executable, arguments, input: input, environment: environment) }
             group.addTask {
                 try await Task.sleep(for: timeout)
-                throw AppError("The command timed out. Try again.")
+                throw AppError(String(localized: .commandTimedOut))
             }
             defer { group.cancelAll() }
             return try await group.next()!
@@ -32,7 +32,7 @@ public enum Command {
         )
         guard result.terminationStatus.isSuccess else {
             let message = String(decoding: result.standardOutput, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            throw AppError(message.isEmpty ? "The command failed. Try again." : message)
+            throw AppError(message.isEmpty ? String(localized: .commandFailed) : message)
         }
         return result.standardOutput
     }

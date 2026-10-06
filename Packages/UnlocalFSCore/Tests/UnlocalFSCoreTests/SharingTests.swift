@@ -1,15 +1,15 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
-extension MountTests {
+extension DriveFeatureTests {
     @Test func shareLinksRefuseFilesStillUploading() async throws {
         try await withPendingUpload { drive, credentials in
             await #expect {
                 _ = try await drive.service.shareLink(for: drive.connection, path: "report.txt", expiry: .day, credentials: credentials)
             } throws: { error in
-                error is AppError && error.localizedDescription.contains("still uploading")
+                error is AppError && error.localizedDescription == String(localized: .fileStillUploading)
             }
         }
     }

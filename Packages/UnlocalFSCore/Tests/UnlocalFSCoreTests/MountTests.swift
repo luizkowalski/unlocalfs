@@ -3,11 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-@Suite(
-    .serialized,
-    .enabled(
-        if: ProcessInfo.processInfo.environment["RCLONE_BINARY"] != nil, "Set RCLONE_BINARY to run")
-)
+@Suite(.serialized, .timeLimit(.minutes(2)))
 struct MountTests {
     @Test func s3DriveReadsUploadsSurvivesReopeningAndUnmountsSafely() async throws {
         try await withDrive { drive in
@@ -87,6 +83,19 @@ struct MountTests {
         }
     }
 
+    @Test func connectingReusesAFolderNamedInDifferentCase() async throws {
+        try await withDrive { drive in
+            try FileManager.default.createDirectory(
+                at: drive.paths.mounts.appending(path: drive.connection.name.lowercased()),
+                withIntermediateDirectories: true)
+            try await drive.service.mount(
+                drive.connection,
+                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+            #expect(await drive.service.status(drive.connection).isMounted)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
     @Test(arguments: [(false, false), (true, false), (false, true), (true, true)])
     func reconnectPreservesCachedFilesWhenControlIsUnavailable(staleSocket: Bool, reopened: Bool) async throws {
         try await withDrive { drive in
@@ -128,7 +137,7 @@ struct MountTests {
             try await drive.service.mount(drive.connection, credentials: credentials)
             let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
             _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
-            try await Task.sleep(for: .seconds(4))
+            try await waitUntil { await drive.service.status(drive.connection).needsReconnect }
             let unhealthy = await drive.service.status(drive.connection)
             #expect(unhealthy.isMounted)
             #expect(unhealthy.needsReconnect)
@@ -273,6 +282,12 @@ struct MountTests {
 let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
+let rcloneExecutable = Task {
+    let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.sh")
+    let output = try await Command.run(script, [])
+    return URL(fileURLWithPath: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+}
+
 struct Drive {
     let executable: URL
     let bucket: URL
@@ -286,6 +301,10 @@ struct Drive {
         MountService(executable: executable, helperDirectory: helpers, paths: paths)
     }
 
+    func service(environment: [String: String]) -> MountService {
+        MountService(executable: executable, helperDirectory: helpers, paths: paths, environment: environment)
+    }
+
     func control(_ method: String, _ parameters: String...) async throws -> [String: Any] {
         let data = try await Command.run(
             executable,
@@ -296,13 +315,24 @@ struct Drive {
     }
 
     func waitForUploads(on service: MountService) async throws {
-        for _ in 0..<200 {
+        try await waitUntil(timeout: .seconds(20)) {
             let queue = try? await control("vfs/queue")["queue"] as? [[String: Any]]
             for item in (queue ?? []).compactMap({ $0["id"] as? Int }) {
                 _ = try? await control("vfs/queue-set-expiry", "id=\(item)", "expiry=-60", "relative=true")
             }
-            if await service.status(connection).pendingUploads == 0 { return }
-            try await Task.sleep(for: .milliseconds(100))
+            return await service.status(connection).pendingUploads == 0
+        }
+    }
+
+    func disconnect() async {
+        guard await service.status(connection).isActive else { return }
+        try? await waitForUploads(on: service)
+        try? await service.unmount(connection)
+        if await service.status(connection).isMounted {
+            _ = try? await Command.run(URL(filePath: "/sbin/umount"), ["-f", mounted.path], timeout: .seconds(10))
+        }
+        if let pid = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8), let id = pid_t(pid) {
+            kill(id, SIGKILL)
         }
     }
 }
@@ -311,8 +341,7 @@ func withDrive(
     folder: String = "", encrypted: Bool = false, readOnly: Bool = false, connection: Connection? = nil,
     _ body: (Drive) async throws -> Void
 ) async throws {
-    let executable = URL(
-        fileURLWithPath: try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"]))
+    let executable = try await rcloneExecutable.value
     let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
     let bucket = root.appendingPathComponent("source/my-bucket")
     try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: true)
@@ -325,7 +354,7 @@ func withDrive(
         logs: root.appendingPathComponent("logs")
     )
     var connection = connection ?? fixture(folder: folder)
-    connection.endpoint = "http://127.0.0.1:19753"
+    connection.endpoint = server.endpoint
     connection.encrypted = encrypted
     connection.readOnly = readOnly
     let service = MountService(executable: executable, helperDirectory: helpers, paths: paths)
@@ -335,13 +364,10 @@ func withDrive(
     do {
         try await body(drive)
     } catch {
-        try? await Task.sleep(for: .seconds(6))
-        if await drive.service.status(connection).isMounted {
-            _ = try? await Command.run(URL(filePath: "/sbin/umount"), [drive.mounted.path], timeout: .seconds(10))
-        }
-        try? await drive.service.unmount(connection)
+        await drive.disconnect()
         throw error
     }
+    await drive.disconnect()
     try FileManager.default.removeItem(at: root)
 }
 
@@ -349,49 +375,14 @@ private func verifyUploadProgress(_ drive: Drive, service: MountService) async t
     _ = try await drive.control("core/bwlimit", "rate=1M")
     try Data(repeating: 42, count: 8 * 1024 * 1024).write(
         to: drive.mounted.appendingPathComponent("large.bin"))
-    var sawProgress = false
-    for _ in 0..<80 {
-        sawProgress = try await service.activity(drive.connection).contains {
+    let sawProgress = try await waitUntil(timeout: .seconds(20)) {
+        try await service.activity(drive.connection).contains {
             $0.path == "large.bin" && $0.state == .uploading && ($0.bytesTransferred ?? 0) > 0
                 && $0.size == 8 * 1024 * 1024
         }
-        if sawProgress { break }
-        try await Task.sleep(for: .milliseconds(250))
     }
     #expect(sawProgress)
-    for _ in 0..<80 {
-        if try await service.activity(drive.connection).isEmpty { break }
-        try await Task.sleep(for: .milliseconds(250))
-    }
+    try await waitUntil(timeout: .seconds(20)) { try await service.activity(drive.connection).isEmpty }
     #expect(try await service.activity(drive.connection).isEmpty)
     #expect(await service.status(drive.connection).isMounted)
-}
-
-private struct S3Server {
-    let process = Process()
-    let log: FileHandle
-
-    init(executable: URL, root: URL) async throws {
-        let logURL = root.appendingPathComponent("server.log")
-        FileManager.default.createFile(atPath: logURL.path, contents: nil)
-        log = try FileHandle(forWritingTo: logURL)
-        process.executableURL = executable
-        process.arguments = [
-            "serve", "s3", root.appendingPathComponent("source").path, "--addr", "127.0.0.1:19753",
-            "--auth-key", "test-key,test-secret", "--dir-cache-time", "0s", "--config", "/dev/null"
-        ]
-        process.standardOutput = log
-        process.standardError = log
-        try process.run()
-        try await Task.sleep(for: .seconds(1))
-        try #require(
-            process.isRunning,
-            "S3 fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
-        )
-    }
-
-    func stop() {
-        if process.isRunning { process.terminate() }
-        try? log.close()
-    }
 }

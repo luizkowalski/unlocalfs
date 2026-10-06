@@ -68,10 +68,10 @@ private struct ActivityRow: View {
 
     private var stateText: String {
         switch activity.state {
-        case .queued: "Queued for upload"
-        case .uploading: "Uploading"
-        case .retrying: "Waiting to retry upload"
-        case .downloading: "Downloading"
+        case .queued: String(localized: "Queued for upload")
+        case .uploading: String(localized: "Uploading")
+        case .retrying: String(localized: "Waiting to retry upload")
+        case .downloading: String(localized: "Downloading")
         }
     }
 

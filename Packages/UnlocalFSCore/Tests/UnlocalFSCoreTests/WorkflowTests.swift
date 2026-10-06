@@ -219,13 +219,11 @@ private func withWorkflowFixture(
     let paths = AppPaths(config: root.appending(path: "config.json"), support: root, mounts: root.appending(path: "drives"), logs: root.appending(path: "logs"))
     try paths.prepare()
     let executable = root.appending(path: "rclone")
-    try """
-    #!/bin/sh
+    try writeRcloneStub("""
     printf '%s\\n' "$1" >> '\(root.path)/process-calls'
     if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
     if [ "$1" = 'rc' ]; then printf '%s' '{"diskCache":{"uploadsQueued":1,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}'; fi
-    """.write(to: executable, atomically: true, encoding: .utf8)
-    try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+    """, to: executable)
     let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     let drives = MountService(executable: executable, helperDirectory: root, paths: paths)
     try await operation(repository, drives, paths, fixture())

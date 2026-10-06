@@ -2,6 +2,10 @@ name: UnlocalFS
 options:
   deploymentTarget:
     macOS: "15.0"
+  postGenCommand: |
+    resolved="UnlocalFS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm"
+    mkdir -p "$resolved"
+    cp Packages/UnlocalFSCore/Package.resolved "$resolved/Package.resolved"
 packages:
   UnlocalFSCore:
     path: Packages/UnlocalFSCore

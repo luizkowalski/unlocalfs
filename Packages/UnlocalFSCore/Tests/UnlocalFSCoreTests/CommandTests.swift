@@ -1,12 +1,14 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
-@Suite struct CommandTests {
+@Suite(.timeLimit(.minutes(1))) struct CommandTests {
     @Test func commandsTimeOutInsteadOfHangingTheCaller() async {
-        let start = Date()
-        await #expect(throws: (any Error).self) { _ = try await Command.run(URL(fileURLWithPath: "/bin/sleep"), ["20"], timeout: .milliseconds(200)) }
-        #expect(Date().timeIntervalSince(start) < 5)
+        await #expect {
+            _ = try await Command.run(URL(fileURLWithPath: "/bin/sleep"), ["3600"], timeout: .milliseconds(200))
+        } throws: { error in
+            error.localizedDescription == String(localized: .commandTimedOut)
+        }
     }
 }

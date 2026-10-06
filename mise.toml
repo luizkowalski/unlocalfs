@@ -2,28 +2,12 @@
 swiftlint = "0.65.1"
 xcodegen = "2.46.0"
 
-[tasks.app]
-description = "Build the universal macOS app into dist/"
-dir = "{{ config_root }}"
-run = "scripts/build-app.sh"
-
 [tasks.test]
-description = "Test the macOS app core and view models"
-dir = "{{ config_root }}"
-run = "scripts/test.sh"
-
-[tasks."test:integration"]
-description = "Also test the bundled rclone against a local S3 server, the NFS client, and Keychain"
-dir = "{{ config_root }}"
-env = { INTEGRATION = "1" }
-run = "scripts/test.sh"
+description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"
+dir = "{{ config_root }}/Packages/UnlocalFSCore"
+run = "xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS"
 
 [tasks.xcode]
 description = "Generate the Xcode project and open it"
 dir = "{{ config_root }}"
 run = "xcodegen generate && open UnlocalFS.xcodeproj"
-
-[tasks.lint]
-description = "Lint Swift sources"
-dir = "{{ config_root }}"
-run = "scripts/lint.sh"

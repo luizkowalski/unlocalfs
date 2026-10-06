@@ -1,0 +1,42 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Copy Share Link (1 Hour)": {
+      "extractionState": "manual",
+      "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (1 hora)"
+          }
+        }
+      }
+    },
+    "Copy Share Link (1 Day)": {
+      "extractionState": "manual",
+      "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (1 dia)"
+          }
+        }
+      }
+    },
+    "Copy Share Link (7 Days)": {
+      "extractionState": "manual",
+      "comment": "Services menu item shown in Finder; the number is how long the link stays valid",
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (7 dias)"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

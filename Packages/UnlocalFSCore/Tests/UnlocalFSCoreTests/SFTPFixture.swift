@@ -26,7 +26,7 @@ struct SFTPFixture {
     var protectedKey: URL { keys.appending(path: "client-protected") }
 
     init(executable: URL, root: URL) async throws {
-        let port = try Self.freePort()
+        let port = try freePort()
         self.port = port
         self.root = root
         self.executable = executable
@@ -53,22 +53,9 @@ struct SFTPFixture {
         server = try await startedServer
     }
 
-    private static func freePort() throws -> Int {
-        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-        defer { close(descriptor) }
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_addr.s_addr = inet_addr("127.0.0.1")
-        let size = socklen_t(MemoryLayout<sockaddr_in>.size)
-        let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) } }
-        try #require(bound == 0)
-        var length = size
-        _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) } }
-        return Int(UInt16(bigEndian: address.sin_port))
-    }
-
     mutating func restartServer(hostKey name: String) async throws {
         server.stop()
+        try await waitUntil { server.exited }
         server = try await SFTPServer(executable: executable, root: root, hostKey: keys.appending(path: name), port: port)
     }
 
@@ -138,20 +125,22 @@ struct SFTPServer {
         process.standardOutput = log
         process.standardError = log
         try process.run()
-        while process.isRunning, !((try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false) {
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false }
+        try await waitUntil { !process.isRunning || serving() }
+        if !serving() { process.terminate() }
         try #require(
-            process.isRunning,
+            process.isRunning && serving(),
             "SFTP fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
         )
     }
 
+    var exited: Bool {
+        var info = siginfo_t()
+        return waitid(P_PID, id_t(process.processIdentifier), &info, WEXITED | WNOHANG | WNOWAIT) == -1 || info.si_pid != 0
+    }
+
     func stop() {
-        if process.isRunning {
-            process.terminate()
-            process.waitUntilExit()
-        }
+        if process.isRunning { process.terminate() }
         try? log.close()
     }
 }
@@ -167,9 +156,7 @@ struct SSHAgent {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
-        for _ in 0..<500 where !FileManager.default.fileExists(atPath: socket.path) {
-            try await Task.sleep(for: .milliseconds(10))
-        }
+        try await waitUntil(timeout: .seconds(5)) { FileManager.default.fileExists(atPath: socket.path) }
         for key in keys {
             _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
         }
@@ -184,7 +171,7 @@ func withSFTPDrive(
     _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false,
     _ body: (Drive, inout SFTPFixture) async throws -> Void
 ) async throws {
-    let executable = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["RCLONE_BINARY"]))
+    let executable = try await rcloneExecutable.value
     let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
     var sftp = try await SFTPFixture(executable: executable, root: root)
     defer { sftp.stop() }
@@ -200,12 +187,23 @@ func withSFTPDrive(
     do {
         try await body(drive, &sftp)
     } catch {
-        try? await Task.sleep(for: .seconds(6))
-        if await drive.service.status(connection).isMounted {
-            _ = try? await Command.run(URL(filePath: "/sbin/umount"), [drive.mounted.path], timeout: .seconds(10))
-        }
-        try? await drive.service.unmount(connection)
+        await drive.disconnect()
         throw error
     }
+    await drive.disconnect()
     try FileManager.default.removeItem(at: root)
+}
+
+func freePort() throws -> Int {
+    let descriptor = socket(AF_INET, SOCK_STREAM, 0)
+    defer { close(descriptor) }
+    var address = sockaddr_in()
+    address.sin_family = sa_family_t(AF_INET)
+    address.sin_addr.s_addr = inet_addr("127.0.0.1")
+    let size = socklen_t(MemoryLayout<sockaddr_in>.size)
+    let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) } }
+    try #require(bound == 0)
+    var length = size
+    _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) } }
+    return Int(UInt16(bigEndian: address.sin_port))
 }

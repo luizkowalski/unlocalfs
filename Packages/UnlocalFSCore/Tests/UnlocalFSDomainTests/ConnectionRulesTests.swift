@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
+@testable import UnlocalFSDomain
 
 @Suite struct ConnectionRulesTests {
     @Test func duplicateUsesANewIdentityAndKeepsTheCredentialsSource() {
@@ -8,7 +8,7 @@ import UnlocalFSDomain
         connection.name = "Photos"
         let draft = ConnectionDraft(duplicating: connection)
         #expect(draft.id != connection.id)
-        #expect(draft.connection.name == "Photos copy")
+        #expect(draft.connection.name == String(localized: .duplicateName("Photos")))
         #expect(draft.credentialsSource == connection.id)
         #expect(draft.isDuplicate)
     }
@@ -46,22 +46,18 @@ import UnlocalFSDomain
         connection.encrypted = true
         let errors = connection.validate(credentials: Credentials(), confirmation: "different", against: [fixture()])
         #expect(errors.issues == [
-            .init(field: .folder, message: "Enter a folder path like clients/acme, or leave it empty to use the whole bucket."),
-            .init(field: .name, message: "A drive with that name already exists."),
-            .init(field: .accessKey, message: "Access key cannot be empty"),
-            .init(field: .secretKey, message: "Secret key cannot be empty"),
-            .init(field: .encryptionPassword, message: "Encryption password cannot be empty"),
-            .init(field: .confirmation, message: "The passwords do not match.")
+            .init(field: .folder, message: String(localized: .folderPathInvalid)),
+            .init(field: .name, message: String(localized: .nameAlreadyExists)),
+            .init(field: .accessKey, message: String(localized: .accessKeyEmpty)),
+            .init(field: .secretKey, message: String(localized: .secretKeyEmpty)),
+            .init(field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty)),
+            .init(field: .confirmation, message: String(localized: .passwordsDoNotMatch))
         ])
         #expect { try errors.requireValid() } throws: { error in
-            (error as? AppError)?.errorDescription == """
-            Enter a folder path like clients/acme, or leave it empty to use the whole bucket.
-            A drive with that name already exists.
-            Access key cannot be empty
-            Secret key cannot be empty
-            Encryption password cannot be empty
-            The passwords do not match.
-            """
+            (error as? AppError)?.errorDescription == [
+                String(localized: .folderPathInvalid), String(localized: .nameAlreadyExists), String(localized: .accessKeyEmpty),
+                String(localized: .secretKeyEmpty), String(localized: .encryptionPasswordEmpty), String(localized: .passwordsDoNotMatch)
+            ].joined(separator: "\n")
         }
     }
 
