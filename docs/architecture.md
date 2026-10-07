@@ -39,6 +39,8 @@ JSON and Keychain encoding remain compatible with existing installations. Founda
 
 `ViewModelFactory` creates `ConnectionEditorViewModel` and `ActivityViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers.
 
+`ActivityViewModel` polls the gateway for a drive's activity and exposes a `TransferSummary` with what the activity card shows: the leading direction, file count, bytes left, and the first 10 files with moving files first. The gateway returns activity in no set order; display order belongs to Presentation.
+
 `UnlocalFS/Presentation` contains the SwiftUI views. `AppDependencies.live()` constructs live dependencies and loads initial connections. `MacOSDesktopServices` implements the presentation's desktop interface. `AppDelegate` owns app polling, network monitoring, sleep/wake events, termination, and Finder services. Views own focus, layout, sheet dismissal, and activity task lifetime.
 
 ## Verification

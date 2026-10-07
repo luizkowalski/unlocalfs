@@ -153,7 +153,7 @@ public actor MountService: DriveGateway {
         let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
             FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes)
         }
-        return (queued + transferring).sorted(using: [KeyPathComparator(\.state), KeyPathComparator(\.path, comparator: .localizedStandard)])
+        return queued + transferring
     }
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }

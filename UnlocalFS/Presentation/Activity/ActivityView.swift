@@ -19,9 +19,9 @@ struct ActivityView: View {
                     status("exclamationmark.triangle", tint: .orange, title: Text("Activity unavailable")) {
                         Text(error.localizedDescription).textSelection(.enabled)
                     }
-                case .success(let activity):
-                    if let summary = TransferSummary(activity) {
-                        transfers(summary, activity: activity)
+                case .success:
+                    if let summary = viewModel?.summary {
+                        transfers(summary)
                     } else {
                         status("checkmark", tint: .green, title: idleTitle) {
                             Text("Files show up here while they upload or download.")
@@ -43,7 +43,7 @@ struct ActivityView: View {
         connection.readOnly ? Text("No transfers in progress") : Text("All changes are uploaded")
     }
 
-    private func transfers(_ summary: TransferSummary, activity: [FileActivity]) -> some View {
+    private func transfers(_ summary: TransferSummary) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             let title = summary.isUploading
                 ? Text("Uploading ^[\(summary.fileCount) file](inflect: true)")
@@ -65,15 +65,14 @@ struct ActivityView: View {
                     .accessibilityLabel(title)
                     .padding(.top, 16)
             }
-            let shown = activity.prefix(10)
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(shown) {
+                ForEach(summary.files) {
                     Divider()
                     ActivityRow(activity: $0).padding(.vertical, 10)
                 }
-                if activity.count > shown.count {
+                if summary.hiddenFileCount > 0 {
                     Divider()
-                    Text("^[\(activity.count - shown.count) more file](inflect: true)")
+                    Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
                         .foregroundStyle(.secondary)
                         .padding(.leading, 30)
                         .padding(.top, 10)

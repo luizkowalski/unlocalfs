@@ -12,6 +12,11 @@ import UnlocalFSDomain
         self.isBusy = isBusy
     }
 
+    public var summary: TransferSummary? {
+        guard case .success(let files) = activity else { return nil }
+        return TransferSummary(files)
+    }
+
     public func observe(_ connection: Connection) async {
         activity = nil
         while !Task.isCancelled {
