@@ -356,6 +356,17 @@
         }
       }
     },
+    "Copy" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar"
+          }
+        }
+      }
+    },
     "Credentials" : {
       "comment" : "Section header: access keys and passwords",
       "localizations" : {

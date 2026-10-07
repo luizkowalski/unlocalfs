@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UnlocalFSDomain
 import UnlocalFSPresentation
@@ -125,7 +126,7 @@ struct ConnectionDetail: View {
                 case .s3Compatible:
                     bucketDetail
                     Divider()
-                    detail("Endpoint") { Text(connection.endpoint).help(connection.endpoint) }
+                    detail("Endpoint") { copyable(connection.endpoint) }
                     Divider()
                     detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
                 case .sftp:
@@ -154,7 +155,7 @@ struct ConnectionDetail: View {
     @ViewBuilder private var sftpDetails: some View {
         let sftp = connection.sftp
         let server = "\(sftp.username)@\(sftp.host):\(sftp.port)"
-        detail("Server") { Text(verbatim: server).help(server) }
+        detail("Server") { copyable(server) }
         Divider()
         detail("Folder") { sftp.remotePath.isEmpty ? Text("Home folder") : Text(verbatim: sftp.remotePath) }
         Divider()
@@ -169,6 +170,13 @@ struct ConnectionDetail: View {
                 .truncationMode(.middle)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func copyable(_ value: String) -> some View {
+        HStack(spacing: 6) {
+            Text(verbatim: value).help(value)
+            CopyButton(value: value)
         }
     }
 
@@ -189,6 +197,29 @@ struct ConnectionDetail: View {
 
     private func tildePath(_ url: URL) -> String {
         (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
+    }
+}
+
+private struct CopyButton: View {
+    let value: String
+    @State private var copied = false
+
+    var body: some View {
+        Button("Copy", systemImage: copied ? "checkmark" : "doc.on.doc") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(value, forType: .string)
+            copied = true
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.borderless)
+        .foregroundStyle(.secondary)
+        .contentTransition(.symbolEffect(.replace, options: .speed(2.5)))
+        .help("Copy")
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(1))
+            copied = false
+        }
     }
 }
 
