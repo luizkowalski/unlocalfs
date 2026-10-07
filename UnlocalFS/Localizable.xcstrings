@@ -4,29 +4,22 @@
     "%@" : {
 
     },
-    "%@ · ^[%@ file](inflect: true)" : {
+    "%@ cached on this Mac. When the cache is full, the oldest copies are cleared." : {
       "localizations" : {
-        "en" : {
+        "pt-BR" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · ^[%2$@ file](inflect: true)"
+            "state" : "translated",
+            "value" : "%@ em cache neste Mac. Quando o cache enche, as cópias mais antigas são apagadas."
           }
         }
       }
     },
-    "%@ · ^[%lld file](inflect: true)" : {
-      "extractionState" : "stale",
+    "%@ left" : {
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · ^[%2$lld file](inflect: true)"
-          }
-        },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ · ^[%2$lld arquivo](inflect: true)"
+            "value" : "Faltam %@"
           }
         }
       }
@@ -44,6 +37,20 @@
     "%@/s" : {
 
     },
+    "^[%@ more file](inflect: true)" : {
+
+    },
+    "^[%lld more file](inflect: true)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
     "Access key" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -55,19 +62,7 @@
         }
       }
     },
-    "Activity" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atividade"
-          }
-        }
-      }
-    },
     "Activity unavailable" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -116,6 +111,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Socket do agente"
+          }
+        }
+      }
+    },
+    "All changes are uploaded" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas as alterações foram enviadas"
           }
         }
       }
@@ -225,27 +230,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Limite de cache"
-          }
-        }
-      }
-    },
-    "Cached files" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arquivos em cache"
-          }
-        }
-      }
-    },
-    "cached of %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "de %1$@ em cache"
           }
         }
       }
@@ -530,6 +514,20 @@
         }
       }
     },
+    "Downloading ^[%@ file](inflect: true)" : {
+
+    },
+    "Downloading ^[%lld file](inflect: true)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
     "Duplicate" : {
       "comment" : "Button: make a copy of the connection",
       "extractionState" : "stale",
@@ -687,6 +685,16 @@
         }
       }
     },
+    "Files show up here while they upload or download." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os arquivos aparecem aqui enquanto são enviados ou baixados."
+          }
+        }
+      }
+    },
     "Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit." : {
       "localizations" : {
         "pt-BR" : {
@@ -705,18 +713,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pasta"
-          }
-        }
-      }
-    },
-    "Free cache" : {
-      "comment" : "Legend of the cache chart: cache space still free (adjective, not a command)",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cache livre"
           }
         }
       }
@@ -930,17 +926,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma transferência em andamento"
-          }
-        }
-      }
-    },
-    "None" : {
-      "comment" : "Value shown when there are no pending uploads",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhum"
           }
         }
       }
@@ -1473,6 +1458,20 @@
         }
       }
     },
+    "Uploading ^[%@ file](inflect: true)" : {
+
+    },
+    "Uploading ^[%lld file](inflect: true)" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
     "us-east-1 or auto" : {
       "localizations" : {
         "pt-BR" : {
@@ -1522,17 +1521,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aguardando nova tentativa de envio"
-          }
-        }
-      }
-    },
-    "Waiting to upload" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aguardando envio"
           }
         }
       }

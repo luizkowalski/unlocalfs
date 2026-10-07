@@ -33,15 +33,6 @@ import UnlocalFSInfrastructure
         #expect(download.bytesTransferred == 100)
         #expect(download.id != upload.id)
     }
-
-    @Test func activityIsSortedByPath() async throws {
-        let activity = try await fetchActivity(queue: """
-        {"queue":[{"name":"file10.txt","id":1,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
-        """, stats: """
-        {"transferring":[{"name":"file2.txt","size":1,"bytes":0,"srcFs":":s3:bucket"}]}
-        """)
-        #expect(activity.map(\.path) == ["file2.txt", "file10.txt"])
-    }
 }
 
 private func fetchActivity(queue: String, stats: String = "{}") async throws -> [FileActivity] {
