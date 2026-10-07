@@ -1,6 +1,6 @@
 # Clean Architecture with MVVM
 
-The domain defines what the app does. Infrastructure implements storage and drive operations. Presentation owns observable state and user interaction. Application constructs the objects and connects them to macOS.
+The domain defines what the app does. Infrastructure implements storage and drive operations. Presentation owns observable state and user interaction. Application constructs the objects and connects them to macOS. In MVVM terms, Domain and Infrastructure are the model, `UnlocalFSPresentation` holds the view models, and the SwiftUI views live in the app target with Application.
 
 ```mermaid
 flowchart LR
@@ -23,25 +23,27 @@ flowchart LR
 | ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
 | QuitUseCase | Refuses quit during an operation or while a drive remains active |
 
-`ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. Simple status, test, refresh, and activity operations use the gateway directly. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.
+`ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. View models call the gateway directly for simple status, test, refresh, and activity operations; workflows with rules go through a use case. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.
 
 ## Infrastructure
 
 `UnlocalFSInfrastructure` depends on Domain. `SavedConnectionRepository` combines `ConnectionStore` and `CredentialStorage`. The application shares one repository instance. A lock serializes complete repository transactions. A failed credential save restores the previous JSON connection or removes a new connection. Delete removes the JSON connection before its credentials, so a failed write keeps both. `Keychain` implements credential storage.
 
-`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. `RcloneRemote` describes how rclone reaches a connection's storage: the backend type, path, options, environment, and recovery export name. The provider selects the S3, GCS, or SFTP branch; all share one mount lifecycle, and crypt wraps any of them. GCS passes the service-account key from `Credentials` as an inline rclone option; `ServiceAccountKey` parses and compacts the imported file once, in Domain. SFTP checks the trusted-hosts and key files before every test and mount, passes only the ssh-agent socket it needs, and never edits the trusted-hosts file. `MountCommand` builds the `nfsmount` arguments and environment from a remote and `AppPaths`. It checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
+`MountService` implements `DriveGateway`. It owns rclone commands, response decoding, process lifetime, and mount paths. `RcloneRemote` describes how rclone reaches a connection's storage: the backend type, path, options, environment, and recovery export name. The provider selects the S3, GCS, or SFTP branch; all share one mount lifecycle, and crypt wraps any of them. GCS passes the service-account key from `Credentials` as an inline rclone option; `ServiceAccountKey` parses and compacts the imported file once, in Domain. SFTP checks the trusted-hosts and key files before every test and mount, passes only the ssh-agent socket it needs, and never edits the trusted-hosts file. `MountCommand` builds the `nfsmount` arguments and environment from a remote and `AppPaths`. `MountService` checks upload safety before ejecting and again before stopping the service. These checks stay at the integration boundary because uploads can change between operations.
 
 JSON and Keychain encoding remain compatible with existing installations. Foundation Codable conformance stays on the value types to avoid duplicating unchanged schemas.
 
 ## Presentation and Application
 
-`UnlocalFSPresentation` contains the view models and depends only on Domain. `AppViewModel` holds connection selection, observed statuses, errors, and busy state. Views read this state and cannot change it directly; they call intent methods such as `toggle`, `delete`, and `checkAgain`. `AppViewModel` also derives the status text, indicator, and notices that views display. It runs domain use cases and translates their results into UI state and desktop feedback.
+`UnlocalFSPresentation` contains the view models and depends only on Domain. `AppViewModel` holds connection selection, observed statuses, errors, and busy state. Views cannot change connections, statuses, errors, or busy state; they call intent methods such as `toggle`, `delete`, and `checkAgain`. Views can set the selection and what is presented: the editor, the delete confirmation, and alerts. `AppViewModel` also derives the status text, indicator, and notices that views display. It runs domain use cases and translates their results into UI state and desktop feedback.
 
-`ViewModelFactory` creates `ConnectionEditorViewModel` and `ActivityViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers.
+`ViewModelFactory` creates `ConnectionEditorViewModel` and `ActivityViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers, so only the factory can create them.
 
-`ActivityViewModel` polls the gateway for a drive's activity and exposes a `TransferSummary` with what the activity card shows: the leading direction, file count, bytes left, and the first 10 files with moving files first. The gateway returns activity in no set order; display order belongs to Presentation.
+While the activity card is visible, `ActivityViewModel` polls the gateway every 3 seconds and exposes a `TransferSummary` with what the card shows: whether uploads or downloads lead (uploads win when both run), the file count and bytes left in that direction, and the first 10 files with moving files first. The gateway returns activity in no set order; display order belongs to Presentation.
 
-`UnlocalFS/Presentation` contains the SwiftUI views. `AppDependencies.live()` constructs live dependencies and loads initial connections. `MacOSDesktopServices` implements the presentation's desktop interface. `AppDelegate` owns app polling, network monitoring, sleep/wake events, termination, and Finder services. Views own focus, layout, sheet dismissal, and activity task lifetime.
+`UnlocalFS/Presentation` contains the SwiftUI views. Views own focus, layout, sheet dismissal, and activity task lifetime. The app target has no tests, so view models decide what the UI shows: which items, in what order, and derived counts and totals. Views decide how it looks: icons, colors, animation, and the format of a single value.
+
+`UnlocalFS/Application` wires the app. `AppDependencies.live()` constructs live dependencies and loads initial connections. `MacOSDesktopServices` implements the presentation's desktop interface. `AppDelegate` owns app polling of drive status every 3 seconds, network monitoring, sleep/wake events, termination, and Finder services.
 
 ## Verification
 
