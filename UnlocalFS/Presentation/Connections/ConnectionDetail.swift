@@ -13,23 +13,22 @@ struct ConnectionDetail: View {
                 if let problem = model.problem(connection) {
                     problemBanner(problem)
                 }
-                header(status)
-                CacheUsage(status: status, limit: connection.cacheLimit)
+                header
                 if model.isOffline(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
                         .font(.callout).foregroundStyle(.secondary)
-                } else if let notice = model.uploadNotice(connection) {
-                    Label(notice, systemImage: "info.circle")
-                        .font(.callout).foregroundStyle(.secondary)
                 }
-                details(status)
                 if status != nil {
-                    ActivityView(connection: connection)
+                    ActivityView(connection: connection, notice: model.uploadNotice(connection))
                 }
+                details
             }
             .padding(28)
         }
         .safeAreaInset(edge: .top, spacing: 0) { actions }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let status { cacheFooter(status) }
+        }
         .navigationTitle(connection.name)
     }
 
@@ -64,7 +63,7 @@ struct ConnectionDetail: View {
         .overlay(alignment: .bottom) { Divider() }
     }
 
-    private func header(_ status: MountStatus?) -> some View {
+    private var header: some View {
         HStack(spacing: 16) {
             logo
                 .frame(width: 34, height: 34)
@@ -81,16 +80,17 @@ struct ConnectionDetail: View {
                 }
                 .font(.callout)
             }
-            Spacer()
-            if let status {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(status.bytesCached, format: .size).font(.title2.weight(.medium))
-                    Text("cached of \(connection.cacheLimit, format: .size)")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                .monospacedDigit()
-            }
         }
+    }
+
+    private func cacheFooter(_ status: MountStatus) -> some View {
+        Text("\(status.bytesCached, format: .size) cached on this Mac. When the cache is full, the oldest copies are cleared.")
+            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 6)
+            .background(.bar)
+            .overlay(alignment: .top) { Divider() }
     }
 
     @ViewBuilder private var logo: some View {
@@ -101,7 +101,7 @@ struct ConnectionDetail: View {
         }
     }
 
-    private func details(_ status: MountStatus?) -> some View {
+    private var details: some View {
         HStack(alignment: .top, spacing: 0) {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
                 detail("Mount point") { Text(tildePath(model.mountLocation(connection))) }
@@ -189,55 +189,6 @@ struct ConnectionDetail: View {
 
     private func tildePath(_ url: URL) -> String {
         (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
-    }
-}
-
-private struct CacheUsage: View {
-    let status: MountStatus?
-    let limit: Int64
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            GeometryReader { proxy in
-                HStack(spacing: 0) {
-                    Rectangle().fill(.green).frame(width: proxy.size.width * share(cached))
-                    Rectangle().fill(.blue).frame(width: proxy.size.width * share(pending))
-                }
-            }
-            .frame(height: 22)
-            .background(.quaternary)
-            .clipShape(.rect(cornerRadius: 5))
-            .accessibilityHidden(true)
-            HStack(alignment: .top, spacing: 28) {
-                legend("Cached files", color: .green) { _ in Text(cached, format: .size) }
-                legend("Waiting to upload", color: .blue) {
-                    $0.pendingUploads > 0
-                        ? Text("\($0.pendingBytes, format: .size) · ^[\($0.pendingUploads) file](inflect: true)")
-                        : Text("None")
-                }
-                legend("Free cache", color: .secondary.opacity(0.4)) { _ in Text(free, format: .size) }
-            }
-        }
-    }
-
-    private var pending: Int64 { status?.pendingBytes ?? 0 }
-    private var cached: Int64 { max((status?.bytesCached ?? 0) - pending, 0) }
-    private var free: Int64 { max(limit - (status?.bytesCached ?? 0), 0) }
-
-    private func share(_ bytes: Int64) -> Double {
-        Double(bytes) / Double(max(limit, cached + pending))
-    }
-
-    private func legend(_ title: LocalizedStringKey, color: Color, value: (MountStatus) -> Text) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 7) {
-            RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 10, height: 10)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                (status.map(value) ?? Text(verbatim: "—"))
-                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 

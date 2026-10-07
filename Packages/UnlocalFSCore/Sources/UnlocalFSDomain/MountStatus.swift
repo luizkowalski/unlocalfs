@@ -12,7 +12,6 @@ public struct MountStatus: Equatable, Sendable {
     public var isMounted = false
     public var isRunning = false
     public var pendingUploads = 0
-    public var pendingBytes: Int64 = 0
     public var failedUploads = 0
     public var bytesCached: Int64 = 0
     public var controlError: String?

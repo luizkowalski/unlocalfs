@@ -468,13 +468,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uploads pending. Keep UnlocalFS running until they finish, then disconnect again."
+            "value": "Keep UnlocalFS running until uploads finish, then disconnect again."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envios pendentes. Mantenha o UnlocalFS em execução até que terminem, depois desconecte novamente."
+            "value": "Mantenha o UnlocalFS em execução até que os envios terminem, depois desconecte novamente."
           }
         }
       }
@@ -485,13 +485,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uploads pending. Keep this drive connected until uploads finish."
+            "value": "Keep this drive connected until uploads finish."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envios pendentes. Mantenha esta unidade conectada até que os envios terminem."
+            "value": "Mantenha esta unidade conectada até que os envios terminem."
           }
         }
       }

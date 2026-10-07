@@ -34,13 +34,27 @@ import UnlocalFSInfrastructure
         #expect(download.id != upload.id)
     }
 
-    @Test func activityIsSortedByPath() async throws {
+    @Test func filesInTheSameStateAreSortedByPath() async throws {
         let activity = try await fetchActivity(queue: """
-        {"queue":[{"name":"file10.txt","id":1,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
-        """, stats: """
-        {"transferring":[{"name":"file2.txt","size":1,"bytes":0,"srcFs":":s3:bucket"}]}
+        {"queue":[
+            {"name":"file10.txt","id":1,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":false},
+            {"name":"file2.txt","id":2,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":false}
+        ]}
         """)
         #expect(activity.map(\.path) == ["file2.txt", "file10.txt"])
+    }
+
+    @Test func movingFilesComeBeforeRetriesAndQueuedUploads() async throws {
+        let activity = try await fetchActivity(queue: """
+        {"queue":[
+            {"name":"a.txt","id":1,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":false},
+            {"name":"b.txt","id":2,"size":1,"expiry":4,"tries":2,"delay":5,"uploading":false},
+            {"name":"c.txt","id":3,"size":1,"expiry":4,"tries":0,"delay":5,"uploading":true}
+        ]}
+        """, stats: """
+        {"transferring":[{"name":"d.txt","size":1,"bytes":0,"srcFs":":s3:bucket"}]}
+        """)
+        #expect(activity.map(\.state) == [.uploading, .downloading, .retrying, .queued])
     }
 }
 
