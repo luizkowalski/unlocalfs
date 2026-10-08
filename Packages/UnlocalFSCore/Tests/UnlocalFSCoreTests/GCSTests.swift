@@ -5,9 +5,9 @@ import UnlocalFSInfrastructure
 
 private let storedKey = (try? ServiceAccountKey(importing: Data(serviceAccountJSON.utf8)))?.json ?? ""
 
-extension MountTests {
+@Suite struct GCSTests {
     @Test func bundledRcloneAcceptsAnInlineServiceAccountKey() async throws {
-        try await withDrive(connection: gcsFixture()) { drive in
+        try await withRclone(connection: gcsFixture()) { drive in
             let credentials = Credentials(serviceAccountKey: storedKey)
             await #expect {
                 try await drive.service.test(drive.connection, credentials: credentials)
@@ -28,7 +28,7 @@ extension MountTests {
         var connection = gcsFixture()
         connection.encrypted = true
         connection.folder = "clients/acme"
-        try await withDrive(connection: connection) { drive in
+        try await withRclone(connection: connection) { drive in
             let credentials = Credentials(encryptionPassword: "-correct horse ", serviceAccountKey: storedKey)
             let withSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "with.conf")
             let withoutSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "without.conf")

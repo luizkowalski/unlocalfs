@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-extension MountTests {
+extension IntegrationTests.MountTests {
     @Test func refreshShowsFilesAddedToTheBucketElsewhere() async throws {
         try await withDrive { drive in
             let docs = drive.bucket.appendingPathComponent("docs")

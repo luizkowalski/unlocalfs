@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 
-extension DriveFeatureTests {
+extension IntegrationTests.DriveFeatureTests {
     @Test func shareLinksRefuseFilesStillUploading() async throws {
         try await withPendingUpload { drive, credentials in
             await #expect {

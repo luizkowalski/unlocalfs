@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-extension MountTests {
+extension IntegrationTests.MountTests {
     @Test func failingUploadsNeedAttentionAndBlockDisconnect() async throws {
         try await withDrive { drive in
             try await drive.service.mount(

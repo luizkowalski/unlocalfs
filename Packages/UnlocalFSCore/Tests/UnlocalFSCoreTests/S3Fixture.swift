@@ -1,36 +1,25 @@
 import Foundation
-import Testing
+import UnlocalFSInfrastructure
 
 struct S3Server {
-    let process = Process()
-    let log: FileHandle
     let endpoint: String
 
-    init(executable: URL, root: URL) async throws {
-        let logURL = root.appendingPathComponent("server.log")
-        FileManager.default.createFile(atPath: logURL.path, contents: nil)
-        log = try FileHandle(forWritingTo: logURL)
+    init(executable: URL, resources: FixtureResources) async throws {
+        let root = resources.root
         let address = "127.0.0.1:\(try freePort())"
         endpoint = "http://\(address)"
-        process.executableURL = executable
-        process.arguments = [
-            "serve", "s3", root.appendingPathComponent("source").path, "--addr", address,
+        let process = try await resources.start(executable, arguments: [
+            "serve", "s3", root.appending(path: "source").path, "--addr", address,
             "--auth-key", "test-key,test-secret", "--dir-cache-time", "0s", "--config", "/dev/null"
+        ], log: "server.log")
+        let environment = [
+            "RCLONE_S3_PROVIDER": "Other", "RCLONE_S3_ENDPOINT": endpoint,
+            "RCLONE_S3_ACCESS_KEY_ID": "test-key", "RCLONE_S3_SECRET_ACCESS_KEY": "test-secret"
         ]
-        process.standardOutput = log
-        process.standardError = log
-        try process.run()
-        let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("Starting s3 server") ?? false }
-        try await waitUntil { !process.isRunning || serving() }
-        if !serving() { process.terminate() }
-        try #require(
-            process.isRunning && serving(),
-            "S3 fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
-        )
-    }
-
-    func stop() {
-        if process.isRunning { process.terminate() }
-        try? log.close()
+        try await requireReady(process, log: root.appending(path: "server.log")) {
+            _ = try await Command.run(executable, [
+                "lsf", ":s3:", "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1"
+            ], environment: environment, timeout: .seconds(2))
+        }
     }
 }

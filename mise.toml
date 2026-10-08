@@ -7,6 +7,16 @@ description = "Run all tests, including rclone against local S3 and SFTP servers
 dir = "{{ config_root }}/Packages/UnlocalFSCore"
 run = "xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS"
 
+[tasks.test-fast]
+description = "Run tests without storage servers or NFS mounts"
+dir = "{{ config_root }}/Packages/UnlocalFSCore"
+run = "xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS -skip-testing:UnlocalFSCoreTests/IntegrationTests"
+
+[tasks.test-integration]
+description = "Run storage and NFS tests serially"
+dir = "{{ config_root }}/Packages/UnlocalFSCore"
+run = "xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS -only-testing:UnlocalFSCoreTests/IntegrationTests"
+
 [tasks.xcode]
 description = "Generate the Xcode project and open it"
 dir = "{{ config_root }}"
