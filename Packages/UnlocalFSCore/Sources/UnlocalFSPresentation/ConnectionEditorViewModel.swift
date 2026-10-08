@@ -18,6 +18,7 @@ import UnlocalFSDomain
     public private(set) var testing = false
     public private(set) var saving = false
     public private(set) var tested = false
+    public private(set) var serverTrust: ServerTrustChallenge?
     public private(set) var error: String?
     private var showErrors = false
     public let isDuplicate: Bool
@@ -62,7 +63,7 @@ import UnlocalFSDomain
         return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
-    public var isLocked: Bool { testing || saving || !credentialsLoaded }
+    public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded }
 
     public var fieldErrors: [ConnectionField: String] {
         guard showErrors else { return [:] }
@@ -97,6 +98,8 @@ import UnlocalFSDomain
         do {
             try await drives.test(connection, credentials: credentials)
             tested = true
+        } catch let challenge as ServerTrustChallenge {
+            serverTrust = challenge
         } catch { self.error = error.localizedDescription }
     }
 
@@ -112,6 +115,26 @@ import UnlocalFSDomain
             self.error = error.localizedDescription
             return false
         }
+    }
+
+    public func trustServer() async {
+        guard let challenge = serverTrust else { return }
+        serverTrust = nil
+        testing = true
+        do {
+            try await drives.trustServer(challenge)
+            testing = false
+            await test()
+        } catch {
+            testing = false
+            self.error = error.localizedDescription
+        }
+    }
+
+    public func cancelServerTrust() async {
+        guard let challenge = serverTrust else { return }
+        serverTrust = nil
+        await drives.cancelServerTrust(challenge)
     }
 
     private func validate() -> Bool {

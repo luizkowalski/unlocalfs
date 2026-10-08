@@ -69,23 +69,6 @@
         }
       }
     },
-    "cannotReadTrustedHostsFile": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "UnlocalFS cannot read the trusted-hosts file: %1$@\nChoose a file that exists and that you can read."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O UnlocalFS não consegue ler o arquivo de hosts confiáveis: %1$@\nEscolha um arquivo que exista e que você possa ler."
-          }
-        }
-      }
-    },
     "commandFailed": {
       "extractionState": "manual",
       "localizations": {
@@ -324,40 +307,6 @@
         }
       }
     },
-    "hostKeyChanged": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not trust this server because its host key changed. Check the server's host key fingerprint with its administrator, then fix its entry in %1$@. UnlocalFS never changes this file.\n\n%2$@"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível confiar neste servidor porque a chave de host do servidor mudou. Confira a impressão digital da chave de host com o administrador do servidor e corrija a entrada em %1$@. O UnlocalFS nunca altera esse arquivo.\n\n%2$@"
-          }
-        }
-      }
-    },
-    "hostKeyNotTrusted": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not trust this server because its host key is not trusted yet. Check the server's host key fingerprint with its administrator, then fix its entry in %1$@. UnlocalFS never changes this file.\n\n%2$@"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível confiar neste servidor porque a chave de host do servidor ainda não é confiável. Confira a impressão digital da chave de host com o administrador do servidor e corrija a entrada em %1$@. O UnlocalFS nunca altera esse arquivo.\n\n%2$@"
-          }
-        }
-      }
-    },
     "keychainError": {
       "extractionState": "manual",
       "localizations": {
@@ -457,6 +406,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconecte a unidade para criar links. O UnlocalFS não conseguiu verificar se o arquivo ainda está sendo enviado.\n\n%1$@"
+          }
+        }
+      }
+    },
+    "serverTrustExpired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server trust changed while you were reviewing this key. Connect again to check the current key."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A confiança no servidor mudou enquanto você conferia esta chave. Conecte novamente para conferir a chave atual."
           }
         }
       }

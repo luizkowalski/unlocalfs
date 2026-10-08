@@ -109,10 +109,7 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         (.username, sftpSettings { $0.username = "" }),
         (.remotePath, sftpSettings { $0.remotePath = "bad\nfolder" }),
         (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "" }),
-        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" }),
-        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "" }),
-        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "none" }),
-        (.trustedHosts, sftpSettings { $0.trustedHostsFile = "known_hosts" })
+        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" })
     ])
     func invalidSFTPInputNamesTheField(field: ConnectionField, settings: SFTPSettings) {
         var connection = sftpFixture()

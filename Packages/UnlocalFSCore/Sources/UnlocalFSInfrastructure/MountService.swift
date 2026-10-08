@@ -6,9 +6,10 @@ public actor MountService: DriveGateway {
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
 
-    private let executable: URL
+    let executable: URL
     private let helperDirectory: URL
-    private let paths: AppPaths
+    let paths: AppPaths
+    private let serverTrust: SFTPTrustStore
     private let hostEnvironment: [String: String]
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
@@ -20,6 +21,7 @@ public actor MountService: DriveGateway {
         self.executable = executable
         self.helperDirectory = helperDirectory
         self.paths = paths
+        serverTrust = SFTPTrustStore(paths: paths)
         hostEnvironment = environment
     }
 
@@ -31,7 +33,7 @@ public actor MountService: DriveGateway {
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
         let credentials = try await prepareCredentials(credentials)
-        let remote = try remote(for: connection, credentials: credentials)
+        let remote = try await remote(for: connection, credentials: credentials)
         do {
             _ = try await Command.run(executable, [
                 "lsf", remote.target, "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
@@ -39,9 +41,19 @@ public actor MountService: DriveGateway {
                 "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
-            throw diagnosed(redacted(error, credentials: credentials), connection: connection)
+            let failure = redacted(error, credentials: credentials)
+            let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
+            let changedKey = failure.localizedDescription.contains("knownhosts: key mismatch")
+            if connection.backend == .sftp, unknownKey || changedKey {
+                throw try await serverTrust.challenge(connection.sftp, keyChanged: changedKey)
+            }
+            throw failure
         }
     }
+
+    public func trustServer(_ challenge: ServerTrustChallenge) async throws { try await serverTrust.accept(challenge) }
+    public func cancelServerTrust(_ challenge: ServerTrustChallenge) async { await serverTrust.cancel(challenge) }
+    public func forgetServer(_ connection: Connection) async throws { try await serverTrust.forget(connection.sftp) }
 
     public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
         var credentials = credentials
@@ -76,7 +88,7 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
-        let command = MountCommand(remote: try remote(for: connection, credentials: credentials), paths: paths)
+        let command = MountCommand(remote: try await remote(for: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
         guard descriptor >= 0 else { throw AppError(String(localized: .couldNotOpenLog(String(cString: strerror(errno))))) }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
@@ -204,7 +216,7 @@ public actor MountService: DriveGateway {
         return kill(pid, 0) == 0 || errno != ESRCH
     }
 
-    private var baseEnvironment: [String: String] {
+    var baseEnvironment: [String: String] {
         ["HOME": URL.homeDirectory.path,
          "PATH": "\(helperDirectory.path):/usr/bin:/bin:/usr/sbin:/sbin",
          "TMPDIR": URL.temporaryDirectory.path,
@@ -215,16 +227,16 @@ public actor MountService: DriveGateway {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
-    private func remote(for connection: Connection, credentials: Credentials?) throws -> RcloneRemote {
+    private func remote(for connection: Connection, credentials: Credentials?) async throws -> RcloneRemote {
         switch connection.backend {
         case .s3Compatible, .gcs:
-            return RcloneRemote(connection: connection, credentials: credentials)
+            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
         case .sftp:
             let sftp = connection.sftp
-            try requireReadableFile(sftp.trustedHostsPath, failure: { .cannotReadTrustedHostsFile($0) })
+            let knownHosts = try await serverTrust.file()
             if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
             let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
-            return RcloneRemote(connection: connection, credentials: credentials, agentSocket: socket)
+            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, agentSocket: socket)
         }
     }
 
@@ -245,23 +257,7 @@ public actor MountService: DriveGateway {
         return path
     }
 
-    private func diagnosed(_ error: AppError, connection: Connection) -> AppError {
-        switch connection.backend {
-        case .s3Compatible, .gcs:
-            return error
-        case .sftp:
-            let message = error.localizedDescription
-            guard message.contains("knownhosts:") else { return error }
-            let trustedHostsPath = connection.sftp.trustedHostsPath
-            return AppError(
-                message.contains("key mismatch")
-                    ? String(localized: .hostKeyChanged(trustedHostsPath, message))
-                    : String(localized: .hostKeyNotTrusted(trustedHostsPath, message))
-            )
-        }
-    }
-
-    private func redacted(_ error: any Error, credentials: Credentials) -> AppError {
+    func redacted(_ error: any Error, credentials: Credentials) -> AppError {
         var message = error.localizedDescription
         let secrets = [
             credentials.accessKey, credentials.secretKey, credentials.sessionToken,
@@ -292,38 +288,6 @@ public actor MountService: DriveGateway {
 }
 
 extension MountService {
-    public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
-        guard RcloneRemote(connection: connection, credentials: nil).path.last?.isWhitespace != true else {
-            throw AppError(String(localized: .folderEndsWithSpace))
-        }
-        var prepared: Credentials?
-        if let credentials { prepared = try await prepareCredentials(credentials) }
-        let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
-        defer { try? FileManager.default.removeItem(at: scratch) }
-        let config = scratch.appending(path: "rclone.conf")
-        let remote = RcloneRemote(connection: connection, credentials: prepared)
-        var crypt = [
-            "remote": "\(remote.exportName):\(remote.path)", "filename_encryption": "standard",
-            "directory_name_encryption": "true", "filename_encoding": "base32"
-        ]
-        crypt["password"] = prepared?.obscuredEncryptionPassword
-        do {
-            try await createRemote(remote.exportName, type: remote.type, options: remote.options, config: config)
-            try await createRemote("unlocalfs", type: "crypt", options: crypt, config: config)
-        } catch {
-            throw redacted(error, credentials: prepared ?? Credentials())
-        }
-        _ = try FileManager.default.replaceItemAt(destination, withItemAt: config, options: .usingNewMetadataOnly)
-    }
-
-    private func createRemote(_ name: String, type: String, options: [String: String], config: URL) async throws {
-        let parameters = options.filter { !$0.value.isEmpty }.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }
-        _ = try await Command.run(executable, [
-            "config", "create", name, type] + parameters + [
-            "--no-obscure", "--non-interactive", "--no-output", "--config", config.path
-        ], environment: baseEnvironment)
-    }
-
     public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             throw AppError(String(localized: .reconnectForLinks))
@@ -337,7 +301,7 @@ extension MountService {
         if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
             throw AppError(String(localized: .fileStillUploading))
         }
-        let remote = RcloneRemote(connection: connection, credentials: credentials)
+        let remote = RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
         let output: Data
         do {
             output = try await Command.run(executable, [

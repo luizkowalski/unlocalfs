@@ -16,7 +16,7 @@ struct SFTPFixture {
     let root: URL
     let executable: URL
     let keys: URL
-    let knownHosts: URL
+    let knownHostsEntry: String
     let agent: SSHAgent
     let emptyAgent: SSHAgent
     var server: SFTPServer
@@ -31,7 +31,6 @@ struct SFTPFixture {
         self.root = root
         self.executable = executable
         let keys = root.appending(path: "keys")
-        let knownHosts = root.appending(path: "known_hosts")
         try FileManager.default.createDirectory(at: keys, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: root.appending(path: "source"), withIntermediateDirectories: true)
         try await withThrowingTaskGroup(of: Void.self) { group in
@@ -42,9 +41,8 @@ struct SFTPFixture {
         }
         let authorized = try ["client", "client-protected"].map { try Self.publicKey(keys.appending(path: $0)) }
         try Data((authorized.joined(separator: "\n") + "\n").utf8).write(to: root.appending(path: "authorized_keys"))
-        try Data("[127.0.0.1]:\(port) \(try Self.publicKey(keys.appending(path: "host")))\n".utf8).write(to: knownHosts)
         self.keys = keys
-        self.knownHosts = knownHosts
+        knownHostsEntry = "[127.0.0.1]:\(port) \(try Self.publicKey(keys.appending(path: "host")))\n"
         async let startedAgent = SSHAgent(socket: root.appending(path: "agent.sock"), keys: [keys.appending(path: "client")])
         async let startedEmptyAgent = SSHAgent(socket: root.appending(path: "empty-agent.sock"), keys: [])
         async let startedServer = SFTPServer(executable: executable, root: root, hostKey: keys.appending(path: "host"), port: port)
@@ -71,7 +69,6 @@ struct SFTPFixture {
         connection.sftp.port = port
         connection.sftp.username = "test"
         connection.sftp.remotePath = folder
-        connection.sftp.trustedHostsFile = knownHosts.path
         connection.encrypted = encrypted
         connection.readOnly = readOnly
         switch login {
@@ -168,7 +165,7 @@ struct SSHAgent {
 }
 
 func withSFTPDrive(
-    _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false,
+    _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false, trusted: Bool = true,
     _ body: (Drive, inout SFTPFixture) async throws -> Void
 ) async throws {
     let executable = try await rcloneExecutable.value
@@ -184,6 +181,10 @@ func withSFTPDrive(
         executable: executable, bucket: sftp.served, paths: paths,
         service: MountService(executable: executable, helperDirectory: helpers, paths: paths), connection: connection
     )
+    if trusted {
+        try paths.prepare()
+        try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
+    }
     do {
         try await body(drive, &sftp)
     } catch {
@@ -192,6 +193,10 @@ func withSFTPDrive(
     }
     await drive.disconnect()
     try FileManager.default.removeItem(at: root)
+}
+
+extension Drive {
+    var knownHosts: URL { paths.support.appending(path: "known_hosts") }
 }
 
 func freePort() throws -> Int {

@@ -257,6 +257,16 @@
         }
       }
     },
+    "Check the fingerprint with the server’s administrator. Trust this key to connect now and recognize this server next time." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confira a impressão digital com o administrador do servidor. Confie nesta chave para conectar agora e reconhecer o servidor nas próximas conexões."
+          }
+        }
+      }
+    },
     "Checking activity…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1229,6 +1239,17 @@
         }
       }
     },
+    "Replace key and connect" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Substituir chave e conectar"
+          }
+        }
+      }
+    },
     "Replace…" : {
       "comment" : "Button: replace the imported service-account key",
       "extractionState" : "stale",
@@ -1308,12 +1329,12 @@
         }
       }
     },
-    "Server trust" : {
+    "Server key changed" : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confiança do servidor"
+            "value" : "A chave do servidor mudou"
           }
         }
       }
@@ -1415,6 +1436,16 @@
         }
       }
     },
+    "This server has a different key. Check the fingerprint with its administrator before you replace the trusted key." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este servidor tem uma chave diferente. Confira a impressão digital com o administrador antes de substituir a chave confiável."
+          }
+        }
+      }
+    },
     "To use a different folder, duplicate this drive." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1426,13 +1457,23 @@
         }
       }
     },
-    "Trusted hosts" : {
+    "Trust and connect" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hosts confiáveis"
+            "value" : "Confiar e conectar"
+          }
+        }
+      }
+    },
+    "Trust this server?" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confiar neste servidor?"
           }
         }
       }
@@ -1444,16 +1485,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O UnlocalFS ainda está em execução"
-          }
-        }
-      }
-    },
-    "UnlocalFS only connects to servers listed in this file and never changes it. Connect once with ssh and check the fingerprint to add a server." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O UnlocalFS só se conecta a servidores listados neste arquivo e nunca o altera. Conecte uma vez pelo ssh e confira a impressão digital para adicionar um servidor."
           }
         }
       }

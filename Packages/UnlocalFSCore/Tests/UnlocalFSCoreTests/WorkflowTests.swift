@@ -81,14 +81,13 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func savedSFTPDriveKeepsEditingAuthenticationAndTrust() async throws {
+    @Test func savedSFTPDriveKeepsEditingAuthentication() async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
             var connection = sftpFixture()
             connection.encrypted = true
             try repository.save(connection, credentials: Credentials(encryptionPassword: "crypt", password: "secret"))
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
-            connection.sftp.trustedHostsFile = "/Users/me/.ssh/team_hosts"
             connection.readOnly = true
             let saved = try await SaveConnectionUseCase(repository: repository, drives: drives)
                 .execute(connection, credentials: Credentials(encryptionPassword: "crypt", password: "secret", keyPassphrase: "phrase"))

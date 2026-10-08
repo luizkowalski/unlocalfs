@@ -89,7 +89,6 @@ import UnlocalFSInfrastructure
         connection.sftp.remotePath = "/srv/files"
         connection.sftp.authentication = .privateKey
         connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
-        connection.sftp.trustedHostsFile = "/Users/me/.ssh/team_hosts"
         connection.sftp.agentSocket = "/tmp/agent.sock"
         let credentials = Credentials(password: "hunter2-password", keyPassphrase: "hunter2-passphrase")
         let repository = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())

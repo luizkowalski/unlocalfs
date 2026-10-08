@@ -25,8 +25,8 @@ Test Connection shows that UnlocalFS can list the folder. It does not check writ
 
 ## An SFTP connection fails
 
-- **The server is unknown or its key changed.** UnlocalFS only connects to servers in your trusted-hosts file and never changes it. Check the server's fingerprint with its administrator. For a new server, connect once with `ssh user@host` and accept the fingerprint. For a changed key, find out why before you update the file.
-- **UnlocalFS cannot read a key or trusted-hosts file.** Check that the path in the connection exists and that you can read it.
+- **The server is unknown or its key changed.** UnlocalFS shows the server's fingerprint and does not connect until you approve it. Check the fingerprint with the server's administrator before you choose **Trust and connect**. For a changed key, find out why before you choose **Replace key and connect**.
+- **UnlocalFS cannot read a key file.** Check that the path in the connection exists and that you can read it.
 - **ssh-agent is not available.** Start an agent and load a key with `ssh-add`, or enter the agent's socket in the connection. UnlocalFS does not start an agent, and it does not fall back to a password.
 - **Sign-in fails.** Check the username, password, or key passphrase. The server must accept the sign-in option you chose.
 - **A folder is not found.** An empty folder means your home folder. A folder that starts with `/` is a path from the server's root.

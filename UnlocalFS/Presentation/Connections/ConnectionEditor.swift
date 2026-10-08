@@ -86,6 +86,11 @@ struct ConnectionEditor: View {
         }
         .frame(width: 560)
         .presentationSizing(.fitted)
+        .sheet(item: Binding(get: { viewModel.serverTrust }, set: { _ in })) { challenge in
+            ServerTrustSheet(challenge: challenge,
+                             onTrust: { Task { await viewModel.trustServer() } },
+                             onCancel: { Task { await viewModel.cancelServerTrust() } })
+        }
         .onAppear {
             viewModel.loadCredentials()
             if viewModel.credentialsLoaded && viewModel.isDuplicate { focus = .folder }
@@ -137,7 +142,6 @@ struct ConnectionEditor: View {
     @ViewBuilder private func sftpSections(errors: [ConnectionField: String]) -> some View {
         serverSection(errors: errors)
         authenticationSection(errors: errors)
-        trustSection(errors: errors)
     }
 
     private func serverSection(errors: [ConnectionField: String]) -> some View {
@@ -185,20 +189,6 @@ struct ConnectionEditor: View {
             Text("Authentication")
         } footer: {
             Text(authenticationHelp).font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private func trustSection(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        return Section {
-            validated(.trustedHosts, error: errors[.trustedHosts]) {
-                fileChooser(String(localized: "Trusted hosts"), path: $viewModel.connection.sftp.trustedHostsFile, prompt: SFTPSettings.defaultTrustedHostsFile)
-            }
-        } header: {
-            Text("Server trust")
-        } footer: {
-            Text("UnlocalFS only connects to servers listed in this file and never changes it. Connect once with ssh and check the fingerprint to add a server.")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 

@@ -440,24 +440,6 @@
       },
       "comment": "Label of this field in the connection editor"
     },
-    "fieldTrustedHosts": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trusted hosts"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hosts confiáveis"
-          }
-        }
-      },
-      "comment": "Label of this field in the connection editor"
-    },
     "fieldUsername": {
       "extractionState": "manual",
       "localizations": {
@@ -990,6 +972,40 @@
         }
       }
     },
+    "serverKeyChanged" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The server key for %1$@ changed. Check the new fingerprint with its administrator before you replace the trusted key.\n\n%2$@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A chave do servidor %1$@ mudou. Confira a nova impressão digital com o administrador antes de substituir a chave confiável.\n\n%2$@"
+          }
+        }
+      }
+    },
+    "serverKeyNeedsTrust" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the server key for %1$@ before you connect.\n\n%2$@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confira a chave do servidor %1$@ antes de conectar.\n\n%2$@"
+          }
+        }
+      }
+    },
     "sevenDays": {
       "extractionState": "manual",
       "comment": "How long a share link stays valid, in a sentence about the link",
@@ -1004,23 +1020,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 dias"
-          }
-        }
-      }
-    },
-    "trustedHostsNotFullPath": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter the full path of your trusted-hosts file, for example %1$@."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Informe o caminho completo do seu arquivo de hosts confiáveis, por exemplo %1$@."
           }
         }
       }

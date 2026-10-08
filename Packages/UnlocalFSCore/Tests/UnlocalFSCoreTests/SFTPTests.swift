@@ -35,35 +35,6 @@ struct SFTPTests {
         }
     }
 
-    @Test(arguments: ["unknown", "changed"])
-    func sftpRefusesUntrustedServersAndLeavesTrustUntouched(trust: String) async throws {
-        try await withSFTPDrive { drive, sftp in
-            var connection = drive.connection
-            if trust == "unknown" {
-                connection.sftp.trustedHostsFile = sftp.root.appending(path: "empty_hosts").path
-                try Data().write(to: URL(filePath: connection.sftp.trustedHostsFile))
-            } else {
-                try await sftp.restartServer(hostKey: "other-host")
-            }
-            let trustedHosts = URL(filePath: connection.sftp.trustedHostsFile)
-            let before = try Data(contentsOf: trustedHosts)
-            let credentials = sftp.credentials(.password)
-            let expected = trust == "unknown"
-                ? String(localized: .hostKeyNotTrusted(trustedHosts.path, ""))
-                : String(localized: .hostKeyChanged(trustedHosts.path, ""))
-
-            for attempt in [{ try await drive.service.test(connection, credentials: credentials) },
-                            { try await drive.service.mount(connection, credentials: credentials) }] {
-                await #expect {
-                    try await attempt()
-                } throws: { $0.localizedDescription.hasPrefix(expected) }
-            }
-
-            #expect(try Data(contentsOf: trustedHosts) == before)
-            #expect(await !drive.service.status(connection).isActive)
-        }
-    }
-
     @Test(arguments: ["", "clients/acme", "/clients/acme"])
     func sftpFoldersAddressTheServerDirectory(folder: String) async throws {
         try await withSFTPDrive(.key, folder: folder) { drive, sftp in

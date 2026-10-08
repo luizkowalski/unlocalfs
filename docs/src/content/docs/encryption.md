@@ -55,7 +55,7 @@ An exported SFTP config has two remotes: `unlocalfs-sftp` for the server and `un
 
 The file does not contain your private key or your ssh-agent. On the computer you use for recovery:
 
-- Copy your trusted-hosts file and, for key sign-in, your private key file. Then fix the `known_hosts_file` and `key_file` paths in the config with `rclone config update unlocalfs-sftp "known_hosts_file=/path" "key_file=/path" --config "My files rclone.conf"`.
+- Copy `~/Library/Application Support/UnlocalFS/known_hosts` and, for key sign-in, your private key file. Then fix the `known_hosts_file` and `key_file` paths in the config with `rclone config update unlocalfs-sftp "known_hosts_file=/path" "key_file=/path" --config "My files rclone.conf"`.
 - For agent sign-in, start an ssh-agent that has your key loaded.
 - If you did not include saved passwords, add the SSH password or key passphrase, then the encryption password:
 

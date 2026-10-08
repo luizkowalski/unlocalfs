@@ -16,7 +16,7 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any 
 - **Finder integration:** Open, edit, and save files in your bucket or on your SFTP server like any other folder on your Mac.
 - **Encrypted drives:** Encrypt file contents and names before upload, so your storage provider can’t read them. Export an rclone config to get your files back without UnlocalFS.
 - **Google Cloud Storage:** Sign in with a service-account key. UnlocalFS keeps it in your Keychain.
-- **SFTP servers:** Sign in with a password, a private key, or ssh-agent. UnlocalFS only connects to servers listed in your trusted-hosts file.
+- **SFTP servers:** Sign in with a password, a private key, or ssh-agent. UnlocalFS asks you to check the server's key fingerprint before it connects for the first time.
 - **Mount a folder as a drive:** Turn one folder in a bucket or on a server into its own drive.
 - **Read-only drives:** Open files while blocking apps from changing or deleting them through the drive.
 - **Automatic connections:** Open UnlocalFS at login and connect your chosen drives automatically.
