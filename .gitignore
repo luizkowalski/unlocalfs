@@ -8,9 +8,6 @@ UnlocalFS.xcodeproj/
 /docs/*
 !/docs/architecture.md
 !/docs/testing.md
-!/docs/experiments/
-/docs/experiments/*
-!/docs/experiments/shared-s3.patch
 !/docs/package.json
 !/docs/package-lock.json
 !/docs/astro.config.mjs

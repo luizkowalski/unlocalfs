@@ -32,14 +32,3 @@ Compared the same 35 test functions in `MountTests`, `DriveFeatureTests`, and `D
 Sharing saved 4.229 seconds, or 6.7%, for this workload. The prototype used a nonrecursive `TestScoping` suite trait and a task-local server reference. Every test kept a unique bucket, config, mount, cache, and RC socket. MD5 ETags stayed enabled. Both variants used the same readiness and cleanup helpers.
 
 The sample is too small, and limited to one machine, to establish a CI speedup or flake-rate improvement. Dedicated servers remain the default. The measured benefit does not yet establish that shared-server coupling is worthwhile.
-
-The [experiment patch](experiments/shared-s3.patch) is retained for reproduction; it is not active test code. Apply it with `git apply docs/experiments/shared-s3.patch`. From `Packages/UnlocalFSCore`, run:
-
-```sh
-xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS \
-  -only-testing:UnlocalFSCoreTests/IntegrationTests/MountTests \
-  -only-testing:UnlocalFSCoreTests/IntegrationTests/DriveFeatureTests \
-  -only-testing:UnlocalFSCoreTests/IntegrationTests/DriveIOTests
-```
-
-With the patch applied, no marker file means dedicated servers. Create `/tmp/unlocalfs-shared-s3-benchmark-enabled` to use one shared server. Count `S3_SERVER_STARTED` lines to verify which setup actually ran. Remove the marker and reverse the patch with `git apply -R docs/experiments/shared-s3.patch` when done. Use the outer timeout for each measurement, as for ordinary test runs.
