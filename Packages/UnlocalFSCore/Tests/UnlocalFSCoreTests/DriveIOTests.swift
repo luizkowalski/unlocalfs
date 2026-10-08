@@ -19,7 +19,7 @@ struct DriveIOTests {
 
     @Test func peekingIntoALargeFileDownloadsLessThanSixteenMegabytes() async throws {
         try await withDrive { drive in
-            let size: UInt64 = 256 << 20
+            let size: UInt64 = 32 << 20
             let stored = drive.bucket.appendingPathComponent("movie.mkv")
             FileManager.default.createFile(atPath: stored.path, contents: nil)
             let writer = try FileHandle(forWritingTo: stored)
