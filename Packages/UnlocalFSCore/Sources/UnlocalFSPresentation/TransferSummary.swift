@@ -13,7 +13,7 @@ public struct TransferSummary {
         let uploads = activity.filter { $0.state != .downloading }
         let leading = uploads.isEmpty ? activity : uploads
         guard !leading.isEmpty else { return nil }
-        let sized = leading.filter { $0.size > 0 }
+        let sized = uploads.filter { $0.size > 0 }
         isUploading = !uploads.isEmpty
         fileCount = leading.count
         bytesDone = sized.reduce(0) { $0 + ($1.bytesTransferred ?? 0) }

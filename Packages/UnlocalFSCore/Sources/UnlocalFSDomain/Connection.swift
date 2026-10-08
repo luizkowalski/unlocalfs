@@ -8,7 +8,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var region = "auto"
     public var bucket = ""
     public var folder = ""
-    public var cacheLimit: Int64 = 128_000_000
+    public var cacheLimit: Int64 = 1_000_000_000
     public var minimumFreeSpace: Int64 = 0
     public var bandwidthLimit: Int64 = 0
     public var transfers = 4

@@ -126,11 +126,7 @@ struct SFTPAgentEnvironmentTests {
     private static func leaveStaleSocket(at url: URL) throws {
         let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         defer { close(descriptor) }
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        _ = withUnsafeMutableBytes(of: &address.sun_path) { buffer in
-            url.path.withCString { strlcpy(buffer.baseAddress!.assumingMemoryBound(to: CChar.self), $0, buffer.count) }
-        }
+        var address = unixAddress(url)
         let result = withUnsafePointer(to: &address) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
         }

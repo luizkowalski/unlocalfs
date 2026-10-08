@@ -30,7 +30,7 @@ import UnlocalFSInfrastructure
         {"connections":[{"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"us-east-1"}]}
         """.utf8).write(to: url)
         let connection = try #require(try ConnectionStore(url: url).all().first)
-        #expect(connection.cacheLimit == 128_000_000)
+        #expect(connection.cacheLimit == 1_000_000_000)
         #expect(connection.minimumFreeSpace == 0)
         #expect(!connection.readOnly)
         #expect(!connection.connectsAutomatically)

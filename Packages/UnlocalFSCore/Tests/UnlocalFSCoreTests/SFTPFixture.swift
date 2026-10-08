@@ -153,7 +153,7 @@ struct SSHAgent {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
-        try await waitUntil(timeout: .seconds(5)) { FileManager.default.fileExists(atPath: socket.path) }
+        try await waitUntil(timeout: .seconds(5)) { acceptsConnections(socket) }
         for key in keys {
             _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
         }
@@ -197,6 +197,24 @@ func withSFTPDrive(
 
 extension Drive {
     var knownHosts: URL { paths.support.appending(path: "known_hosts") }
+}
+
+func unixAddress(_ url: URL) -> sockaddr_un {
+    var address = sockaddr_un()
+    address.sun_family = sa_family_t(AF_UNIX)
+    _ = withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+        url.path.withCString { strlcpy(buffer.baseAddress!.assumingMemoryBound(to: CChar.self), $0, buffer.count) }
+    }
+    return address
+}
+
+private func acceptsConnections(_ url: URL) -> Bool {
+    let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
+    defer { close(descriptor) }
+    var address = unixAddress(url)
+    return withUnsafePointer(to: &address) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
+    } == 0
 }
 
 func freePort() throws -> Int {

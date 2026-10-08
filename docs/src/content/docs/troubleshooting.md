@@ -47,6 +47,14 @@ The app will not disconnect while uploads are pending or need a retry. If you tr
 
 Click **Log** in the drive toolbar to inspect the drive log. Logs are in `~/Library/Logs/UnlocalFS`. When a log reaches 5 MB, UnlocalFS starts a new one and keeps the two previous logs, with the date in their names. Older logs are deleted.
 
+## A drive cannot eject
+
+A drive cannot eject while an app has a file open on it. Finder and Quick Look open files for a short time to show previews. When you disconnect, UnlocalFS tries again for 10 seconds before it shows an error. If the error stays, quit the apps that use files on the drive and try again.
+
+## Files download when you did not open them
+
+Finder and Quick Look read parts of files to show icons, previews, and details such as the length of a video. UnlocalFS cannot tell these reads apart from a copy, so they show in the drive's activity as downloads. They get only the parts the apps read, usually a few megabytes, and stop well before 100%. A bigger cache limit keeps these parts on your Mac, so Finder does not download them again.
+
 ## Changes from another app do not appear
 
 Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the sidebar menu or menu bar, to see them sooner.
