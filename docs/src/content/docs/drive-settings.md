@@ -24,7 +24,7 @@ Files you open are cached in `~/Library/Application Support/UnlocalFS/cache`.
 
 | Setting | Default | Choices |
 | --- | --- | --- |
-| Cache limit | 128 MB | 128 MB, 512 MB, 1 GB, 5 GB, 10 GB, 50 GB |
+| Cache limit | 1 GB | 128 MB, 512 MB, 1 GB, 5 GB, 10 GB, 50 GB |
 | Keep free on disk | Off | Off, 1 GB, 5 GB, 10 GB, 20 GB |
 
 **Cache limit** sets the target maximum size for this drive’s cache. Increase it if you often reopen large files and have disk space available. Files you have not opened for the longest time are removed first.

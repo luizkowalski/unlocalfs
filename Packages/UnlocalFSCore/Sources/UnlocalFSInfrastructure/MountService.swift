@@ -5,6 +5,7 @@ import UnlocalFSDomain
 public actor MountService: DriveGateway {
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
+    private static let ejectRetryTime: Duration = .seconds(10)
 
     let executable: URL
     private let helperDirectory: URL
@@ -322,10 +323,16 @@ extension MountService {
 
 private extension MountService {
     func eject(_ connection: Connection, force: Bool) async throws {
-        do {
-            _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
-        } catch {
-            throw AppError(String(localized: .couldNotEject(error.localizedDescription)))
+        let deadline = ContinuousClock.now.advanced(by: Self.ejectRetryTime)
+        while true {
+            do {
+                _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
+                break
+            } catch where ContinuousClock.now < deadline {
+                try await Task.sleep(for: .seconds(1))
+            } catch {
+                throw AppError(String(localized: .couldNotEject(error.localizedDescription)))
+            }
         }
         for _ in 0..<20 {
             if !isMounted(paths.mount(connection)) { return }
