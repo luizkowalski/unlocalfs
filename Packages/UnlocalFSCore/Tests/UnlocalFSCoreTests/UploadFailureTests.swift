@@ -8,7 +8,7 @@ extension IntegrationTests.MountTests {
         try await withDrive { drive in
             try await drive.service.mount(
                 drive.connection,
-                credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+                credentials: s3Credentials)
             try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: drive.bucket.path)
             try Data("offline edit".utf8).write(to: drive.mounted.appendingPathComponent("upload.txt"))
             try await waitUntil { await drive.service.status(drive.connection).failedUploads > 0 }

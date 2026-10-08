@@ -14,6 +14,8 @@ extension IntegrationTests.DriveFeatureTests {
             try await drive.waitForUploads(on: drive.service)
             try await drive.service.unmount(drive.connection)
             let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
+            try Data("[other]\ntype = alias\nremote = /tmp\n".utf8).write(to: config)
+            try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: config.path)
 
             desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: true)
             await app.exportRcloneConfig(drive.connection)
@@ -21,6 +23,9 @@ extension IntegrationTests.DriveFeatureTests {
 
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
             let remotes = try await dump(drive, config)
+            #expect(Set(remotes.keys) == ["unlocalfs", "unlocalfs-s3"], "replaces an existing file")
+            let permissions = try FileManager.default.attributesOfItem(atPath: config.path)[.posixPermissions] as? Int
+            #expect(permissions == 0o600)
             #expect(remotes["unlocalfs-s3"]?["directory_markers"] == "true")
             #expect(remotes["unlocalfs-s3"]?["no_check_bucket"] == "true")
             #expect(remotes["unlocalfs"]?["filename_encryption"] == "standard")
@@ -42,6 +47,7 @@ extension IntegrationTests.DriveFeatureTests {
             #expect(app.alert == nil)
 
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
+            try await drive.service.test(drive.connection, credentials: encryptedDriveCredentials)
         }
     }
 
@@ -66,32 +72,6 @@ extension IntegrationTests.DriveFeatureTests {
                 "access_key_id=\(credentials.accessKey)", "secret_access_key=\(credentials.secretKey)")
             _ = try await rclone(drive, config, "config", "update", "unlocalfs", "password=\(credentials.encryptionPassword)", "--obscure")
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
-        }
-    }
-
-    @MainActor @Test func exportReplacesAnExistingFileAndKeepsItPrivate() async throws {
-        try await withAppDrive(encrypted: true, credentials: encryptedDriveCredentials) { drive, app, desktop in
-            let config = drive.paths.config.deletingLastPathComponent().appending(path: "My files rclone.conf")
-            try Data("[other]\ntype = alias\nremote = /tmp\n".utf8).write(to: config)
-            try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: config.path)
-
-            desktop.rcloneConfigDestination = RcloneConfigDestination(url: config, includesSecrets: true)
-            await app.exportRcloneConfig(drive.connection)
-            #expect(app.alert == nil)
-
-            #expect(try await Set(dump(drive, config).keys) == ["unlocalfs", "unlocalfs-s3"])
-            let permissions = try FileManager.default.attributesOfItem(atPath: config.path)[.posixPermissions] as? Int
-            #expect(permissions == 0o600)
-        }
-    }
-
-    @Test func foldersCreatedOnTheDriveAreStoredInTheBucket() async throws {
-        try await withDrive { drive in
-            try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-            try FileManager.default.createDirectory(at: drive.mounted.appendingPathComponent("empty folder"), withIntermediateDirectories: false)
-            try await drive.waitForUploads(on: drive.service)
-            try await drive.service.unmount(drive.connection)
-            #expect(FileManager.default.fileExists(atPath: drive.bucket.appendingPathComponent("empty folder").path))
         }
     }
 }

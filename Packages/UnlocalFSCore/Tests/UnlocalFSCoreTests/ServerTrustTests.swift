@@ -7,23 +7,32 @@ import UnlocalFSPresentation
 extension IntegrationTests {
     @Suite
     struct ServerTrustTests {
-        @Test func acceptedKeyIsRememberedAfterRestart() async throws {
+        @Test func canceledAndStaleApprovalsDoNotTrustTheKeyAndAcceptedKeysSurviveRestart() async throws {
             try await withSFTPDrive(trusted: false) { drive, sftp in
                 let credentials = sftp.credentials(.password)
-                let challenge = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
+                let canceled = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
                 let fingerprint = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-lf", sftp.keys.appending(path: "host.pub").path])
                 let expected = try #require(String(decoding: fingerprint, as: UTF8.self).split(separator: " ").dropFirst().first)
-                #expect(challenge.fingerprints.contains(expected))
-                #expect(!challenge.keyChanged)
-                try await drive.service.trustServer(challenge)
+                #expect(canceled.fingerprints.contains(expected))
+                #expect(!canceled.keyChanged)
+                await drive.service.cancelServerTrust(canceled)
+                await #expect(throws: AppError.self) { try await drive.service.trustServer(canceled) }
+                #expect(try Data(contentsOf: drive.knownHosts).isEmpty)
+                await #expect(throws: ServerTrustChallenge.self) { try await drive.service.test(drive.connection, credentials: credentials) }
 
+                let first = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
+                let stale = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
+                try await drive.service.trustServer(first)
+                let trusted = try Data(contentsOf: drive.knownHosts)
+                await #expect(throws: AppError.self) { try await drive.service.trustServer(stale) }
+                #expect(try Data(contentsOf: drive.knownHosts) == trusted)
                 try await drive.reopen().test(drive.connection, credentials: credentials)
                 let permissions = try FileManager.default.attributesOfItem(atPath: drive.knownHosts.path)[.posixPermissions] as? Int
                 #expect(permissions == 0o600)
             }
         }
 
-        @Test func changedKeyRequiresApprovalAndReplacesOnlyThatServer() async throws {
+        @Test func changedKeysRequireApprovalAndReplaceOnlyThatServer() async throws {
             try await withSFTPDrive { drive, sftp in
                 let credentials = sftp.credentials(.password)
                 let other = sftp.knownHostsEntry.replacingOccurrences(of: "[127.0.0.1]:\(sftp.port)", with: "other.example.com")
@@ -40,29 +49,14 @@ extension IntegrationTests {
                 let hosts = try String(contentsOf: drive.knownHosts, encoding: .utf8)
                 #expect(hosts.contains(other))
                 #expect(!hosts.contains(sftp.knownHostsEntry))
-            }
-        }
 
-        @Test func cancelingTrustDoesNotAcceptTheKey() async throws {
-            try await withSFTPDrive(trusted: false) { drive, sftp in
-                let credentials = sftp.credentials(.password)
-                let challenge = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
-                await drive.service.cancelServerTrust(challenge)
-                await #expect(throws: AppError.self) { try await drive.service.trustServer(challenge) }
-                #expect(try Data(contentsOf: drive.knownHosts).isEmpty)
-                await #expect(throws: ServerTrustChallenge.self) { try await drive.service.test(drive.connection, credentials: credentials) }
-            }
-        }
-
-        @Test func serverChangingAfterReviewStillFailsVerification() async throws {
-            try await withSFTPDrive(trusted: false) { drive, sftp in
-                let credentials = sftp.credentials(.password)
-                let challenge = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
+                try await sftp.restartServer(hostKey: "third-host")
+                let reviewed = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
                 try await sftp.restartServer(hostKey: "other-host")
-                try await drive.service.trustServer(challenge)
+                try await drive.service.trustServer(reviewed)
                 let replacement = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
                 #expect(replacement.keyChanged)
-                #expect(replacement.fingerprints != challenge.fingerprints)
+                #expect(replacement.fingerprints != reviewed.fingerprints, "a server that changes after review still fails verification")
             }
         }
 
@@ -77,55 +71,41 @@ extension IntegrationTests {
             }
         }
 
-        @Test func staleApprovalDoesNotOverwriteNewerTrust() async throws {
-            try await withSFTPDrive(trusted: false) { drive, sftp in
-                let credentials = sftp.credentials(.password)
-                let first = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
-                let stale = try await challengeFor(drive.connection, on: drive.service, credentials: credentials)
-                try await drive.service.trustServer(first)
-                let before = try Data(contentsOf: drive.knownHosts)
-                await #expect(throws: AppError.self) { try await drive.service.trustServer(stale) }
-                #expect(try Data(contentsOf: drive.knownHosts) == before)
-                try await drive.service.test(drive.connection, credentials: credentials)
-            }
-        }
-
-        @Test func deletingTheLastDriveOnAServerForgetsItsKey() async throws {
+        @Test func deletingDrivesForgetsAServerKeyWithItsLastDrive() async throws {
             try await withSFTPDrive { drive, sftp in
                 let credentials = sftp.credentials(.password)
                 let other = sftp.knownHostsEntry.replacingOccurrences(of: "[127.0.0.1]:\(sftp.port)", with: "other.example.com")
                 try Data((sftp.knownHostsEntry + other).utf8).write(to: drive.knownHosts)
-                let repository = try repository(saving: drive.connection, on: drive, credentials: credentials)
+                var sibling = drive.connection
+                sibling.id = UUID()
+                sibling.name = "Sibling"
+                let repository = try repository(saving: drive.connection, sibling, on: drive, credentials: credentials)
+                let delete = DeleteConnectionUseCase(repository: repository, drives: drive.service)
 
-                _ = try await DeleteConnectionUseCase(repository: repository, drives: drive.service).execute(drive.connection)
+                _ = try await delete.execute(drive.connection)
+                try await drive.service.test(sibling, credentials: credentials)
 
+                _ = try await delete.execute(sibling)
                 #expect(try String(contentsOf: drive.knownHosts, encoding: .utf8) == other)
                 #expect(try !FileManager.default.contentsOfDirectory(atPath: drive.paths.support.path).contains("known_hosts.old"))
                 await #expect(throws: ServerTrustChallenge.self) { try await drive.service.test(drive.connection, credentials: credentials) }
             }
         }
 
-        @Test func deletingOneOfTwoDrivesOnAServerKeepsItsKey() async throws {
-            try await withSFTPDrive { drive, sftp in
-                let credentials = sftp.credentials(.password)
-                var sibling = drive.connection
-                sibling.id = UUID()
-                sibling.name = "Sibling"
-                let repository = try repository(saving: drive.connection, sibling, on: drive, credentials: credentials)
-
-                _ = try await DeleteConnectionUseCase(repository: repository, drives: drive.service).execute(drive.connection)
-
-                try await drive.service.test(sibling, credentials: credentials)
-            }
-        }
-
-        @MainActor @Test func editorTrustsTheKeyAndRetriesTheConnectionTest() async throws {
+        @MainActor @Test func editorCanCancelTrustAndThenTrustTheKeyAndRetryTheConnectionTest() async throws {
             try await withUntrustedServerApp { drive, connection, app, repository in
                 let editor = editor(for: connection, drive: drive, app: app, repository: repository)
                 await editor.test()
                 #expect(editor.serverTrust != nil)
                 #expect(!editor.tested)
                 #expect(editor.error == nil)
+                await editor.cancelServerTrust()
+                #expect(editor.serverTrust == nil)
+                #expect(!editor.tested)
+                #expect(!editor.isLocked)
+
+                await editor.test()
+                #expect(editor.serverTrust != nil)
                 await editor.trustServer()
                 #expect(editor.serverTrust == nil)
                 #expect(editor.tested)
@@ -133,42 +113,21 @@ extension IntegrationTests {
             }
         }
 
-        @MainActor @Test func cancelingEditorTrustLeavesTheConnectionUntested() async throws {
-            try await withUntrustedServerApp { drive, connection, app, repository in
-                let editor = editor(for: connection, drive: drive, app: app, repository: repository)
-                await editor.test()
-                await editor.cancelServerTrust()
-                #expect(editor.serverTrust == nil)
-                #expect(!editor.tested)
-                #expect(!editor.isLocked)
-            }
-        }
-
-        @MainActor @Test func trustingSavedConnectionConnectsTheDrive() async throws {
+        @MainActor @Test func connectingAnUntrustedServerSelectsItsPromptAndTrustingConnectsTheDrive() async throws {
             try await withUntrustedServerApp { _, connection, app, _ in
                 await app.refresh()
-                await app.toggle(connection)
-                #expect(app.serverTrust[connection.id] != nil)
+                for _ in 0..<2 {
+                    app.selection = nil
+                    await app.toggle(connection)
+                    #expect(app.serverTrust[connection.id] != nil)
+                    #expect(app.selection == connection.id)
+                }
+
                 await app.trustServer(connection)
                 #expect(app.serverTrust[connection.id] == nil)
                 #expect(app.errors[connection.id] == nil)
                 #expect(app.isActive(connection))
                 await app.toggle(connection)
-            }
-        }
-
-        @MainActor @Test func connectingAnUntrustedServerSelectsItsPrompt() async throws {
-            try await withUntrustedServerApp { _, connection, app, _ in
-                await app.refresh()
-                app.selection = nil
-                await app.toggle(connection)
-                #expect(app.serverTrust[connection.id] != nil)
-                #expect(app.selection == connection.id)
-
-                app.selection = nil
-                await app.toggle(connection)
-                #expect(app.serverTrust[connection.id] != nil)
-                #expect(app.selection == connection.id)
             }
         }
 

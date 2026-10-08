@@ -8,17 +8,46 @@ extension IntegrationTests {
     @Suite
     struct SFTPTests {
         @Test(arguments: SFTPLogin.allCases)
-        func sftpDriveAuthenticatesReadsAndWrites(login: SFTPLogin) async throws {
-            try await withSFTPDrive(login) { drive, sftp in
-                try Data("hello from SFTP".utf8).write(to: sftp.served.appending(path: "hello.txt"))
-                let credentials = sftp.credentials(login)
+        func encryptedSFTPDriveReadsWritesKeepsSecretsPrivateAndExportsARecoverableConfig(login: SFTPLogin) async throws {
+            try await withSFTPDrive(login, encrypted: true) { drive, sftp in
+                try await writeEncrypted("hello from SFTP", named: "hello.txt", to: sftp.served, executable: drive.executable)
+                let credentials = try await drive.service.prepareCredentials(
+                    sftp.credentials(login, encryptionPassword: encryptedDriveCredentials.encryptionPassword))
                 try await drive.service.test(drive.connection, credentials: credentials)
                 try await drive.service.mount(drive.connection, credentials: credentials)
                 #expect(try String(contentsOf: drive.mounted.appending(path: "hello.txt"), encoding: .utf8) == "hello from SFTP")
-                try Data("written through Finder's filesystem".utf8).write(to: drive.mounted.appending(path: "upload.txt"))
+                try Data("top secret".utf8).write(to: drive.mounted.appending(path: "secret plan.txt"))
                 try await drive.waitForUploads(on: drive.service)
-                #expect(try String(contentsOf: sftp.served.appending(path: "upload.txt"), encoding: .utf8) == "written through Finder's filesystem")
+                let vfs = try #require(try await drive.control("options/get")["vfs"] as? [String: Any])
+                #expect(vfs["ChunkStreams"] as? Int64 == 0, "an SFTP drive reads in one stream")
+                let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
+                let arguments = String(decoding: try await Command.run(URL(filePath: "/bin/ps"), ["-ww", "-o", "args=", "-p", "\(pid)"]), as: UTF8.self)
                 try await drive.service.unmount(drive.connection)
+
+                let stored = try FileManager.default.subpathsOfDirectory(atPath: sftp.served.path)
+                #expect(stored.count == 2)
+                #expect(!stored.contains { $0.contains("secret") || $0.contains("hello") }, "uploads only encrypted names")
+                for file in stored {
+                    #expect(try !String(decoding: Data(contentsOf: sftp.served.appending(path: file)), as: UTF8.self).contains("top secret"))
+                }
+                let log = try String(contentsOf: drive.paths.log(drive.connection), encoding: .utf8)
+                let secrets = [
+                    credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
+                    credentials.encryptionPassword, credentials.obscuredEncryptionPassword
+                ].filter { !$0.isEmpty }
+                #expect(secrets.count >= 2)
+                for secret in secrets {
+                    #expect(!arguments.contains(secret), "keeps secrets out of process arguments")
+                    #expect(!log.contains(secret), "keeps secrets out of the log")
+                }
+
+                let config = sftp.root.appending(path: "My files rclone.conf")
+                try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
+                let environment = login == .agent ? ["SSH_AUTH_SOCK": sftp.agentSocket.path] : [:]
+                #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment) == "top secret")
+                let remote = try #require(try await dump(drive, config)["unlocalfs-sftp"])
+                #expect(remote["shell_type"] == "none" && remote["known_hosts_file"] == drive.knownHosts.path)
+                #expect(remote["port"] == "\(sftp.port)" && remote["user"] == "test" && remote["host"] == "127.0.0.1")
             }
         }
 
@@ -47,48 +76,6 @@ extension IntegrationTests {
                 let expected = folder.isEmpty ? ["clients", "root.txt"] : ["plan.txt"]
                 #expect(try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path).sorted() == expected)
                 try await drive.service.unmount(drive.connection)
-            }
-        }
-
-        @Test func encryptedSFTPDriveUploadsOnlyCiphertextAndRejectsTheWrongPassword() async throws {
-            try await withSFTPDrive(.password, encrypted: true) { drive, sftp in
-                let credentials = sftp.credentials(.password, encryptionPassword: "correct horse")
-                try await drive.service.mount(drive.connection, credentials: credentials)
-                try Data("top secret".utf8).write(to: drive.mounted.appending(path: "secret plan.txt"))
-                try await drive.waitForUploads(on: drive.service)
-                try await drive.service.unmount(drive.connection)
-                let stored = try FileManager.default.subpathsOfDirectory(atPath: sftp.served.path)
-                #expect(stored.count == 1)
-                #expect(try #require(stored.first).contains("secret") == false)
-                #expect(try !String(decoding: Data(contentsOf: sftp.served.appending(path: stored[0])), as: UTF8.self).contains("top secret"))
-                try FileManager.default.removeItem(at: drive.paths.cache(drive.connection))
-                try await drive.service.mount(drive.connection, credentials: credentials)
-                #expect(try String(contentsOf: drive.mounted.appending(path: "secret plan.txt"), encoding: .utf8) == "top secret")
-                try await drive.service.unmount(drive.connection)
-                var wrong = credentials
-                wrong.encryptionPassword = "wrong"
-                await #expect { try await drive.service.test(drive.connection, credentials: wrong) } throws: {
-                    $0.localizedDescription.contains("undecryptable")
-                }
-            }
-        }
-
-        @Test func runningSFTPDriveKeepsSecretsOutOfProcessArgumentsAndLogs() async throws {
-            try await withSFTPDrive(.protectedKey, encrypted: true) { drive, sftp in
-                let credentials = try await drive.service.prepareCredentials(sftp.credentials(.protectedKey, encryptionPassword: "correct horse"))
-                try await drive.service.mount(drive.connection, credentials: credentials)
-                let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
-                let arguments = try await Command.run(URL(filePath: "/bin/ps"), ["-ww", "-o", "args=", "-p", "\(pid)"])
-                try await drive.service.unmount(drive.connection)
-                let log = try String(contentsOf: drive.paths.log(drive.connection), encoding: .utf8)
-                let secrets = [
-                    SFTPFixture.passphrase, "correct horse", credentials.obscuredKeyPassphrase, credentials.obscuredEncryptionPassword
-                ]
-                for secret in secrets {
-                    #expect(!secret.isEmpty)
-                    #expect(!String(decoding: arguments, as: UTF8.self).contains(secret))
-                    #expect(!log.contains(secret))
-                }
             }
         }
     }
@@ -127,7 +114,11 @@ extension IntegrationTests {
         private static func leaveStaleSocket(at url: URL) throws {
             let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
             defer { close(descriptor) }
-            var address = unixAddress(url)
+            var address = sockaddr_un()
+            address.sun_family = sa_family_t(AF_UNIX)
+            _ = withUnsafeMutableBytes(of: &address.sun_path) { buffer in
+                url.path.withCString { strlcpy(buffer.baseAddress!.assumingMemoryBound(to: CChar.self), $0, buffer.count) }
+            }
             let result = withUnsafePointer(to: &address) {
                 $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
             }

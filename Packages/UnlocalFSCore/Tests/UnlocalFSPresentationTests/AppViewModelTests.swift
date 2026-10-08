@@ -216,9 +216,10 @@ import UnlocalFSInfrastructure
         #expect(app.statusText(connection) == String(localized: .disconnected))
     }
 
-    @Test func failedShareKeepsTheClipboardAndReportsTheFile() async throws {
+    @Test func failedSharesKeepTheClipboardAndExplainWhy() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
+        let encrypted = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
         let previousLink = URL(string: "https://example.com/previous")!
         desktop.copiedLinks = [previousLink]
@@ -227,22 +228,14 @@ import UnlocalFSInfrastructure
         await app.copyShareLinks(for: [fixture.root.appending(path: "outside.jpg")], expiry: .day)
 
         #expect(desktop.copiedLinks == [previousLink])
-        let notification = try #require(desktop.notifications.first)
-        #expect(notification.title == String(localized: .couldNotCopyLink("outside.jpg")))
-        #expect(notification.fallbackToAlert)
-    }
+        let outside = try #require(desktop.notifications.first)
+        #expect(outside.title == String(localized: .couldNotCopyLink("outside.jpg")))
+        #expect(outside.fallbackToAlert)
 
-    @Test func sharingFromAnEncryptedDriveExplainsWhyWithoutCreatingALink() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = try fixture.saveEncryptedConnection()
-        let desktop = TestDesktopServices(paths: fixture.paths)
-        let app = fixture.app(desktop: desktop)
+        await app.copyShareLinks(for: [fixture.paths.mount(encrypted).appending(path: "plan.pdf")], expiry: .day)
 
-        await app.copyShareLinks(for: [fixture.paths.mount(connection).appending(path: "plan.pdf")], expiry: .day)
-
-        #expect(desktop.copiedLinks.isEmpty)
-        let notification = try #require(desktop.notifications.first)
+        #expect(desktop.copiedLinks == [previousLink])
+        let notification = try #require(desktop.notifications.last)
         #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
         #expect(notification.body == String(localized: .linksUnavailableEncrypted))
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))

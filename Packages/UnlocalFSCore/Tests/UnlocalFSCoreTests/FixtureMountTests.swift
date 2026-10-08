@@ -9,7 +9,7 @@ extension IntegrationTests {
         let task = Task {
             defer { continuation.finish() }
             try await withDrive { drive in
-                try await drive.service.mount(drive.connection, credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+                try await drive.service.mount(drive.connection, credentials: s3Credentials)
                 continuation.yield(drive)
                 try await Task.sleep(for: .seconds(3600))
             }

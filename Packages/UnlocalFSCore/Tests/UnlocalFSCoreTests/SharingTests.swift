@@ -4,22 +4,25 @@ import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 
 extension IntegrationTests.DriveFeatureTests {
-    @Test func shareLinksRefuseFilesStillUploading() async throws {
-        try await withPendingUpload { drive, credentials in
+    @Test func shareLinksRefuseFilesStillUploadingButNotOtherFiles() async throws {
+        try await withDrive { drive in
+            try Data("old content".utf8).write(to: drive.bucket.appending(path: "report.txt"))
+            try Data("ready content".utf8).write(to: drive.bucket.appending(path: "ready.txt"))
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
+            let report = drive.mounted.appending(path: "report.txt")
+            _ = try Data(contentsOf: report)
+            try Data("new content".utf8).write(to: report)
+            try #require(try await drive.service.activity(drive.connection).contains { $0.path == "report.txt" && $0.state != .downloading })
+
             await #expect {
-                _ = try await drive.service.shareLink(for: drive.connection, path: "report.txt", expiry: .day, credentials: credentials)
+                _ = try await drive.service.shareLink(for: drive.connection, path: "report.txt", expiry: .day, credentials: s3Credentials)
             } throws: { error in
                 error is AppError && error.localizedDescription == String(localized: .fileStillUploading)
             }
-        }
-    }
+            _ = try await drive.service.shareLink(for: drive.connection, path: "ready.txt", expiry: .day, credentials: s3Credentials)
 
-    @Test func shareLinksIgnoreOtherFilesStillUploading() async throws {
-        try await withPendingUpload { drive, credentials in
-            let link = try await drive.service.shareLink(for: drive.connection, path: "ready.txt", expiry: .day, credentials: credentials)
-            let (data, response) = try await URLSession.shared.data(from: link)
-            #expect((response as? HTTPURLResponse)?.statusCode == 200)
-            #expect(String(decoding: data, as: UTF8.self) == "ready content")
+            try await drive.waitForUploads(on: drive.service)
+            try await drive.service.unmount(drive.connection)
         }
     }
 
@@ -29,11 +32,10 @@ extension IntegrationTests.DriveFeatureTests {
             let storage = drive.bucket.appending(path: folder)
             try FileManager.default.createDirectory(at: storage, withIntermediateDirectories: true)
             try Data("shared plan".utf8).write(to: storage.appending(path: "trip plan.txt"))
-            let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
-            try await drive.service.mount(drive.connection, credentials: credentials)
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
             let link = try await drive.service.shareLink(
                 for: drive.connection, path: "trip plan.txt", expiry: .day,
-                credentials: credentials)
+                credentials: s3Credentials)
             let (data, response) = try await URLSession.shared.data(from: link)
             #expect((response as? HTTPURLResponse)?.statusCode == 200)
             #expect(String(decoding: data, as: UTF8.self) == "shared plan")
@@ -41,21 +43,5 @@ extension IntegrationTests.DriveFeatureTests {
             #expect(expires?.value == "86400")
             try await drive.service.unmount(drive.connection)
         }
-    }
-}
-
-private func withPendingUpload(_ body: (Drive, Credentials) async throws -> Void) async throws {
-    try await withDrive { drive in
-        try Data("old content".utf8).write(to: drive.bucket.appending(path: "report.txt"))
-        try Data("ready content".utf8).write(to: drive.bucket.appending(path: "ready.txt"))
-        let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
-        try await drive.service.mount(drive.connection, credentials: credentials)
-        let report = drive.mounted.appending(path: "report.txt")
-        _ = try Data(contentsOf: report)
-        try Data("new content".utf8).write(to: report)
-        try #require(try await drive.service.activity(drive.connection).contains { $0.path == "report.txt" && $0.state != .downloading })
-        try await body(drive, credentials)
-        try await drive.waitForUploads(on: drive.service)
-        try await drive.service.unmount(drive.connection)
     }
 }

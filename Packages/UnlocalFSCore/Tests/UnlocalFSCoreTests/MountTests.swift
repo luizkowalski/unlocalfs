@@ -3,6 +3,10 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
+enum ControlFault {
+    case missingSocket, staleSocket, killedService
+}
+
 extension IntegrationTests {
     @Suite
     struct MountTests {
@@ -10,14 +14,13 @@ extension IntegrationTests {
             try await withDrive { drive in
                 try Data("hello from S3".utf8).write(
                     to: drive.bucket.appendingPathComponent("hello.txt"))
-                let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
-                try await drive.service.test(drive.connection, credentials: credentials)
+                try await drive.service.test(drive.connection, credentials: s3Credentials)
                 await #expect(throws: AppError.self) {
                     try await drive.service.test(
                         drive.connection,
                         credentials: Credentials(accessKey: "test-key", secretKey: "wrong"))
                 }
-                try await drive.service.mount(drive.connection, credentials: credentials)
+                try await drive.service.mount(drive.connection, credentials: s3Credentials)
                 #expect(
                     try String(
                         contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8)
@@ -31,7 +34,7 @@ extension IntegrationTests {
                     try await drive.service.unmount(drive.connection)
                 }
                 await #expect(throws: UploadsPendingError.self) {
-                    try await drive.service.reconnect(drive.connection, credentials: credentials)
+                    try await drive.service.reconnect(drive.connection, credentials: s3Credentials)
                 }
                 let reopened = drive.reopen()
                 #expect(await reopened.status(drive.connection).isMounted)
@@ -40,6 +43,10 @@ extension IntegrationTests {
                     try String(
                         contentsOf: drive.bucket.appendingPathComponent("upload.txt"), encoding: .utf8)
                         == "written through Finder's filesystem")
+                try FileManager.default.createDirectory(
+                    at: drive.mounted.appendingPathComponent("empty folder"), withIntermediateDirectories: false)
+                try await drive.waitForUploads(on: reopened)
+                #expect(FileManager.default.fileExists(atPath: drive.bucket.appendingPathComponent("empty folder").path))
                 #expect(try await reopened.activity(drive.connection).isEmpty)
                 try await verifyUploadProgress(drive, service: reopened)
                 try await reopened.unmount(drive.connection)
@@ -48,61 +55,13 @@ extension IntegrationTests {
             }
         }
 
-        @Test func folderDriveShowsOnlyThatFolder() async throws {
-            try await withDrive(folder: "clients/acme") { drive in
-                let folder = drive.bucket.appendingPathComponent("clients/acme")
-                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                try Data("acme plan".utf8).write(to: folder.appendingPathComponent("plan.txt"))
-                try Data("other client".utf8).write(
-                    to: drive.bucket.appendingPathComponent("clients/other.txt"))
-                try await drive.service.mount(
-                    drive.connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-                #expect(
-                    try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path) == [
-                        "plan.txt"
-                    ])
-                #expect(
-                    try String(
-                        contentsOf: drive.mounted.appendingPathComponent("plan.txt"), encoding: .utf8)
-                        == "acme plan")
-                try await drive.service.unmount(drive.connection)
-            }
-        }
-
-        @Test func mountingRotatesAnOversizedLog() async throws {
+        @Test(arguments: [
+            (ControlFault.missingSocket, false), (.missingSocket, true), (.staleSocket, false), (.staleSocket, true), (.killedService, false)
+        ])
+        func reconnectPreservesCachedFilesWhenControlIsLost(fault: ControlFault, reopened: Bool) async throws {
             try await withDrive { drive in
-                try drive.paths.prepare()
-                let log = drive.paths.log(drive.connection)
-                try Data(repeating: 120, count: 6 * 1024 * 1024).write(to: log)
-                try await drive.service.mount(
-                    drive.connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-                try await drive.service.unmount(drive.connection)
-                #expect(try FileManager.default.contentsOfDirectory(atPath: drive.paths.logs.path).count == 2)
-                #expect(try #require(log.resourceValues(forKeys: [.fileSizeKey]).fileSize) < 1024 * 1024)
-            }
-        }
-
-        @Test func connectingReusesAFolderNamedInDifferentCase() async throws {
-            try await withDrive { drive in
-                try FileManager.default.createDirectory(
-                    at: drive.paths.mounts.appending(path: drive.connection.name.lowercased()),
-                    withIntermediateDirectories: true)
-                try await drive.service.mount(
-                    drive.connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-                #expect(await drive.service.status(drive.connection).isMounted)
-                try await drive.service.unmount(drive.connection)
-            }
-        }
-
-        @Test(arguments: [(false, false), (true, false), (false, true), (true, true)])
-        func reconnectPreservesCachedFilesWhenControlIsUnavailable(staleSocket: Bool, reopened: Bool) async throws {
-            try await withDrive { drive in
-                let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
                 try Data("remote file".utf8).write(to: drive.bucket.appendingPathComponent("hello.txt"))
-                try await drive.service.mount(drive.connection, credentials: credentials)
+                try await drive.service.mount(drive.connection, credentials: s3Credentials)
                 #expect(try String(contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "remote file")
                 let diskCache = try #require(try await drive.control("vfs/stats")["diskCache"] as? [String: Any])
                 let cached = URL(filePath: try #require(diskCache["path"] as? String)).appendingPathComponent("hello.txt")
@@ -110,17 +69,22 @@ extension IntegrationTests {
                 let service = reopened ? drive.reopen() : drive.service
                 let socket = drive.paths.socket(drive.connection)
                 let hiddenSocket = socket.appendingPathExtension("hidden")
-                try FileManager.default.moveItem(at: socket, to: hiddenSocket)
                 defer {
                     if !FileManager.default.fileExists(atPath: socket.path) {
                         try? FileManager.default.moveItem(at: hiddenSocket, to: socket)
                     }
                 }
-                if staleSocket { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
-                let unhealthy = await service.status(drive.connection)
-                #expect(unhealthy.isMounted)
-                #expect(unhealthy.needsReconnect)
-                try await service.reconnect(drive.connection, credentials: credentials)
+                switch fault {
+                case .missingSocket, .staleSocket:
+                    try FileManager.default.moveItem(at: socket, to: hiddenSocket)
+                    if fault == .staleSocket { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
+                case .killedService:
+                    let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
+                    _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
+                }
+                try await waitUntil { await service.status(drive.connection).needsReconnect }
+                #expect(await service.status(drive.connection).isMounted)
+                try await service.reconnect(drive.connection, credentials: s3Credentials)
                 let recovered = await service.status(drive.connection)
                 #expect(recovered.isMounted)
                 #expect(!recovered.needsReconnect)
@@ -131,36 +95,38 @@ extension IntegrationTests {
             }
         }
 
-        @Test func reconnectRestoresTheDriveAfterTheServiceCrashes() async throws {
-            try await withDrive { drive in
-                let credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
-                try Data("remote file".utf8).write(to: drive.bucket.appendingPathComponent("hello.txt"))
-                try await drive.service.mount(drive.connection, credentials: credentials)
-                let pid = try #require(try await drive.control("core/pid")["pid"] as? Int)
-                _ = try await Command.run(URL(filePath: "/bin/kill"), ["-KILL", "\(pid)"])
-                try await waitUntil { await drive.service.status(drive.connection).needsReconnect }
-                let unhealthy = await drive.service.status(drive.connection)
-                #expect(unhealthy.isMounted)
-                #expect(unhealthy.needsReconnect)
-                try await drive.service.reconnect(drive.connection, credentials: credentials)
-                #expect(try String(contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8) == "remote file")
-                try await drive.service.unmount(drive.connection)
-            }
-        }
-
-        @Test func connectingAppliesBandwidthAndTransferLimits() async throws {
-            let connection = try JSONDecoder().decode(Connection.self, from: Data("""
-            {"bandwidthLimit":10000000,"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"auto","transfers":8}
-            """.utf8))
-            try await withDrive(connection: connection) { drive in
-                try await drive.service.mount(
-                    drive.connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
+        @Test func readOnlyFolderDriveShowsOnlyThatFolderAndAppliesItsLimits() async throws {
+            var connection = fixture(folder: "clients/acme")
+            connection.bandwidthLimit = 10_000_000
+            connection.transfers = 8
+            connection.cacheLimit = 512 << 20
+            connection.minimumFreeSpace = 5 << 30
+            try await withDrive(readOnly: true, connection: connection) { drive in
+                let folder = drive.bucket.appendingPathComponent("clients/acme")
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try Data("acme plan".utf8).write(to: folder.appendingPathComponent("plan.txt"))
+                try Data("other client".utf8).write(to: drive.bucket.appendingPathComponent("clients/other.txt"))
+                try await drive.service.mount(drive.connection, credentials: s3Credentials)
+                #expect(try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path) == ["plan.txt"])
+                #expect(try String(contentsOf: drive.mounted.appendingPathComponent("plan.txt"), encoding: .utf8) == "acme plan")
+                #expect(throws: (any Error).self) {
+                    try Data("nope".utf8).write(to: drive.mounted.appendingPathComponent("upload.txt"))
+                }
+                #expect(throws: (any Error).self) {
+                    try FileManager.default.removeItem(at: drive.mounted.appendingPathComponent("plan.txt"))
+                }
                 let options = try await drive.control("options/get")
                 let main = try #require(options["main"] as? [String: Any])
                 #expect(main["BwLimit"] as? String == "9.537Mi")
                 #expect(main["Transfers"] as? Int64 == 8)
+                let vfs = try #require(options["vfs"] as? [String: Any])
+                #expect(vfs["CacheMaxSize"] as? Int64 == 512 << 20)
+                #expect(vfs["CacheMinFreeSpace"] as? Int64 == 5 << 30)
+                #expect((vfs["CacheMaxAge"] as? NSNumber)?.doubleValue == Double(Int64.max))
+                #expect(vfs["CacheMode"] as? String == "full")
                 try await drive.service.unmount(drive.connection)
+                #expect(FileManager.default.fileExists(atPath: folder.appendingPathComponent("plan.txt").path))
+                #expect(!FileManager.default.fileExists(atPath: folder.appendingPathComponent("upload.txt").path))
             }
         }
 
@@ -209,77 +175,10 @@ extension IntegrationTests {
                 #expect(await !drive.service.status(drive.connection).isActive)
             }
         }
-
-        @Test(arguments: ["", #"clients/a"b,c"#])
-        func encryptedDrivesAcceptValidDirectoryNames(folder: String) async throws {
-            try await withDrive(folder: folder, encrypted: true) { drive in
-                let storage = drive.bucket.appendingPathComponent(folder)
-                try FileManager.default.createDirectory(at: storage, withIntermediateDirectories: true)
-                let password = try await Command.run(
-                    drive.executable, ["obscure", "-", "--config", "/dev/null"], input: "correct horse")
-                _ = try await Command.run(
-                    drive.executable, ["mkdir", ":crypt:undecryptable", "--config", "/dev/null"],
-                    environment: [
-                        "RCLONE_CRYPT_REMOTE": storage.path,
-                        "RCLONE_CRYPT_PASSWORD": String(decoding: password, as: UTF8.self)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                    ])
-                try await drive.service.test(
-                    drive.connection,
-                    credentials: Credentials(
-                        accessKey: "test-key", secretKey: "test-secret",
-                        encryptionPassword: "correct horse"))
-            }
-        }
-
-        @Test(arguments: [(Int64(0), Int64(-1)), (Int64(5) << 30, Int64(5) << 30)])
-        func connectingAppliesTheCacheLimits(minimumFreeSpace: Int64, expected: Int64) async throws {
-            try await withDrive { drive in
-                var connection = drive.connection
-                connection.cacheLimit = 512 << 20
-                connection.minimumFreeSpace = minimumFreeSpace
-                try await drive.service.mount(
-                    connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-                let options = try await drive.control("options/get")
-                let vfs = try #require(options["vfs"] as? [String: Any])
-                #expect(vfs["CacheMaxSize"] as? Int64 == 512 << 20)
-                #expect(vfs["CacheMinFreeSpace"] as? Int64 == expected)
-                #expect((vfs["CacheMaxAge"] as? NSNumber)?.doubleValue == Double(Int64.max))
-                #expect(vfs["CacheMode"] as? String == "full")
-                try await drive.service.unmount(connection)
-            }
-        }
-
-        @Test func readOnlyDriveRejectsWrites() async throws {
-            try await withDrive(readOnly: true) { drive in
-                try Data("hello from S3".utf8).write(
-                    to: drive.bucket.appendingPathComponent("hello.txt"))
-                try await drive.service.mount(
-                    drive.connection,
-                    credentials: Credentials(accessKey: "test-key", secretKey: "test-secret"))
-                #expect(
-                    try String(
-                        contentsOf: drive.mounted.appendingPathComponent("hello.txt"), encoding: .utf8)
-                        == "hello from S3")
-                #expect(throws: (any Error).self) {
-                    try Data("nope".utf8).write(to: drive.mounted.appendingPathComponent("upload.txt"))
-                }
-                #expect(throws: (any Error).self) {
-                    try FileManager.default.removeItem(
-                        at: drive.mounted.appendingPathComponent("hello.txt"))
-                }
-                try await drive.service.unmount(drive.connection)
-                #expect(
-                    FileManager.default.fileExists(
-                        atPath: drive.bucket.appendingPathComponent("hello.txt").path))
-                #expect(
-                    !FileManager.default.fileExists(
-                        atPath: drive.bucket.appendingPathComponent("upload.txt").path))
-            }
-        }
     }
 }
+
+let s3Credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
 
 let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized

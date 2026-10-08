@@ -6,26 +6,6 @@ import UnlocalFSInfrastructure
 extension IntegrationTests {
     @Suite
     struct SFTPRecoveryTests {
-        @Test(arguments: [SFTPLogin.password, .key, .protectedKey, .agent])
-        func exportedConfigReadsFilesUploadedThroughAnEncryptedSFTPDrive(login: SFTPLogin) async throws {
-            try await withSFTPDrive(login, encrypted: true) { drive, sftp in
-                let credentials = try await drive.service.prepareCredentials(sftp.credentials(login, encryptionPassword: encryptedDriveCredentials.encryptionPassword))
-                try await drive.service.mount(drive.connection, credentials: credentials)
-                try Data("top secret".utf8).write(to: drive.mounted.appending(path: "secret plan.txt"))
-                try await drive.waitForUploads(on: drive.service)
-                try await drive.service.unmount(drive.connection)
-                let config = sftp.root.appending(path: "My files rclone.conf")
-
-                try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
-
-                let environment = login == .agent ? ["SSH_AUTH_SOCK": sftp.agentSocket.path] : [:]
-                #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment) == "top secret")
-                let remote = try #require(try await dump(drive, config)["unlocalfs-sftp"])
-                #expect(remote["shell_type"] == "none" && remote["known_hosts_file"] == drive.knownHosts.path)
-                #expect(remote["port"] == "\(sftp.port)" && remote["user"] == "test" && remote["host"] == "127.0.0.1")
-            }
-        }
-
         @Test(arguments: [SFTPLogin.password, .protectedKey, .agent])
         func exportedSFTPConfigWithoutSecretsRecoversOnceCredentialsAreSupplied(login: SFTPLogin) async throws {
             try await withSFTPDrive(login, encrypted: true) { drive, sftp in
@@ -79,6 +59,5 @@ extension IntegrationTests {
                 #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
             }
         }
-
     }
 }

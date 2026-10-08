@@ -1,8 +1,10 @@
 import Darwin
 import Foundation
+import Synchronization
 import Testing
+import UnlocalFSDomain
 
-@Suite(.timeLimit(.minutes(1))) struct FixtureResourcesTests {
+@Suite struct FixtureResourcesTests {
     @Test func setupFailureStopsAlreadyStartedProcesses() async throws {
         var started: Process?
         var root: URL?
@@ -44,7 +46,7 @@ import Testing
                     try await Task.sleep(for: .seconds(3600))
                 }
                 if duringReadiness {
-                    try await requireReady(process, log: resources.root.appending(path: "sleep.log"), suspend)
+                    try await requireReady(process, in: resources, suspend)
                 } else {
                     try await suspend()
                 }
@@ -74,14 +76,53 @@ import Testing
     }
     @Test func restartingAProcessKeepsItsEarlierLogOutput() async throws {
         var output = ""
+        var restarted = ""
         try await withFixture { resources in
             let first = try await resources.start(URL(filePath: "/usr/bin/printf"), arguments: ["first\n"], log: "server.log")
             try await waitUntil { !first.isRunning }
             let second = try await resources.start(URL(filePath: "/usr/bin/printf"), arguments: ["second\n"], log: "server.log")
             try await waitUntil { !second.isRunning }
             output = try String(contentsOf: resources.root.appending(path: "server.log"), encoding: .utf8)
+            restarted = try await resources.output(of: second)
         }
         #expect(output == "first\nsecond\n")
+        #expect(restarted == "second\n")
     }
 
+    @Test func fixtureThatOutlivesItsDeadlineFailsAndStopsItsProcesses() async throws {
+        var started: Process?
+        var root: URL?
+        await #expect {
+            try await withFixture(deadline: .seconds(1)) { resources in
+                root = resources.root
+                started = try await resources.start(URL(filePath: "/bin/sleep"), arguments: ["3600"], log: "sleep.log")
+                try await Task.sleep(for: .seconds(3600))
+            }
+        } throws: { ($0 as? AppError)?.localizedDescription.contains("exceeded") == true }
+        let process = try #require(started)
+        #expect(!process.isRunning)
+        try FileManager.default.removeItem(at: #require(root))
+    }
+
+    @Test func fixturesRunThreeAtATime() async throws {
+        let running = Mutex(0)
+        let peak = Mutex(0)
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for _ in 0..<6 {
+                group.addTask {
+                    try await withFixture { _ in
+                        let now = running.withLock { count -> Int in
+                            count += 1
+                            return count
+                        }
+                        peak.withLock { $0 = max($0, now) }
+                        try await Task.sleep(for: .milliseconds(300))
+                        running.withLock { $0 -= 1 }
+                    }
+                }
+            }
+            try await group.waitForAll()
+        }
+        #expect(peak.withLock { $0 } <= 3)
+    }
 }

@@ -5,11 +5,10 @@ import Testing
 @testable import UnlocalFSPresentation
 
 @MainActor @Suite struct ConnectionEditorViewModelTests {
-    @Test func invalidConnectionShowsFieldErrorsWithoutSaving() async throws {
+    @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = Connection()
-        let editor = fixture.editor(draft: .init(connection: connection))
+        let editor = fixture.editor(draft: .init(connection: Connection()))
 
         #expect(editor.fieldErrors.isEmpty)
         #expect(await editor.save() == false)
@@ -19,6 +18,14 @@ import Testing
         #expect(editor.fieldErrors[.accessKey] != nil)
         #expect(!editor.saving)
         #expect(!FileManager.default.fileExists(atPath: fixture.paths.config.path))
+
+        editor.connection.name = "Photos"
+
+        #expect(editor.fieldErrors[.name] == nil)
+        #expect(editor.firstInvalidField == .endpoint)
+        editor.connection.endpoint = "https://s3.example.com"
+        #expect(editor.fieldErrors[.endpoint] == nil)
+        #expect(editor.firstInvalidField == .bucket)
     }
 
     @Test func testRevealsErrorsWithoutRunningAProcess() async throws {
@@ -39,22 +46,6 @@ import Testing
         #expect(editor.firstInvalidField == .bucket)
         #expect(!editor.tested)
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
-    }
-
-    @Test func correctingFieldsUpdatesErrorsAndFocusWithoutAnotherAttempt() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let editor = fixture.editor(draft: .init(connection: Connection()))
-        await editor.test()
-        #expect(editor.firstInvalidField == .name)
-
-        editor.connection.name = "Photos"
-
-        #expect(editor.fieldErrors[.name] == nil)
-        #expect(editor.firstInvalidField == .endpoint)
-        editor.connection.endpoint = "https://s3.example.com"
-        #expect(editor.fieldErrors[.endpoint] == nil)
-        #expect(editor.firstInvalidField == .bucket)
     }
 
     @Test func duplicateNameFromSavedConnectionsTakesFocusInFormOrder() async throws {
@@ -148,31 +139,20 @@ import Testing
         #expect(!editor.tested)
     }
 
-    @Test func changingTheEndpointClearsTheSuccessfulTest() async throws {
+    @Test func changingTheEndpointOrCredentialsClearsTheSuccessfulTest() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = connectionFixture()
-        let editor = fixture.editor(draft: .init(connection: connection))
+        let editor = fixture.editor(draft: .init(connection: connectionFixture()))
         editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
         await editor.test()
         #expect(editor.tested)
 
         editor.connection.endpoint = "https://other.example.com"
-
         #expect(!editor.tested)
-    }
 
-    @Test func changingCredentialsClearsTheSuccessfulTest() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
-        let editor = fixture.editor(draft: .init(connection: connection))
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
         await editor.test()
         #expect(editor.tested)
-
         editor.credentials.secretKey = "new-secret"
-
         #expect(!editor.tested)
     }
 
@@ -255,44 +235,32 @@ import Testing
         }
     }
 
-    @Test func editingASavedSFTPDriveLocksItsFolderAndKeepsItsProtocol() throws {
+    @Test func savedDrivesKeepTheirProtocolAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = sftpConnectionFixture()
-        try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
-        let editor = fixture.editor(draft: .init(connection: connection))
-        editor.loadCredentials()
+        let s3Connection = connectionFixture()
+        let sftp = sftpConnectionFixture()
+        try fixture.repository.save(s3Connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        try fixture.repository.save(sftp, credentials: Credentials(password: "saved-password"))
 
-        #expect(editor.credentials.password == "saved-password")
-        #expect(editor.locksRemoteFolder)
-        #expect(editor.availableProviders == [.sftp])
-    }
-
-    @Test func savedS3DriveCannotSwitchToSFTPButNewAndDuplicateDraftsCan() throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
-        try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
-
-        let saved = fixture.editor(draft: .init(connection: connection))
-        #expect(!saved.locksRemoteFolder)
-        #expect(!saved.availableProviders.contains(.sftp))
+        let savedS3 = fixture.editor(draft: .init(connection: s3Connection))
+        #expect(!savedS3.locksRemoteFolder)
+        #expect(!savedS3.availableProviders.contains(.sftp))
         #expect(fixture.editor(draft: .init(connection: Connection())).availableProviders == Provider.allCases)
-        #expect(fixture.editor(draft: .init(duplicating: connection)).availableProviders == Provider.allCases)
-    }
+        #expect(fixture.editor(draft: .init(duplicating: s3Connection)).availableProviders == Provider.allCases)
 
-    @Test func duplicatingASFTPDriveUnlocksItsFolderAndReloadsTheOriginalCredentials() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = sftpConnectionFixture()
-        try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
-        let editor = fixture.editor(draft: .init(duplicating: connection))
-        editor.loadCredentials()
-        editor.connection.sftp.remotePath = "/elsewhere"
+        let savedSFTP = fixture.editor(draft: .init(connection: sftp))
+        savedSFTP.loadCredentials()
+        #expect(savedSFTP.credentials.password == "saved-password")
+        #expect(savedSFTP.locksRemoteFolder)
+        #expect(savedSFTP.availableProviders == [.sftp])
 
-        #expect(!editor.locksRemoteFolder)
-        #expect(editor.credentials.password == "saved-password")
-        #expect(await editor.save())
-        #expect(try fixture.repository.all().count == 2)
+        let copy = fixture.editor(draft: .init(duplicating: sftp))
+        copy.loadCredentials()
+        copy.connection.sftp.remotePath = "/elsewhere"
+        #expect(!copy.locksRemoteFolder)
+        #expect(copy.credentials.password == "saved-password")
+        #expect(await copy.save())
+        #expect(try fixture.repository.all().count == 3)
     }
 }
