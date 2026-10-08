@@ -54,17 +54,18 @@ UnlocalFS stores the key in your Mac's Keychain and shows only the service accou
 | Sign in with | **Password**, **Private key**, or **SSH agent**. Only the selected option is used. |
 | Private key | The path to your key file, and its passphrase if it has one. UnlocalFS reads the file and never copies it. |
 | Agent socket | Optional. Leave empty to use the agent your Mac started. |
-| Trusted hosts | The file that lists the servers you trust. The default is `~/.ssh/known_hosts`. |
 
 Passwords and key passphrases are stored in your Mac's Keychain. Key files stay where they are.
 
-UnlocalFS checks the server against the trusted-hosts file every time you test or connect. If the server is unknown or its key changed, the connection fails. UnlocalFS never adds to or changes the file. To trust a new server, connect once with `ssh user@host`, check that the fingerprint is the one your server administrator gave you, and accept it. If a trusted server's key changed, find out why before you edit the file.
+The first test or connection shows the server's SHA256 key fingerprint. Check it with your server administrator, then choose **Trust and connect**. UnlocalFS saves the approved keys in `~/Library/Application Support/UnlocalFS/known_hosts` and checks them every time you connect. It does not read or change your Mac's SSH files, such as `~/.ssh/known_hosts`. If the key changes, UnlocalFS stops the connection and asks you to approve the new key. Find out why it changed before you accept it.
+
+Drives saved with an earlier version of UnlocalFS used a trusted-hosts file that you chose. They now use the UnlocalFS file, so their next connection asks you to approve the server key once.
 
 Private keys in OpenSSH format are supported, with or without a passphrase. UnlocalFS has been checked with ed25519 keys. SSH config files, jump hosts, and interactive logins such as multi-factor prompts are not supported.
 
 **Test Connection** lists the folder. It shows that you can reach the folder, not that you can write to it. If a server refuses a write, the drive's activity list shows the failed upload.
 
-After you save an SFTP drive, you cannot change its folder or encryption. Choose **Duplicate** to connect another folder. You can still change the host, port, username, how you sign in, and the trusted-hosts file. Before you point a drive at a different server, make sure the files in its cache belong there, because pending uploads go to the new server. Drives saved with SFTP cannot be opened by older versions of UnlocalFS.
+After you save an SFTP drive, you cannot change its folder or encryption. Choose **Duplicate** to connect another folder. You can still change the host, port, username, and how you sign in. Before you point a drive at a different server, make sure the files in its cache belong there, because pending uploads go to the new server. Drives saved with SFTP cannot be opened by older versions of UnlocalFS.
 
 ## Test and save
 

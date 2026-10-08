@@ -231,7 +231,7 @@ import Testing
     @Test func editingConnectionAffectingSFTPFieldsClearsTheSuccessfulTest() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let editor = fixture.editor(draft: .init(connection: try fixture.sftpConnection()))
+        let editor = fixture.editor(draft: .init(connection: sftpConnectionFixture()))
         editor.credentials = Credentials(password: "secret")
         await editor.test()
         #expect(editor.tested)
@@ -242,11 +242,11 @@ import Testing
 
         let changes: [(inout SFTPSettings) -> Void] = [
             { $0.host = "other.example.com" }, { $0.port = 2222 }, { $0.username = "other" }, { $0.remotePath = "/srv" },
-            { $0.authentication = .agent }, { $0.keyFile = "/Users/me/.ssh/other" }, { $0.trustedHostsFile = "/Users/me/.ssh/other_hosts" },
+            { $0.authentication = .agent }, { $0.keyFile = "/Users/me/.ssh/other" },
             { $0.agentSocket = "/tmp/agent.sock" }
         ]
         for change in changes {
-            editor.connection.sftp = try fixture.sftpConnection().sftp
+            editor.connection.sftp = sftpConnectionFixture().sftp
             editor.credentials = Credentials(password: "secret")
             await editor.test()
             #expect(editor.tested)
@@ -258,7 +258,7 @@ import Testing
     @Test func editingASavedSFTPDriveLocksItsFolderAndKeepsItsProtocol() throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = try fixture.sftpConnection()
+        let connection = sftpConnectionFixture()
         try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.loadCredentials()
@@ -284,7 +284,7 @@ import Testing
     @Test func duplicatingASFTPDriveUnlocksItsFolderAndReloadsTheOriginalCredentials() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = try fixture.sftpConnection()
+        let connection = sftpConnectionFixture()
         try fixture.repository.save(connection, credentials: Credentials(password: "saved-password"))
         let editor = fixture.editor(draft: .init(duplicating: connection))
         editor.loadCredentials()
@@ -294,30 +294,5 @@ import Testing
         #expect(editor.credentials.password == "saved-password")
         #expect(await editor.save())
         #expect(try fixture.repository.all().count == 2)
-    }
-
-    @Test func sftpTrustAndFileFailuresAreActionableWithoutSecrets() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        try "ssh: handshake failed: knownhosts: key is unknown sftp-secret".write(
-            to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
-        var connection = try fixture.sftpConnection()
-        let editor = fixture.editor(draft: .init(connection: connection))
-        editor.credentials = Credentials(password: "sftp-secret")
-
-        await editor.test()
-
-        var error = try #require(editor.error)
-        #expect(error.hasPrefix(String(localized: .hostKeyNotTrusted(connection.sftp.trustedHostsPath, ""))))
-        #expect(!error.contains("sftp-secret"))
-        #expect(!editor.tested)
-
-        connection.sftp.authentication = .privateKey
-        connection.sftp.keyFile = fixture.root.appending(path: "missing-key").path
-        editor.connection = connection
-        await editor.test()
-
-        error = try #require(editor.error)
-        #expect(error.contains(connection.sftp.keyFile))
     }
 }

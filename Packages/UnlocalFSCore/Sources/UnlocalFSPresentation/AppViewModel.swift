@@ -11,6 +11,8 @@ import UnlocalFSDomain
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var errors: [UUID: String] = [:]
     public private(set) var busy: Set<UUID> = []
+    public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
+    private var trustOpensFinder: [UUID: Bool] = [:]
     public var alert: String?
     public var editor: ConnectionDraft?
     public var deleting: Connection?
@@ -123,6 +125,7 @@ import UnlocalFSDomain
         errors[connection.id] = nil
         if allowsDisconnect { waitingToDisconnect.remove(connection.id) }
         defer { busy.remove(connection.id) }
+        if let pending = serverTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending) }
         do {
             let outcome = try await toggleDrive.execute(connection, allowsDisconnect: allowsDisconnect)
             if opensFinder {
@@ -131,12 +134,37 @@ import UnlocalFSDomain
                 case .disconnected: break
                 }
             }
+        } catch let challenge as ServerTrustChallenge {
+            serverTrust[connection.id] = challenge
+            trustOpensFinder[connection.id] = opensFinder
+            errors[connection.id] = challenge.localizedDescription
+            selection = connection.id
         } catch is UploadsPendingError {
             waitingToDisconnect.insert(connection.id)
         } catch {
             errors[connection.id] = error.localizedDescription
         }
         update(await drives.status(connection), for: connection)
+    }
+
+    public func trustServer(_ connection: Connection) async {
+        guard let challenge = serverTrust.removeValue(forKey: connection.id) else { return }
+        let opensFinder = trustOpensFinder.removeValue(forKey: connection.id) ?? false
+        busy.insert(connection.id)
+        do {
+            try await drives.trustServer(challenge)
+            busy.remove(connection.id)
+            await toggle(connection, opensFinder: opensFinder, allowsDisconnect: false)
+        } catch {
+            busy.remove(connection.id)
+            errors[connection.id] = error.localizedDescription
+        }
+    }
+
+    public func cancelServerTrust(_ connection: Connection) async {
+        guard let challenge = serverTrust.removeValue(forKey: connection.id) else { return }
+        trustOpensFinder[connection.id] = nil
+        await drives.cancelServerTrust(challenge)
     }
 
     public func requestDisconnectAll() {

@@ -126,7 +126,7 @@ public enum ConnectionField: CaseIterable, Sendable {
     case name, endpoint, bucket, folder, accessKey, secretKey
     case serviceAccountKey
     case host, port, username, remotePath
-    case password, keyFile, trustedHosts
+    case password, keyFile
     case encryptionPassword, confirmation
 
     public var displayName: String {
@@ -144,7 +144,6 @@ public enum ConnectionField: CaseIterable, Sendable {
         case .remotePath: String(localized: .fieldRemoteFolder)
         case .password: String(localized: .password)
         case .keyFile: String(localized: .privateKey)
-        case .trustedHosts: String(localized: .fieldTrustedHosts)
         case .encryptionPassword: String(localized: .fieldEncryptionPassword)
         case .confirmation: String(localized: .fieldConfirmPassword)
         }

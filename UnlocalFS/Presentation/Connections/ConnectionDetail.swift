@@ -31,6 +31,11 @@ struct ConnectionDetail: View {
             if let status { cacheFooter(status) }
         }
         .navigationTitle(connection.name)
+        .sheet(item: Binding(get: { model.serverTrust[connection.id] }, set: { _ in })) { challenge in
+            ServerTrustSheet(challenge: challenge,
+                             onTrust: { Task { await model.trustServer(connection) } },
+                             onCancel: { Task { await model.cancelServerTrust(connection) } })
+        }
     }
 
     private var actions: some View {

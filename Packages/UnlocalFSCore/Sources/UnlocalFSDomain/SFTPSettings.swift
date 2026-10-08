@@ -17,15 +17,12 @@ public enum SFTPAuthentication: String, Codable, CaseIterable, Identifiable, Sen
 }
 
 public struct SFTPSettings: Codable, Equatable, Sendable {
-    public static let defaultTrustedHostsFile = "~/.ssh/known_hosts"
-
     public var host = ""
     public var port = 22
     public var username = ""
     public var remotePath = ""
     public var authentication = SFTPAuthentication.password
     public var keyFile = ""
-    public var trustedHostsFile = Self.defaultTrustedHostsFile
     public var agentSocket = ""
 
     public init() {}
@@ -52,10 +49,6 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
                 message: String(localized: .keyFileNotFullPath)
             )
         }
-        result.check(
-            Self.isFullPath(trustedHostsFile), field: .trustedHosts,
-            message: String(localized: .trustedHostsNotFullPath(Self.defaultTrustedHostsFile))
-        )
         return result
     }
 

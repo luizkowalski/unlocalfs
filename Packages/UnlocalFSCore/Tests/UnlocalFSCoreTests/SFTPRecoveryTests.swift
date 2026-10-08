@@ -20,7 +20,7 @@ struct SFTPRecoveryTests {
             let environment = ["SSH_AUTH_SOCK": sftp.agent.socket.path]
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt", environment: environment) == "top secret")
             let remote = try #require(try await dump(drive, config)["unlocalfs-sftp"])
-            #expect(remote["shell_type"] == "none" && remote["known_hosts_file"] == sftp.knownHosts.path)
+            #expect(remote["shell_type"] == "none" && remote["known_hosts_file"] == drive.knownHosts.path)
             #expect(remote["port"] == "\(sftp.port)" && remote["user"] == "test" && remote["host"] == "127.0.0.1")
         }
     }

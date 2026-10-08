@@ -122,9 +122,7 @@ import UnlocalFSDomain
         defer { try? FileManager.default.removeItem(at: directory) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let key = directory.appending(path: "id")
-        let hosts = directory.appending(path: "known_hosts")
         try Data().write(to: key)
-        try Data().write(to: hosts)
         let script = """
         case "$1" in
             obscure) printf 'obscured-token' ;;
@@ -139,7 +137,6 @@ import UnlocalFSDomain
             connection.encrypted = true
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = key.path
-            connection.sftp.trustedHostsFile = hosts.path
             let credentials = Credentials(encryptionPassword: "private-password", password: "private-ssh", keyPassphrase: "private-phrase")
             await #expect {
                 try await service.test(connection, credentials: credentials)
@@ -152,21 +149,14 @@ import UnlocalFSDomain
         }
     }
 
-    @Test func sftpTestRefusesUnreadableTrustAndKeyFilesWithoutRunningRclone() async throws {
+    @Test func sftpTestRefusesAnUnreadableKeyFileWithoutRunningRclone() async throws {
         var fixtureRoot: URL?
         try await withFixture { root in
             fixtureRoot = root
             return "if [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
         } operation: { service, _ in
             var connection = sftpFixture()
-            connection.sftp.trustedHostsFile = "/nonexistent/known_hosts"
-            await #expect { try await service.test(connection, credentials: Credentials(password: "secret")) } throws: {
-                $0.localizedDescription.contains("/nonexistent/known_hosts")
-            }
             let root = try #require(fixtureRoot)
-            let hosts = root.appending(path: "known_hosts")
-            try Data().write(to: hosts)
-            connection.sftp.trustedHostsFile = hosts.path
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = "/nonexistent/id"
             await #expect { try await service.test(connection, credentials: Credentials()) } throws: {

@@ -4,6 +4,7 @@ import UnlocalFSDomain
 struct RcloneRemote {
     let connection: Connection
     let credentials: Credentials?
+    let knownHosts: URL
     var agentSocket: String?
 
     var type: String {
@@ -68,7 +69,7 @@ struct RcloneRemote {
         let sftp = connection.sftp
         var options = [
             "host": sftp.host, "port": "\(sftp.port)", "user": sftp.username,
-            "shell_type": "none", "known_hosts_file": sftp.trustedHostsPath
+            "shell_type": "none", "known_hosts_file": knownHosts.path
         ]
         switch sftp.authentication {
         case .password:
@@ -84,7 +85,6 @@ struct RcloneRemote {
 }
 
 extension SFTPSettings {
-    var trustedHostsPath: String { trustedHostsFile.expandingTilde }
     var keyPath: String { keyFile.expandingTilde }
     var agentSocketPath: String { agentSocket.expandingTilde }
 }

@@ -2,6 +2,8 @@ import Foundation
 
 public protocol DriveGateway: Sendable {
     func test(_ connection: Connection, credentials: Credentials) async throws
+    func trustServer(_ challenge: ServerTrustChallenge) async throws
+    func cancelServerTrust(_ challenge: ServerTrustChallenge) async
     func prepareCredentials(_ credentials: Credentials) async throws -> Credentials
     func mount(_ connection: Connection, credentials: Credentials) async throws
     func unmount(_ connection: Connection) async throws
