@@ -42,8 +42,16 @@ public struct DeleteConnectionUseCase: Sendable {
 
     public func execute(_ connection: Connection) async throws -> [Connection] {
         guard await !drives.status(connection).isActive else { throw AppError(String(localized: .disconnectBeforeDelete)) }
+        if try isLastDriveOnItsServer(connection) { try await drives.forgetServer(connection) }
         try repository.delete(connection.id)
         drives.removeCache(connection)
         return try repository.all()
+    }
+
+    private func isLastDriveOnItsServer(_ connection: Connection) throws -> Bool {
+        guard connection.backend == .sftp else { return false }
+        return try !repository.all().contains {
+            $0.id != connection.id && $0.backend == .sftp && $0.sftp.host == connection.sftp.host && $0.sftp.port == connection.sftp.port
+        }
     }
 }

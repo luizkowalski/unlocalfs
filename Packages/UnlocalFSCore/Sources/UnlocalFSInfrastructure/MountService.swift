@@ -53,6 +53,7 @@ public actor MountService: DriveGateway {
 
     public func trustServer(_ challenge: ServerTrustChallenge) async throws { try await serverTrust.accept(challenge) }
     public func cancelServerTrust(_ challenge: ServerTrustChallenge) async { await serverTrust.cancel(challenge) }
+    public func forgetServer(_ connection: Connection) async throws { try await serverTrust.forget(connection.sftp) }
 
     public func prepareCredentials(_ credentials: Credentials) async throws -> Credentials {
         var credentials = credentials

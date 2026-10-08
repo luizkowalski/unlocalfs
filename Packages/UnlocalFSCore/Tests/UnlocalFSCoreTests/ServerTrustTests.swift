@@ -89,6 +89,35 @@ struct ServerTrustTests {
         }
     }
 
+    @Test func deletingTheLastDriveOnAServerForgetsItsKey() async throws {
+        try await withSFTPDrive { drive, sftp in
+            let credentials = sftp.credentials(.password)
+            let other = sftp.knownHostsEntry.replacingOccurrences(of: "[127.0.0.1]:\(sftp.port)", with: "other.example.com")
+            try Data((sftp.knownHostsEntry + other).utf8).write(to: drive.knownHosts)
+            let repository = try repository(saving: drive.connection, on: drive, credentials: credentials)
+
+            _ = try await DeleteConnectionUseCase(repository: repository, drives: drive.service).execute(drive.connection)
+
+            #expect(try String(contentsOf: drive.knownHosts, encoding: .utf8) == other)
+            #expect(try !FileManager.default.contentsOfDirectory(atPath: drive.paths.support.path).contains("known_hosts.old"))
+            await #expect(throws: ServerTrustChallenge.self) { try await drive.service.test(drive.connection, credentials: credentials) }
+        }
+    }
+
+    @Test func deletingOneOfTwoDrivesOnAServerKeepsItsKey() async throws {
+        try await withSFTPDrive { drive, sftp in
+            let credentials = sftp.credentials(.password)
+            var sibling = drive.connection
+            sibling.id = UUID()
+            sibling.name = "Sibling"
+            let repository = try repository(saving: drive.connection, sibling, on: drive, credentials: credentials)
+
+            _ = try await DeleteConnectionUseCase(repository: repository, drives: drive.service).execute(drive.connection)
+
+            try await drive.service.test(sibling, credentials: credentials)
+        }
+    }
+
     @MainActor @Test func editorTrustsTheKeyAndRetriesTheConnectionTest() async throws {
         try await withUntrustedServerApp { drive, connection, app, repository in
             let editor = editor(for: connection, drive: drive, app: app, repository: repository)
@@ -149,6 +178,12 @@ struct ServerTrustTests {
         } catch let challenge as ServerTrustChallenge { return challenge }
     }
 
+    private func repository(saving connections: Connection..., on drive: Drive, credentials: Credentials) throws -> SavedConnectionRepository {
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: MemoryCredentialStorage())
+        for connection in connections { try repository.save(connection, credentials: credentials) }
+        return repository
+    }
+
     @MainActor private func editor(
         for connection: Connection, drive: Drive, app: AppViewModel, repository: SavedConnectionRepository
     ) -> ConnectionEditorViewModel {
@@ -164,8 +199,7 @@ struct ServerTrustTests {
     ) async throws {
         try await withSFTPDrive(trusted: false) { drive, sftp in
             let connection = drive.connection
-            let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: MemoryCredentialStorage())
-            try repository.save(connection, credentials: sftp.credentials(.password))
+            let repository = try repository(saving: connection, on: drive, credentials: sftp.credentials(.password))
             let app = await AppViewModel(
                 initialConnections: .success([connection]), drives: drive.service,
                 deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drive.service),

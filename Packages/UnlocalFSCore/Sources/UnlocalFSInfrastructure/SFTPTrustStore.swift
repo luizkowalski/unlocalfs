@@ -40,28 +40,45 @@ actor SFTPTrustStore {
             id: UUID(), host: sftp.host, port: sftp.port,
             fingerprints: String(decoding: fingerprints, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines), keyChanged: keyChanged
         )
-        let server = sftp.port == 22 ? sftp.host : "[\(sftp.host)]:\(sftp.port)"
-        pending[challenge.id] = Pending(server: server, keys: keys, previous: previous)
+        pending[challenge.id] = Pending(server: Self.server(sftp), keys: keys, previous: previous)
         return challenge
     }
 
     func accept(_ challenge: ServerTrustChallenge) async throws {
         guard let request = pending.removeValue(forKey: challenge.id) else { throw AppError(String(localized: .serverTrustExpired)) }
-        let file = try file()
-        let scratch = try scratchDirectory()
-        defer { try? FileManager.default.removeItem(at: scratch) }
-        let replacement = scratch.appending(path: "known_hosts")
-        try request.previous.write(to: replacement)
-        _ = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-R", request.server, "-f", replacement.path])
-        var keys = try String(contentsOf: replacement, encoding: .utf8)
+        var keys = try await removing(request.server, from: request.previous)
         if !keys.isEmpty && !keys.hasSuffix("\n") { keys += "\n" }
-        keys += request.keys
-        guard try Data(contentsOf: file) == request.previous else { throw AppError(String(localized: .serverTrustExpired)) }
-        try Data(keys.utf8).write(to: file, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        guard try Data(contentsOf: file()) == request.previous else { throw AppError(String(localized: .serverTrustExpired)) }
+        try write(keys + request.keys)
+    }
+
+    func forget(_ sftp: SFTPSettings) async throws {
+        let previous = try Data(contentsOf: file())
+        let hosts = try await removing(Self.server(sftp), from: previous)
+        guard try Data(contentsOf: file()) == previous else { return try await forget(sftp) }
+        try write(hosts)
     }
 
     func cancel(_ challenge: ServerTrustChallenge) { pending[challenge.id] = nil }
+
+    private static func server(_ sftp: SFTPSettings) -> String {
+        sftp.port == 22 ? sftp.host : "[\(sftp.host)]:\(sftp.port)"
+    }
+
+    private func removing(_ server: String, from hosts: Data) async throws -> String {
+        let scratch = try scratchDirectory()
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let copy = scratch.appending(path: "known_hosts")
+        try hosts.write(to: copy)
+        _ = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-R", server, "-f", copy.path])
+        return try String(contentsOf: copy, encoding: .utf8)
+    }
+
+    private func write(_ hosts: String) throws {
+        let file = try file()
+        try Data(hosts.utf8).write(to: file, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+    }
 
     private func scratchDirectory() throws -> URL {
         try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: paths.support, create: true)

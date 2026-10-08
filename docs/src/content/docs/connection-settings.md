@@ -57,7 +57,7 @@ UnlocalFS stores the key in your Mac's Keychain and shows only the service accou
 
 Passwords and key passphrases are stored in your Mac's Keychain. Key files stay where they are.
 
-The first test or connection shows the server's SHA256 key fingerprint. Check it with your server administrator, then choose **Trust and connect**. UnlocalFS saves the approved keys in `~/Library/Application Support/UnlocalFS/known_hosts` and checks them every time you connect. It does not read or change your Mac's SSH files, such as `~/.ssh/known_hosts`. If the key changes, UnlocalFS stops the connection and asks you to approve the new key. Find out why it changed before you accept it.
+The first test or connection shows the server's SHA256 key fingerprint. Check it with your server administrator, then choose **Trust and connect**. UnlocalFS saves the approved keys in `~/Library/Application Support/UnlocalFS/known_hosts` and checks them every time you connect. It does not read or change your Mac's SSH files, such as `~/.ssh/known_hosts`. If the key changes, UnlocalFS stops the connection and asks you to approve the new key. Find out why it changed before you accept it. When you delete the last drive for a server, UnlocalFS removes that server's keys from the file.
 
 Drives saved with an earlier version of UnlocalFS used a trusted-hosts file that you chose. They now use the UnlocalFS file, so their next connection asks you to approve the server key once.
 
