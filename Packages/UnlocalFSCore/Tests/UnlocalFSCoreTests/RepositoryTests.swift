@@ -21,12 +21,46 @@ import UnlocalFSInfrastructure
         #expect(Set(try repository.all().map(\.id)) == Set(connections.map(\.id)))
     }
 
-    @Test func failedCredentialWriteRestoresTheSavedConnection() throws {
+    @Test(arguments: [
+        (Provider.sftp, Credentials(password: "hunter2-password", keyPassphrase: "hunter2-passphrase"), "hunter2"),
+        (.googleCloudStorage, Credentials(serviceAccountKey: serviceAccountJSON), "BEGIN PRIVATE KEY")
+    ])
+    func savedSettingsAndSecretsSurviveReopening(provider: Provider, credentials: Credentials, secret: String) throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
-        let store = ConnectionStore(url: root.appending(path: "config.json"))
+        let url = root.appending(path: "config.json")
+        let service = "app.unlocalfs.tests.\(UUID())"
+        let keychain = Keychain(service: service)
+        var connection = provider == .sftp ? sftpFixture() : gcsFixture()
+        connection.folder = "clients/acme"
+        if provider == .sftp {
+            connection.sftp.port = 2222
+            connection.sftp.remotePath = "/srv/files"
+            connection.sftp.authentication = .privateKey
+            connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
+            connection.sftp.agentSocket = "/tmp/agent.sock"
+        }
+        defer { try? keychain.delete(connection.id) }
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: keychain)
+        try repository.save(connection, credentials: credentials)
+
+        let reopened = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: Keychain(service: service))
+        #expect(try reopened.all() == [connection])
+        #expect(try reopened.credentials(for: connection.id) == credentials)
+        #expect(try !String(contentsOf: url, encoding: .utf8).contains(secret))
+    }
+
+    @Test(arguments: [false, true])
+    func failedCredentialWriteRestoresThePreviousConfig(updating: Bool) throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appending(path: "config.json")
+        let store = ConnectionStore(url: url)
+        let unrelated = fixture(name: "Other files")
+        try store.save(unrelated)
         let original = fixture()
-        try store.save(original)
+        if updating { try store.save(original) }
+        let previous = updating ? [original, unrelated] : [unrelated]
         var edited = original
         edited.folder = "new-folder"
         let repository = SavedConnectionRepository(store: store, credentials: UnavailableCredentialStorage())
@@ -35,20 +69,7 @@ import UnlocalFSInfrastructure
             try repository.save(edited, credentials: Credentials(accessKey: "key", secretKey: "secret"))
         }
 
-        #expect(try store.all() == [original])
-    }
-
-    @Test func failedCredentialWriteDoesNotLeaveANewConnection() throws {
-        let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
-        defer { try? FileManager.default.removeItem(at: root) }
-        let store = ConnectionStore(url: root.appending(path: "config.json"))
-        let repository = SavedConnectionRepository(store: store, credentials: UnavailableCredentialStorage())
-
-        #expect(throws: AppError.self) {
-            try repository.save(fixture(), credentials: Credentials(accessKey: "key", secretKey: "secret"))
-        }
-
-        #expect(try store.all().isEmpty)
+        #expect(try ConnectionStore(url: url).all() == previous)
     }
 
     @Test func failedConfigWriteKeepsTheCredentials() throws {
