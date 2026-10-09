@@ -45,9 +45,9 @@ targets:
         CODE_SIGN_STYLE: Manual
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_USER_SCRIPT_SANDBOXING: NO
-        RCLONE_VERSION: 1.75.1
-        RCLONE_SHA256_ARM64: c61d7a371c62bcbbe882c3423aa4b8bf63485c248dd0f692997b8f0c3f6d0c6f
-        RCLONE_SHA256_AMD64: 29253d0288b8fbbac46baad6e5f6add6cb01d462c79f10805bbd4631c4cdf82c
+        RCLONE_VERSION: 1.75.2
+        RCLONE_SHA256_ARM64: 610ab7d48615135dfc60b763858b11a426a0d3d1160c1bb76fb0ae6011b02edd
+        RCLONE_SHA256_AMD64: 574e1f31cf1c464e5fb0325cb66fcbdeaf1efa1802bd9b17f13c256fd74b6561
     postBuildScripts:
       - name: Embed rclone
         shell: /bin/bash

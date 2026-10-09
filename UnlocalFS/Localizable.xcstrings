@@ -51,6 +51,17 @@
         }
       }
     },
+    "About UnlocalFS" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre o UnlocalFS"
+          }
+        }
+      }
+    },
     "Access key" : {
       "extractionState" : "stale",
       "localizations" : {
