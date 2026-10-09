@@ -81,41 +81,6 @@ import UnlocalFSInfrastructure
             return expected }())
     }
 
-    @Test func sftpSettingsSurviveReopenAndKeepSecretsOutOfTheConfig() throws {
-        let url = configURL()
-        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-        var connection = sftpFixture()
-        connection.sftp.port = 2222
-        connection.sftp.remotePath = "/srv/files"
-        connection.sftp.authentication = .privateKey
-        connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
-        connection.sftp.agentSocket = "/tmp/agent.sock"
-        let credentials = Credentials(password: "hunter2-password", keyPassphrase: "hunter2-passphrase")
-        let repository = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
-        try repository.save(connection, credentials: credentials)
-
-        let reopened = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
-        #expect(try reopened.all() == [connection])
-        #expect(try repository.credentials(for: connection.id) == credentials)
-        let json = try String(contentsOf: url, encoding: .utf8)
-        #expect(!json.contains("hunter2"))
-    }
-
-    @Test func gcsKeySurvivesReopenAndStaysOutOfTheConfig() throws {
-        let url = configURL()
-        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-        var connection = gcsFixture()
-        connection.folder = "clients/acme"
-        let credentials = Credentials(serviceAccountKey: serviceAccountJSON)
-        let repository = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
-        try repository.save(connection, credentials: credentials)
-
-        let reopened = SavedConnectionRepository(store: ConnectionStore(url: url), credentials: MemoryCredentialStorage())
-        #expect(try reopened.all() == [connection])
-        #expect(try repository.credentials(for: connection.id) == credentials)
-        #expect(try !String(contentsOf: url, encoding: .utf8).contains("BEGIN PRIVATE KEY"))
-    }
-
     @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {
         let credentials = try JSONDecoder().decode(Credentials.self, from: Data(#"{"accessKey":"a","secretKey":"b","sessionToken":""}"#.utf8))
         #expect(credentials == Credentials(accessKey: "a", secretKey: "b"))

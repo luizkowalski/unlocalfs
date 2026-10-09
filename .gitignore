@@ -7,6 +7,7 @@ dist/
 UnlocalFS.xcodeproj/
 /docs/*
 !/docs/architecture.md
+!/docs/testing.md
 !/docs/package.json
 !/docs/package-lock.json
 !/docs/astro.config.mjs

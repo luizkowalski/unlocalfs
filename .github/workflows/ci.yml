@@ -43,15 +43,18 @@ jobs:
 
       - name: Test
         working-directory: Packages/UnlocalFSCore
-        run: xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
+        run: >-
+          xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
+          -resultBundlePath "$RUNNER_TEMP/tests.xcresult"
 
-      - name: Upload logs
+      - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-logs-${{ matrix.os }}
+          name: test-results-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
+            ${{ runner.temp }}/tests.xcresult
             /tmp/uf-*/**/*.log
             ~/Library/Logs/DiagnosticReports
 

@@ -1,4 +1,3 @@
-import Darwin
 import Foundation
 import Testing
 import UnlocalFSDomain
@@ -12,65 +11,57 @@ struct SFTPFixture {
     static let password = "sftp-secret"
     static let passphrase = "key passphrase"
 
+    let login: SFTPLogin
     let port: Int
     let root: URL
     let executable: URL
     let keys: URL
     let knownHostsEntry: String
-    let agent: SSHAgent
-    let emptyAgent: SSHAgent
+    let resources: FixtureResources
     var server: SFTPServer
 
+    var agentSocket: URL { root.appending(path: "agent.sock") }
     var served: URL { root.appending(path: "source") }
     var key: URL { keys.appending(path: "client") }
     var protectedKey: URL { keys.appending(path: "client-protected") }
 
-    init(executable: URL, root: URL) async throws {
-        let port = try freePort()
-        self.port = port
+    init(executable: URL, resources: FixtureResources, login: SFTPLogin) async throws {
+        let root = resources.root
+        self.login = login
         self.root = root
         self.executable = executable
+        self.resources = resources
         let keys = root.appending(path: "keys")
         try FileManager.default.createDirectory(at: keys, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: root.appending(path: "source"), withIntermediateDirectories: true)
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            for (name, passphrase) in [("host", ""), ("client", ""), ("client-protected", Self.passphrase), ("other-host", "")] {
-                group.addTask { try await Self.generateKey(keys.appending(path: name), passphrase: passphrase) }
-            }
-            try await group.waitForAll()
-        }
-        let authorized = try ["client", "client-protected"].map { try Self.publicKey(keys.appending(path: $0)) }
-        try Data((authorized.joined(separator: "\n") + "\n").utf8).write(to: root.appending(path: "authorized_keys"))
+        var keyNames = [("host", "")]
+        if login == .key || login == .agent { keyNames.append(("client", "")) }
+        if login == .protectedKey { keyNames.append(("client-protected", Self.passphrase)) }
+        for (name, passphrase) in keyNames { try await Self.generateKey(keys.appending(path: name), passphrase: passphrase) }
+        let authorized = try keyNames.filter { $0.0 != "host" }.map { try Self.publicKey(keys.appending(path: $0.0)) }
+        try Data(authorized.joined(separator: "\n").utf8).write(to: root.appending(path: "authorized_keys"))
         self.keys = keys
-        knownHostsEntry = "[127.0.0.1]:\(port) \(try Self.publicKey(keys.appending(path: "host")))\n"
-        async let startedAgent = SSHAgent(socket: root.appending(path: "agent.sock"), keys: [keys.appending(path: "client")])
-        async let startedEmptyAgent = SSHAgent(socket: root.appending(path: "empty-agent.sock"), keys: [])
-        async let startedServer = SFTPServer(executable: executable, root: root, hostKey: keys.appending(path: "host"), port: port)
-        agent = try await startedAgent
-        emptyAgent = try await startedEmptyAgent
-        server = try await startedServer
+        if login == .agent {
+            try await startAgent(resources: resources, socket: root.appending(path: "agent.sock"), key: keys.appending(path: "client"))
+        }
+        let server = try await SFTPServer(executable: executable, resources: resources, hostKey: keys.appending(path: "host"))
+        self.server = server
+        port = server.port
+        knownHostsEntry = "[127.0.0.1]:\(server.port) \(try Self.publicKey(keys.appending(path: "host")))\n"
     }
 
     mutating func restartServer(hostKey name: String) async throws {
-        server.stop()
-        try await waitUntil { server.exited }
-        server = try await SFTPServer(executable: executable, root: root, hostKey: keys.appending(path: name), port: port)
+        try await resources.stop(server.process)
+        let key = keys.appending(path: name)
+        if !FileManager.default.fileExists(atPath: key.path) { try await Self.generateKey(key, passphrase: "") }
+        server = try await SFTPServer(executable: executable, resources: resources, hostKey: key, port: port)
     }
 
-    func stop() {
-        server.stop()
-        agent.stop()
-        emptyAgent.stop()
-    }
-
-    func connection(_ login: SFTPLogin, folder: String = "", encrypted: Bool = false, readOnly: Bool = false) -> Connection {
+    var connection: Connection {
         var connection = sftpFixture()
         connection.sftp.host = "127.0.0.1"
         connection.sftp.port = port
         connection.sftp.username = "test"
-        connection.sftp.remotePath = folder
-        connection.encrypted = encrypted
-        connection.readOnly = readOnly
         switch login {
         case .password:
             connection.sftp.authentication = .password
@@ -82,17 +73,13 @@ struct SFTPFixture {
             connection.sftp.keyFile = protectedKey.path
         case .agent:
             connection.sftp.authentication = .agent
-            connection.sftp.agentSocket = agent.socket.path
+            connection.sftp.agentSocket = agentSocket.path
         }
         return connection
     }
 
-    func credentials(_ login: SFTPLogin, encryptionPassword: String = "") -> Credentials {
-        Credentials(
-            encryptionPassword: encryptionPassword,
-            password: login == .password ? Self.password : "",
-            keyPassphrase: login == .protectedKey ? Self.passphrase : ""
-        )
+    var credentials: Credentials {
+        Credentials(password: login == .password ? Self.password : "", keyPassphrase: login == .protectedKey ? Self.passphrase : "")
     }
 
     private static func generateKey(_ file: URL, passphrase: String) async throws {
@@ -106,127 +93,41 @@ struct SFTPFixture {
 }
 
 struct SFTPServer {
-    let process = Process()
-    let log: FileHandle
+    let process: Process
+    let port: Int
 
-    init(executable: URL, root: URL, hostKey: URL, port: Int) async throws {
-        let logURL = root.appending(path: "sftp-server.log")
-        FileManager.default.createFile(atPath: logURL.path, contents: nil)
-        log = try FileHandle(forWritingTo: logURL)
-        process.executableURL = executable
-        process.arguments = [
+    init(executable: URL, resources: FixtureResources, hostKey: URL, port: Int = 0) async throws {
+        let root = resources.root
+        let authorized = root.appending(path: "authorized_keys")
+        let authorizedPath = try Data(contentsOf: authorized).isEmpty ? "" : authorized.path
+        let process = try await resources.start(executable, arguments: [
             "serve", "sftp", root.appending(path: "source").path, "--addr", "127.0.0.1:\(port)",
-            "--user", "test", "--pass", SFTPFixture.password, "--authorized-keys", root.appending(path: "authorized_keys").path,
+            "--user", "test", "--pass", SFTPFixture.password, "--authorized-keys", authorizedPath,
             "--key", hostKey.path, "--dir-cache-time", "0s", "--config", "/dev/null"
-        ]
-        process.standardOutput = log
-        process.standardError = log
-        try process.run()
-        let serving = { (try? String(contentsOf: logURL, encoding: .utf8))?.contains("listening") ?? false }
-        try await waitUntil { !process.isRunning || serving() }
-        if !serving() { process.terminate() }
-        try #require(
-            process.isRunning && serving(),
-            "SFTP fixture could not start: \((try? String(contentsOf: logURL, encoding: .utf8)) ?? "")"
-        )
-    }
-
-    var exited: Bool {
-        var info = siginfo_t()
-        return waitid(P_PID, id_t(process.processIdentifier), &info, WEXITED | WNOHANG | WNOWAIT) == -1 || info.si_pid != 0
-    }
-
-    func stop() {
-        if process.isRunning { process.terminate() }
-        try? log.close()
+        ], log: "sftp-server.log")
+        let listening = try await requireOutput(of: process, in: resources, matching: #/SFTP server listening on 127\.0\.0\.1:(\d+)/#)
+        self.process = process
+        self.port = try #require(Int(listening))
     }
 }
 
-struct SSHAgent {
-    let process = Process()
-    let socket: URL
-
-    init(socket: URL, keys: [URL]) async throws {
-        self.socket = socket
-        process.executableURL = URL(filePath: "/usr/bin/ssh-agent")
-        process.arguments = ["-D", "-a", socket.path]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        try process.run()
-        try await waitUntil(timeout: .seconds(5)) { acceptsConnections(socket) }
-        for key in keys {
-            _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
-        }
-    }
-
-    func stop() {
-        if process.isRunning { process.terminate() }
-    }
+private func startAgent(resources: FixtureResources, socket: URL, key: URL) async throws {
+    let process = try await resources.start(URL(filePath: "/usr/bin/ssh-agent"), arguments: ["-D", "-a", socket.path], log: "agent.log")
+    try await requireOutput(of: process, in: resources, matching: #/Agent pid (\d+)/#)
+    _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
 }
 
 func withSFTPDrive(
-    _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false, trusted: Bool = true,
-    _ body: (Drive, inout SFTPFixture) async throws -> Void
+    _ login: SFTPLogin = .password, trusted: Bool = true, _ body: (Drive, inout SFTPFixture) async throws -> Void
 ) async throws {
     let executable = try await rcloneExecutable.value
-    let root = URL(fileURLWithPath: "/tmp/uf-\(UUID().uuidString.prefix(8))")
-    var sftp = try await SFTPFixture(executable: executable, root: root)
-    defer { sftp.stop() }
-    let paths = AppPaths(
-        config: root.appending(path: "config.json"), support: root.appending(path: "app"),
-        mounts: root.appending(path: "drives"), logs: root.appending(path: "logs")
-    )
-    let connection = sftp.connection(login, folder: folder, encrypted: encrypted, readOnly: readOnly)
-    let drive = Drive(
-        executable: executable, bucket: sftp.served, paths: paths,
-        service: MountService(executable: executable, helperDirectory: helpers, paths: paths), connection: connection
-    )
-    if trusted {
-        try paths.prepare()
-        try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
-    }
-    do {
+    try await withFixture { resources in
+        var sftp = try await SFTPFixture(executable: executable, resources: resources, login: login)
+        let drive = await makeDrive(executable: executable, resources: resources, connection: sftp.connection)
+        if trusted {
+            try drive.paths.prepare()
+            try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
+        }
         try await body(drive, &sftp)
-    } catch {
-        await drive.disconnect()
-        throw error
     }
-    await drive.disconnect()
-    try FileManager.default.removeItem(at: root)
-}
-
-extension Drive {
-    var knownHosts: URL { paths.support.appending(path: "known_hosts") }
-}
-
-func unixAddress(_ url: URL) -> sockaddr_un {
-    var address = sockaddr_un()
-    address.sun_family = sa_family_t(AF_UNIX)
-    _ = withUnsafeMutableBytes(of: &address.sun_path) { buffer in
-        url.path.withCString { strlcpy(buffer.baseAddress!.assumingMemoryBound(to: CChar.self), $0, buffer.count) }
-    }
-    return address
-}
-
-private func acceptsConnections(_ url: URL) -> Bool {
-    let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-    defer { close(descriptor) }
-    var address = unixAddress(url)
-    return withUnsafePointer(to: &address) {
-        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
-    } == 0
-}
-
-func freePort() throws -> Int {
-    let descriptor = socket(AF_INET, SOCK_STREAM, 0)
-    defer { close(descriptor) }
-    var address = sockaddr_in()
-    address.sin_family = sa_family_t(AF_INET)
-    address.sin_addr.s_addr = inet_addr("127.0.0.1")
-    let size = socklen_t(MemoryLayout<sockaddr_in>.size)
-    let bound = withUnsafePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, size) } }
-    try #require(bound == 0)
-    var length = size
-    _ = withUnsafeMutablePointer(to: &address) { $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) } }
-    return Int(UInt16(bigEndian: address.sin_port))
 }
