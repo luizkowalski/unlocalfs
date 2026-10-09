@@ -1,6 +1,5 @@
 import Darwin
 import Foundation
-import Synchronization
 import Testing
 import UnlocalFSDomain
 
@@ -105,24 +104,31 @@ import UnlocalFSDomain
     }
 
     @Test func fixturesRunThreeAtATime() async throws {
-        let running = Mutex(0)
-        let peak = Mutex(0)
+        let fixtures = RunningFixtures()
         try await withThrowingTaskGroup(of: Void.self) { group in
             for _ in 0..<6 {
                 group.addTask {
                     try await withFixture { _ in
-                        let now = running.withLock { count -> Int in
-                            count += 1
-                            return count
-                        }
-                        peak.withLock { $0 = max($0, now) }
+                        await fixtures.enter()
                         try await Task.sleep(for: .milliseconds(300))
-                        running.withLock { $0 -= 1 }
+                        await fixtures.leave()
                     }
                 }
             }
             try await group.waitForAll()
         }
-        #expect(peak.withLock { $0 } <= 3)
+        #expect(await fixtures.peak <= 3)
     }
+}
+
+private actor RunningFixtures {
+    private var running = 0
+    private(set) var peak = 0
+
+    func enter() {
+        running += 1
+        peak = max(peak, running)
+    }
+
+    func leave() { running -= 1 }
 }

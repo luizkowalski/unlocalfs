@@ -121,12 +121,16 @@ private func runFixture(deadline: Duration, _ body: (FixtureResources) async thr
     try FileManager.default.removeItem(at: resources.root)
 }
 
+private struct Unchecked<Value>: @unchecked Sendable {
+    let value: Value
+}
+
 private func withDeadline(_ limit: Duration, _ body: () async throws -> Void) async throws {
     try await withoutActuallyEscaping(body) { body in
-        nonisolated(unsafe) let work = body
+        let work = Unchecked(value: body)
         try await withThrowingTaskGroup(of: Bool.self) { group in
             group.addTask {
-                try await work()
+                try await work.value()
                 return true
             }
             group.addTask {
