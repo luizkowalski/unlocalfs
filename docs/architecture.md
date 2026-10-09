@@ -39,7 +39,7 @@ JSON and Keychain encoding remain compatible with existing installations. Founda
 
 `ViewModelFactory` creates `ConnectionEditorViewModel` and `ActivityViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers, so only the factory can create them.
 
-While the activity card is visible, `ActivityViewModel` polls the gateway every 3 seconds and exposes a `TransferSummary` with what the card shows: whether uploads or downloads lead (uploads win when both run), the file count and bytes left in that direction, and the first 10 files with moving files first. The gateway returns activity in no set order; display order belongs to Presentation.
+While the activity card is visible, `ActivityViewModel` polls the gateway every 3 seconds and exposes a `TransferSummary` with what the card shows: whether uploads or downloads lead (uploads win when both run), the file count and bytes left in that direction, the speed in that direction, the upload time left, and the first 10 files with moving files first. The gateway returns activity in no set order; display order belongs to Presentation.
 
 `UnlocalFS/Presentation` contains the SwiftUI views. Views own focus, layout, sheet dismissal, and activity task lifetime. The app target has no tests, so view models decide what the UI shows: which items, in what order, and derived counts and totals. Views decide how it looks: icons, colors, animation, and the format of a single value.
 
