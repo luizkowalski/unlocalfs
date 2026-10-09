@@ -55,10 +55,18 @@ struct ActivityView: View {
                 .symbolEffect(summary.isUploading ? .wiggle.up : .wiggle.down, options: .repeat(.periodic(delay: 1.5)), isActive: !reduceMotion)
                 .symbolEffect(.pulse, isActive: reduceMotion)
                 Spacer()
-                if summary.bytesTotal > 0 {
-                    Text("\(summary.bytesLeft, format: .byteCount(style: .file)) left")
-                        .font(.title3.weight(.medium)).monospacedDigit()
+                VStack(alignment: .trailing, spacing: 3) {
+                    if summary.bytesTotal > 0 {
+                        Text("\(summary.bytesLeft, format: .byteCount(style: .file)) left")
+                            .font(.title3.weight(.medium))
+                    }
+                    if let bytesPerSecond = summary.bytesPerSecond {
+                        speed(bytesPerSecond, timeLeft: summary.timeLeft).foregroundStyle(.secondary)
+                    }
                 }
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(reduceMotion ? nil : .default, value: summary.bytesPerSecond)
             }
             if summary.bytesTotal > 0 {
                 ProgressView(value: Double(summary.bytesDone), total: Double(summary.bytesTotal))
@@ -79,6 +87,16 @@ struct ActivityView: View {
                 }
             }
             .padding(.top, 14)
+        }
+    }
+
+    @ViewBuilder private func speed(_ bytesPerSecond: Int64, timeLeft: Duration?) -> some View {
+        let speed = bytesPerSecond.formatted(.byteCount(style: .file))
+        if let timeLeft {
+            let duration = timeLeft.formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated, maximumUnitCount: 1))
+            Text("\(speed)/s · about \(duration) left")
+        } else {
+            Text("\(speed)/s")
         }
     }
 

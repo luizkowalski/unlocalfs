@@ -6,6 +6,8 @@ public struct TransferSummary {
     public let fileCount: Int
     public let bytesDone: Int64
     public let bytesTotal: Int64
+    public let bytesPerSecond: Int64?
+    public let timeLeft: Duration?
     public let files: [FileActivity]
     public let hiddenFileCount: Int
 
@@ -18,6 +20,11 @@ public struct TransferSummary {
         fileCount = leading.count
         bytesDone = sized.reduce(0) { $0 + ($1.bytesTransferred ?? 0) }
         bytesTotal = sized.reduce(0) { $0 + $1.size }
+        let speed = Int64(leading.reduce(0) { $0 + ($1.bytesPerSecond ?? 0) }.rounded())
+        bytesPerSecond = speed > 0 ? speed : nil
+        let sizedSpeed = sized.reduce(0) { $0 + ($1.bytesPerSecond ?? 0) }
+        let secondsLeft = sizedSpeed > 0 ? Double(bytesTotal - bytesDone) / sizedSpeed : 0
+        timeLeft = secondsLeft >= 1 ? .seconds(secondsLeft) : nil
         files = Array(activity.sorted(using: [KeyPathComparator(\.listOrder), KeyPathComparator(\.path, comparator: .localizedStandard)]).prefix(10))
         hiddenFileCount = activity.count - files.count
     }

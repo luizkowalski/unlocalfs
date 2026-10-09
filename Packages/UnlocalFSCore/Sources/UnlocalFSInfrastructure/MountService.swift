@@ -161,10 +161,10 @@ public actor MountService: DriveGateway {
         let queued = queue.map { item in
             let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .retrying : .queued
             let transfer = item.uploading ? transfers.first { $0.isUpload && $0.name == item.name } : nil
-            return FileActivity(path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes)
+            return FileActivity(path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg)
         }
         let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
-            FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes)
+            FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
         }
         return queued + transferring
     }
