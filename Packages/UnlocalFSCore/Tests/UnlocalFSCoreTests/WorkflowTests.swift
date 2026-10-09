@@ -146,6 +146,27 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func deletingTheLastDriveOnAServerForgetsItsKey() async throws {
+        try await withWorkflowFixture { repository, drives, paths, _ in
+            let knownHosts = paths.support.appending(path: "known_hosts")
+            let key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJkXRt3/O+0kRoTjuNk0ZipZ0gJOFlaqbU46bIXehpe\n"
+            let other = "other.example.com " + key
+            try Data(("files.example.com " + key + other).utf8).write(to: knownHosts)
+            let drive = sftpFixture()
+            let sibling = sftpFixture(name: "Sibling")
+            try repository.save(drive, credentials: Credentials(password: "secret"))
+            try repository.save(sibling, credentials: Credentials(password: "secret"))
+            let delete = DeleteConnectionUseCase(repository: repository, drives: drives)
+
+            _ = try await delete.execute(drive)
+            #expect(try String(contentsOf: knownHosts, encoding: .utf8) == "files.example.com " + key + other)
+
+            _ = try await delete.execute(sibling)
+            #expect(try String(contentsOf: knownHosts, encoding: .utf8) == other)
+            #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "known_hosts.old").path))
+        }
+    }
+
     @Test func toggleKeepsQueuedUploadsRunning() async throws {
         try await withWorkflowFixture { repository, drives, paths, connection in
             try Data().write(to: paths.socket(connection))

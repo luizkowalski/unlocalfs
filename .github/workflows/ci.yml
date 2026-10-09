@@ -16,8 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-fast:
-    name: test-fast (${{ matrix.os }})
+  test:
+    name: test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -41,69 +41,20 @@ jobs:
           path: .build/rclone
           key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
 
-      - name: Test without storage servers or mounts
+      - name: Test
         working-directory: Packages/UnlocalFSCore
         run: >-
           xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
-          -skip-testing:UnlocalFSCoreTests/IntegrationTests
-          -resultBundlePath "$RUNNER_TEMP/fast.xcresult"
-
-      - name: Verify tests ran
-        run: xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/fast.xcresult" | jq -e '.totalTestCount > 0'
+          -resultBundlePath "$RUNNER_TEMP/tests.xcresult"
 
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: fast-test-results-${{ matrix.os }}
+          name: test-results-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
-            ${{ runner.temp }}/fast.xcresult
-            /tmp/uf-*/**/*.log
-
-  test-integration:
-    name: test-integration (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-15
-            xcode: "26.3"
-          - os: macos-26
-            xcode: "26.6"
-          - os: xcode-27
-            xcode: "27.0"
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Cache rclone
-        uses: actions/cache@v6
-        with:
-          path: .build/rclone
-          key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
-
-      - name: Test storage and mounts
-        working-directory: Packages/UnlocalFSCore
-        run: >-
-          xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
-          -only-testing:UnlocalFSCoreTests/IntegrationTests
-          -resultBundlePath "$RUNNER_TEMP/integration.xcresult"
-
-      - name: Verify tests ran
-        run: xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/integration.xcresult" | jq -e '.totalTestCount > 0'
-
-      - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-logs-${{ matrix.os }}
-          if-no-files-found: ignore
-          path: |
-            ${{ runner.temp }}/integration.xcresult
+            ${{ runner.temp }}/tests.xcresult
             /tmp/uf-*/**/*.log
             ~/Library/Logs/DiagnosticReports
 

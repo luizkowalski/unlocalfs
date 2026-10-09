@@ -73,46 +73,10 @@ actor FixtureResources {
     }
 }
 
-private actor Slots {
-    private var free: Int
-    private var waiting: [CheckedContinuation<Void, Never>] = []
-
-    init(width: Int) { free = width }
-
-    func acquire() async {
-        if free > 0 {
-            free -= 1
-        } else {
-            await withCheckedContinuation { waiting.append($0) }
-        }
-    }
-
-    func release() {
-        if waiting.isEmpty {
-            free += 1
-        } else {
-            waiting.removeFirst().resume()
-        }
-    }
-}
-
-private let slots = Slots(width: 3)
-
-func withFixture(deadline: Duration = .seconds(180), _ body: (FixtureResources) async throws -> Void) async throws {
-    await slots.acquire()
-    do {
-        try await runFixture(deadline: deadline, body)
-    } catch {
-        await slots.release()
-        throw error
-    }
-    await slots.release()
-}
-
-private func runFixture(deadline: Duration, _ body: (FixtureResources) async throws -> Void) async throws {
+func withFixture(_ body: (FixtureResources) async throws -> Void) async throws {
     let resources = try FixtureResources()
     do {
-        try await withDeadline(deadline) { try await body(resources) }
+        try await body(resources)
     } catch {
         do { try await Task.detached { try await resources.cleanup() }.value } catch { Issue.record(error) }
         throw error
@@ -121,84 +85,21 @@ private func runFixture(deadline: Duration, _ body: (FixtureResources) async thr
     try FileManager.default.removeItem(at: resources.root)
 }
 
-private struct Unchecked<Value>: @unchecked Sendable {
-    let value: Value
-}
-
-private func withDeadline(_ limit: Duration, _ body: () async throws -> Void) async throws {
-    try await withoutActuallyEscaping(body) { body in
-        let work = Unchecked(value: body)
-        try await withThrowingTaskGroup(of: Bool.self) { group in
-            group.addTask {
-                try await work.value()
-                return true
-            }
-            group.addTask {
-                try await Task.sleep(for: limit)
-                return false
-            }
-            let finished = try await group.next()
-            group.cancelAll()
-            if finished == false { throw AppError("Fixture exceeded \(limit)") }
-        }
-    }
-}
-
-func requireReady(_ process: Process, in resources: FixtureResources, _ probe: () async throws -> Void) async throws {
-    var lastFailure: (any Error)?
-    do {
-        try await waitUntil {
-            guard process.isRunning else { throw AppError("Fixture process exited with status \(process.terminationStatus)") }
-            do {
-                try await probe()
-                return true
-            } catch let error as CancellationError {
-                throw error
-            } catch {
-                lastFailure = error
-                return false
-            }
-        }
-    } catch let error as CancellationError {
-        throw error
-    } catch {
-        let output = (try? await resources.output(of: process)) ?? ""
-        throw AppError("Fixture readiness failed: \(error)\nLast probe: \(String(describing: lastFailure))\n\(output)")
-    }
-}
-
 @discardableResult
 func requireOutput(
     of process: Process, in resources: FixtureResources, matching pattern: Regex<(Substring, Substring)>
 ) async throws -> String {
-    var captured = ""
-    try await requireReady(process, in: resources) {
-        guard let match = try await resources.output(of: process).firstMatch(of: pattern) else {
-            throw AppError("No output matching \(pattern) yet")
+    var captured: Substring?
+    do {
+        try await waitUntil {
+            captured = try await resources.output(of: process).firstMatch(of: pattern)?.1
+            guard captured != nil || process.isRunning else { throw AppError("Fixture process exited with status \(process.terminationStatus)") }
+            return captured != nil
         }
-        captured = String(match.1)
+    } catch is CancellationError {
+        throw CancellationError()
+    } catch {
+        throw AppError("Fixture readiness failed: \(error)\n\((try? await resources.output(of: process)) ?? "")")
     }
-    return captured
-}
-
-func makeDrive(executable: URL, bucket: URL, resources: FixtureResources, connection: Connection) async -> Drive {
-    let root = resources.root
-    let paths = AppPaths(
-        config: root.appending(path: "config.json"), support: root.appending(path: "app"),
-        mounts: root.appending(path: "drives"), logs: root.appending(path: "logs")
-    )
-    let drive = Drive(
-        executable: executable, bucket: bucket, paths: paths,
-        service: MountService(executable: executable, helperDirectory: helpers, paths: paths), connection: connection
-    )
-    await resources.track(drive)
-    return drive
-}
-
-func withRclone(connection: Connection, _ body: (Drive) async throws -> Void) async throws {
-    let executable = try await rcloneExecutable.value
-    try await withFixture { resources in
-        let drive = await makeDrive(executable: executable, bucket: resources.root, resources: resources, connection: connection)
-        try await body(drive)
-    }
+    return String(try #require(captured))
 }

@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-enum SFTPLogin: CaseIterable, Hashable {
+enum SFTPLogin: CaseIterable {
     case password, key, protectedKey, agent
 }
 
@@ -11,6 +11,7 @@ struct SFTPFixture {
     static let password = "sftp-secret"
     static let passphrase = "key passphrase"
 
+    let login: SFTPLogin
     let port: Int
     let root: URL
     let executable: URL
@@ -20,13 +21,13 @@ struct SFTPFixture {
     var server: SFTPServer
 
     var agentSocket: URL { root.appending(path: "agent.sock") }
-    var emptyAgentSocket: URL { root.appending(path: "empty-agent.sock") }
     var served: URL { root.appending(path: "source") }
     var key: URL { keys.appending(path: "client") }
     var protectedKey: URL { keys.appending(path: "client-protected") }
 
-    init(executable: URL, resources: FixtureResources, logins: [SFTPLogin], emptyAgent: Bool) async throws {
+    init(executable: URL, resources: FixtureResources, login: SFTPLogin) async throws {
         let root = resources.root
+        self.login = login
         self.root = root
         self.executable = executable
         self.resources = resources
@@ -34,22 +35,14 @@ struct SFTPFixture {
         try FileManager.default.createDirectory(at: keys, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: root.appending(path: "source"), withIntermediateDirectories: true)
         var keyNames = [("host", "")]
-        if logins.contains(.key) || logins.contains(.agent) { keyNames.append(("client", "")) }
-        if logins.contains(.protectedKey) { keyNames.append(("client-protected", Self.passphrase)) }
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            for (name, passphrase) in keyNames {
-                group.addTask { try await Self.generateKey(keys.appending(path: name), passphrase: passphrase) }
-            }
-            try await group.waitForAll()
-        }
+        if login == .key || login == .agent { keyNames.append(("client", "")) }
+        if login == .protectedKey { keyNames.append(("client-protected", Self.passphrase)) }
+        for (name, passphrase) in keyNames { try await Self.generateKey(keys.appending(path: name), passphrase: passphrase) }
         let authorized = try keyNames.filter { $0.0 != "host" }.map { try Self.publicKey(keys.appending(path: $0.0)) }
         try Data(authorized.joined(separator: "\n").utf8).write(to: root.appending(path: "authorized_keys"))
         self.keys = keys
-        if logins.contains(.agent) {
-            try await startAgent(resources: resources, socket: root.appending(path: "agent.sock"), keys: [keys.appending(path: "client")])
-        }
-        if emptyAgent {
-            try await startAgent(resources: resources, socket: root.appending(path: "empty-agent.sock"), keys: [])
+        if login == .agent {
+            try await startAgent(resources: resources, socket: root.appending(path: "agent.sock"), key: keys.appending(path: "client"))
         }
         let server = try await SFTPServer(executable: executable, resources: resources, hostKey: keys.appending(path: "host"))
         self.server = server
@@ -64,14 +57,11 @@ struct SFTPFixture {
         server = try await SFTPServer(executable: executable, resources: resources, hostKey: key, port: port)
     }
 
-    func connection(_ login: SFTPLogin, folder: String = "", encrypted: Bool = false, readOnly: Bool = false) -> Connection {
+    var connection: Connection {
         var connection = sftpFixture()
         connection.sftp.host = "127.0.0.1"
         connection.sftp.port = port
         connection.sftp.username = "test"
-        connection.sftp.remotePath = folder
-        connection.encrypted = encrypted
-        connection.readOnly = readOnly
         switch login {
         case .password:
             connection.sftp.authentication = .password
@@ -88,19 +78,15 @@ struct SFTPFixture {
         return connection
     }
 
-    func credentials(_ login: SFTPLogin, encryptionPassword: String = "") -> Credentials {
-        Credentials(
-            encryptionPassword: encryptionPassword,
-            password: login == .password ? Self.password : "",
-            keyPassphrase: login == .protectedKey ? Self.passphrase : ""
-        )
+    var credentials: Credentials {
+        Credentials(password: login == .password ? Self.password : "", keyPassphrase: login == .protectedKey ? Self.passphrase : "")
     }
 
     private static func generateKey(_ file: URL, passphrase: String) async throws {
         _ = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-q", "-t", "ed25519", "-a", "1", "-N", passphrase, "-C", "", "-f", file.path])
     }
 
-    static func publicKey(_ file: URL) throws -> String {
+    private static func publicKey(_ file: URL) throws -> String {
         let line = try String(contentsOf: file.appendingPathExtension("pub"), encoding: .utf8)
         return line.split(separator: " ").prefix(2).joined(separator: " ")
     }
@@ -125,32 +111,23 @@ struct SFTPServer {
     }
 }
 
-private func startAgent(resources: FixtureResources, socket: URL, keys: [URL]) async throws {
-    let process = try await resources.start(URL(filePath: "/usr/bin/ssh-agent"), arguments: ["-D", "-a", socket.path], log: socket.lastPathComponent + ".log")
+private func startAgent(resources: FixtureResources, socket: URL, key: URL) async throws {
+    let process = try await resources.start(URL(filePath: "/usr/bin/ssh-agent"), arguments: ["-D", "-a", socket.path], log: "agent.log")
     try await requireOutput(of: process, in: resources, matching: #/Agent pid (\d+)/#)
-    for key in keys {
-        _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
-    }
+    _ = try await Command.run(URL(filePath: "/usr/bin/ssh-add"), [key.path], environment: ["SSH_AUTH_SOCK": socket.path])
 }
 
 func withSFTPDrive(
-    _ login: SFTPLogin = .password, folder: String = "", encrypted: Bool = false, readOnly: Bool = false, trusted: Bool = true,
-    additionalLogins: [SFTPLogin] = [], emptyAgent: Bool = false,
-    _ body: (Drive, inout SFTPFixture) async throws -> Void
+    _ login: SFTPLogin = .password, trusted: Bool = true, _ body: (Drive, inout SFTPFixture) async throws -> Void
 ) async throws {
     let executable = try await rcloneExecutable.value
     try await withFixture { resources in
-        var sftp = try await SFTPFixture(executable: executable, resources: resources, logins: [login] + additionalLogins, emptyAgent: emptyAgent)
-        let connection = sftp.connection(login, folder: folder, encrypted: encrypted, readOnly: readOnly)
-        let drive = await makeDrive(executable: executable, bucket: sftp.served, resources: resources, connection: connection)
+        var sftp = try await SFTPFixture(executable: executable, resources: resources, login: login)
+        let drive = await makeDrive(executable: executable, resources: resources, connection: sftp.connection)
         if trusted {
             try drive.paths.prepare()
             try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
         }
         try await body(drive, &sftp)
     }
-}
-
-extension Drive {
-    var knownHosts: URL { paths.support.appending(path: "known_hosts") }
 }
