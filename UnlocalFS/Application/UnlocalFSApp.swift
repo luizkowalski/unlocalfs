@@ -13,6 +13,16 @@ import UnlocalFSPresentation
         }
         .defaultSize(width: 860, height: 680)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About UnlocalFS") {
+                    let version = Bundle.main.object(forInfoDictionaryKey: "RcloneVersion") as? String ?? ""
+                    let credits = NSAttributedString(string: "rclone \(version)", attributes: [
+                        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                        .foregroundColor: NSColor.labelColor
+                    ])
+                    NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
+                }
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New Connection…") { delegate.model.edit(Connection()) }
                     .keyboardShortcut("n")
