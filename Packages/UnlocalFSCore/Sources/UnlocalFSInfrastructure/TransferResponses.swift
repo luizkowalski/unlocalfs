@@ -18,6 +18,7 @@ struct TransferStats: Decodable {
         let name: String
         let size: Int64
         let bytes: Int64?
+        let speedAvg: Double?
         let dstFs: String?
 
         var isUpload: Bool { dstFs != nil }

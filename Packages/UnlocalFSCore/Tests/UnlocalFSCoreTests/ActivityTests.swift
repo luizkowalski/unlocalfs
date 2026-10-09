@@ -23,15 +23,24 @@ import UnlocalFSInfrastructure
         """, stats: """
         {"transferring":[
             {"name":"video.mov","size":1000,"bytes":100,"srcFs":":s3:bucket"},
-            {"name":"video.mov","size":1000,"bytes":600,"srcFs":"/cache","dstFs":":s3:bucket"}
+            {"name":"video.mov","size":1000,"bytes":600,"speedAvg":250000.5,"srcFs":"/cache","dstFs":":s3:bucket"}
         ]}
         """)
         #expect(activity.count == 2)
         let upload = try #require(activity.first { $0.state == .uploading })
         #expect(upload.bytesTransferred == 600)
+        #expect(upload.bytesPerSecond == 250000.5)
         let download = try #require(activity.first { $0.state == .downloading })
         #expect(download.bytesTransferred == 100)
+        #expect(download.bytesPerSecond == nil)
         #expect(download.id != upload.id)
+    }
+
+    @Test func downloadsReportTheirSpeed() async throws {
+        let activity = try await fetchActivity(queue: #"{"queue":[]}"#, stats: """
+        {"transferring":[{"name":"movie.mkv","size":5000,"bytes":100,"speedAvg":4096,"srcFs":":s3:bucket"}]}
+        """)
+        #expect(activity.map(\.bytesPerSecond) == [4096])
     }
 }
 
