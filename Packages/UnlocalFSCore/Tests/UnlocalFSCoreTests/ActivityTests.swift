@@ -36,6 +36,15 @@ import UnlocalFSInfrastructure
         #expect(download.id != upload.id)
     }
 
+    @Test func queuedUploadsHaveNoSpeedEvenWhenATransferHasTheirName() async throws {
+        let activity = try await fetchActivity(queue: """
+        {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
+        """, stats: """
+        {"transferring":[{"name":"video.mov","size":1000,"bytes":600,"speedAvg":250000,"srcFs":"/cache","dstFs":":s3:bucket"}]}
+        """)
+        #expect(activity.map(\.bytesPerSecond) == [nil])
+    }
+
     @Test func downloadsReportTheirSpeed() async throws {
         let activity = try await fetchActivity(queue: #"{"queue":[]}"#, stats: """
         {"transferring":[{"name":"movie.mkv","size":5000,"bytes":100,"speedAvg":4096,"srcFs":":s3:bucket"}]}

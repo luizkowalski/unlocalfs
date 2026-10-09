@@ -42,6 +42,24 @@ import UnlocalFSPresentation
         #expect(summary.timeLeft == nil)
     }
 
+    @Test func timeLeftIgnoresTheSpeedOfFilesOfUnknownSize() throws {
+        let summary = try #require(TransferSummary([
+            FileActivity(path: "video.mov", size: 1000, state: .uploading, bytesTransferred: 0, bytesPerSecond: 100),
+            FileActivity(path: "stream.bin", size: -1, state: .uploading, bytesTransferred: 50, bytesPerSecond: 1000)
+        ]))
+
+        #expect(summary.bytesPerSecond == 1100)
+        #expect(summary.timeLeft == .seconds(10))
+    }
+
+    @Test func finishedUploadsHaveNoTimeLeft() throws {
+        let summary = try #require(TransferSummary([
+            FileActivity(path: "video.mov", size: 1000, state: .uploading, bytesTransferred: 1000, bytesPerSecond: 100)
+        ]))
+
+        #expect(summary.timeLeft == nil)
+    }
+
     @Test func queuedUploadsAloneHaveNoSpeedOrTimeLeft() throws {
         let summary = try #require(TransferSummary([
             FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil)
