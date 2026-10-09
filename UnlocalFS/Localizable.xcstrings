@@ -37,6 +37,16 @@
     "%@/s" : {
 
     },
+    "%@/s · about %@ left" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/s · faltam cerca de %@"
+          }
+        }
+      }
+    },
     "^[%@ more file](inflect: true)" : {
 
     },
