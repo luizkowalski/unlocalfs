@@ -31,6 +31,7 @@ export default defineConfig({
             { label: "Folder drives", slug: "folder-drives" },
             { label: "Encryption", slug: "encryption" },
             { label: "Sharing links", slug: "sharing-links" },
+            { label: "Duplicating files", slug: "duplicating-files" },
             { label: "Troubleshooting", slug: "troubleshooting" },
             { label: "Privacy", slug: "privacy" },
           ],
