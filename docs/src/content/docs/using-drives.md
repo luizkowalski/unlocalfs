@@ -17,7 +17,7 @@ If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar
 
 ## Menu bar and quitting
 
-Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. If a menu-bar disconnect is blocked by pending uploads or an eject failure, the main window opens to show its alert. UnlocalFS will not quit while a drive is connected, so pending uploads are never cut off. Disconnect your drives first. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
+Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. The menu-bar icon shows turning yellow arrows while uploads are pending and a blue arrow while files download. Finder previews also count as downloads. If a menu-bar disconnect is blocked by pending uploads or an eject failure, the main window opens to show its alert. UnlocalFS will not quit while a drive is connected, so pending uploads are never cut off. Disconnect your drives first. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
 
 ## Shortcuts
 

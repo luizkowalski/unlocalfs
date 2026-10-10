@@ -416,6 +416,16 @@
         }
       }
     },
+    "Connected" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado"
+          }
+        }
+      }
+    },
     "Connection" : {
       "comment" : "Segmented control label: pane with the connection details",
       "extractionState" : "stale",
@@ -1043,6 +1053,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma conexão ainda"
+          }
+        }
+      }
+    },
+    "No drives connected" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma unidade conectada"
           }
         }
       }

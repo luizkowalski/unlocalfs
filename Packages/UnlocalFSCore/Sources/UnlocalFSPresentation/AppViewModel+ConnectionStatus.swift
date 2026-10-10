@@ -3,7 +3,8 @@ import UnlocalFSDomain
 
 extension AppViewModel {
     public var activity: Activity {
-        if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .syncing }
+        if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .uploading }
+        if statuses.values.contains(where: \.isDownloading) { return .downloading }
         return statuses.values.contains(where: \.isMounted) ? .connected : .idle
     }
 

@@ -134,16 +134,12 @@ public actor MountService: DriveGateway {
             return status
         }
         do {
-            let data = try await control(connection, "vfs/stats")
-            let cache = try JSONDecoder().decode(VFSStats.self, from: data).diskCache
+            let snapshot = try await snapshot(connection)
             status.isRunning = true
-            status.pendingUploads = cache.uploadsQueued + cache.uploadsInProgress
-            status.failedUploads = cache.erroredFiles
-            if status.pendingUploads > 0 {
-                let queue = try await JSONDecoder().decode(UploadQueue.self, from: control(connection, "vfs/queue")).queue
-                status.failedUploads += queue.count { !$0.uploading && $0.tries > 0 }
-            }
-            status.bytesCached = cache.bytesUsed
+            status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
+            status.failedUploads = snapshot.cache.erroredFiles + snapshot.queue.count { !$0.uploading && $0.tries > 0 }
+            status.bytesCached = snapshot.cache.bytesUsed
+            status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
         } catch {
             if status.isMounted || running != false {
                 status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))
@@ -153,10 +149,9 @@ public actor MountService: DriveGateway {
     }
 
     public func activity(_ connection: Connection) async throws -> [FileActivity] {
-        async let queueData = control(connection, "vfs/queue")
-        async let statsData = control(connection, "core/stats")
-        let queue = try await JSONDecoder().decode(UploadQueue.self, from: queueData).queue
-        let transfers = try await JSONDecoder().decode(TransferStats.self, from: statsData).transferring ?? []
+        let snapshot = try await snapshot(connection)
+        let queue = snapshot.queue
+        let transfers = snapshot.transfers
         let queuedPaths = Set(queue.map(\.name))
         let queued = queue.map { item in
             let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .retrying : .queued
@@ -202,10 +197,14 @@ public actor MountService: DriveGateway {
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
 
-    private func control(_ connection: Connection, _ method: String) async throws -> Data {
+    private func control(_ connection: Connection, _ arguments: String...) async throws -> Data {
         try await Command.run(executable, [
-            "rc", "--unix-socket", paths.socket(connection).path, method, "--config", "/dev/null"
-        ], environment: baseEnvironment, timeout: .seconds(4))
+            "rc", "--unix-socket", paths.socket(connection).path
+        ] + arguments + ["--config", "/dev/null"], environment: baseEnvironment, timeout: .seconds(4))
+    }
+
+    private func snapshot(_ connection: Connection) async throws -> ControlSnapshot {
+        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", "--json", ControlSnapshot.request))
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {

@@ -3,7 +3,7 @@ import Observation
 import UnlocalFSDomain
 
 @MainActor @Observable public final class AppViewModel {
-    public enum Activity { case idle, connected, syncing }
+    public enum Activity { case idle, connected, uploading, downloading }
     public enum Indicator { case working, attention, connected, idle }
 
     public private(set) var connections: [Connection] = []
