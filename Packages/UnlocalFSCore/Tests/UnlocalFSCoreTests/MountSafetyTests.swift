@@ -77,32 +77,18 @@ import UnlocalFSDomain
         }
     }
 
-    @Test func disconnectRefusesWhileRcloneRunsADuplicate() async throws {
-        try await withFixture(script: """
-        case "$4" in
-            job/list) printf '{"runningIds":[3,7]}' ;;
-            job/status)
-                if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
-                printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
-            core/quit) touch "$3.quit" ;;
-            *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
-        esac
-        """) { service, connection in
-            await #expect { try await service.unmount(connection) } throws: { error in
-                error.localizedDescription == String(localized: .copyInProgress)
-            }
-            #expect(await service.status(connection).isRunning)
-        }
-    }
-
-    @Test func duplicateStartedDuringEjectKeepsTheServiceAlive() async throws {
+    @Test func disconnectRefusesWhileRcloneRunsADuplicateBeforeOrAfterEject() async throws {
+        var fixtureRoot: URL?
         try await withFixture { root in
-            """
+            fixtureRoot = root
+            return """
             case "$4" in
                 job/list)
-                    if [ -f '\(root.path)/listed' ]; then printf '{"runningIds":[7]}'; else printf '{"runningIds":[]}'; fi
+                    if [ -f '\(root.path)/listed' ]; then printf '{"runningIds":[3,7]}'; else printf '{"runningIds":[3]}'; fi
                     touch '\(root.path)/listed' ;;
-                job/status) printf '{"finished":false,"success":false,"error":"","group":"duplicate"}' ;;
+                job/status)
+                    if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
+                    printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
                 core/quit) touch '\(root.path)/quit' ;;
                 *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
             esac
@@ -112,6 +98,8 @@ import UnlocalFSDomain
                 error.localizedDescription == String(localized: .copyInProgress)
             }
             #expect(await service.status(connection).isRunning)
+            let root = try #require(fixtureRoot)
+            #expect(!FileManager.default.fileExists(atPath: root.appending(path: "quit").path))
         }
     }
 

@@ -10,6 +10,6 @@ import UnlocalFSDomain
         ("README", 3, "README copy 3")
     ])
     func copyNameSplitsOffOnlyTheLastExtension(original: String, attempt: Int, expected: String) {
-        #expect(CopyName(of: original, word: "copy").attempt(attempt) == expected)
+        #expect(CopyName(of: original).attempt(attempt) == expected)
     }
 }

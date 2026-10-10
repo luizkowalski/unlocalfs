@@ -202,9 +202,10 @@ public actor MountService: DriveGateway {
     }
 
     func control(_ connection: Connection, _ method: String, _ parameters: [String] = []) async throws -> Data {
-        try await Command.run(executable, [
-            "rc", "--unix-socket", paths.socket(connection).path, method] + parameters + ["--config", "/dev/null"
-        ], environment: baseEnvironment, timeout: .seconds(4))
+        try await Command.run(
+            executable, ["rc", "--unix-socket", paths.socket(connection).path, method] + parameters + ["--config", "/dev/null"],
+            environment: baseEnvironment, timeout: .seconds(4)
+        )
     }
 
     func control<Response: Decodable>(

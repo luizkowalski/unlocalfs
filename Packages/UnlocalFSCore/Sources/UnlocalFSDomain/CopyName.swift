@@ -3,17 +3,12 @@ import Foundation
 public struct CopyName: Sendable {
     private let base: String
     private let pathExtension: String
-    private let word: String
+    private let word = String(localized: .copyWord)
 
     public init(of fileName: String) {
-        self.init(of: fileName, word: String(localized: .copyWord))
-    }
-
-    public init(of fileName: String, word: String) {
         let name = fileName as NSString
         base = name.deletingPathExtension
         pathExtension = name.pathExtension
-        self.word = word
     }
 
     public func attempt(_ attempt: Int) -> String {

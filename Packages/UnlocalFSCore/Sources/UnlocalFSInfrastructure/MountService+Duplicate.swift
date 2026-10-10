@@ -52,19 +52,14 @@ extension MountService {
             let candidate = (folder as NSString).appendingPathComponent(fileName)
             guard !mounted.contains(fileName), !reservedCopies[connection.id, default: []].contains(candidate) else { continue }
             reservedCopies[connection.id, default: []].insert(candidate)
-            do {
-                if try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil {
-                    return candidate
-                }
-            } catch {
-                reservedCopies[connection.id]?.remove(candidate)
-                throw error
-            }
-            reservedCopies[connection.id]?.remove(candidate)
+            var keep = false
+            defer { if !keep { reservedCopies[connection.id]?.remove(candidate) } }
+            keep = try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil
+            if keep { return candidate }
         }
     }
 
-    private nonisolated func names(in folder: URL) async throws -> Set<String> {
+    @concurrent private nonisolated func names(in folder: URL) async throws -> Set<String> {
         Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
     }
 }
