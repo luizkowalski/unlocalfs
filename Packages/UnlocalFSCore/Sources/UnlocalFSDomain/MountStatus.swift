@@ -1,5 +1,13 @@
 import Foundation
 
+public struct DriveEjectError: LocalizedError, Sendable {
+    public let message: String
+
+    public init(_ message: String) { self.message = message }
+
+    public var errorDescription: String? { message }
+}
+
 public struct UploadsPendingError: LocalizedError, Sendable {
     public init() {}
 

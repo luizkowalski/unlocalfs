@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” couldn’t be disconnected." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível desconectar “%@”."
+          }
+        }
+      }
+    },
+    "“%@” is still uploading files." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ainda está enviando arquivos."
+          }
+        }
+      }
+    },
     "%@" : {
 
     },
@@ -340,6 +362,16 @@
         }
       }
     },
+    "Close files and stop apps using this drive, then try again. The drive is still connected." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feche os arquivos e pare os apps que usam esta unidade. Depois, tente novamente. A unidade continua conectada."
+          }
+        }
+      }
+    },
     "Confirm password" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -397,6 +429,7 @@
       }
     },
     "Connection needs attention" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -878,6 +911,17 @@
         }
       }
     },
+    "Keep Connected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manter conectada"
+          }
+        }
+      }
+    },
     "Keep free" : {
       "comment" : "Label: minimum free disk space to keep (verb phrase)",
       "extractionState" : "stale",
@@ -897,6 +941,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manter livre no disco"
+          }
+        }
+      }
+    },
+    "Keep UnlocalFS running until uploads finish. You’ll be notified when you can disconnect." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantenha o UnlocalFS em execução até que os envios terminem. Você receberá uma notificação quando puder desconectar."
           }
         }
       }
@@ -1499,6 +1553,16 @@
         }
       }
     },
+    "The drive will stay connected until uploads finish. You’ll be notified when you can disconnect." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A unidade continuará conectada até que os envios terminem. Você receberá uma notificação quando puder desconectar."
+          }
+        }
+      }
+    },
     "The key file stays where it is. A passphrase is stored in your Mac’s Keychain." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1568,6 +1632,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confiar neste servidor?"
+          }
+        }
+      }
+    },
+    "Try Disconnect Again" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar desconectar novamente"
           }
         }
       }

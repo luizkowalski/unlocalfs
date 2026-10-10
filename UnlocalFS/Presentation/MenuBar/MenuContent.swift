@@ -16,7 +16,9 @@ struct MenuContent: View {
                 Button(model.toggleTitle(connection)) {
                     Task {
                         await model.toggle(connection, opensFinder: true)
-                        if model.serverTrust[connection.id] != nil { openMain() }
+                        if model.serverTrust[connection.id] != nil || model.isShowingDisconnectFailure || model.isShowingUploadsBlockingDisconnect {
+                            openMain()
+                        }
                     }
                 }
                 .disabled(!model.canToggle(connection))

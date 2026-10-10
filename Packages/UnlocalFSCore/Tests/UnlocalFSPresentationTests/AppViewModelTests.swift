@@ -93,23 +93,42 @@ import UnlocalFSInfrastructure
 
         #expect(app.indicator(connection) == .attention)
         #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
-        #expect(app.uploadNotice(connection) == nil)
         #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
     }
 
-    @Test func pendingUploadsOnAnEjectedDriveAskToKeepTheAppRunning() async throws {
+    @Test func pendingUploadsExplainBlockedDisconnectAndNotifyWhenFinished() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = connectionFixture()
         try fixture.serve(connection, queued: 1, cached: 2048)
-        let app = fixture.app()
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
 
         await app.refresh()
 
         #expect(app.indicator(connection) == .idle)
         #expect(app.statusText(connection) == String(localized: .uploadsPending(1)))
-        #expect(app.uploadNotice(connection) == String(localized: .uploadsPendingKeepAppRunning))
         #expect(app.servingStatus(connection)?.bytesCached == 2048)
+        #expect(!app.isShowingUploadsBlockingDisconnect)
+        #expect(desktop.notifications.isEmpty)
+
+        await app.disconnect(connection)
+
+        #expect(app.disconnectFailure == nil)
+        #expect(app.problem(connection) == nil)
+        #expect(await fixture.service.status(connection).isRunning)
+        #expect(app.uploadsBlockingDisconnect == connection)
+        #expect(app.isShowingUploadsBlockingDisconnect)
+
+        app.isShowingUploadsBlockingDisconnect = false
+        #expect(app.uploadsBlockingDisconnect == nil)
+        try fixture.serve(connection)
+        await app.refresh()
+        await app.refresh()
+
+        #expect(desktop.notifications.map(\.title) == [String(localized: .finishedUploading(connection.name))])
+        #expect(desktop.notifications.map(\.body) == [String(localized: .canDisconnectNow)])
+        #expect(await fixture.service.status(connection).isRunning)
     }
 
     @Test func uploadsInProgressAreNotReportedAsFailed() async throws {
@@ -198,6 +217,30 @@ import UnlocalFSInfrastructure
         app.requestDisconnectAll()
 
         #expect(app.isConfirmingDisconnectAll)
+    }
+
+    @Test func disconnectAllStopsAtTheFirstDriveWithPendingUploads() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let first = connectionFixture()
+        var second = connectionFixture()
+        second.name = "Second drive"
+        try fixture.serve(first, queued: 1)
+        try fixture.serve(second, queued: 1)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+        await app.refresh()
+        let blocked = try #require(app.connections.first)
+
+        await app.disconnectAll()
+
+        #expect(app.uploadsBlockingDisconnect == blocked)
+        #expect(app.selected == blocked)
+
+        try fixture.serve(blocked)
+        await app.refresh()
+
+        #expect(desktop.notifications.map(\.title) == [String(localized: .finishedUploading(blocked.name))])
     }
 
     @Test func checkAgainClearsTheErrorAndReloadsTheStatus() async throws {

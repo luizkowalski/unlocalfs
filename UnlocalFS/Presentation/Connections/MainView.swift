@@ -50,6 +50,24 @@ struct MainView: View {
         } message: {
             Text($0)
         }
+        .alert("“\(model.disconnectFailure?.name ?? "")” couldn’t be disconnected.",
+               isPresented: $model.isShowingDisconnectFailure, presenting: model.disconnectFailure) { connection in
+            Button("Keep Connected", role: .cancel) {}
+            Button("Try Disconnect Again") { Task { await model.disconnect(connection) } }
+                .disabled(!model.canDisconnect(connection))
+        } message: { _ in
+            Text("Close files and stop apps using this drive, then try again. The drive is still connected.")
+        }
+        .alert("“\(model.uploadsBlockingDisconnect?.name ?? "")” is still uploading files.",
+               isPresented: $model.isShowingUploadsBlockingDisconnect, presenting: model.uploadsBlockingDisconnect) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { connection in
+            if model.canOpen(connection) {
+                Text("The drive will stay connected until uploads finish. You’ll be notified when you can disconnect.")
+            } else {
+                Text("Keep UnlocalFS running until uploads finish. You’ll be notified when you can disconnect.")
+            }
+        }
         .confirmationDialog(
             "Delete \(model.deleting?.name ?? "connection")?",
             isPresented: $model.isConfirmingDelete,
@@ -108,7 +126,7 @@ private struct ConnectionRow: View {
         .contextMenu {
             Button("Connect") { Task { await model.activate(connection) } }
                 .disabled(!model.canConnect(connection))
-            Button("Disconnect") { Task { await model.toggle(connection) } }
+            Button("Disconnect") { Task { await model.disconnect(connection) } }
                 .disabled(!model.canDisconnect(connection))
             Button("Disconnect All…") { model.requestDisconnectAll() }
             if model.needsReconnect(connection) {

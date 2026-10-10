@@ -4,7 +4,6 @@ import UnlocalFSPresentation
 
 struct ActivityView: View {
     let connection: Connection
-    let notice: String?
     @Environment(ViewModelFactory.self) private var viewModels
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel: ActivityViewModel?
@@ -49,9 +48,7 @@ struct ActivityView: View {
                 ? Text("Uploading ^[\(summary.fileCount) file](inflect: true)")
                 : Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
             HStack {
-                status(summary.isUploading ? "arrow.up" : "arrow.down", tint: .accentColor, title: title) {
-                    if summary.isUploading, let notice { Text(notice) }
-                }
+                status(summary.isUploading ? "arrow.up" : "arrow.down", tint: .accentColor, title: title) {}
                 .symbolEffect(summary.isUploading ? .wiggle.up : .wiggle.down, options: .repeat(.periodic(delay: 1.5)), isActive: !reduceMotion)
                 .symbolEffect(.pulse, isActive: reduceMotion)
                 Spacer()

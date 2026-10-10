@@ -331,14 +331,14 @@ private extension MountService {
             } catch where ContinuousClock.now < deadline {
                 try await Task.sleep(for: .seconds(1))
             } catch {
-                throw AppError(String(localized: .couldNotEject(error.localizedDescription)))
+                throw DriveEjectError(String(localized: .couldNotEject(error.localizedDescription)))
             }
         }
         for _ in 0..<20 {
             if !isMounted(paths.mount(connection)) { return }
             try await Task.sleep(for: .milliseconds(100))
         }
-        throw AppError(String(localized: .driveStillMounted))
+        throw DriveEjectError(String(localized: .driveStillMounted))
     }
 
     func stop(_ connection: Connection) async throws {
