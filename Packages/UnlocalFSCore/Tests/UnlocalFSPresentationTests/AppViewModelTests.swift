@@ -284,6 +284,23 @@ import UnlocalFSInfrastructure
         #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
     }
 
+    @Test func refusedDuplicateNamesTheFileAndExplainsWhy() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let server = sftpConnectionFixture()
+        try fixture.repository.save(server, credentials: Credentials(password: "secret"))
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.duplicateOnServer([fixture.paths.mount(server).appending(path: "plan.pdf")])
+
+        let notification = try #require(desktop.notifications.last)
+        #expect(notification.title == String(localized: .couldNotDuplicate("plan.pdf")))
+        #expect(notification.body.contains(server.provider.title))
+        #expect(notification.fallbackToAlert)
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+    }
+
     @Test func cancellingTheExportWritesNothing() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
