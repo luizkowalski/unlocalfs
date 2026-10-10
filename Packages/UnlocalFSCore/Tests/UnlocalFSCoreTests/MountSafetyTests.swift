@@ -49,6 +49,7 @@ import UnlocalFSDomain
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withFixture { root in
             """
+            if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
             pending=0
             if [ -f '\(root.path)/checked' ]; then pending=1; fi
             touch '\(root.path)/checked'
@@ -73,6 +74,32 @@ import UnlocalFSDomain
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
             let status = await service.status(connection)
             #expect(status.isActive)
+        }
+    }
+
+    @Test func disconnectRefusesWhileRcloneRunsADuplicateBeforeOrAfterEject() async throws {
+        var fixtureRoot: URL?
+        try await withFixture { root in
+            fixtureRoot = root
+            return """
+            case "$4" in
+                job/list)
+                    if [ -f '\(root.path)/listed' ]; then printf '{"runningIds":[3,7]}'; else printf '{"runningIds":[3]}'; fi
+                    touch '\(root.path)/listed' ;;
+                job/status)
+                    if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
+                    printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
+                core/quit) touch '\(root.path)/quit' ;;
+                *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
+            esac
+            """
+        } operation: { service, connection in
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
+            }
+            #expect(await service.status(connection).isRunning)
+            let root = try #require(fixtureRoot)
+            #expect(!FileManager.default.fileExists(atPath: root.appending(path: "quit").path))
         }
     }
 
@@ -224,6 +251,7 @@ import UnlocalFSDomain
 
 private func shutdownScript(phase: String, root: URL) -> String {
     """
+    if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
     if [ "$4" = 'core/quit' ]; then
         if [ '\(phase)' = 'after' ]; then rm "$3"; fi
         echo 'Quit failed'

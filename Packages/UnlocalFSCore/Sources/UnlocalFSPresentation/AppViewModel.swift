@@ -27,10 +27,11 @@ import UnlocalFSDomain
     private let drives: any DriveGateway
     private let deleteConnection: DeleteConnectionUseCase
     private let connectDrive: ConnectDriveUseCase
-    private let shareFiles: ShareFilesUseCase
+    let shareFiles: ShareFilesUseCase
+    let duplicateFiles: DuplicateFilesUseCase
     private let exportConfig: ExportRcloneConfigUseCase
     private let quit: QuitUseCase
-    private let desktop: any DesktopServices
+    let desktop: any DesktopServices
     private var refreshing = false
     private var refreshRequested = false
     private var checkingQuit = false
@@ -43,6 +44,7 @@ import UnlocalFSDomain
         deleteConnection: DeleteConnectionUseCase,
         connectDrive: ConnectDriveUseCase,
         shareFiles: ShareFilesUseCase,
+        duplicateFiles: DuplicateFilesUseCase,
         exportConfig: ExportRcloneConfigUseCase,
         quit: QuitUseCase,
         desktop: any DesktopServices
@@ -51,6 +53,7 @@ import UnlocalFSDomain
         self.deleteConnection = deleteConnection
         self.connectDrive = connectDrive
         self.shareFiles = shareFiles
+        self.duplicateFiles = duplicateFiles
         self.exportConfig = exportConfig
         self.quit = quit
         self.desktop = desktop
@@ -216,21 +219,6 @@ import UnlocalFSDomain
                 selection = connection.id
                 return
             }
-        }
-    }
-
-    public func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
-        do {
-            let links = try await shareFiles.execute(files, expiry: expiry)
-            desktop.copyShareLinks(links)
-            desktop.notify(
-                title: String(localized: .linksCopied(links.count)),
-                body: String(localized: .anyoneCanDownload(expiry.title)), fallbackToAlert: false
-            )
-        } catch let error as ShareFileError {
-            desktop.notify(title: String(localized: .couldNotCopyLink(error.file.lastPathComponent)), body: error.localizedDescription, fallbackToAlert: true)
-        } catch {
-            desktop.notify(title: String(localized: .couldNotCopyShareLinks), body: error.localizedDescription, fallbackToAlert: true)
         }
     }
 

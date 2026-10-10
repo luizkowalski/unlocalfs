@@ -66,3 +66,24 @@ private struct BatchResult<Value: Decodable>: Decodable {
         value = try Value(from: decoder)
     }
 }
+
+struct StartedJob: Decodable {
+    let jobid: Int
+}
+
+struct JobStatus: Decodable {
+    let finished: Bool
+    let success: Bool
+    let error: String
+    let group: String?
+}
+
+struct JobList: Decodable {
+    let runningIds: [Int]
+}
+
+struct RemoteItem: Decodable {
+    struct Item: Decodable {}
+
+    let item: Item?
+}
