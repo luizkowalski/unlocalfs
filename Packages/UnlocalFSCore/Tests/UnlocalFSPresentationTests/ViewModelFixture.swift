@@ -78,11 +78,13 @@ struct ViewModelFixture {
         factory(app ?? self.app()).makeEditor(draft)
     }
 
-    func serve(_ connection: Connection, queued: Int = 0, failed: Int = 0, cached: Int64 = 0) throws {
+    func serve(_ connection: Connection, queued: Int = 0, failed: Int = 0, cached: Int64 = 0, downloading: Bool = false) throws {
         try ConnectionStore(url: paths.config).save(connection)
         try Data().write(to: paths.socket(connection))
         let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"erroredFiles":\#(failed),"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
+        let transfers = downloading ? #"{"transferring":[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]}"# : "{}"
+        try Data(transfers.utf8).write(to: root.appending(path: "stats.json"))
     }
 
     func queue(_ items: String...) throws {

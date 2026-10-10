@@ -58,6 +58,7 @@ import UnlocalFSDomain
         try await withFixture { root in
             """
             if [ "$4" = 'core/quit' ]; then rm "$3"; exit 0; fi
+            if [ "$4" = 'core/stats' ]; then printf '{}'; exit 0; fi
             if [ -f '\(root.path)/checked' ]; then echo 'Control unavailable' >&2; exit 1; fi
             touch '\(root.path)/checked'
             printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42}}'
@@ -223,7 +224,7 @@ private func shutdownScript(phase: String, root: URL) -> String {
         exit 1
     fi
     if [ '\(phase)' = 'before' ] || { [ '\(phase)' = 'during' ] && [ -f '\(root.path)/checked' ]; }; then
-        rm "$3"
+        rm -f "$3"
     fi
     touch '\(root.path)/checked'
     printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}'

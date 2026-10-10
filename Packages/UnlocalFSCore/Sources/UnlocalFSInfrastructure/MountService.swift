@@ -144,6 +144,8 @@ public actor MountService: DriveGateway {
                 status.failedUploads += queue.count { !$0.uploading && $0.tries > 0 }
             }
             status.bytesCached = cache.bytesUsed
+            let transfers = try await JSONDecoder().decode(TransferStats.self, from: control(connection, "core/stats")).transferring ?? []
+            status.isDownloading = transfers.contains { !$0.isUpload }
         } catch {
             if status.isMounted || running != false {
                 status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))

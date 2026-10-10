@@ -22,7 +22,8 @@ struct MenuBarIcon: View {
         switch activity {
         case .idle: Self.drive(badge: .labelColor, template: true)
         case .connected: Self.drive(badge: .systemGreen, template: false)
-        case .syncing: Self.syncing(angle: angle)
+        case .syncing: Self.drive(overlay: "arrow.triangle.2.circlepath", color: .systemYellow, angle: angle)
+        case .downloading: Self.drive(overlay: "arrow.down", color: .systemBlue)
         }
     }
 
@@ -33,17 +34,17 @@ struct MenuBarIcon: View {
         return image
     }
 
-    private static func syncing(angle: Double) -> NSImage {
+    private static func drive(overlay symbol: String, color: NSColor, angle: Double = 0) -> NSImage {
         let drive = drive(badge: .clear, template: false)
-        let arrows = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)!
-            .withSymbolConfiguration(.init(pointSize: 7.5, weight: .bold).applying(.init(paletteColors: [.systemYellow])))!
+        let overlay = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)!
+            .withSymbolConfiguration(.init(pointSize: 7.5, weight: .bold).applying(.init(paletteColors: [color])))!
         return NSImage(size: drive.size, flipped: false) { rect in
             drive.draw(in: rect)
             let rotation = NSAffineTransform()
             rotation.translateX(by: 6.2, yBy: 6.25)
             rotation.rotate(byDegrees: angle)
             rotation.concat()
-            arrows.draw(in: NSRect(x: -arrows.size.width / 2, y: -arrows.size.height / 2, width: arrows.size.width, height: arrows.size.height))
+            overlay.draw(in: NSRect(x: -overlay.size.width / 2, y: -overlay.size.height / 2, width: overlay.size.width, height: overlay.size.height))
             return true
         }
     }
