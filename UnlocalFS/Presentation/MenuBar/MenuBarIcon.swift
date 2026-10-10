@@ -9,6 +9,7 @@ struct MenuBarIcon: View {
     var body: some View {
         Image(nsImage: image)
             .accessibilityLabel("UnlocalFS")
+            .accessibilityValue(accessibilityValue)
             .task(id: activity) {
                 guard activity == .uploading else { return }
                 while !Task.isCancelled {
@@ -24,6 +25,15 @@ struct MenuBarIcon: View {
         case .connected: Self.drive(badge: .systemGreen, template: false)
         case .uploading: Self.drive(overlay: "arrow.triangle.2.circlepath", color: .systemYellow, angle: angle)
         case .downloading: Self.drive(overlay: "arrow.down", color: .systemBlue)
+        }
+    }
+
+    private var accessibilityValue: Text {
+        switch activity {
+        case .idle: Text("No drives connected")
+        case .connected: Text("Connected")
+        case .uploading: Text("Uploading")
+        case .downloading: Text("Downloading")
         }
     }
 
