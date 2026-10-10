@@ -243,6 +243,7 @@ struct ConnectionEditor: View {
                     validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $viewModel.confirmation) }
                 }
             }
+            if viewModel.connection.provider == .aws { awsSection(errors: errors) }
             Section {
                 Picker("Cache limit", selection: $viewModel.connection.cacheLimit) {
                     ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }
@@ -301,12 +302,35 @@ struct ConnectionEditor: View {
 
     private func focusFirstInvalidField() {
         guard let field = viewModel.firstInvalidField else { return }
-        pane = field == .encryptionPassword || field == .confirmation ? .settings : .connection
+        pane = [.encryptionPassword, .confirmation, .kmsKey].contains(field) ? .settings : .connection
         focus = field
     }
 }
 
 private extension ConnectionEditor {
+    func awsSection(errors: [ConnectionField: String]) -> some View {
+        @Bindable var viewModel = viewModel
+        return Section {
+            Picker("Storage class", selection: $viewModel.connection.aws.storageClass) {
+                ForEach(S3StorageClass.allCases) { Text($0.title).tag($0) }
+            }
+            Picker("Server-side encryption", selection: $viewModel.connection.aws.serverSideEncryption) {
+                Text("Bucket default").tag(ServerSideEncryption?.none)
+                ForEach(ServerSideEncryption.allCases) { Text($0.title).tag(Optional($0)) }
+            }
+            if viewModel.connection.aws.serverSideEncryption == .kms {
+                validated(.kmsKey, error: errors[.kmsKey]) {
+                    TextField("KMS key", text: $viewModel.connection.aws.kmsKeyID, prompt: Text("Optional: key ID, alias, or ARN"))
+                }
+            }
+        } header: {
+            Text("Amazon S3")
+        } footer: {
+            Text("Applies to new uploads. Infrequent-access classes bill a minimum size and storage time. AWS can read files it encrypts; Encrypt files keeps them private.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
     @ViewBuilder func bucketFields(errors: [ConnectionField: String]) -> some View {
         @Bindable var viewModel = viewModel
         validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }

@@ -10,6 +10,10 @@ Turn on **Encrypt files** when you add a drive. UnlocalFS encrypts the content a
 - If the top folder of the drive has names that the password cannot decrypt, the drive does not connect. This happens when the password is wrong or when the folder also has files that are not encrypted.
 - Encrypted names are longer than the original names. Some providers limit the length of a file path.
 
+## Server-side encryption
+
+Amazon S3 drives also have a **Server-side encryption** setting. With it, AWS encrypts files when it stores them, and AWS decrypts them for anyone with access to the bucket. It meets rules that require encryption at rest or a specific KMS key, but it does not hide your files from AWS. **Encrypt files** encrypts them on your Mac, so AWS cannot read them. You can use both. See [drive settings](/drive-settings/#amazon-s3).
+
 ## Recover files without UnlocalFS
 
 You can read an encrypted drive with [rclone](https://rclone.org/) alone. This works on any computer, also when UnlocalFS or this Mac is no longer available. Make the recovery file now and keep it in a safe place.

@@ -31,4 +31,34 @@ import UnlocalFSInfrastructure
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
         }
     }
+
+    @Test func onlyAmazonS3DrivesExportStorageClassAndEncryption() async throws {
+        let key = "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+        var amazon = fixture()
+        amazon.provider = .aws
+        let defaults = amazon
+        amazon.aws.storageClass = .standardInfrequentAccess
+        amazon.aws.serverSideEncryption = .kms
+        amazon.aws.kmsKeyID = key
+        var leftoverKey = amazon
+        leftoverKey.aws.serverSideEncryption = .s3Managed
+        var minio = amazon
+        minio.provider = .minio
+        try await withOfflineDrive(fixture()) { drive in
+            func exported(_ connection: Connection) async throws -> [String: String] {
+                let config = drive.paths.config.deletingLastPathComponent().appending(path: "\(UUID()).conf")
+                try await drive.service.exportRcloneConfig(connection, credentials: nil, to: config)
+                let options = try await dump(drive, config)["unlocalfs-s3"] ?? [:]
+                return options.filter { ["storage_class", "server_side_encryption", "sse_kms_key_id"].contains($0.key) }
+            }
+            var exports: [[String: String]] = []
+            for connection in [amazon, leftoverKey, minio, defaults] { exports.append(try await exported(connection)) }
+            #expect(exports == [
+                ["storage_class": "STANDARD_IA", "server_side_encryption": "aws:kms", "sse_kms_key_id": key],
+                ["storage_class": "STANDARD_IA", "server_side_encryption": "AES256"],
+                [:],
+                [:]
+            ])
+        }
+    }
 }

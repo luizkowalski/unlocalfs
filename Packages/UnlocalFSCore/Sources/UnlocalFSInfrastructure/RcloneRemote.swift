@@ -56,6 +56,12 @@ struct RcloneRemote {
             options["secret_access_key"] = credentials.secretKey
             options["session_token"] = credentials.sessionToken
         }
+        if connection.provider == .aws {
+            let aws = connection.aws
+            options["storage_class"] = aws.storageClass == .standard ? nil : aws.storageClass.rawValue
+            options["server_side_encryption"] = aws.serverSideEncryption?.rawValue
+            if aws.serverSideEncryption == .kms, !aws.kmsKeyID.isEmpty { options["sse_kms_key_id"] = aws.kmsKeyID }
+        }
         return options
     }
 
