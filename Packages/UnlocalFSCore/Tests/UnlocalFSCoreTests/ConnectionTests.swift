@@ -15,6 +15,10 @@ import UnlocalFSInfrastructure
         connection.readOnly = true
         connection.connectsAutomatically = true
         connection.encrypted = true
+        connection.provider = .aws
+        connection.aws.storageClass = .intelligentTiering
+        connection.aws.serverSideEncryption = .kms
+        connection.aws.kmsKeyID = "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
         try store.save(connection)
         let reopened = ConnectionStore(url: url)
         #expect(try reopened.all() == [connection])
@@ -37,6 +41,7 @@ import UnlocalFSInfrastructure
         #expect(!connection.encrypted)
         #expect(connection.bandwidthLimit == 0)
         #expect(connection.transfers == 4)
+        #expect(connection.aws == AWSSettings())
     }
 
     @Test func transferSettingsSurviveReopenAndUpdate() throws {

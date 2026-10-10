@@ -30,7 +30,7 @@ Each storage type has one suite. Each test starts its own local server and uses 
 
 - `S3DriveTests`: a drive downloads, uploads, and deletes files, and does not disconnect while an upload is pending. An encrypted drive stores only ciphertext, and its exported rclone config can read it.
 - `SFTPDriveTests`: the same round trip for each login, and approval of a new or changed server key.
-- `GCSDriveTests`: rclone has no GCS server, so this suite checks only the exported config. To add a mount test, start a GCS emulator in `withGCSDrive` and call `verifyRoundTrip`.
+- `GCSDriveTests`: rclone has no GCS server, so this suite checks only the exported config. To add a mount test, start a GCS emulator in `withOfflineDrive` and call `verifyRoundTrip`.
 
 Add a storage test only for app behavior that a stub cannot show, such as what rclone writes to the server.
 

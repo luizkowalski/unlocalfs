@@ -141,6 +141,31 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     }
 }
 
+@Suite struct AWSValidationTests {
+    @Test(arguments: [
+        "", "1234abcd-12ab-34cd-56ef-1234567890ab", "mrk-1234abcd12ab34cd56ef1234567890ab", "alias/compliance",
+        "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+        "arn:aws-us-gov:kms:us-gov-west-1:111122223333:alias/compliance"
+    ])
+    func kmsKeyAcceptsKeyIDsAliasesAndARNs(key: String) {
+        #expect(awsFixture(kmsKeyID: key).validate().isValid)
+    }
+
+    @Test(arguments: ["my key", "compliance", "alias/compliance\n"])
+    func malformedKMSKeyNamesTheField(key: String) {
+        #expect(awsFixture(kmsKeyID: key).validate().issues.map(\.field) == [.kmsKey])
+    }
+
+    @Test func kmsKeyIsIgnoredWithoutKMSOrOutsideAWS() {
+        var connection = awsFixture(kmsKeyID: "my key")
+        connection.aws.serverSideEncryption = .s3Managed
+        #expect(connection.validate().isValid)
+        connection.aws.serverSideEncryption = .kms
+        connection.provider = .minio
+        #expect(connection.validate().isValid)
+    }
+}
+
 @Suite struct GCSValidationTests {
     @Test(arguments: [
         "", "not json", "[]",
@@ -186,6 +211,14 @@ func sftpFixture(name: String = "Server") -> Connection {
     connection.provider = .sftp
     connection.sftp.host = "files.example.com"
     connection.sftp.username = "me"
+    return connection
+}
+
+private func awsFixture(kmsKeyID: String) -> Connection {
+    var connection = fixture()
+    connection.provider = .aws
+    connection.aws.serverSideEncryption = .kms
+    connection.aws.kmsKeyID = kmsKeyID
     return connection
 }
 

@@ -9,7 +9,7 @@ import UnlocalFSInfrastructure
         var connection = gcsFixture()
         connection.encrypted = true
         connection.folder = #"clients/a"b,c #1;x"#
-        try await withGCSDrive(connection) { drive in
+        try await withOfflineDrive(connection) { drive in
             let credentials = Credentials(encryptionPassword: "-correct horse ", serviceAccountKey: storedKey)
             let tested = await #expect(throws: (any Error).self) { try await drive.service.test(drive.connection, credentials: credentials) }
             #expect(tested?.localizedDescription.contains("private key") == true)

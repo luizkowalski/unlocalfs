@@ -139,6 +139,23 @@
       },
       "comment": "Name of a duplicated connection; %1$@ is the original name"
     },
+    "encryptionKMS" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS KMS (SSE-KMS)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AWS KMS (SSE-KMS)"
+          }
+        }
+      }
+    },
     "encryptionPasswordEmpty": {
       "extractionState": "manual",
       "localizations": {
@@ -169,6 +186,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Não é possível mudar a senha de criptografia de uma unidade salva. Duplique a unidade para usar uma nova senha."
+          }
+        }
+      }
+    },
+    "encryptionS3Managed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S3-managed keys (SSE-S3)"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chaves gerenciadas pelo S3 (SSE-S3)"
           }
         }
       }
@@ -349,6 +383,23 @@
         }
       },
       "comment": "Label of this field in the connection editor"
+    },
+    "fieldKMSKey" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KMS key"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave KMS"
+          }
+        }
+      }
     },
     "fieldName": {
       "extractionState": "manual",
@@ -539,6 +590,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Informe o caminho completo do seu arquivo de chave privada, por exemplo ~/.ssh/id_ed25519."
+          }
+        }
+      }
+    },
+    "kmsKeyInvalid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use a key ID, an alias such as alias/my-key, or a key ARN"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use um ID de chave, um alias como alias/minha-chave ou um ARN de chave"
           }
         }
       }
@@ -1020,6 +1088,91 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 dias"
+          }
+        }
+      }
+    },
+    "storageClassGlacierInstantRetrieval" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glacier Instant Retrieval"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glacier Instant Retrieval"
+          }
+        }
+      }
+    },
+    "storageClassIntelligentTiering" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligent-Tiering"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intelligent-Tiering"
+          }
+        }
+      }
+    },
+    "storageClassOneZoneIA" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One Zone-IA"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One Zone-IA"
+          }
+        }
+      }
+    },
+    "storageClassStandard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        }
+      }
+    },
+    "storageClassStandardIA" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard-IA"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard-IA"
           }
         }
       }

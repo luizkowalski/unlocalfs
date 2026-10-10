@@ -146,6 +146,16 @@
         }
       }
     },
+    "Amazon S3" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amazon S3"
+          }
+        }
+      }
+    },
     "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -190,6 +200,16 @@
         }
       }
     },
+    "Applies to new uploads. Infrequent-access classes bill a minimum size and storage time. AWS can read files it encrypts; Encrypt files keeps them private." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vale para novos envios. Classes de acesso infrequente cobram um tamanho e um tempo de armazenamento mínimos. A AWS consegue ler os arquivos que ela criptografa; Criptografar arquivos os mantém privados."
+          }
+        }
+      }
+    },
     "Authentication" : {
       "localizations" : {
         "pt-BR" : {
@@ -229,6 +249,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bucket"
+          }
+        }
+      }
+    },
+    "Bucket default" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Padrão do bucket"
           }
         }
       }
@@ -871,6 +901,17 @@
         }
       }
     },
+    "KMS key" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chave KMS"
+          }
+        }
+      }
+    },
     "Leave the folder empty for your home folder. Start it with / for a path from the server’s root." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1098,6 +1139,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opcional, usa o agente do seu Mac"
+          }
+        }
+      }
+    },
+    "Optional: key ID, alias, or ARN" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional: ID da chave, alias ou ARN"
           }
         }
       }
@@ -1360,6 +1411,17 @@
         }
       }
     },
+    "Server-side encryption" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criptografia no servidor"
+          }
+        }
+      }
+    },
     "Session token" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1412,6 +1474,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Armazenamento"
+          }
+        }
+      }
+    },
+    "Storage class" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classe de armazenamento"
           }
         }
       }

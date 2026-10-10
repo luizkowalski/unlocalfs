@@ -16,6 +16,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var readOnly = false
     public var encrypted = false
     public var sftp = SFTPSettings()
+    public var aws = AWSSettings()
 
     public init() {}
 
@@ -36,6 +37,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         encrypted = try container.decodeIfPresent(Bool.self, forKey: .encrypted) ?? encrypted
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
         sftp = try container.decodeIfPresent(SFTPSettings.self, forKey: .sftp) ?? sftp
+        aws = try container.decodeIfPresent(AWSSettings.self, forKey: .aws) ?? aws
     }
 
     public var backend: Backend { provider.backend }
@@ -64,7 +66,9 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         )
         result.check(name.utf8.count <= 120, field: .name, message: String(localized: .nameTooLong))
         switch backend {
-        case .s3Compatible: result.issues += validateEndpoint().issues + validateBucket().issues
+        case .s3Compatible:
+            result.issues += validateEndpoint().issues + validateBucket().issues
+            if provider == .aws { result.issues += aws.validate().issues }
         case .gcs: result.issues += validateBucket().issues
         case .sftp: result.issues += sftp.validate().issues
         }
@@ -128,6 +132,7 @@ public enum ConnectionField: CaseIterable, Sendable {
     case host, port, username, remotePath
     case password, keyFile
     case encryptionPassword, confirmation
+    case kmsKey
 
     public var displayName: String {
         switch self {
@@ -146,6 +151,7 @@ public enum ConnectionField: CaseIterable, Sendable {
         case .keyFile: String(localized: .privateKey)
         case .encryptionPassword: String(localized: .fieldEncryptionPassword)
         case .confirmation: String(localized: .fieldConfirmPassword)
+        case .kmsKey: String(localized: .fieldKMSKey)
         }
     }
 }

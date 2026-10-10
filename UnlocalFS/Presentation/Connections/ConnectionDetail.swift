@@ -134,6 +134,7 @@ struct ConnectionDetail: View {
                     detail("Endpoint") { copyable(connection.endpoint) }
                     Divider()
                     detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
+                    if connection.provider == .aws { awsDetails }
                 case .sftp:
                     sftpDetails
                 }
@@ -165,6 +166,20 @@ struct ConnectionDetail: View {
         detail("Folder") { sftp.remotePath.isEmpty ? Text("Home folder") : Text(verbatim: sftp.remotePath) }
         Divider()
         detail("Sign in with") { Text(sftp.authentication.title) }
+    }
+
+    @ViewBuilder private var awsDetails: some View {
+        let aws = connection.aws
+        Divider()
+        detail("Storage class") { Text(aws.storageClass.title) }
+        Divider()
+        detail("Server-side encryption") {
+            if aws.serverSideEncryption == .kms, !aws.kmsKeyID.isEmpty {
+                copyable(aws.kmsKeyID)
+            } else {
+                aws.serverSideEncryption.map { Text($0.title) } ?? Text("Bucket default")
+            }
+        }
     }
 
     private func detail(_ label: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {
