@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” couldn’t be disconnected." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível desconectar “%@”."
+          }
+        }
+      }
+    },
+    "“%@” is still uploading files." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” ainda está enviando arquivos."
+          }
+        }
+      }
+    },
     "%@" : {
 
     },
@@ -340,6 +362,16 @@
         }
       }
     },
+    "Close files and stop apps using this drive, then try again. The drive is still connected." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feche os arquivos e pare os apps que usam esta unidade. Depois, tente novamente. A unidade continua conectada."
+          }
+        }
+      }
+    },
     "Confirm password" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -397,6 +429,7 @@
       }
     },
     "Connection needs attention" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -874,6 +907,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Incluir chave da conta de serviço"
+          }
+        }
+      }
+    },
+    "Keep Connected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manter conectada"
           }
         }
       }
@@ -1568,6 +1612,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confiar neste servidor?"
+          }
+        }
+      }
+    },
+    "Try Disconnect Again" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentar desconectar novamente"
           }
         }
       }

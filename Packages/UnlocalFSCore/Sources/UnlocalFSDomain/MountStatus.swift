@@ -1,5 +1,9 @@
 import Foundation
 
+public struct DriveEjectError: Error, Sendable {
+    public init() {}
+}
+
 public struct UploadsPendingError: LocalizedError, Sendable {
     public init() {}
 

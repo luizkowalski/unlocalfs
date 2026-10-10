@@ -171,23 +171,6 @@
         }
       }
     },
-    "couldNotEject": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not eject the drive. Close files using it and try again.\n\n%1$@"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível ejetar a unidade. Feche os arquivos em uso nela e tente novamente.\n\n%1$@"
-          }
-        }
-      }
-    },
     "couldNotMount": {
       "extractionState": "manual",
       "localizations": {
@@ -235,23 +218,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Não foi possível parar o serviço antigo da unidade porque o processo dele não pôde ser identificado. O cache foi mantido."
-          }
-        }
-      }
-    },
-    "driveStillMounted": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The drive is still mounted. Close files using it and try again."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A unidade ainda está montada. Feche os arquivos em uso nela e tente novamente."
           }
         }
       }

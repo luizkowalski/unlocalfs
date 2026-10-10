@@ -11,16 +11,16 @@ struct ConnectionDetail: View {
         let status = model.servingStatus(connection)
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                if let problem = model.problem(connection) {
-                    problemBanner(problem)
-                }
                 header
+                if let problem = model.problem(connection) {
+                    problemNotice(problem)
+                }
                 if model.isOffline(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
                         .font(.callout).foregroundStyle(.secondary)
                 }
                 if status != nil {
-                    ActivityView(connection: connection, notice: model.uploadNotice(connection))
+                    ActivityView(connection: connection)
                 }
                 details
             }
@@ -200,19 +200,15 @@ struct ConnectionDetail: View {
         }
     }
 
-    private func problemBanner(_ problem: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill").font(.title3).foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Connection needs attention").font(.headline)
-                Text(problem).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
-                Button("Check Again") { Task { await model.checkAgain(connection) } }
-            }
-            Spacer(minLength: 0)
+    private func problemNotice(_ problem: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            Label("Connection needs attention", systemImage: "exclamationmark.triangle")
+                .font(.headline)
+            Text(problem).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+            Button("Check Again") { Task { await model.checkAgain(connection) } }
+            Divider()
         }
-        .padding(12)
-        .background(Color.orange.opacity(0.12), in: .rect(cornerRadius: 10))
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(Color.orange.opacity(0.3)) }
     }
 
     private func tildePath(_ url: URL) -> String {

@@ -63,7 +63,7 @@ struct ViewModelFixture {
         AppViewModel(
             initialConnections: Result { try repository.all() }, drives: service,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
-            toggleDrive: ToggleDriveUseCase(repository: repository, drives: service),
+            connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
             quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths)

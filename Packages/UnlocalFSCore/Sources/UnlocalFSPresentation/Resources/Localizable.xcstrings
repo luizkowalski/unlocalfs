@@ -462,36 +462,36 @@
         }
       }
     },
+    "uploadsPendingDriveStaysConnected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drive will stay connected until uploads finish. You’ll be notified when you can disconnect."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A unidade continuará conectada até que os envios terminem. Você receberá uma notificação quando puder desconectar."
+          }
+        }
+      }
+    },
     "uploadsPendingKeepAppRunning": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Keep UnlocalFS running until uploads finish, then disconnect again."
+            "value": "Keep UnlocalFS running until uploads finish. You’ll be notified when you can disconnect."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mantenha o UnlocalFS em execução até que os envios terminem, depois desconecte novamente."
-          }
-        }
-      }
-    },
-    "uploadsPendingKeepDriveConnected": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keep this drive connected until uploads finish."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mantenha esta unidade conectada até que os envios terminem."
+            "value": "Mantenha o UnlocalFS em execução até que os envios terminem. Você receberá uma notificação quando puder desconectar."
           }
         }
       }
