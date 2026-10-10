@@ -181,8 +181,8 @@ import UnlocalFSInfrastructure
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = connectionFixture()
-        try ConnectionStore(url: fixture.paths.config).save(connection)
-        try Data().write(to: fixture.paths.socket(connection))
+        try fixture.serve(connection)
+        try Data("unavailable".utf8).write(to: fixture.root.appending(path: "vfs-stats.json"))
         let app = fixture.app()
 
         await app.refresh()

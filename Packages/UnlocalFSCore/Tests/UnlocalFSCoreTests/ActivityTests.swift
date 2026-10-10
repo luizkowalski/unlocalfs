@@ -57,17 +57,10 @@ private func fetchActivity(queue: String, stats: String = "{}") async throws -> 
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    try Data(queue.utf8).write(to: root.appendingPathComponent("queue.json"))
-    try Data(stats.utf8).write(to: root.appendingPathComponent("stats.json"))
     let binary = root.appendingPathComponent("rclone")
-    let script = """
-    case "$4" in
-        vfs/queue) cat '\(root.path)/queue.json' ;;
-        core/stats) cat '\(root.path)/stats.json' ;;
-        *) exit 1 ;;
-    esac
-    """
-    try writeRcloneStub(script, to: binary)
+    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats)
+    try Data(batch.utf8).write(to: root.appendingPathComponent("batch.json"))
+    try writeRcloneStub("cat '\(root.path)/batch.json'", to: binary)
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
     let service = MountService(executable: binary, helperDirectory: root, paths: paths)
     return try await service.activity(fixture())

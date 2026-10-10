@@ -28,9 +28,8 @@ struct ViewModelFixture {
             obscure) cat >/dev/null; printf 'prepared-password\\n' ;;
             rc)
                 case "$4" in
-                    vfs/stats) cat '\(root.path)/vfs-stats.json' ;;
-                    vfs/queue) cat '\(root.path)/queue.json' ;;
-                    core/stats) cat '\(root.path)/stats.json' ;;
+                    job/batch)
+                        printf '{"results":[%s,%s,%s]}' "$(cat '\(root.path)/vfs-stats.json')" "$(cat '\(root.path)/queue.json')" "$(cat '\(root.path)/stats.json')" ;;
                     *) exit 1 ;;
                 esac
                 ;;
@@ -55,6 +54,7 @@ struct ViewModelFixture {
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
         try Data("{}".utf8).write(to: root.appending(path: "stats.json"))
+        try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
         service = MountService(executable: executable, helperDirectory: root, paths: paths)
         repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     }

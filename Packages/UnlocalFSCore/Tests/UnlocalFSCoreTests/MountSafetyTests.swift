@@ -27,8 +27,7 @@ import UnlocalFSDomain
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
         try await withFixture(script: """
-        if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
-        printf '%s' '{"diskCache":{\(cache),"bytesUsed":42}}'
+        printf '%s' '\(statusBatch(cache: cache + #","bytesUsed":42"#))'
         """) { service, connection in
             let status = await service.status(connection)
             #expect(status.isRunning)
@@ -38,14 +37,22 @@ import UnlocalFSDomain
         }
     }
 
+    @Test func anErrorInsideTheStatusBatchMarksTheDriveForReconnect() async throws {
+        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
+        try await withFixture(script: "printf '%s' '\(batch)'") { service, connection in
+            let status = await service.status(connection)
+            #expect(status.needsReconnect)
+            #expect(status.controlError?.contains("core/stats failed") == true)
+        }
+    }
+
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withFixture { root in
             """
-            if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; exit 0; fi
             pending=0
             if [ -f '\(root.path)/checked' ]; then pending=1; fi
             touch '\(root.path)/checked'
-            printf '{"diskCache":{"uploadsQueued":%s,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42}}' "$pending"
+            printf '\(statusBatch(cache: #""uploadsQueued":%s,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))' "$pending"
             """
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -58,10 +65,9 @@ import UnlocalFSDomain
         try await withFixture { root in
             """
             if [ "$4" = 'core/quit' ]; then rm "$3"; exit 0; fi
-            if [ "$4" = 'core/stats' ]; then printf '{}'; exit 0; fi
             if [ -f '\(root.path)/checked' ]; then echo 'Control unavailable' >&2; exit 1; fi
             touch '\(root.path)/checked'
-            printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42}}'
+            printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))'
             """
         } operation: { service, connection in
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
@@ -97,7 +103,7 @@ import UnlocalFSDomain
         let script = """
         case "$1" in
             rc)
-                if [ "$4" = 'vfs/queue' ]; then printf '{"queue":[]}'; else printf '{}'; fi ;;
+                printf '{}' ;;
             obscure) printf 'obscured-token' ;;
             \(command))
                 printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
@@ -224,10 +230,10 @@ private func shutdownScript(phase: String, root: URL) -> String {
         exit 1
     fi
     if [ '\(phase)' = 'before' ] || { [ '\(phase)' = 'during' ] && [ -f '\(root.path)/checked' ]; }; then
-        rm -f "$3"
+        rm "$3"
     fi
     touch '\(root.path)/checked'
-    printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}'
+    printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))'
     """
 }
 
