@@ -14,7 +14,6 @@ public actor MountService: DriveGateway {
     private let hostEnvironment: [String: String]
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
-    var copiesInFlight: [UUID: Int] = [:]
     var reservedCopies: [UUID: Set<String>] = [:]
 
     public init(

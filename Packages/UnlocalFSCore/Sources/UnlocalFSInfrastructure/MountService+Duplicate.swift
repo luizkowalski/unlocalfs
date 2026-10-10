@@ -8,8 +8,6 @@ extension MountService {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             throw AppError(String(localized: .reconnectToDuplicate))
         }
-        copiesInFlight[connection.id, default: 0] += 1
-        defer { copiesInFlight[connection.id]? -= 1 }
         if try await control(UploadQueue.self, connection, "vfs/queue").queue.contains(where: { $0.name == path }) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
@@ -34,7 +32,7 @@ extension MountService {
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
-        guard copiesInFlight[connection.id, default: 0] == 0 else { throw AppError(String(localized: .copyInProgress)) }
+        guard reservedCopies[connection.id, default: []].isEmpty else { throw AppError(String(localized: .copyInProgress)) }
         guard connection.backend.supportsServerCopy, status.isRunning, !status.needsReconnect else { return }
         for id in try await control(JobList.self, connection, "job/list").runningIds {
             let job = try await control(JobStatus.self, connection, "job/status", ["jobid=\(id)"])

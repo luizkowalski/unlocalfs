@@ -80,38 +80,27 @@ import UnlocalFSDomain
         try await withS3Drive { drive, bucket in
             try Data("report".utf8).write(to: bucket.appending(path: "report.txt"))
             try await drive.service.mount(drive.connection, credentials: s3Credentials)
-            let holds = drive.paths.support
-            let slowRclone = holds.appending(path: "slow-rclone")
+            let hold = drive.paths.support.appending(path: "hold")
+            let entered = drive.paths.support.appending(path: "entered")
+            let slowRclone = drive.paths.support.appending(path: "slow-rclone")
             try writeRcloneStub("""
             for argument in "$@"; do
-                case "$argument" in
-                    vfs/queue|operations/copyfile)
-                        marker=$(printf '%s' "$argument" | tr / -)
-                        if [ -f '\(holds.path)/hold-'"$marker" ]; then touch '\(holds.path)/entered-'"$marker"; sleep 2; fi ;;
-                esac
+                if [ "$argument" = 'operations/copyfile' ] && [ -f '\(hold.path)' ]; then touch '\(entered.path)'; sleep 2; fi
             done
             exec '\(drive.executable.path)' "$@"
             """, to: slowRclone)
             let service = MountService(executable: slowRclone, helperDirectory: helpers, paths: drive.paths)
             let connection = drive.connection
-            func hold(_ marker: String) throws { try Data().write(to: holds.appending(path: "hold-\(marker)")) }
-            func release(_ marker: String) throws { try FileManager.default.removeItem(at: holds.appending(path: "hold-\(marker)")) }
-            func entered(_ marker: String) async throws {
-                try await waitUntil { FileManager.default.fileExists(atPath: holds.appending(path: "entered-\(marker)").path) }
-            }
 
-            try hold("vfs-queue")
+            try Data().write(to: hold)
             let first = Task { try await service.duplicate("report.txt", in: connection) }
-            try await entered("vfs-queue")
+            try await waitUntil { FileManager.default.fileExists(atPath: entered.path) }
             await #expect { try await service.unmount(connection) } throws: { error in
                 error.localizedDescription == String(localized: .copyInProgress)
             }
-            try release("vfs-queue")
-            try hold("operations-copyfile")
-            try await entered("operations-copyfile")
             let second = Task { try await service.duplicate("report.txt", in: connection) }
             try await Task.sleep(for: .milliseconds(500))
-            try release("operations-copyfile")
+            try FileManager.default.removeItem(at: hold)
             #expect(try await [first.value, second.value] == ["report copy.txt", "report copy 2.txt"])
 
             await #expect(throws: AppError.self) { _ = try await service.duplicate("missing.txt", in: connection) }
