@@ -85,7 +85,7 @@ import UnlocalFSDomain
                 if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
                 printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
             core/quit) touch "$3.quit" ;;
-            *) printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}' ;;
+            *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
         esac
         """) { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -104,7 +104,7 @@ import UnlocalFSDomain
                     touch '\(root.path)/listed' ;;
                 job/status) printf '{"finished":false,"success":false,"error":"","group":"duplicate"}' ;;
                 core/quit) touch '\(root.path)/quit' ;;
-                *) printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}' ;;
+                *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
             esac
             """
         } operation: { service, connection in
