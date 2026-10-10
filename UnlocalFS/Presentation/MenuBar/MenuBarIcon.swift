@@ -10,7 +10,7 @@ struct MenuBarIcon: View {
         Image(nsImage: image)
             .accessibilityLabel("UnlocalFS")
             .task(id: activity) {
-                guard activity == .syncing else { return }
+                guard activity == .uploading else { return }
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .milliseconds(80))
                     angle -= 30
@@ -22,7 +22,7 @@ struct MenuBarIcon: View {
         switch activity {
         case .idle: Self.drive(badge: .labelColor, template: true)
         case .connected: Self.drive(badge: .systemGreen, template: false)
-        case .syncing: Self.drive(overlay: "arrow.triangle.2.circlepath", color: .systemYellow, angle: angle)
+        case .uploading: Self.drive(overlay: "arrow.triangle.2.circlepath", color: .systemYellow, angle: angle)
         case .downloading: Self.drive(overlay: "arrow.down", color: .systemBlue)
         }
     }

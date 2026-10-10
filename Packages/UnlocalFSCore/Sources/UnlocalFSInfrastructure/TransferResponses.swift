@@ -38,6 +38,8 @@ struct VFSStats: Decodable {
 }
 
 struct ControlSnapshot: Decodable {
+    static let request = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"}]}"#
+
     let cache: VFSStats.DiskCache
     let queue: [UploadQueue.Item]
     let transfers: [TransferStats.Transfer]

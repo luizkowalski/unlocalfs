@@ -204,8 +204,7 @@ public actor MountService: DriveGateway {
     }
 
     private func snapshot(_ connection: Connection) async throws -> ControlSnapshot {
-        let request = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"}]}"#
-        return try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", "--json", request))
+        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", "--json", ControlSnapshot.request))
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {

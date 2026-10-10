@@ -11,7 +11,7 @@ import UnlocalFSPresentation
         let app = fixture.app()
 
         await app.refresh()
-        #expect(app.activity == .syncing)
+        #expect(app.activity == .uploading)
 
         try fixture.serve(connection, downloading: true)
         await app.refresh()
