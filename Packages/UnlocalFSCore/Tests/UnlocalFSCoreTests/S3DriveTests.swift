@@ -80,8 +80,7 @@ import UnlocalFSDomain
             try await drive.service.mount(drive.connection, credentials: s3Credentials)
             let holds = drive.paths.support
             let slowRclone = holds.appending(path: "slow-rclone")
-            try """
-            #!/bin/sh
+            try writeRcloneStub("""
             for argument in "$@"; do
                 case "$argument" in
                     vfs/queue|operations/copyfile)
@@ -90,8 +89,7 @@ import UnlocalFSDomain
                 esac
             done
             exec '\(drive.executable.path)' "$@"
-            """.write(to: slowRclone, atomically: true, encoding: .utf8)
-            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: slowRclone.path)
+            """, to: slowRclone)
             let service = MountService(executable: slowRclone, helperDirectory: helpers, paths: drive.paths)
             let connection = drive.connection
             func hold(_ marker: String) throws { try Data().write(to: holds.appending(path: "hold-\(marker)")) }

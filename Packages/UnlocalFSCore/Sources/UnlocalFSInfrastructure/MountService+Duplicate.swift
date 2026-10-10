@@ -10,53 +10,52 @@ extension MountService {
         }
         copiesInFlight[connection.id, default: 0] += 1
         defer { copiesInFlight[connection.id]? -= 1 }
-        if try await activity(connection).contains(where: { $0.path == path && $0.state != .downloading }) {
+        if try await control(UploadQueue.self, connection, "vfs/queue").queue.contains(where: { $0.name == path }) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
         let target = RcloneRemote(connection: connection, credentials: nil, knownHosts: paths.knownHosts).target
-        let destination = try await freeCopyPath(for: path, in: connection, target: target)
+        let folder = (path as NSString).deletingLastPathComponent
+        let destination = try await freeCopyPath(for: path, in: folder, of: connection, target: target)
         reservedCopies[connection.id, default: []].insert(destination)
         defer { reservedCopies[connection.id]?.remove(destination) }
-        let job = try await JSONDecoder().decode(StartedJob.self, from: control(connection, "operations/copyfile", [
+        let job = try await control(StartedJob.self, connection, "operations/copyfile", [
             "srcFs=\(target)", "srcRemote=\(path)", "dstFs=\(target)", "dstRemote=\(destination)",
             "_async=true", "_group=\(Self.copyGroup)"
-        ]))
+        ])
         while true {
-            let status = try await JSONDecoder().decode(JobStatus.self, from: control(connection, "job/status", ["jobid=\(job.jobid)"]))
+            let status = try await control(JobStatus.self, connection, "job/status", ["jobid=\(job.jobid)"])
             if status.finished {
                 guard status.success else { throw AppError(status.error) }
                 break
             }
             try await Task.sleep(for: .milliseconds(500))
         }
-        let folder = (destination as NSString).deletingLastPathComponent
         _ = try await control(connection, "vfs/refresh", folder.isEmpty ? [] : ["dir=\(folder)"])
         return destination
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
         guard copiesInFlight[connection.id, default: 0] == 0 else { throw AppError(String(localized: .copyInProgress)) }
-        guard status.isRunning, !status.needsReconnect else { return }
+        guard connection.backend.supportsServerCopy, status.isRunning, !status.needsReconnect else { return }
         guard let list = try? await control(connection, "job/list") else { return }
-        let running = try JSONDecoder().decode(JobList.self, from: list).runningIds
-        for id in running {
-            let job = try await JSONDecoder().decode(JobStatus.self, from: control(connection, "job/status", ["jobid=\(id)"]))
+        for id in try JSONDecoder().decode(JobList.self, from: list).runningIds {
+            let job = try await control(JobStatus.self, connection, "job/status", ["jobid=\(id)"])
             if job.group == Self.copyGroup, !job.finished { throw AppError(String(localized: .copyInProgress)) }
         }
     }
 
-    private func freeCopyPath(for path: String, in connection: Connection, target: String) async throws -> String {
-        let folder = (path as NSString).deletingLastPathComponent
+    private func freeCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
         let mounted = Set(try FileManager.default.contentsOfDirectory(atPath: paths.mount(connection).appending(path: folder).path))
         let name = CopyName(of: (path as NSString).lastPathComponent)
-        var attempt = 1
+        var attempt = 0
         while true {
-            let candidate = (folder as NSString).appendingPathComponent(name.attempt(attempt))
-            if !mounted.contains(name.attempt(attempt)), !reservedCopies[connection.id, default: []].contains(candidate) {
-                let stat = try await control(connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"])
-                if try JSONDecoder().decode(RemoteItem.self, from: stat).item == nil { return candidate }
-            }
             attempt += 1
+            let fileName = name.attempt(attempt)
+            let candidate = (folder as NSString).appendingPathComponent(fileName)
+            guard !mounted.contains(fileName), !reservedCopies[connection.id, default: []].contains(candidate) else { continue }
+            if try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil {
+                return candidate
+            }
         }
     }
 }

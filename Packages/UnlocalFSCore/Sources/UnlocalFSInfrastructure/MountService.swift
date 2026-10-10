@@ -206,8 +206,14 @@ public actor MountService: DriveGateway {
         ], environment: baseEnvironment, timeout: .seconds(4))
     }
 
+    func control<Response: Decodable>(
+        _ response: Response.Type, _ connection: Connection, _ method: String, _ parameters: [String] = []
+    ) async throws -> Response {
+        try await JSONDecoder().decode(response, from: control(connection, method, parameters))
+    }
+
     private func snapshot(_ connection: Connection) async throws -> ControlSnapshot {
-        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", ["--json", ControlSnapshot.request]))
+        try await control(ControlSnapshot.self, connection, "job/batch", ["--json", ControlSnapshot.request])
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {
