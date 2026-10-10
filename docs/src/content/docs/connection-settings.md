@@ -3,7 +3,7 @@ title: Connection settings
 description: Understand the storage and credential fields for a drive.
 ---
 
-Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server or **Google Cloud Storage** to connect a GCS bucket; the S3 sections below do not apply to them.
+Choose **Add Connection**, or select a disconnected drive and choose **More → Edit Connection** in the toolbar. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server or **Google Cloud Storage** to connect a GCS bucket; the S3 sections below do not apply to them.
 
 ## Storage
 

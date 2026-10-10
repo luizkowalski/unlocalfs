@@ -58,7 +58,7 @@ extension AppViewModel {
         case .offline: String(localized: .networkUnavailable)
         case .uploadFailed: String(localized: .uploadNeedsAttention)
         case .uploading(let count): String(localized: .uploadsPending(count))
-        case .connected: String(localized: .connected)
+        case .connected: String(localized: .upToDate)
         case .ejected: String(localized: .ejected)
         case .disconnected: String(localized: .disconnected)
         }

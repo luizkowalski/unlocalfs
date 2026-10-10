@@ -89,13 +89,39 @@ import UnlocalFSPresentation
         #expect(summary.files.map(\.path) == ["file2.txt", "file10.txt"])
     }
 
+    @Test func listShowsThreeQueuedUploadsAfterMovingFiles() throws {
+        let summary = try #require(TransferSummary([
+            FileActivity(path: "a.txt", size: 1, state: .uploading, bytesTransferred: 0),
+            FileActivity(path: "b.txt", size: 1, state: .retrying, bytesTransferred: nil)
+        ] + (1...5).map {
+            FileActivity(path: "queued\($0).txt", size: 1, state: .queued, bytesTransferred: nil)
+        }))
+
+        #expect(summary.files.map(\.path) == ["a.txt", "b.txt", "queued1.txt", "queued2.txt", "queued3.txt"])
+        #expect(summary.hiddenFileCount == 2)
+    }
+
     @Test func listStopsAtTenFiles() throws {
         let summary = try #require(TransferSummary((1...12).map {
-            FileActivity(path: "file\($0).txt", size: 1, state: .queued, bytesTransferred: nil)
+            FileActivity(path: "file\($0).txt", size: 1, state: .retrying, bytesTransferred: nil)
         }))
 
         #expect(summary.files.count == 10)
         #expect(summary.hiddenFileCount == 2)
+    }
+
+    @Test func finderMetadataFilesCountButAreNotListed() throws {
+        let summary = try #require(TransferSummary([
+            FileActivity(path: "Tax/.DS_Store", size: 10, state: .queued, bytesTransferred: nil),
+            FileActivity(path: "Tax/._report.pdf", size: 4, state: .queued, bytesTransferred: nil),
+            FileActivity(path: "Tax/report.pdf", size: 100, state: .queued, bytesTransferred: nil)
+        ]))
+
+        #expect(summary.files.map(\.path) == ["Tax/report.pdf"])
+        #expect(summary.finderFileCount == 2)
+        #expect(summary.hiddenFileCount == 0)
+        #expect(summary.fileCount == 3)
+        #expect(summary.bytesTotal == 114)
     }
 
     @Test func nothingMovingHasNoSummary() {

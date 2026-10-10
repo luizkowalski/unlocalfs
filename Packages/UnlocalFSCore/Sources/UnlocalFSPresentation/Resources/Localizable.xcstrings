@@ -89,24 +89,6 @@
       },
       "comment": "Button: connect the drive (verb)"
     },
-    "connected": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connected"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conectada"
-          }
-        }
-      },
-      "comment": "Drive status (adjective, agrees with the drive)"
-    },
     "couldNotCopyLink": {
       "extractionState": "manual",
       "localizations": {
@@ -578,6 +560,24 @@
           }
         }
       }
+    },
+    "upToDate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to date"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualizada"
+          }
+        }
+      },
+      "comment": "Drive status when the drive is connected and has no pending uploads (adjective, agrees with the drive)"
     },
     "working": {
       "extractionState": "manual",

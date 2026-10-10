@@ -4,12 +4,13 @@ import UnlocalFSDomain
 public struct TransferSummary {
     public let isUploading: Bool
     public let fileCount: Int
-    public let bytesDone: Int64
+    private let bytesDone: Int64
     public let bytesTotal: Int64
     public let bytesPerSecond: Int64?
     public let timeLeft: Duration?
     public let files: [FileActivity]
     public let hiddenFileCount: Int
+    public let finderFileCount: Int
 
     public init?(_ activity: [FileActivity]) {
         let uploads = activity.filter { $0.state != .downloading }
@@ -25,14 +26,22 @@ public struct TransferSummary {
         let sizedSpeed = sized.reduce(0) { $0 + ($1.bytesPerSecond ?? 0) }
         let secondsLeft = sizedSpeed > 0 ? Double(bytesTotal - bytesDone) / sizedSpeed : 0
         timeLeft = secondsLeft >= 1 ? .seconds(secondsLeft) : nil
-        files = Array(activity.sorted(using: [KeyPathComparator(\.listOrder), KeyPathComparator(\.path, comparator: .localizedStandard)]).prefix(10))
-        hiddenFileCount = activity.count - files.count
+        let listed = activity.filter { !$0.isFinderMetadata }
+            .sorted(using: [KeyPathComparator(\.listOrder), KeyPathComparator(\.path, comparator: .localizedStandard)])
+        files = Array((listed.filter { $0.state != .queued } + listed.filter { $0.state == .queued }.prefix(3)).prefix(10))
+        hiddenFileCount = listed.count - files.count
+        finderFileCount = activity.count - listed.count
     }
 
     public var bytesLeft: Int64 { bytesTotal - bytesDone }
 }
 
 private extension FileActivity {
+    var isFinderMetadata: Bool {
+        let name = (path as NSString).lastPathComponent
+        return name == ".DS_Store" || name.hasPrefix("._")
+    }
+
     var listOrder: Int {
         switch state {
         case .uploading: 0

@@ -26,26 +26,6 @@
     "%@" : {
 
     },
-    "%@ cached on this Mac. When the cache is full, the oldest copies are cleared." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ em cache neste Mac. Quando o cache enche, as cópias mais antigas são apagadas."
-          }
-        }
-      }
-    },
-    "%@ left" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faltam %@"
-          }
-        }
-      }
-    },
     "%@ of %@" : {
       "localizations" : {
         "pt-BR" : {
@@ -71,6 +51,17 @@
     },
     "^[%@ more file](inflect: true)" : {
 
+    },
+    "^[%lld file](inflect: true) left · %@" : {
+      "comment" : "Uploads summary: number of files and bytes left to upload",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%lld arquivo restante](inflect: true) · %@"
+          }
+        }
+      }
     },
     "^[%lld more file](inflect: true)" : {
       "extractionState" : "stale",
@@ -154,16 +145,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Socket do agente"
-          }
-        }
-      }
-    },
-    "All changes are uploaded" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Todas as alterações foram enviadas"
           }
         }
       }
@@ -286,7 +267,7 @@
       }
     },
     "Cache" : {
-      "comment" : "Section header: local cache settings",
+      "comment" : "Label: how much of the drive is cached on this Mac",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -336,17 +317,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confira a impressão digital com o administrador do servidor. Confie nesta chave para conectar agora e reconhecer o servidor nas próximas conexões."
-          }
-        }
-      }
-    },
-    "Checking activity…" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verificando atividade…"
           }
         }
       }
@@ -503,18 +473,6 @@
         }
       }
     },
-    "Delete" : {
-      "comment" : "Toolbar button, destructive: delete the connection",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Excluir"
-          }
-        }
-      }
-    },
     "Delete %@?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -643,6 +601,17 @@
         }
       }
     },
+    "Downloads" : {
+      "comment" : "Section header: files that download from the drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads"
+          }
+        }
+      }
+    },
     "Duplicate" : {
       "comment" : "Button: make a copy of the connection",
       "extractionState" : "stale",
@@ -662,18 +631,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duplicar conexão…"
-          }
-        }
-      }
-    },
-    "Edit" : {
-      "comment" : "Toolbar button: edit the connection",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editar"
           }
         }
       }
@@ -755,18 +712,6 @@
         }
       }
     },
-    "Export" : {
-      "comment" : "Toolbar button: export an rclone config file for the drive",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exportar"
-          }
-        }
-      }
-    },
     "Export rclone Config" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -800,22 +745,34 @@
         }
       }
     },
-    "Files show up here while they upload or download." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os arquivos aparecem aqui enquanto são enviados ou baixados."
-          }
-        }
-      }
-    },
     "Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit." : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Os arquivos que você abriu há mais tempo são removidos primeiro. Arquivos abertos e envios pendentes permanecem, então o cache pode passar do limite."
+          }
+        }
+      }
+    },
+    "Finder metadata files, such as .DS_Store, are not listed." : {
+      "comment" : "Section footer: hidden files in the activity list",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arquivos de metadados do Finder, como .DS_Store, não são listados."
+          }
+        }
+      }
+    },
+    "Finishing" : {
+      "comment" : "Activity row: all bytes are sent and the server has not confirmed the upload yet",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finalizando"
           }
         }
       }
@@ -932,18 +889,6 @@
         }
       }
     },
-    "Keep free" : {
-      "comment" : "Label: minimum free disk space to keep (verb phrase)",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manter livre"
-          }
-        }
-      }
-    },
     "Keep free on disk" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -977,14 +922,13 @@
         }
       }
     },
-    "Log" : {
-      "comment" : "Toolbar button: open the drive log file (noun)",
-      "extractionState" : "stale",
+    "More" : {
+      "comment" : "Toolbar menu button with more drive actions",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Log"
+            "value" : "Mais"
           }
         }
       }
@@ -1063,27 +1007,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma unidade conectada"
-          }
-        }
-      }
-    },
-    "No transfers in progress" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma transferência em andamento"
-          }
-        }
-      }
-    },
-    "Not set" : {
-      "comment" : "Value shown when a limit is not configured",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não definido"
           }
         }
       }
@@ -1281,17 +1204,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Provedor"
-          }
-        }
-      }
-    },
-    "Queued for upload" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Na fila para envio"
           }
         }
       }
@@ -1520,6 +1432,17 @@
         }
       }
     },
+    "Show Log" : {
+      "comment" : "Menu item: open the drive log file",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar log"
+          }
+        }
+      }
+    },
     "Sign in with" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1658,6 +1581,17 @@
         }
       }
     },
+    "Up to %@" : {
+      "comment" : "Cache value when the drive is disconnected: the cache size limit",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Até %@"
+          }
+        }
+      }
+    },
     "Uploading" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1679,6 +1613,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enviando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
+    "Uploads" : {
+      "comment" : "Section header: files that upload to the drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envios"
           }
         }
       }
@@ -1721,6 +1666,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Usa uma chave carregada no seu ssh-agent. Nada é armazenado para esta opção."
+          }
+        }
+      }
+    },
+    "Waiting" : {
+      "comment" : "Activity row: file is queued for upload",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando"
           }
         }
       }
