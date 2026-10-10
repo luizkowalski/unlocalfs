@@ -137,6 +137,23 @@
         }
       }
     },
+    "copyInProgress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A file is still being duplicated on the server. Wait for it to finish, then disconnect."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um arquivo ainda está sendo duplicado no servidor. Aguarde o término e desconecte."
+          }
+        }
+      }
+    },
     "couldNotCreateLink": {
       "extractionState": "manual",
       "localizations": {
@@ -235,6 +252,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "A unidade ainda está encerrando. Aguarde um instante e tente desconectar novamente."
+          }
+        }
+      }
+    },
+    "duplicateFileStillUploading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file is still uploading. Wait for it to finish, then duplicate it again."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este arquivo ainda está sendo enviado. Aguarde o término e duplique-o novamente."
           }
         }
       }
@@ -372,6 +406,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reconecte a unidade para criar links. O UnlocalFS não conseguiu verificar se o arquivo ainda está sendo enviado.\n\n%1$@"
+          }
+        }
+      }
+    },
+    "reconnectToDuplicate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect the drive to duplicate files. UnlocalFS can only duplicate files through a connected drive."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconecte a unidade para duplicar arquivos. O UnlocalFS só pode duplicar arquivos por uma unidade conectada."
           }
         }
       }

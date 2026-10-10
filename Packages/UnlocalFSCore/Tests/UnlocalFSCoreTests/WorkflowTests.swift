@@ -173,7 +173,7 @@ import UnlocalFSInfrastructure
             await #expect {
                 _ = try await ShareFilesUseCase(repository: repository, drives: drives).execute([file], expiry: .day)
             } throws: { error in
-                (error as? ShareFileError)?.file == file
+                (error as? FileActionError)?.file == file
             }
         }
     }
@@ -189,7 +189,32 @@ import UnlocalFSInfrastructure
                 _ = try await ShareFilesUseCase(repository: repository, drives: drives).execute([file], expiry: .day)
             } throws: { error in
                 let message = error.localizedDescription
-                return (error as? ShareFileError)?.file == file && message.contains(connection.provider.title) && !message.contains("Keychain")
+                return (error as? FileActionError)?.file == file && message.contains(connection.provider.title) && !message.contains("Keychain")
+            }
+            #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
+        }
+    }
+
+    @Test func duplicatingReportsTheFileOutsideADrive() async throws {
+        try await withWorkflowFixture { repository, drives, paths, _ in
+            let file = paths.support.appending(path: "outside.jpg")
+            await #expect {
+                _ = try await DuplicateFilesUseCase(repository: repository, drives: drives).execute([file])
+            } throws: { error in
+                (error as? FileActionError)?.file == file
+            }
+        }
+    }
+
+    @Test(arguments: [sftpFixture(), readOnlyFixture()])
+    func duplicatingIsRefusedBeforeRcloneRuns(connection: Connection) async throws {
+        try await withWorkflowFixture { repository, drives, paths, _ in
+            try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret", password: "secret"))
+            let file = paths.mount(connection).appending(path: "plan.pdf")
+            await #expect {
+                _ = try await DuplicateFilesUseCase(repository: repository, drives: drives).execute([file])
+            } throws: { error in
+                (error as? FileActionError)?.file == file
             }
             #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
         }
@@ -220,6 +245,12 @@ private let redirections: [Redirection] = [
     { $0.encrypted = true },
     { $0.provider = .other }
 ]
+
+private func readOnlyFixture() -> Connection {
+    var connection = fixture(name: "Archive")
+    connection.readOnly = true
+    return connection
+}
 
 private func withWorkflowFixture(
     operation: (SavedConnectionRepository, MountService, AppPaths, Connection) async throws -> Void

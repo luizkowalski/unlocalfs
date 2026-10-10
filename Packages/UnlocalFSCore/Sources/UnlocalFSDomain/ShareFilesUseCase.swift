@@ -1,15 +1,5 @@
 import Foundation
 
-public struct ShareFileError: LocalizedError, Sendable {
-    public let file: URL
-    public let errorDescription: String?
-
-    public init(file: URL, message: String) {
-        self.file = file
-        errorDescription = message
-    }
-}
-
 public struct ShareFilesUseCase: Sendable {
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway
@@ -38,7 +28,7 @@ public struct ShareFilesUseCase: Sendable {
                 )
                 links.append(link)
             } catch {
-                throw ShareFileError(file: file, message: error.localizedDescription)
+                throw FileActionError(file: file, message: error.localizedDescription)
             }
         }
         return links

@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
 @Suite(.timeLimit(.minutes(2))) struct S3DriveTests {
     @Test func driveDownloadsUploadsAndDeletesFiles() async throws {
@@ -45,6 +45,77 @@ import UnlocalFSInfrastructure
             let config = drive.paths.support.appending(path: "My files rclone.conf")
             try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func duplicateCopiesOnTheServerNextToTheOriginal(encrypted: Bool) async throws {
+        try await withS3Drive(encrypted: encrypted) { drive, bucket in
+            let credentials = try await drive.service.prepareCredentials(
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : "")
+            )
+            try await drive.service.mount(drive.connection, credentials: credentials)
+            try Data("report".utf8).write(to: drive.mounted.appending(path: "report.txt"))
+            try await drive.waitForUploads()
+            try Data("draft".utf8).write(to: drive.mounted.appending(path: "draft.txt"))
+
+            await #expect(throws: AppError.self) { _ = try await drive.service.duplicate("draft.txt", in: drive.connection) }
+            #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy.txt")
+            #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy 2.txt")
+
+            #expect(try await drive.control("core/stats")["serverSideCopies"] as? Int == 2)
+            try await waitUntil(timeout: .seconds(5)) {
+                let listed = try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path)
+                return listed.contains("report copy.txt") && listed.contains("report copy 2.txt")
+            }
+            #expect(try String(contentsOf: drive.mounted.appending(path: "report copy 2.txt"), encoding: .utf8) == "report")
+            try await drive.waitForUploads()
+            #expect(try FileManager.default.contentsOfDirectory(atPath: bucket.path).count == 4)
+        }
+    }
+
+    @Test func duplicatesInFlightKeepTheirNamesApartAndBlockDisconnect() async throws {
+        try await withS3Drive { drive, bucket in
+            try Data("report".utf8).write(to: bucket.appending(path: "report.txt"))
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
+            let holds = drive.paths.support
+            let slowRclone = holds.appending(path: "slow-rclone")
+            try """
+            #!/bin/sh
+            for argument in "$@"; do
+                case "$argument" in
+                    vfs/queue|operations/copyfile)
+                        marker=$(printf '%s' "$argument" | tr / -)
+                        if [ -f '\(holds.path)/hold-'"$marker" ]; then touch '\(holds.path)/entered-'"$marker"; sleep 2; fi ;;
+                esac
+            done
+            exec '\(drive.executable.path)' "$@"
+            """.write(to: slowRclone, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: slowRclone.path)
+            let service = MountService(executable: slowRclone, helperDirectory: helpers, paths: drive.paths)
+            let connection = drive.connection
+            func hold(_ marker: String) throws { try Data().write(to: holds.appending(path: "hold-\(marker)")) }
+            func release(_ marker: String) throws { try FileManager.default.removeItem(at: holds.appending(path: "hold-\(marker)")) }
+            func entered(_ marker: String) async throws {
+                try await waitUntil { FileManager.default.fileExists(atPath: holds.appending(path: "entered-\(marker)").path) }
+            }
+
+            try hold("vfs-queue")
+            let first = Task { try await service.duplicate("report.txt", in: connection) }
+            try await entered("vfs-queue")
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
+            }
+            try release("vfs-queue")
+            try hold("operations-copyfile")
+            try await entered("operations-copyfile")
+            let second = Task { try await service.duplicate("report.txt", in: connection) }
+            try await Task.sleep(for: .milliseconds(500))
+            try release("operations-copyfile")
+            #expect(try await [first.value, second.value] == ["report copy.txt", "report copy 2.txt"])
+
+            await #expect(throws: AppError.self) { _ = try await service.duplicate("missing.txt", in: connection) }
+            try await service.unmount(connection)
         }
     }
 

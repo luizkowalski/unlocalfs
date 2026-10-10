@@ -49,6 +49,7 @@ import UnlocalFSDomain
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withFixture { root in
             """
+            if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
             pending=0
             if [ -f '\(root.path)/checked' ]; then pending=1; fi
             touch '\(root.path)/checked'
@@ -73,6 +74,24 @@ import UnlocalFSDomain
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
             let status = await service.status(connection)
             #expect(status.isActive)
+        }
+    }
+
+    @Test func disconnectRefusesWhileRcloneRunsADuplicate() async throws {
+        try await withFixture(script: """
+        case "$4" in
+            job/list) printf '{"runningIds":[3,7]}' ;;
+            job/status)
+                if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
+                printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
+            core/quit) touch "$3.quit" ;;
+            *) printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}' ;;
+        esac
+        """) { service, connection in
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
+            }
+            #expect(await service.status(connection).isRunning)
         }
     }
 
@@ -224,6 +243,7 @@ import UnlocalFSDomain
 
 private func shutdownScript(phase: String, root: URL) -> String {
     """
+    if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
     if [ "$4" = 'core/quit' ]; then
         if [ '\(phase)' = 'after' ]; then rm "$3"; fi
         echo 'Quit failed'

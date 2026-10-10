@@ -8,6 +8,13 @@ public enum Backend: Sendable {
         }
     }
 
+    public var supportsServerCopy: Bool {
+        switch self {
+        case .s3Compatible, .gcs: true
+        case .sftp: false
+        }
+    }
+
     public var locksFolderAfterSave: Bool {
         switch self {
         case .s3Compatible, .gcs: false

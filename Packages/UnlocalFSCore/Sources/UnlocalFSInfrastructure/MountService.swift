@@ -14,6 +14,8 @@ public actor MountService: DriveGateway {
     private let hostEnvironment: [String: String]
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
+    var copiesInFlight: [UUID: Int] = [:]
+    var reservedCopies: [UUID: Set<String>] = [:]
 
     public init(
         executable: URL, helperDirectory: URL, paths: AppPaths,
@@ -180,6 +182,7 @@ public actor MountService: DriveGateway {
             throw AppError(String(localized: .couldNotStopOldService))
         }
         try current.requireSafeDisconnect()
+        try await requireNoCopies(connection, status: current)
         if current.isMounted { try await eject(connection, force: !current.isRunning) }
         if current.needsReconnect {
             try await stop(connection)
@@ -197,14 +200,14 @@ public actor MountService: DriveGateway {
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
 
-    private func control(_ connection: Connection, _ arguments: String...) async throws -> Data {
+    func control(_ connection: Connection, _ method: String, _ parameters: [String] = []) async throws -> Data {
         try await Command.run(executable, [
-            "rc", "--unix-socket", paths.socket(connection).path
-        ] + arguments + ["--config", "/dev/null"], environment: baseEnvironment, timeout: .seconds(4))
+            "rc", "--unix-socket", paths.socket(connection).path, method] + parameters + ["--config", "/dev/null"
+        ], environment: baseEnvironment, timeout: .seconds(4))
     }
 
     private func snapshot(_ connection: Connection) async throws -> ControlSnapshot {
-        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", "--json", ControlSnapshot.request))
+        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", ["--json", ControlSnapshot.request]))
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {
@@ -271,7 +274,7 @@ public actor MountService: DriveGateway {
         return AppError(message)
     }
 
-    private func isMounted(_ url: URL) -> Bool {
+    func isMounted(_ url: URL) -> Bool {
         guard let parent = realpath(url.deletingLastPathComponent().path, nil) else { return false }
         defer { free(parent) }
         let path = URL(filePath: String(cString: parent)).appending(path: url.lastPathComponent).path
