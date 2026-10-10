@@ -17,3 +17,4 @@ UnlocalFS.xcodeproj/
 !/docs/public/
 /docs/.astro/
 /docs/node_modules/
+.vscode/

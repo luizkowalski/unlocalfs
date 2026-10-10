@@ -141,6 +141,41 @@
         }
       }
     },
+    "couldNotDuplicate": {
+      "comment": "Notification title; %1$@ is the file name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not duplicate %1$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível duplicar %1$@"
+          }
+        }
+      }
+    },
+    "couldNotDuplicateFiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not duplicate the files"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível duplicar os arquivos"
+          }
+        }
+      }
+    },
     "disconnect": {
       "extractionState": "manual",
       "localizations": {
@@ -226,6 +261,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ejetada · desconecte para parar"
+          }
+        }
+      }
+    },
+    "filesDuplicated": {
+      "comment": "Notification title after Duplicate on Server; %lld is the number of copies",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "File duplicated on the server"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld files duplicated on the server"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Arquivo duplicado no servidor"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld arquivos duplicados no servidor"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld arquivos duplicados no servidor"
+                }
+              }
+            }
           }
         }
       }

@@ -57,7 +57,7 @@ import UnlocalFSPresentation
     var model: AppViewModel { dependencies.model }
     var viewModels: ViewModelFactory { dependencies.viewModels }
     private var requester = NSWorkspace.shared.frontmostApplication
-    private var shareRequester: NSRunningApplication?
+    private var serviceRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
     private var refreshTask: Task<Void, Never>?
@@ -122,32 +122,51 @@ import UnlocalFSPresentation
 
 extension AppDelegate {
     @objc func copyShareLink(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
-              !files.isEmpty, let expiry = userData.flatMap(ShareLinkExpiry.init) else {
-            error.pointee = String(localized: "Select files in an UnlocalFS drive.") as NSString
+        guard let expiry = userData.flatMap(ShareLinkExpiry.init) else {
+            refuseService(error)
             return
         }
-        shareRequester = requester == NSRunningApplication.current ? nil : requester
-        if NSApp.isActive { returnShareFocus() }
-        Task {
-            defer { shareRequester = nil }
-            await model.copyShareLinks(for: files, expiry: expiry)
+        runService(on: pasteboard, error: error) { await self.model.copyShareLinks(for: $0, expiry: expiry) }
+    }
+
+    @objc func duplicateOnServer(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        runService(on: pasteboard, error: error) { await self.model.duplicateOnServer($0) }
+    }
+
+    private func runService(
+        on pasteboard: NSPasteboard, error: AutoreleasingUnsafeMutablePointer<NSString?>, _ action: @escaping @MainActor ([URL]) async -> Void
+    ) {
+        guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
+              !files.isEmpty else {
+            refuseService(error)
+            return
         }
+        serviceRequester = requester == NSRunningApplication.current ? nil : requester
+        if NSApp.isActive { returnServiceFocus() }
+        Task { await action(files) }
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            serviceRequester = nil
+        }
+    }
+
+    private func refuseService(_ error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+        error.pointee = String(localized: "Select files in an UnlocalFS drive.") as NSString
     }
 
     @objc private func applicationActivated(_ notification: Notification) {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
         if app == .current {
-            returnShareFocus()
+            returnServiceFocus()
         } else {
             requester = app
         }
     }
 
-    private func returnShareFocus() {
-        guard let shareRequester else { return }
-        self.shareRequester = nil
-        NSApp.yieldActivation(to: shareRequester)
-        shareRequester.activate()
+    private func returnServiceFocus() {
+        guard let serviceRequester else { return }
+        self.serviceRequester = nil
+        NSApp.yieldActivation(to: serviceRequester)
+        serviceRequester.activate()
     }
 }

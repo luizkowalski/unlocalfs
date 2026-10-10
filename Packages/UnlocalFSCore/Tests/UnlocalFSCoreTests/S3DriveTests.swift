@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 
 @Suite(.timeLimit(.minutes(2))) struct S3DriveTests {
     @Test func driveDownloadsUploadsAndDeletesFiles() async throws {
@@ -45,6 +45,66 @@ import UnlocalFSInfrastructure
             let config = drive.paths.support.appending(path: "My files rclone.conf")
             try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: config)
             #expect(try await rclone(drive, config, "cat", "unlocalfs:secret plan.txt") == "top secret")
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func duplicateCopiesOnTheServerNextToTheOriginal(encrypted: Bool) async throws {
+        try await withS3Drive(encrypted: encrypted) { drive, bucket in
+            let credentials = try await drive.service.prepareCredentials(
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : "")
+            )
+            try await drive.service.mount(drive.connection, credentials: credentials)
+            try Data("report".utf8).write(to: drive.mounted.appending(path: "report.txt"))
+            try await drive.waitForUploads()
+            try Data("draft".utf8).write(to: drive.mounted.appending(path: "draft.txt"))
+
+            await #expect { _ = try await drive.service.duplicate("draft.txt", in: drive.connection) } throws: { error in
+                error.localizedDescription == String(localized: .duplicateFileStillUploading)
+            }
+            #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy.txt")
+            #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy 2.txt")
+
+            #expect(try await drive.control("core/stats")["serverSideCopies"] as? Int == 2)
+            try await waitUntil(timeout: .seconds(5)) {
+                let listed = try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path)
+                return listed.contains("report copy.txt") && listed.contains("report copy 2.txt")
+            }
+            #expect(try String(contentsOf: drive.mounted.appending(path: "report copy 2.txt"), encoding: .utf8) == "report")
+            try await drive.waitForUploads()
+            #expect(try FileManager.default.contentsOfDirectory(atPath: bucket.path).count == 4)
+        }
+    }
+
+    @Test func duplicatesInFlightKeepTheirNamesApartAndBlockDisconnect() async throws {
+        try await withS3Drive { drive, bucket in
+            try Data("report".utf8).write(to: bucket.appending(path: "report.txt"))
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
+            let hold = drive.paths.support.appending(path: "hold")
+            let entered = drive.paths.support.appending(path: "entered")
+            let slowRclone = drive.paths.support.appending(path: "slow-rclone")
+            try writeRcloneStub("""
+            for argument in "$@"; do
+                if [ "$argument" = 'operations/copyfile' ] && [ -f '\(hold.path)' ]; then touch '\(entered.path)'; sleep 2; fi
+            done
+            exec '\(drive.executable.path)' "$@"
+            """, to: slowRclone)
+            let service = MountService(executable: slowRclone, helperDirectory: helpers, paths: drive.paths)
+            let connection = drive.connection
+
+            try Data().write(to: hold)
+            let first = Task { try await service.duplicate("report.txt", in: connection) }
+            try await waitUntil { FileManager.default.fileExists(atPath: entered.path) }
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
+            }
+            let second = Task { try await service.duplicate("report.txt", in: connection) }
+            try await Task.sleep(for: .milliseconds(500))
+            try FileManager.default.removeItem(at: hold)
+            #expect(try await [first.value, second.value] == ["report copy.txt", "report copy 2.txt"])
+
+            await #expect(throws: AppError.self) { _ = try await service.duplicate("missing.txt", in: connection) }
+            try await service.unmount(connection)
         }
     }
 

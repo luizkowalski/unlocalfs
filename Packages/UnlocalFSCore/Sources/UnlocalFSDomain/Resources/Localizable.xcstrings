@@ -70,6 +70,24 @@
         }
       }
     },
+    "copyWord" : {
+      "comment" : "Word added to the name of a file duplicated on the server, as Finder does: \"report copy.pdf\"",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "copy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cópia"
+          }
+        }
+      }
+    },
     "disconnectBeforeDelete": {
       "extractionState": "manual",
       "localizations": {
@@ -100,6 +118,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Desconecte suas unidades antes de sair. Isso preserva os envios pendentes. Fechar a janela mantém o UnlocalFS na barra de menus."
+          }
+        }
+      }
+    },
+    "driveIsReadOnly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The drive is read-only."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A unidade é somente leitura."
           }
         }
       }
@@ -1036,6 +1071,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "A chave secreta não pode ficar vazia"
+          }
+        }
+      }
+    },
+    "serverCopyUnavailable" : {
+      "comment" : "%1$@ is the provider name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate on Server isn't available for %1$@ drives."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicar no Servidor não está disponível para unidades %1$@."
           }
         }
       }

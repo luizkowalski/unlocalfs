@@ -25,6 +25,7 @@ import UnlocalFSPresentation
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: drives),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),
+            duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: drives),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),
             quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths)
         )

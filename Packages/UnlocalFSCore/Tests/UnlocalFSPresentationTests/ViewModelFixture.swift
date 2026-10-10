@@ -65,6 +65,7 @@ struct ViewModelFixture {
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
+            duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
             quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths)
         )

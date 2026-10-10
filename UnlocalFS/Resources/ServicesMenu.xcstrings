@@ -36,6 +36,18 @@
           }
         }
       }
+    },
+    "Duplicate on Server": {
+      "extractionState": "manual",
+      "comment": "Services menu item shown in Finder",
+      "localizations": {
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicar no Servidor"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
