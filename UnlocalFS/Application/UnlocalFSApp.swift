@@ -143,9 +143,10 @@ extension AppDelegate {
         }
         serviceRequester = requester == NSRunningApplication.current ? nil : requester
         if NSApp.isActive { returnServiceFocus() }
+        Task { await action(files) }
         Task {
-            defer { serviceRequester = nil }
-            await action(files)
+            try? await Task.sleep(for: .seconds(2))
+            serviceRequester = nil
         }
     }
 

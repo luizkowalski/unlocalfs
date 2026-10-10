@@ -15,8 +15,7 @@ extension MountService {
         }
         let target = RcloneRemote(connection: connection, credentials: nil, knownHosts: paths.knownHosts).target
         let folder = (path as NSString).deletingLastPathComponent
-        let destination = try await freeCopyPath(for: path, in: folder, of: connection, target: target)
-        reservedCopies[connection.id, default: []].insert(destination)
+        let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
         defer { reservedCopies[connection.id]?.remove(destination) }
         let job = try await control(StartedJob.self, connection, "operations/copyfile", [
             "srcFs=\(target)", "srcRemote=\(path)", "dstFs=\(target)", "dstRemote=\(destination)",
@@ -30,22 +29,21 @@ extension MountService {
             }
             try await Task.sleep(for: .milliseconds(500))
         }
-        _ = try await control(connection, "vfs/refresh", folder.isEmpty ? [] : ["dir=\(folder)"])
+        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [] : ["dir=\(folder)"])
         return destination
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
         guard copiesInFlight[connection.id, default: 0] == 0 else { throw AppError(String(localized: .copyInProgress)) }
         guard connection.backend.supportsServerCopy, status.isRunning, !status.needsReconnect else { return }
-        guard let list = try? await control(connection, "job/list") else { return }
-        for id in try JSONDecoder().decode(JobList.self, from: list).runningIds {
+        for id in try await control(JobList.self, connection, "job/list").runningIds {
             let job = try await control(JobStatus.self, connection, "job/status", ["jobid=\(id)"])
             if job.group == Self.copyGroup, !job.finished { throw AppError(String(localized: .copyInProgress)) }
         }
     }
 
-    private func freeCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
-        let mounted = Set(try FileManager.default.contentsOfDirectory(atPath: paths.mount(connection).appending(path: folder).path))
+    private func reserveCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
+        let mounted = try await names(in: paths.mount(connection).appending(path: folder))
         let name = CopyName(of: (path as NSString).lastPathComponent)
         var attempt = 0
         while true {
@@ -53,9 +51,20 @@ extension MountService {
             let fileName = name.attempt(attempt)
             let candidate = (folder as NSString).appendingPathComponent(fileName)
             guard !mounted.contains(fileName), !reservedCopies[connection.id, default: []].contains(candidate) else { continue }
-            if try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil {
-                return candidate
+            reservedCopies[connection.id, default: []].insert(candidate)
+            do {
+                if try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil {
+                    return candidate
+                }
+            } catch {
+                reservedCopies[connection.id]?.remove(candidate)
+                throw error
             }
+            reservedCopies[connection.id]?.remove(candidate)
         }
+    }
+
+    private nonisolated func names(in folder: URL) async throws -> Set<String> {
+        Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
     }
 }

@@ -59,7 +59,9 @@ import UnlocalFSDomain
             try await drive.waitForUploads()
             try Data("draft".utf8).write(to: drive.mounted.appending(path: "draft.txt"))
 
-            await #expect(throws: AppError.self) { _ = try await drive.service.duplicate("draft.txt", in: drive.connection) }
+            await #expect { _ = try await drive.service.duplicate("draft.txt", in: drive.connection) } throws: { error in
+                error.localizedDescription == String(localized: .duplicateFileStillUploading)
+            }
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy.txt")
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy 2.txt")
 

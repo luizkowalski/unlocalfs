@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
+@testable import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
 @Suite struct WorkflowTests {
@@ -206,15 +206,21 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test(arguments: [sftpFixture(), readOnlyFixture()])
-    func duplicatingIsRefusedBeforeRcloneRuns(connection: Connection) async throws {
-        try await withWorkflowFixture { repository, drives, paths, _ in
-            try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret", password: "secret"))
-            let file = paths.mount(connection).appending(path: "plan.pdf")
+    @Test(arguments: [
+        (sftpFixture(), String(localized: .serverCopyUnavailable(sftpFixture().provider.title))),
+        (readOnlyFixture(), String(localized: .driveIsReadOnly))
+    ])
+    func duplicatingRefusesTheSelectionBeforeCopyingAnyFile(refused: Connection, message: String) async throws {
+        try await withWorkflowFixture { repository, drives, paths, writable in
+            let credentials = Credentials(accessKey: "key", secretKey: "secret", password: "secret")
+            try repository.save(writable, credentials: credentials)
+            try repository.save(refused, credentials: credentials)
+            let file = paths.mount(refused).appending(path: "plan.pdf")
             await #expect {
-                _ = try await DuplicateFilesUseCase(repository: repository, drives: drives).execute([file])
+                _ = try await DuplicateFilesUseCase(repository: repository, drives: drives)
+                    .execute([paths.mount(writable).appending(path: "report.pdf"), file])
             } throws: { error in
-                (error as? FileActionError)?.file == file
+                (error as? FileActionError)?.file == file && error.localizedDescription == message
             }
             #expect(!FileManager.default.fileExists(atPath: paths.support.appending(path: "process-calls").path))
         }

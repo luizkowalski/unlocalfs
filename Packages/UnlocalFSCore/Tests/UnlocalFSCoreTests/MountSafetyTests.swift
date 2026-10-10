@@ -95,6 +95,26 @@ import UnlocalFSDomain
         }
     }
 
+    @Test func duplicateStartedDuringEjectKeepsTheServiceAlive() async throws {
+        try await withFixture { root in
+            """
+            case "$4" in
+                job/list)
+                    if [ -f '\(root.path)/listed' ]; then printf '{"runningIds":[7]}'; else printf '{"runningIds":[]}'; fi
+                    touch '\(root.path)/listed' ;;
+                job/status) printf '{"finished":false,"success":false,"error":"","group":"duplicate"}' ;;
+                core/quit) touch '\(root.path)/quit' ;;
+                *) printf '%s' '{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}' ;;
+            esac
+            """
+        } operation: { service, connection in
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
+            }
+            #expect(await service.status(connection).isRunning)
+        }
+    }
+
     @Test(arguments: ["before", "during", "after"])
     func disconnectSucceedsWhenRcloneExitsDuringShutdown(phase: String) async throws {
         try await withFixture { shutdownScript(phase: phase, root: $0) } operation: { service, connection in
