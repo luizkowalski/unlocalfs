@@ -114,14 +114,14 @@ import UnlocalFSInfrastructure
 
         await app.disconnect(connection)
 
-        #expect(app.disconnectFailure == nil)
         #expect(app.problem(connection) == nil)
         #expect(await fixture.service.status(connection).isRunning)
         #expect(app.uploadsBlockingDisconnect == connection)
-        #expect(app.isShowingUploadsBlockingDisconnect)
+        #expect(app.uploadsBlockingMessage(connection) == String(localized: .uploadsPendingKeepAppRunning))
+        #expect(app.needsMainWindow(connection))
 
         app.isShowingUploadsBlockingDisconnect = false
-        #expect(app.uploadsBlockingDisconnect == nil)
+        #expect(!app.needsMainWindow(connection))
         try fixture.serve(connection)
         await app.refresh()
         await app.refresh()

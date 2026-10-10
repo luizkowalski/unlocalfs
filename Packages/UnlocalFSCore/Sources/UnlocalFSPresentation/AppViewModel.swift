@@ -26,7 +26,7 @@ import UnlocalFSDomain
 
     private let drives: any DriveGateway
     private let deleteConnection: DeleteConnectionUseCase
-    private let toggleDrive: ToggleDriveUseCase
+    private let connectDrive: ConnectDriveUseCase
     private let shareFiles: ShareFilesUseCase
     private let exportConfig: ExportRcloneConfigUseCase
     private let quit: QuitUseCase
@@ -41,7 +41,7 @@ import UnlocalFSDomain
         initialConnections: Result<[Connection], any Error>,
         drives: any DriveGateway,
         deleteConnection: DeleteConnectionUseCase,
-        toggleDrive: ToggleDriveUseCase,
+        connectDrive: ConnectDriveUseCase,
         shareFiles: ShareFilesUseCase,
         exportConfig: ExportRcloneConfigUseCase,
         quit: QuitUseCase,
@@ -49,7 +49,7 @@ import UnlocalFSDomain
     ) {
         self.drives = drives
         self.deleteConnection = deleteConnection
-        self.toggleDrive = toggleDrive
+        self.connectDrive = connectDrive
         self.shareFiles = shareFiles
         self.exportConfig = exportConfig
         self.quit = quit
@@ -127,27 +127,30 @@ import UnlocalFSDomain
     public func activate(_ connection: Connection) async {
         guard !checkingQuit, canToggle(connection) else { return }
         if canOpen(connection) || !isActive(connection) || needsReconnect(connection) {
-            await toggle(connection, opensFinder: true, allowsDisconnect: false)
+            await connect(connection, opensFinder: true)
         }
     }
 
-    public func toggle(_ connection: Connection, opensFinder: Bool = false, allowsDisconnect: Bool = true) async {
-        guard !checkingQuit, canToggle(connection) else { return }
-        if allowsDisconnect, canDisconnect(connection) {
+    public func toggle(_ connection: Connection, opensFinder: Bool = false) async {
+        if canDisconnect(connection) {
             await disconnect(connection)
-            return
+        } else {
+            await connect(connection, opensFinder: opensFinder)
         }
+    }
+
+    private func connect(_ connection: Connection, opensFinder: Bool) async {
+        guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
         errors[connection.id] = nil
-        if allowsDisconnect { waitingToDisconnect.remove(connection.id) }
         defer { busy.remove(connection.id) }
         if let pending = serverTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending) }
         do {
-            let outcome = try await toggleDrive.execute(connection, allowsDisconnect: allowsDisconnect)
+            let outcome = try await connectDrive.execute(connection)
             if opensFinder {
                 switch outcome {
                 case .connected, .reconnected: openDrive(connection)
-                case .disconnected: break
+                case .ejected: break
                 }
             }
         } catch let challenge as ServerTrustChallenge {
@@ -156,7 +159,7 @@ import UnlocalFSDomain
             errors[connection.id] = challenge.localizedDescription
             selection = connection.id
         } catch {
-            handleDriveError(error, for: connection)
+            errors[connection.id] = error.localizedDescription
         }
         update(await drives.status(connection), for: connection)
     }
@@ -170,8 +173,14 @@ import UnlocalFSDomain
         defer { busy.remove(connection.id) }
         do {
             try await drives.unmount(connection)
+        } catch is UploadsPendingError {
+            uploadsBlockingDisconnect = connection
+            waitingToDisconnect.insert(connection.id)
+            selection = connection.id
+        } catch is DriveEjectError {
+            disconnectFailure = connection
         } catch {
-            handleDriveError(error, for: connection)
+            errors[connection.id] = error.localizedDescription
         }
         update(await drives.status(connection), for: connection)
     }
@@ -183,7 +192,7 @@ import UnlocalFSDomain
         do {
             try await drives.trustServer(challenge)
             busy.remove(connection.id)
-            await toggle(connection, opensFinder: opensFinder, allowsDisconnect: false)
+            await connect(connection, opensFinder: opensFinder)
         } catch {
             busy.remove(connection.id)
             errors[connection.id] = error.localizedDescription
@@ -258,7 +267,7 @@ import UnlocalFSDomain
     private func connectAutomatically() async {
         for connection in connections {
             if let status = statuses[connection.id], connection.shouldConnectAutomatically(status: status) {
-                await toggle(connection)
+                await connect(connection, opensFinder: false)
             }
         }
     }
@@ -318,19 +327,6 @@ extension AppViewModel {
 }
 
 private extension AppViewModel {
-    func handleDriveError(_ error: any Error, for connection: Connection) {
-        switch error {
-        case is UploadsPendingError:
-            uploadsBlockingDisconnect = connection
-            waitingToDisconnect.insert(connection.id)
-            selection = connection.id
-        case is DriveEjectError:
-            disconnectFailure = connection
-        default:
-            errors[connection.id] = error.localizedDescription
-        }
-    }
-
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
             notify(title: String(localized: .uploadsFailed(connection.name)), body: String(localized: .uploadsFailedBody))

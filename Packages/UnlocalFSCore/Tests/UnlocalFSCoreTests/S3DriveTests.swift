@@ -10,6 +10,22 @@ import UnlocalFSInfrastructure
         }
     }
 
+    @Test func openFileKeepsTheDriveConnectedUntilItCloses() async throws {
+        try await withS3Drive { drive, bucket in
+            try Data("open file".utf8).write(to: bucket.appending(path: "open.txt"))
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
+            let file = try FileHandle(forReadingFrom: drive.mounted.appending(path: "open.txt"))
+            defer { try? file.close() }
+
+            await #expect(throws: DriveEjectError.self) { try await drive.service.unmount(drive.connection) }
+            #expect(await drive.service.status(drive.connection).isMounted)
+
+            try file.close()
+            try await drive.service.unmount(drive.connection)
+            #expect(await !drive.service.status(drive.connection).isActive)
+        }
+    }
+
     @Test func encryptedDriveStoresOnlyCiphertextThatItsExportedConfigCanRead() async throws {
         try await withS3Drive(encrypted: true) { drive, bucket in
             let credentials = try await drive.service.prepareCredentials(

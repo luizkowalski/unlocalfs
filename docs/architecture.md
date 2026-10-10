@@ -18,7 +18,7 @@ flowchart LR
 | --- | --- |
 | SaveConnectionUseCase | Validates current saved names and credentials, refuses to change a saved drive's protocol and a saved SFTP drive's folder or encryption, drops credentials the connection no longer uses, prepares credentials, then saves |
 | DeleteConnectionUseCase | Refuses active drives, removes the saved connection and cache |
-| ToggleDriveUseCase | Uses current drive status to connect, disconnect, or reconnect |
+| ConnectDriveUseCase | Uses current drive status to connect or reconnect; view models disconnect through the gateway |
 | ShareFilesUseCase | Resolves selected files to drives and creates links, refusing SFTP, GCS, and encrypted drives before it loads credentials; identifies the failed file |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
 | QuitUseCase | Refuses quit during an operation or while a drive remains active |

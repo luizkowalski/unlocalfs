@@ -1,7 +1,7 @@
 import Foundation
 
-public struct ToggleDriveUseCase: Sendable {
-    public enum Outcome: Sendable { case connected, disconnected, reconnected }
+public struct ConnectDriveUseCase: Sendable {
+    public enum Outcome: Sendable { case connected, ejected, reconnected }
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway
 
@@ -10,17 +10,13 @@ public struct ToggleDriveUseCase: Sendable {
         self.drives = drives
     }
 
-    public func execute(_ connection: Connection, allowsDisconnect: Bool = true) async throws -> Outcome {
+    public func execute(_ connection: Connection) async throws -> Outcome {
         let current = await drives.status(connection)
         if current.needsReconnect {
             try await drives.reconnect(connection, credentials: repository.credentials(for: connection.id))
             return .reconnected
         }
-        if current.isActive {
-            if !allowsDisconnect { return current.isMounted ? .connected : .disconnected }
-            try await drives.unmount(connection)
-            return .disconnected
-        }
+        if current.isActive { return current.isMounted ? .connected : .ejected }
         try await drives.mount(connection, credentials: repository.credentials(for: connection.id))
         return .connected
     }

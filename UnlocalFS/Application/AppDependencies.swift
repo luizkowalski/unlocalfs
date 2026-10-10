@@ -23,7 +23,7 @@ import UnlocalFSPresentation
         let model = AppViewModel(
             initialConnections: initialConnections, drives: drives,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),
-            toggleDrive: ToggleDriveUseCase(repository: repository, drives: drives),
+            connectDrive: ConnectDriveUseCase(repository: repository, drives: drives),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),
             quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths)

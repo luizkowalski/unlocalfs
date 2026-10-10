@@ -167,16 +167,6 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func toggleKeepsQueuedUploadsRunning() async throws {
-        try await withWorkflowFixture { repository, drives, paths, connection in
-            try Data().write(to: paths.socket(connection))
-            await #expect(throws: UploadsPendingError.self) {
-                _ = try await ToggleDriveUseCase(repository: repository, drives: drives).execute(connection)
-            }
-            #expect(await drives.status(connection).isActive)
-        }
-    }
-
     @Test func sharingReportsTheFileOutsideADrive() async throws {
         try await withWorkflowFixture { repository, drives, paths, _ in
             let file = paths.support.appending(path: "outside.jpg")

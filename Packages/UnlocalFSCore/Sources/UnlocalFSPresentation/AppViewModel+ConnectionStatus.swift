@@ -71,6 +71,14 @@ extension AppViewModel {
         if needsReconnect(connection) { return String(localized: .reconnect) }
         return isActive(connection) ? String(localized: .disconnect) : String(localized: .connect)
     }
+
+    public func uploadsBlockingMessage(_ connection: Connection) -> String {
+        canOpen(connection) ? String(localized: .uploadsPendingDriveStaysConnected) : String(localized: .uploadsPendingKeepAppRunning)
+    }
+
+    public func needsMainWindow(_ connection: Connection) -> Bool {
+        serverTrust[connection.id] != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id
+    }
 }
 
 private extension AppViewModel {

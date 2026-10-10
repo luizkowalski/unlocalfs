@@ -54,7 +54,6 @@ struct MainView: View {
                isPresented: $model.isShowingDisconnectFailure, presenting: model.disconnectFailure) { connection in
             Button("Keep Connected", role: .cancel) {}
             Button("Try Disconnect Again") { Task { await model.disconnect(connection) } }
-                .disabled(!model.canDisconnect(connection))
         } message: { _ in
             Text("Close files and stop apps using this drive, then try again. The drive is still connected.")
         }
@@ -62,11 +61,7 @@ struct MainView: View {
                isPresented: $model.isShowingUploadsBlockingDisconnect, presenting: model.uploadsBlockingDisconnect) { _ in
             Button("OK", role: .cancel) {}
         } message: { connection in
-            if model.canOpen(connection) {
-                Text("The drive will stay connected until uploads finish. You’ll be notified when you can disconnect.")
-            } else {
-                Text("Keep UnlocalFS running until uploads finish. You’ll be notified when you can disconnect.")
-            }
+            Text(model.uploadsBlockingMessage(connection))
         }
         .confirmationDialog(
             "Delete \(model.deleting?.name ?? "connection")?",
