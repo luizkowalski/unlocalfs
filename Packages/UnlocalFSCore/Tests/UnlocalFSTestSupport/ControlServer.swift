@@ -88,13 +88,7 @@ public final class ControlServer: Sendable {
             let json = try? JSONSerialization.data(withJSONObject: ["error": message, "status": 500])
             (status, body) = ("500 Internal Server Error", String(decoding: json ?? Data(), as: UTF8.self))
         }
-        var response = Array("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n".utf8)
-        let bytes = Array(body.utf8)
-        for start in stride(from: 0, to: bytes.count, by: 1024) {
-            let chunk = bytes[start..<min(start + 1024, bytes.count)]
-            response += Array("\(String(chunk.count, radix: 16))\r\n".utf8) + chunk + Array("\r\n".utf8)
-        }
-        return response + Array("0\r\n\r\n".utf8)
+        return Array("HTTP/1.0 \(status)\r\nContent-Type: application/json\r\nContent-Length: \(body.utf8.count)\r\n\r\n\(body)".utf8)
     }
 
     private static func finish(_ client: Int32, _ response: [UInt8]) {
@@ -105,7 +99,5 @@ public final class ControlServer: Sendable {
             guard count > 0 else { return }
             sent += count
         }
-        var buffer = [UInt8](repeating: 0, count: 1024)
-        while read(client, &buffer, buffer.count) > 0 {}
     }
 }

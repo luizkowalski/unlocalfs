@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 @MainActor @Suite struct ActivityViewModelTests {
     @Test func activityRecoversAfterTheControlServiceReturns() async throws {
@@ -53,6 +54,27 @@ import Testing
         try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         await viewModel.refresh(connection)
         #expect(viewModel.refreshInterval == .milliseconds(250))
+    }
+
+    @Test func cancelledRefreshDoesNotReplaceTheNextDrivesActivity() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        var previous = connectionFixture()
+        previous.name = "Previous"
+        let current = connectionFixture()
+        try fixture.serve(previous) { _ in
+            try await Task.sleep(for: .milliseconds(300))
+            throw ControlFailure("Previous drive failed")
+        }
+        try fixture.serve(current)
+
+        let refreshingPrevious = Task { await viewModel.refresh(previous) }
+        refreshingPrevious.cancel()
+        await viewModel.refresh(current)
+        await refreshingPrevious.value
+
+        #expect(try #require(viewModel.activity).get().isEmpty)
     }
 
     @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {

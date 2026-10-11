@@ -75,8 +75,7 @@ struct ViewModelFixture {
     }
 
     func serve(_ connection: Connection, queued: Int = 0, failed: Int = 0, cached: Int64 = 0, downloading: Bool = false) throws {
-        try ConnectionStore(url: paths.config).save(connection)
-        try servers.start(at: paths.socket(connection)) { [root] request in
+        try serve(connection) { [root] request in
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
             let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
             return #"{"results":[\#(results.joined(separator: ","))]}"#
@@ -85,6 +84,11 @@ struct ViewModelFixture {
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
         let transfers = downloading ? #"{"transferring":[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]}"# : "{}"
         try Data(transfers.utf8).write(to: root.appending(path: "stats.json"))
+    }
+
+    func serve(_ connection: Connection, respond: @escaping ControlServer.Respond) throws {
+        try ConnectionStore(url: paths.config).save(connection)
+        try servers.start(at: paths.socket(connection), respond: respond)
     }
 
     func queue(_ items: String...) throws {

@@ -105,6 +105,24 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test func controlCallsStopAtTheirDeadline() async throws {
+        let socket = URL(filePath: "/tmp/uf-deadline-\(UUID().uuidString.prefix(8)).sock")
+        let server = try ControlServer(at: socket) { _ in
+            try await Task.sleep(for: .seconds(2))
+            return "{}"
+        }
+        defer {
+            server.stop()
+            try? FileManager.default.removeItem(at: socket)
+        }
+        let started = ContinuousClock.now
+
+        await #expect { _ = try await ControlSocket.post(socket, "core/stats", body: Data("{}".utf8), timeout: .milliseconds(300)) } throws: { error in
+            error.localizedDescription == String(localized: .commandTimedOut)
+        }
+        #expect(ContinuousClock.now - started < .seconds(1))
+    }
+
     @Test(arguments: ["before", "during", "after"])
     func disconnectSucceedsWhenRcloneExitsDuringShutdown(phase: String) async throws {
         try await withControl { shutdown(phase: phase, root: $0, socket: $1) } operation: { service, connection in

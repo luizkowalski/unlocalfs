@@ -35,9 +35,8 @@ import UnlocalFSDomain
             let files = try await drives.activity(connection)
             try Task.checkCancellation()
             activity = .success(files)
-        } catch is CancellationError {
-        } catch {
+        } catch where !Task.isCancelled {
             activity = .failure(error)
-        }
+        } catch {}
     }
 }
