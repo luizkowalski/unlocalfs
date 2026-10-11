@@ -97,6 +97,10 @@ import UnlocalFSInfrastructure
         #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
         #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedReason("AccessDenied: Access Denied"))])
 
+        await app.disconnect(connection)
+        #expect(app.problem(connection) != nil)
+        #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
+
         try fixture.queue()
         await app.refresh()
 
@@ -114,8 +118,7 @@ import UnlocalFSInfrastructure
 
         await app.refresh()
 
-        let failure = try #require(app.uploadFailure(connection))
-        #expect(failure.uploadError == nil)
+        #expect(try #require(app.uploadFailure(connection)).uploadError == nil)
         #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedBody)])
     }
 

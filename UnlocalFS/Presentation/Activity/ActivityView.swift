@@ -163,6 +163,9 @@ private struct ActivityRow: View {
         } status: {
             statusView.font(.caption).foregroundStyle(.secondary)
                 .popover(isPresented: $showingFailure, arrowEdge: .bottom) { failureDetails }
+                .onChange(of: showsFailure) { _, failing in
+                    if !failing { showingFailure = false }
+                }
         } size: {
             if activity.size >= 0 {
                 Text(activity.size, format: .byteCount(style: .file))
@@ -223,6 +226,10 @@ private struct ActivityRow: View {
         }
     }
 
+    private var showsFailure: Bool {
+        if case .failed = activity.state { true } else { activity.uploadError != nil }
+    }
+
     private var failureDetails: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(name).font(.headline)
@@ -234,6 +241,8 @@ private struct ActivityRow: View {
             nextAttempt.foregroundStyle(.secondary)
         }
         .font(.callout)
+        .foregroundStyle(.primary)
+        .lineLimit(nil)
         .fixedSize(horizontal: false, vertical: true)
         .padding(14)
         .frame(width: 320, alignment: .leading)

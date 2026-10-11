@@ -18,8 +18,9 @@ extension AppViewModel {
     }
 
     public func uploadFailure(_ connection: Connection) -> MountStatus? {
-        guard case .uploadFailed = condition(connection) else { return nil }
-        return statuses[connection.id]
+        guard !busy.contains(connection.id), !needsReconnect(connection), !isOffline(connection),
+              let status = statuses[connection.id], status.failedUploads > 0 else { return nil }
+        return status
     }
 
     public func problem(_ connection: Connection) -> String? {
