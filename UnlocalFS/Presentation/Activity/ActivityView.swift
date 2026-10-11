@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 import UnlocalFSDomain
@@ -80,7 +81,7 @@ struct ActivityView: View {
             }
             if let bytesPerSecond = summary.bytesPerSecond {
                 Text(verbatim: "·")
-                Text("\(bytesPerSecond.formatted(.byteCount(style: .file)))/s")
+                Text("\(bytesPerSecond, format: .byteCount(style: .file))/s")
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(reduceMotion ? nil : .default, value: bytesPerSecond)
