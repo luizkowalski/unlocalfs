@@ -135,7 +135,7 @@ public actor MountService: DriveGateway {
             return status
         }
         do {
-            let snapshot = try await snapshot(connection)
+            let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
             status.isRunning = true
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
             status.failedUploads = snapshot.cache.erroredFiles + snapshot.queue.count { !$0.uploading && $0.tries > 0 }
@@ -150,7 +150,7 @@ public actor MountService: DriveGateway {
     }
 
     public func activity(_ connection: Connection) async throws -> [FileActivity] {
-        let snapshot = try await snapshot(connection)
+        let snapshot = try await snapshot(connection, ControlSnapshot.activityRequest)
         let queue = snapshot.queue
         let transfers = snapshot.transfers
         let queuedPaths = Set(queue.map(\.name))
@@ -162,7 +162,13 @@ public actor MountService: DriveGateway {
         let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
             FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
         }
-        return queued + transferring
+        let active = queued + transferring
+        let activeUploads = Set(active.filter { $0.state != .downloading }.map(\.path))
+        let uploads = snapshot.finished.filter { $0.isUpload && $0.error.isEmpty && !activeUploads.contains($0.name) }
+        let latestUploads = Dictionary(uploads.map { ($0.name, $0) }) { $0.completedAt > $1.completedAt ? $0 : $1 }.values
+        return active + latestUploads.map {
+            FileActivity(path: $0.name, size: $0.size, state: .uploaded($0.completedAt), bytesTransferred: $0.size)
+        }
     }
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
@@ -213,8 +219,8 @@ public actor MountService: DriveGateway {
         try await JSONDecoder().decode(response, from: control(connection, method, parameters))
     }
 
-    private func snapshot(_ connection: Connection) async throws -> ControlSnapshot {
-        try await control(ControlSnapshot.self, connection, "job/batch", ["--json", ControlSnapshot.request])
+    private func snapshot(_ connection: Connection, _ request: String) async throws -> ControlSnapshot {
+        try await control(ControlSnapshot.self, connection, "job/batch", ["--json", request])
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {

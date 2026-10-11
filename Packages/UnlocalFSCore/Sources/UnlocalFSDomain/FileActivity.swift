@@ -1,8 +1,9 @@
 import Foundation
 
 public struct FileActivity: Identifiable, Equatable, Sendable {
-    public enum State: Sendable {
+    public enum State: Equatable, Sendable {
         case queued, uploading, retrying, downloading
+        case uploaded(Date)
     }
 
     public let path: String

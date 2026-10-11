@@ -51,14 +51,33 @@ import UnlocalFSInfrastructure
         """)
         #expect(activity.map(\.bytesPerSecond) == [4096])
     }
+
+    @Test func finishedUploadsShowOnceUnlessTheFileUploadsAgain() async throws {
+        let activity = try await fetchActivity(queue: """
+        {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
+        """, transferred: """
+        {"transferred":[
+            {"name":"photo.jpg","size":10,"error":"","completed_at":"2026-10-11T16:10:35.1+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"photo.jpg","size":20,"error":"","completed_at":"2026-10-11T16:10:36.750335+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"video.mov","size":1000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"denied.txt","size":5,"error":"Access Denied","completed_at":"2026-10-11T16:10:36+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"movie.mkv","size":5000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","srcFs":":s3:bucket"}
+        ]}
+        """)
+        let uploaded = try Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse("2026-10-11T14:10:36.750335Z")
+        #expect(activity.filter { $0.path != "video.mov" } == [
+            FileActivity(path: "photo.jpg", size: 20, state: .uploaded(uploaded), bytesTransferred: 20)
+        ])
+        #expect(activity.first { $0.path == "video.mov" }?.state == .queued)
+    }
 }
 
-private func fetchActivity(queue: String, stats: String = "{}") async throws -> [FileActivity] {
+private func fetchActivity(queue: String, stats: String = "{}", transferred: String? = nil) async throws -> [FileActivity] {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     let binary = root.appendingPathComponent("rclone")
-    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats)
+    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
     try Data(batch.utf8).write(to: root.appendingPathComponent("batch.json"))
     try writeRcloneStub("cat '\(root.path)/batch.json'", to: binary)
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)

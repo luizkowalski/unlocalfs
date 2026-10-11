@@ -1602,6 +1602,17 @@
         }
       }
     },
+    "Uploaded" : {
+      "comment" : "Activity table status: the file finished uploading",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado"
+          }
+        }
+      }
+    },
     "Uploading" : {
       "localizations" : {
         "pt-BR" : {

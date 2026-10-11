@@ -45,7 +45,7 @@ struct ActivityView: View {
         case .failure:
             Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
         case .success:
-            if let summary {
+            if let summary, summary.fileCount > 0 {
                 transfers(summary)
             }
         }
@@ -93,6 +93,7 @@ struct ActivityView: View {
 private struct ActivityTable<Empty: View>: View {
     let files: [FileActivity]
     @ViewBuilder let empty: Empty
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 0) {
@@ -116,6 +117,7 @@ private struct ActivityTable<Empty: View>: View {
                     .background(Color(nsColor: .alternatingContentBackgroundColors[index.isMultiple(of: 2) ? 0 : 1]))
             }
         }
+        .animation(reduceMotion ? nil : .default, value: files.map(\.id))
         .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(.rect(cornerRadius: 10))
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
@@ -143,6 +145,7 @@ private struct ActivityTableRow<Name: View, Folder: View, Status: View, Size: Vi
 
 private struct ActivityRow: View {
     let activity: FileActivity
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ActivityTableRow {
@@ -173,6 +176,12 @@ private struct ActivityRow: View {
             Text("Waiting")
         case .retrying:
             Text("Waiting to retry upload").foregroundStyle(.orange)
+        case .uploaded:
+            Label {
+                Text("Uploaded")
+            } icon: {
+                Image(systemName: "checkmark").foregroundStyle(.green)
+            }
         case .uploading, .downloading:
             if activity.size > 0, let transferred = activity.bytesTransferred {
                 let fraction = min(Double(transferred) / Double(activity.size), 1)
@@ -182,8 +191,10 @@ private struct ActivityRow: View {
                         .accessibilityLabel(movingText)
                     Text(fraction, format: .percent.precision(.fractionLength(0)))
                         .monospacedDigit()
+                        .contentTransition(.numericText())
                         .frame(width: 34, alignment: .leading)
                 }
+                .animation(reduceMotion ? nil : .linear(duration: 1), value: fraction)
                 .help(movingText)
             } else {
                 movingText

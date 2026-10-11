@@ -38,6 +38,20 @@ import Testing
         #expect(try #require(viewModel.activity).get().isEmpty)
     }
 
+    @Test func activityRefreshesEverySecondWhileFilesShow() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        let connection = connectionFixture()
+
+        await viewModel.refresh(connection)
+        #expect(viewModel.refreshInterval == .seconds(3))
+
+        try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
+        await viewModel.refresh(connection)
+        #expect(viewModel.refreshInterval == .seconds(1))
+    }
+
     @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
