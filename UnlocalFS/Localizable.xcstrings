@@ -503,18 +503,6 @@
         }
       }
     },
-    "Delete" : {
-      "comment" : "Toolbar button, destructive: delete the connection",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Excluir"
-          }
-        }
-      }
-    },
     "Delete %@?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -619,7 +607,6 @@
       }
     },
     "Downloading" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -662,18 +649,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duplicar conexão…"
-          }
-        }
-      }
-    },
-    "Edit" : {
-      "comment" : "Toolbar button: edit the connection",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editar"
           }
         }
       }
@@ -751,18 +726,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Endpoint"
-          }
-        }
-      }
-    },
-    "Export" : {
-      "comment" : "Toolbar button: export an rclone config file for the drive",
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exportar"
           }
         }
       }
@@ -977,14 +940,14 @@
         }
       }
     },
-    "Log" : {
-      "comment" : "Toolbar button: open the drive log file (noun)",
+    "More" : {
+      "comment" : "Toolbar menu button with more drive actions",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Log"
+            "value" : "Mais"
           }
         }
       }
@@ -1409,17 +1372,6 @@
         }
       }
     },
-    "Save a file that lets rclone read this drive without UnlocalFS" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salvar um arquivo que permite ao rclone ler esta unidade sem o UnlocalFS"
-          }
-        }
-      }
-    },
     "Secret key" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1516,6 +1468,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar as alterações feitas nesta unidade por outros apps ou Macs"
+          }
+        }
+      }
+    },
+    "Show Log" : {
+      "comment" : "Menu item: open the drive log file",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar log"
           }
         }
       }
@@ -1659,7 +1623,6 @@
       }
     },
     "Uploading" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
