@@ -138,7 +138,7 @@ public actor MountService: DriveGateway {
             let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
             status.isRunning = true
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
-            status.failedUploads = snapshot.queue.count(where: \.hasFailed)
+            status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
@@ -158,11 +158,11 @@ public actor MountService: DriveGateway {
         let finishedInOrder = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
         let uploadErrors = Dictionary(finishedInOrder.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
         let queued = queue.map { item in
-            let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .failed(nextAttempt: .now + item.expiry) : .queued
+            let state: FileActivity.State = item.uploading ? .uploading : item.hasFailedAttempt ? .failed(nextAttempt: .now + item.expiry) : .queued
             let transfer = item.uploading ? transfers.first { $0.isUpload && $0.name == item.name } : nil
             return FileActivity(
                 path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg,
-                uploadError: item.hasFailed ? uploadErrors[item.name] : nil
+                uploadError: item.hasFailedAttempt ? uploadErrors[item.name] : nil
             )
         }
         let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {

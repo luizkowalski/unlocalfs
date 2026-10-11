@@ -11,7 +11,7 @@ struct UploadQueue: Decodable {
         let tries: Int
         let uploading: Bool
 
-        var hasFailed: Bool { tries > 1 || tries > 0 && !uploading }
+        var hasFailedAttempt: Bool { tries > 1 || (tries > 0 && !uploading) }
     }
 }
 

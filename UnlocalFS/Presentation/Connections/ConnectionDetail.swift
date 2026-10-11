@@ -208,31 +208,37 @@ struct ConnectionDetail: View {
     }
 
     private func problemNotice(_ problem: String) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-            Label("Connection needs attention", systemImage: "exclamationmark.triangle")
-                .font(.headline)
-            Text(problem).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+        notice("Connection needs attention") {
+            Text(problem).textSelection(.enabled)
+        } actions: {
             Button("Check Again") { Task { await model.checkAgain(connection) } }
-            Divider()
         }
     }
 
     private func uploadFailureNotice(_ error: String?) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-            Label("Uploads are failing", systemImage: "exclamationmark.triangle")
-                .font(.headline)
+        notice("Uploads are failing") {
             if let error {
-                Text(error).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+                Text(error).textSelection(.enabled)
             } else {
-                Text("rclone did not report a reason. The log has the details.").font(.callout).foregroundStyle(.secondary)
+                Text("rclone did not report a reason. The log has the details.")
             }
             Text("UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected.")
-                .font(.callout).foregroundStyle(.secondary)
+        } actions: {
             if error == nil {
                 Button("Show Log") { model.openLog(connection) }
             }
+        }
+    }
+
+    private func notice(
+        _ title: LocalizedStringKey, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            Label(title, systemImage: "exclamationmark.triangle")
+                .font(.headline)
+            message().font(.callout).foregroundStyle(.secondary)
+            actions()
             Divider()
         }
     }

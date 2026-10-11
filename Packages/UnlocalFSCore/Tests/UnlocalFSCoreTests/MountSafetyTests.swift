@@ -58,10 +58,10 @@ import UnlocalFSTestSupport
         } operation: { service, connection in
             let queue = await service.paths.support.appending(path: "queue")
             var reported: [String?] = []
-            for (tries, uploading) in [(2, false), (3, true), (1, true), (0, false)] {
+            for (tries, uploading, failed) in [(2, false, 1), (3, true, 1), (1, true, 0), (0, false, 0)] {
                 try #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#.write(to: queue, atomically: true, encoding: .utf8)
                 let status = await service.status(connection)
-                #expect(status.failedUploads == (tries > 1 ? 1 : 0))
+                #expect(status.failedUploads == failed)
                 reported.append(status.uploadError)
             }
             #expect(reported == ["AccessDenied: Access Denied", "AccessDenied: Access Denied", nil, nil])
