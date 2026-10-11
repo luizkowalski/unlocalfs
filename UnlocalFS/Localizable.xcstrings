@@ -36,38 +36,8 @@
         }
       }
     },
-    "%@ left" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faltam %@"
-          }
-        }
-      }
-    },
-    "%@ of %@" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ de %2$@"
-          }
-        }
-      }
-    },
     "%@/s" : {
 
-    },
-    "%@/s · about %@ left" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@/s · faltam cerca de %@"
-          }
-        }
-      }
     },
     "^[%@ more file](inflect: true)" : {
 
@@ -105,7 +75,19 @@
         }
       }
     },
+    "Activity" : {
+      "comment" : "Section heading: files that upload or download on the drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade"
+          }
+        }
+      }
+    },
     "Activity unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -341,7 +323,6 @@
       }
     },
     "Checking activity…" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -763,16 +744,6 @@
         }
       }
     },
-    "Files show up here while they upload or download." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os arquivos aparecem aqui enquanto são enviados ou baixados."
-          }
-        }
-      }
-    },
     "Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit." : {
       "localizations" : {
         "pt-BR" : {
@@ -785,7 +756,6 @@
     },
     "Folder" : {
       "comment" : "Field label: folder inside the bucket or on the server",
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -978,7 +948,6 @@
     },
     "Name" : {
       "comment" : "Field label: name of the connection",
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1248,17 +1217,6 @@
         }
       }
     },
-    "Queued for upload" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Na fila para envio"
-          }
-        }
-      }
-    },
     "Quit UnlocalFS" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1495,6 +1453,28 @@
         }
       }
     },
+    "Size" : {
+      "comment" : "Activity table column: file size",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamanho"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "comment" : "Activity table column: transfer status",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status"
+          }
+        }
+      }
+    },
     "Storage" : {
       "comment" : "Section header: where the files are stored",
       "localizations" : {
@@ -1688,8 +1668,18 @@
         }
       }
     },
+    "Waiting" : {
+      "comment" : "Activity table status: upload not started yet",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando"
+          }
+        }
+      }
+    },
     "Waiting to retry upload" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
