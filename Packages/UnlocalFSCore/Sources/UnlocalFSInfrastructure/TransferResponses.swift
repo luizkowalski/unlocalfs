@@ -48,7 +48,8 @@ struct FinishedTransfer: Decodable {
         size = try container.decode(Int64.self, forKey: .size)
         error = try container.decode(String.self, forKey: .error)
         dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
-        completedAt = try Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(container.decode(String.self, forKey: .completedAt))
+        let completed = try container.decode(String.self, forKey: .completedAt)
+        completedAt = try (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(completed)) ?? Date.ISO8601FormatStyle().parse(completed)
     }
 
     var isUpload: Bool { dstFs != nil }
