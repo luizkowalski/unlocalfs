@@ -146,6 +146,7 @@ private struct ActivityTableRow<Name: View, Folder: View, Status: View, Size: Vi
 private struct ActivityRow: View {
     let activity: FileActivity
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showingFailure = false
 
     var body: some View {
         ActivityTableRow {
@@ -161,6 +162,7 @@ private struct ActivityRow: View {
             Text(folder).truncationMode(.middle).foregroundStyle(.secondary).help(folder)
         } status: {
             statusView.font(.caption).foregroundStyle(.secondary)
+                .popover(isPresented: $showingFailure, arrowEdge: .bottom) { failureDetails }
         } size: {
             if activity.size >= 0 {
                 Text(activity.size, format: .byteCount(style: .file))
@@ -175,28 +177,76 @@ private struct ActivityRow: View {
         case .queued:
             Text("Waiting")
         case .failed:
-            Text("Waiting to retry upload").foregroundStyle(.orange)
+            Button { showingFailure = true } label: {
+                HStack(spacing: 4) {
+                    Label("Upload failed", systemImage: "exclamationmark.triangle.fill")
+                    Image(systemName: "info.circle").accessibilityHidden(true)
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.orange)
+            .accessibilityLabel("Upload failed, show details")
+            .help("Show why the upload failed")
         case .uploaded:
             finished(Text("Uploaded"))
         case .downloaded:
             finished(Text("Downloaded"))
         case .uploading, .downloading:
-            if activity.size > 0, let transferred = activity.bytesTransferred {
-                let fraction = min(Double(transferred) / Double(activity.size), 1)
-                HStack(spacing: 6) {
-                    ProgressView(value: fraction)
-                        .controlSize(.small)
-                        .accessibilityLabel(movingText)
-                    Text(fraction, format: .percent.precision(.fractionLength(0)))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                        .frame(width: 34, alignment: .leading)
+            HStack(spacing: 6) {
+                if activity.uploadError != nil {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel("Trying again after a failed upload")
+                        .help("Trying again after a failed upload")
                 }
-                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
-                .help(movingText)
-            } else {
-                movingText
+                progress
             }
+        }
+    }
+
+    @ViewBuilder private var progress: some View {
+        if activity.size > 0, let transferred = activity.bytesTransferred {
+            let fraction = min(Double(transferred) / Double(activity.size), 1)
+            HStack(spacing: 6) {
+                ProgressView(value: fraction)
+                    .controlSize(.small)
+                    .accessibilityLabel(movingText)
+                Text(fraction, format: .percent.precision(.fractionLength(0)))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .frame(width: 34, alignment: .leading)
+            }
+            .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
+            .help(movingText)
+        } else {
+            movingText
+        }
+    }
+
+    private var failureDetails: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name).font(.headline)
+            if let error = activity.uploadError {
+                Text(error).textSelection(.enabled)
+            } else {
+                Text("rclone did not report a reason.")
+            }
+            nextAttempt.foregroundStyle(.secondary)
+        }
+        .font(.callout)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(14)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    @ViewBuilder private var nextAttempt: some View {
+        switch activity.state {
+        case .failed(let date) where date > .now:
+            Text("Retry \(date, format: .relative(presentation: .named))")
+        case .failed:
+            Text("Retrying soon")
+        default:
+            Text("Uploading again")
         }
     }
 

@@ -15,6 +15,9 @@ struct ConnectionDetail: View {
                 if let problem = model.problem(connection) {
                     problemNotice(problem)
                 }
+                if let failure = model.uploadFailure(connection) {
+                    uploadFailureNotice(failure.uploadError)
+                }
                 if model.isOffline(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
                         .font(.callout).foregroundStyle(.secondary)
@@ -211,6 +214,25 @@ struct ConnectionDetail: View {
                 .font(.headline)
             Text(problem).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             Button("Check Again") { Task { await model.checkAgain(connection) } }
+            Divider()
+        }
+    }
+
+    private func uploadFailureNotice(_ error: String?) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+            Label("Uploads are failing", systemImage: "exclamationmark.triangle")
+                .font(.headline)
+            if let error {
+                Text(error).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+            } else {
+                Text("rclone did not report a reason. The log has the details.").font(.callout).foregroundStyle(.secondary)
+            }
+            Text("UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected.")
+                .font(.callout).foregroundStyle(.secondary)
+            if error == nil {
+                Button("Show Log") { model.openLog(connection) }
+            }
             Divider()
         }
     }

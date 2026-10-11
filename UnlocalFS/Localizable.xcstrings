@@ -1239,6 +1239,26 @@
         }
       }
     },
+    "rclone did not report a reason." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O rclone não informou o motivo."
+          }
+        }
+      }
+    },
+    "rclone did not report a reason. The log has the details." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O rclone não informou o motivo. O registro tem os detalhes."
+          }
+        }
+      }
+    },
     "Read-only" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1326,6 +1346,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Substituir…"
+          }
+        }
+      }
+    },
+    "Retry %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tentativa %@"
+          }
+        }
+      }
+    },
+    "Retrying soon" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tentativa em breve"
           }
         }
       }
@@ -1449,6 +1489,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar log"
+          }
+        }
+      }
+    },
+    "Show why the upload failed" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar por que o envio falhou"
           }
         }
       }
@@ -1602,6 +1652,16 @@
         }
       }
     },
+    "Trying again after a failed upload" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentando novamente após uma falha no envio"
+          }
+        }
+      }
+    },
     "UnlocalFS is still running" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1609,6 +1669,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O UnlocalFS ainda está em execução"
+          }
+        }
+      }
+    },
+    "UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O UnlocalFS tenta novamente sozinho, no máximo a cada 5 minutos, enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
+    "Upload failed" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha no envio"
+          }
+        }
+      }
+    },
+    "Upload failed, show details" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha no envio, mostrar detalhes"
           }
         }
       }
@@ -1644,6 +1734,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enviando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
+    "Uploading again" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando novamente"
+          }
+        }
+      }
+    },
+    "Uploads are failing" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os envios estão falhando"
           }
         }
       }
@@ -1697,16 +1807,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aguardando"
-          }
-        }
-      }
-    },
-    "Waiting to retry upload" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aguardando nova tentativa de envio"
           }
         }
       }
