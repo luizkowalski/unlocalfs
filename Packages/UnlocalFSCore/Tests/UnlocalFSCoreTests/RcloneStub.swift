@@ -5,6 +5,6 @@ func writeRcloneStub(_ script: String, to url: URL) throws {
     try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: url.path)
 }
 
-func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = "{}") -> String {
-    #"{"results":[{"diskCache":{\#(cache)}},\#(queue),\#(stats)]}"#
+func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = "{}", transferred: String? = nil) -> String {
+    #"{"results":[{"diskCache":{\#(cache)}},\#(queue),\#(stats)\#(transferred.map { ",\($0)" } ?? "")]}"#
 }

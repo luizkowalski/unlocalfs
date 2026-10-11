@@ -1,4 +1,6 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 import UnlocalFSDomain
 import UnlocalFSPresentation
 
@@ -9,27 +11,25 @@ struct ActivityView: View {
     @State private var viewModel: ActivityViewModel?
 
     var body: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 0) {
-                switch viewModel?.activity {
-                case nil:
-                    ProgressView("Checking activity…").controlSize(.small)
-                case .failure(let error):
-                    status("exclamationmark.triangle", tint: .orange, title: Text("Activity unavailable")) {
-                        Text(error.localizedDescription).textSelection(.enabled)
-                    }
-                case .success:
-                    if let summary = viewModel?.summary {
-                        transfers(summary)
-                    } else {
-                        status("checkmark", tint: .green, title: idleTitle) {
-                            Text("Files show up here while they upload or download.")
-                        }
-                    }
-                }
+        let summary = viewModel?.summary
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Activity").font(.headline)
+                Spacer()
+                headline(summary).foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            if case .failure(let error) = viewModel?.activity {
+                Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+            }
+            if case .success = viewModel?.activity {
+                ActivityTable(files: summary?.files ?? []) { idle }
+            }
+            if let summary, summary.hiddenFileCount > 0 {
+                Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+            }
         }
         .task(id: connection.id) {
             let viewModel = self.viewModel ?? viewModels.makeActivity()
@@ -38,146 +38,181 @@ struct ActivityView: View {
         }
     }
 
-    private var idleTitle: Text {
-        connection.readOnly ? Text("No transfers in progress") : Text("All changes are uploaded")
+    @ViewBuilder private func headline(_ summary: TransferSummary?) -> some View {
+        switch viewModel?.activity {
+        case nil:
+            Text("Checking activity…")
+        case .failure:
+            Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+        case .success:
+            if let summary, summary.fileCount > 0 {
+                transfers(summary)
+            }
+        }
+    }
+
+    private var idle: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle")
+                .foregroundStyle(.green)
+                .accessibilityHidden(true)
+            if connection.readOnly {
+                Text("No transfers in progress")
+            } else {
+                Text("All changes are uploaded")
+            }
+        }
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     private func transfers(_ summary: TransferSummary) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            let title = summary.isUploading
-                ? Text("Uploading ^[\(summary.fileCount) file](inflect: true)")
-                : Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
-            HStack {
-                status(summary.isUploading ? "arrow.up" : "arrow.down", tint: .accentColor, title: title) {}
+        HStack(spacing: 6) {
+            Image(systemName: summary.isUploading ? "arrow.up" : "arrow.down")
+                .foregroundStyle(.tint)
                 .symbolEffect(summary.isUploading ? .wiggle.up : .wiggle.down, options: .repeat(.periodic(delay: 1.5)), isActive: !reduceMotion)
                 .symbolEffect(.pulse, isActive: reduceMotion)
-                Spacer()
-                VStack(alignment: .trailing, spacing: 3) {
-                    if summary.bytesTotal > 0 {
-                        Text("\(summary.bytesLeft, format: .byteCount(style: .file)) left")
-                            .font(.title3.weight(.medium))
-                    }
-                    if let bytesPerSecond = summary.bytesPerSecond {
-                        speed(bytesPerSecond, timeLeft: summary.timeLeft).foregroundStyle(.secondary)
-                    }
-                }
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(reduceMotion ? nil : .default, value: summary.bytesPerSecond)
-            }
-            if summary.bytesTotal > 0 {
-                ProgressView(value: Double(summary.bytesDone), total: Double(summary.bytesTotal))
-                    .accessibilityLabel(title)
-                    .padding(.top, 16)
-            }
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(summary.files) {
-                    Divider()
-                    ActivityRow(activity: $0).padding(.vertical, 10)
-                }
-                if summary.hiddenFileCount > 0 {
-                    Divider()
-                    Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, 30)
-                        .padding(.top, 10)
-                }
-            }
-            .padding(.top, 14)
-        }
-    }
-
-    @ViewBuilder private func speed(_ bytesPerSecond: Int64, timeLeft: Duration?) -> some View {
-        let speed = bytesPerSecond.formatted(.byteCount(style: .file))
-        if let timeLeft {
-            let duration = timeLeft.formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated, maximumUnitCount: 1))
-            Text("\(speed)/s · about \(duration) left")
-        } else {
-            Text("\(speed)/s")
-        }
-    }
-
-    private func status(_ symbol: String, tint: Color, title: Text, @ViewBuilder detail: () -> some View) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: symbol)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(width: 44, height: 44)
-                .background(tint.opacity(0.15), in: .circle)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
-                title.font(.title3.weight(.semibold))
-                detail().foregroundStyle(.secondary)
+            if summary.isUploading {
+                Text("Uploading ^[\(summary.fileCount) file](inflect: true)")
+            } else {
+                Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
+            }
+            if let bytesPerSecond = summary.bytesPerSecond {
+                Text(verbatim: "·")
+                Text("\(bytesPerSecond, format: .byteCount(style: .file))/s")
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(reduceMotion ? nil : .default, value: bytesPerSecond)
             }
         }
     }
 }
 
-private struct ActivityRow: View {
-    let activity: FileActivity
+private struct ActivityTable<Empty: View>: View {
+    let files: [FileActivity]
+    @ViewBuilder let empty: Empty
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol).foregroundStyle(tint).frame(width: 18)
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(name).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
-                            .help(activity.path)
-                        Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                    }
-                    Spacer()
-                    Group {
-                        if let progress {
-                            Text("\(progress, format: .byteCount(style: .file)) of \(activity.size, format: .byteCount(style: .file))")
-                        } else if activity.size >= 0 {
-                            Text(activity.size, format: .byteCount(style: .file))
-                        }
-                    }
-                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                }
-                if let progress {
-                    ProgressView(value: Double(progress), total: Double(activity.size))
-                        .accessibilityLabel("\(stateText): \(activity.path)")
-                }
+        VStack(spacing: 0) {
+            ActivityTableRow {
+                Text("Name")
+            } folder: {
+                Text("Folder")
+            } status: {
+                Text("Status")
+            } size: {
+                Text("Size")
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            Divider()
+            if files.isEmpty {
+                empty
+            }
+            ForEach(Array(files.enumerated()), id: \.element.id) { index, activity in
+                ActivityRow(activity: activity)
+                    .background(Color(nsColor: .alternatingContentBackgroundColors[index.isMultiple(of: 2) ? 0 : 1]))
+            }
+        }
+        .animation(reduceMotion ? nil : .default, value: files.map(\.id))
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(.rect(cornerRadius: 10))
+        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
+    }
+}
+
+private struct ActivityTableRow<Name: View, Folder: View, Status: View, Size: View>: View {
+    @ViewBuilder let name: Name
+    @ViewBuilder let folder: Folder
+    @ViewBuilder let status: Status
+    @ViewBuilder let size: Size
+
+    var body: some View {
+        HStack(spacing: 12) {
+            name.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            folder.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            status.frame(width: 150, alignment: .leading)
+            size.frame(width: 74, alignment: .trailing)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+}
+
+private struct ActivityRow: View {
+    let activity: FileActivity
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ActivityTableRow {
+            HStack(spacing: 7) {
+                Image(nsImage: NSWorkspace.shared.icon(for: UTType(filenameExtension: (name as NSString).pathExtension) ?? .data))
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+                Text(name).truncationMode(.middle).textSelection(.enabled)
+            }
+            .help(activity.path)
+        } folder: {
+            Text(folder).truncationMode(.middle).foregroundStyle(.secondary).help(folder)
+        } status: {
+            statusView.font(.caption).foregroundStyle(.secondary)
+        } size: {
+            if activity.size >= 0 {
+                Text(activity.size, format: .byteCount(style: .file))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
         }
     }
 
-    private var progress: Int64? {
-        activity.size > 0 ? activity.bytesTransferred : nil
+    @ViewBuilder private var statusView: some View {
+        switch activity.state {
+        case .queued:
+            Text("Waiting")
+        case .retrying:
+            Text("Waiting to retry upload").foregroundStyle(.orange)
+        case .uploaded:
+            finished(Text("Uploaded"))
+        case .downloaded:
+            finished(Text("Downloaded"))
+        case .uploading, .downloading:
+            if activity.size > 0, let transferred = activity.bytesTransferred {
+                let fraction = min(Double(transferred) / Double(activity.size), 1)
+                HStack(spacing: 6) {
+                    ProgressView(value: fraction)
+                        .controlSize(.small)
+                        .accessibilityLabel(movingText)
+                    Text(fraction, format: .percent.precision(.fractionLength(0)))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .frame(width: 34, alignment: .leading)
+                }
+                .animation(reduceMotion ? nil : .linear(duration: 1), value: fraction)
+                .help(movingText)
+            } else {
+                movingText
+            }
+        }
+    }
+
+    private func finished(_ title: Text) -> some View {
+        Label {
+            title
+        } icon: {
+            Image(systemName: "checkmark").foregroundStyle(.green)
+        }
+    }
+
+    private var movingText: Text {
+        activity.state == .downloading ? Text("Downloading") : Text("Uploading")
     }
 
     private var name: String { (activity.path as NSString).lastPathComponent }
 
-    private var detail: String {
-        let folder = (activity.path as NSString).deletingLastPathComponent
-        return folder.isEmpty ? stateText : "\(stateText) · \(folder)"
-    }
-
-    private var stateText: String {
-        switch activity.state {
-        case .queued: String(localized: "Queued for upload")
-        case .uploading: String(localized: "Uploading")
-        case .retrying: String(localized: "Waiting to retry upload")
-        case .downloading: String(localized: "Downloading")
-        }
-    }
-
-    private var symbol: String {
-        switch activity.state {
-        case .queued: "clock"
-        case .uploading: "arrow.up.circle"
-        case .retrying: "arrow.clockwise.circle"
-        case .downloading: "arrow.down.circle"
-        }
-    }
-
-    private var tint: Color {
-        switch activity.state {
-        case .queued: .secondary
-        case .uploading, .downloading: .accentColor
-        case .retrying: .orange
-        }
-    }
+    private var folder: String { (activity.path as NSString).deletingLastPathComponent }
 }

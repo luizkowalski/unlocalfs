@@ -26,10 +26,10 @@ struct ConnectionDetail: View {
             }
             .padding(28)
         }
-        .safeAreaInset(edge: .top, spacing: 0) { actions }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let status { cacheFooter(status) }
         }
+        .toolbar { actions }
         .navigationTitle(connection.name)
         .sheet(item: Binding(get: { model.serverTrust[connection.id] }, set: { _ in })) { challenge in
             ServerTrustSheet(challenge: challenge,
@@ -38,35 +38,39 @@ struct ConnectionDetail: View {
         }
     }
 
-    private var actions: some View {
-        HStack(spacing: 2) {
+    @ToolbarContentBuilder private var actions: some ToolbarContent {
+        ToolbarItemGroup {
             Button(model.toggleTitle(connection), systemImage: "power") {
                 Task { await model.toggle(connection, opensFinder: true) }
             }
             .disabled(!model.canToggle(connection))
+            .help(model.toggleTitle(connection))
             Button("Open", systemImage: "folder") { model.openDrive(connection) }
                 .disabled(!model.canOpen(connection))
                 .help("Open in Finder")
             Button("Refresh", systemImage: "arrow.clockwise") { Task { await model.refreshFiles(connection) } }
                 .disabled(!model.canOpen(connection))
                 .help("Show changes made to this drive from other apps or Macs")
-            Button("Edit", systemImage: "pencil") { model.edit(connection) }
-                .disabled(!model.canEdit(connection))
-            Button("Duplicate", systemImage: "plus.square.on.square") { model.duplicate(connection) }
-            if connection.encrypted {
-                Button("Export", systemImage: "square.and.arrow.up") { Task { await model.exportRcloneConfig(connection) } }
-                    .help("Save a file that lets rclone read this drive without UnlocalFS")
-            }
-            Button("Log", systemImage: "doc.text") { model.openLog(connection) }
-            Spacer()
-            Button("Delete", systemImage: "trash", role: .destructive) { model.deleting = connection }
-                .disabled(!model.canEdit(connection))
         }
-        .buttonStyle(ToolButtonStyle())
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
-        .background(.bar)
-        .overlay(alignment: .bottom) { Divider() }
+        if #available(macOS 26, *) {
+            ToolbarSpacer(.fixed)
+        }
+        ToolbarItem {
+            Menu("More", systemImage: "ellipsis") {
+                Button("Edit Connection") { model.edit(connection) }
+                    .disabled(!model.canEdit(connection))
+                Button("Duplicate") { model.duplicate(connection) }
+                if connection.encrypted {
+                    Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
+                }
+                Button("Show Log") { model.openLog(connection) }
+                Divider()
+                Button("Delete…", role: .destructive) { model.deleting = connection }
+                    .disabled(!model.canEdit(connection))
+            }
+            .menuIndicator(.hidden)
+            .help("More")
+        }
     }
 
     private var header: some View {
@@ -235,32 +239,6 @@ private struct CopyButton: View {
             guard copied else { return }
             try? await Task.sleep(for: .seconds(1))
             copied = false
-        }
-    }
-}
-
-private struct ToolButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .labelStyle(ToolLabelStyle(isDestructive: configuration.role == .destructive))
-            .foregroundStyle(configuration.role == .destructive ? Color.red : Color.primary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.quaternary.opacity(configuration.isPressed ? 1 : 0), in: .rect(cornerRadius: 6))
-            .contentShape(.rect)
-            .opacity(isEnabled ? 1 : 0.35)
-    }
-}
-
-private struct ToolLabelStyle: LabelStyle {
-    let isDestructive: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        VStack(spacing: 3) {
-            configuration.icon.font(.system(size: 15)).frame(height: 18)
-            configuration.title.font(.caption).foregroundStyle(isDestructive ? Color.red : Color.secondary)
         }
     }
 }

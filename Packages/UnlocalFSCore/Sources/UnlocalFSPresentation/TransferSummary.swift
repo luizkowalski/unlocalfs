@@ -4,32 +4,24 @@ import UnlocalFSDomain
 public struct TransferSummary {
     public let isUploading: Bool
     public let fileCount: Int
-    public let bytesDone: Int64
-    public let bytesTotal: Int64
     public let bytesPerSecond: Int64?
-    public let timeLeft: Duration?
     public let files: [FileActivity]
     public let hiddenFileCount: Int
 
-    public init?(_ activity: [FileActivity]) {
-        let uploads = activity.filter { $0.state != .downloading }
-        let leading = uploads.isEmpty ? activity : uploads
-        guard !leading.isEmpty else { return nil }
-        let sized = uploads.filter { $0.size > 0 }
+    public init?(_ activity: [FileActivity], now: Date) {
+        let shown = activity.filter { $0.finishedAt.map { now.timeIntervalSince($0) < 10 } ?? true }
+        guard !shown.isEmpty else { return nil }
+        let moving = shown.filter { $0.finishedAt == nil }
+        let uploads = moving.filter { $0.state != .downloading }
+        let leading = uploads.isEmpty ? moving : uploads
         isUploading = !uploads.isEmpty
         fileCount = leading.count
-        bytesDone = sized.reduce(0) { $0 + ($1.bytesTransferred ?? 0) }
-        bytesTotal = sized.reduce(0) { $0 + $1.size }
         let speed = Int64(leading.reduce(0) { $0 + ($1.bytesPerSecond ?? 0) }.rounded())
         bytesPerSecond = speed > 0 ? speed : nil
-        let sizedSpeed = sized.reduce(0) { $0 + ($1.bytesPerSecond ?? 0) }
-        let secondsLeft = sizedSpeed > 0 ? Double(bytesTotal - bytesDone) / sizedSpeed : 0
-        timeLeft = secondsLeft >= 1 ? .seconds(secondsLeft) : nil
-        files = Array(activity.sorted(using: [KeyPathComparator(\.listOrder), KeyPathComparator(\.path, comparator: .localizedStandard)]).prefix(10))
-        hiddenFileCount = activity.count - files.count
+        let byName = [KeyPathComparator(\FileActivity.path, comparator: .localizedStandard), KeyPathComparator(\FileActivity.id)]
+        files = shown.sorted(using: [KeyPathComparator(\.listOrder)] + byName).prefix(10).sorted(using: byName)
+        hiddenFileCount = shown.count - files.count
     }
-
-    public var bytesLeft: Int64 { bytesTotal - bytesDone }
 }
 
 private extension FileActivity {
@@ -39,6 +31,14 @@ private extension FileActivity {
         case .downloading: 1
         case .retrying: 2
         case .queued: 3
+        case .uploaded, .downloaded: 4
+        }
+    }
+
+    var finishedAt: Date? {
+        switch state {
+        case .uploaded(let date), .downloaded(let date): date
+        case .queued, .uploading, .retrying, .downloading: nil
         }
     }
 }

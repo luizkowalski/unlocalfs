@@ -51,14 +51,35 @@ import UnlocalFSInfrastructure
         """)
         #expect(activity.map(\.bytesPerSecond) == [4096])
     }
+
+    @Test func finishedTransfersShowOnceUnlessTheFileMovesAgain() async throws {
+        let activity = try await fetchActivity(queue: """
+        {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
+        """, transferred: """
+        {"transferred":[
+            {"name":"photo.jpg","size":20,"bytes":20,"error":"","completed_at":"2026-10-11T16:10:36.750335+02:00","dstFs":":s3:bucket"},
+            {"name":"photo.jpg","size":10,"bytes":10,"error":"","completed_at":"2026-10-11T16:10:35.1+02:00","dstFs":":s3:bucket"},
+            {"name":"video.mov","size":1000,"bytes":1000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"},
+            {"name":"denied.txt","size":5,"bytes":0,"error":"Access Denied","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"},
+            {"name":"movie.mkv","size":5000,"bytes":5000,"error":"","completed_at":"2026-10-11T16:10:37+02:00","srcFs":":s3:bucket"},
+            {"name":"preview.mov","size":9000,"bytes":100,"error":"","completed_at":"2026-10-11T16:10:37+02:00","srcFs":":s3:bucket"}
+        ]}
+        """)
+        let uploaded = try Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse("2026-10-11T14:10:36.750335Z")
+        let downloaded = try Date.ISO8601FormatStyle().parse("2026-10-11T14:10:37Z")
+        #expect(Set(activity.map(\.id)) == ["upload:video.mov", "upload:photo.jpg", "download:movie.mkv"])
+        #expect(activity.first { $0.path == "video.mov" }?.state == .queued)
+        #expect(activity.first { $0.path == "photo.jpg" } == FileActivity(path: "photo.jpg", size: 20, state: .uploaded(uploaded), bytesTransferred: 20))
+        #expect(activity.first { $0.path == "movie.mkv" } == FileActivity(path: "movie.mkv", size: 5000, state: .downloaded(downloaded), bytesTransferred: 5000))
+    }
 }
 
-private func fetchActivity(queue: String, stats: String = "{}") async throws -> [FileActivity] {
+private func fetchActivity(queue: String, stats: String = "{}", transferred: String? = nil) async throws -> [FileActivity] {
     let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     defer { try? FileManager.default.removeItem(at: root) }
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     let binary = root.appendingPathComponent("rclone")
-    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats)
+    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
     try Data(batch.utf8).write(to: root.appendingPathComponent("batch.json"))
     try writeRcloneStub("cat '\(root.path)/batch.json'", to: binary)
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)

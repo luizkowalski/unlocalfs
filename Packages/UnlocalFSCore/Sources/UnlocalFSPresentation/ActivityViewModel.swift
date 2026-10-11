@@ -14,15 +14,17 @@ import UnlocalFSDomain
 
     public var summary: TransferSummary? {
         guard case .success(let files) = activity else { return nil }
-        return TransferSummary(files)
+        return TransferSummary(files, now: .now)
     }
+
+    var refreshInterval: Duration { summary == nil ? .seconds(3) : .seconds(1) }
 
     public func observe(_ connection: Connection) async {
         activity = nil
         while !Task.isCancelled {
             await refresh(connection)
             do {
-                try await Task.sleep(for: .seconds(3))
+                try await Task.sleep(for: refreshInterval)
             } catch { return }
         }
     }

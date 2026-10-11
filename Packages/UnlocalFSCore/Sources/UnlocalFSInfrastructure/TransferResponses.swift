@@ -26,6 +26,37 @@ struct TransferStats: Decodable {
     }
 }
 
+struct FinishedTransfers: Decodable {
+    let transferred: [FinishedTransfer]
+}
+
+struct FinishedTransfer: Decodable {
+    let name: String
+    let size: Int64
+    let bytes: Int64
+    let error: String
+    let dstFs: String?
+    let completedAt: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case name, size, bytes, error, dstFs
+        case completedAt = "completed_at"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        size = try container.decode(Int64.self, forKey: .size)
+        bytes = try container.decode(Int64.self, forKey: .bytes)
+        error = try container.decode(String.self, forKey: .error)
+        dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
+        let completed = try container.decode(String.self, forKey: .completedAt)
+        completedAt = try (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(completed)) ?? Date.ISO8601FormatStyle().parse(completed)
+    }
+
+    var isUpload: Bool { dstFs != nil }
+}
+
 struct VFSStats: Decodable {
     let diskCache: DiskCache
 
@@ -38,11 +69,13 @@ struct VFSStats: Decodable {
 }
 
 struct ControlSnapshot: Decodable {
-    static let request = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"}]}"#
+    static let statusRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"}]}"#
+    static let activityRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"},{"_path":"core/transferred"}]}"#
 
     let cache: VFSStats.DiskCache
     let queue: [UploadQueue.Item]
     let transfers: [TransferStats.Transfer]
+    let finished: [FinishedTransfer]
 
     private enum CodingKeys: CodingKey { case results }
 
@@ -51,6 +84,7 @@ struct ControlSnapshot: Decodable {
         cache = try results.decode(BatchResult<VFSStats>.self).value.diskCache
         queue = try results.decode(BatchResult<UploadQueue>.self).value.queue
         transfers = try results.decode(BatchResult<TransferStats>.self).value.transferring ?? []
+        finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred
     }
 }
 

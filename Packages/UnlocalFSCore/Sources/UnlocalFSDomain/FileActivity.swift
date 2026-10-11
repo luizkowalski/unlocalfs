@@ -1,8 +1,9 @@
 import Foundation
 
 public struct FileActivity: Identifiable, Equatable, Sendable {
-    public enum State: Sendable {
+    public enum State: Equatable, Sendable {
         case queued, uploading, retrying, downloading
+        case uploaded(Date), downloaded(Date)
     }
 
     public let path: String
@@ -19,5 +20,10 @@ public struct FileActivity: Identifiable, Equatable, Sendable {
         self.bytesPerSecond = bytesPerSecond
     }
 
-    public var id: String { "\(state == .downloading ? "download" : "upload"):\(path)" }
+    public var id: String {
+        switch state {
+        case .queued, .uploading, .retrying, .uploaded: "upload:\(path)"
+        case .downloading, .downloaded: "download:\(path)"
+        }
+    }
 }
