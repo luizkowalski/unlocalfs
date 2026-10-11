@@ -146,7 +146,6 @@ private struct ActivityTableRow<Name: View, Folder: View, Status: View, Size: Vi
 private struct ActivityRow: View {
     let activity: FileActivity
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showingFailure = false
 
     var body: some View {
         ActivityTableRow {
@@ -162,10 +161,6 @@ private struct ActivityRow: View {
             Text(folder).truncationMode(.middle).foregroundStyle(.secondary).help(folder)
         } status: {
             statusView.font(.caption).foregroundStyle(.secondary)
-                .popover(isPresented: $showingFailure, arrowEdge: .bottom) { failureDetails }
-                .onChange(of: showsFailure) { _, failing in
-                    if !failing { showingFailure = false }
-                }
         } size: {
             if activity.size >= 0 {
                 Text(activity.size, format: .byteCount(style: .file))
@@ -179,17 +174,8 @@ private struct ActivityRow: View {
         switch activity.state {
         case .queued:
             Text("Waiting")
-        case .failed:
-            Button { showingFailure = true } label: {
-                HStack(spacing: 4) {
-                    Label("Upload failed", systemImage: "exclamationmark.triangle.fill")
-                    Image(systemName: "info.circle").accessibilityHidden(true)
-                }
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.orange)
-            .accessibilityLabel("Upload failed, show details")
-            .help("Show why the upload failed")
+        case .failed(let nextAttempt):
+            FailedUploadButton(name: name, error: activity.uploadError, nextAttempt: nextAttempt)
         case .uploaded:
             finished(Text("Uploaded"))
         case .downloaded:
@@ -226,39 +212,6 @@ private struct ActivityRow: View {
         }
     }
 
-    private var showsFailure: Bool {
-        if case .failed = activity.state { true } else { activity.uploadError != nil }
-    }
-
-    private var failureDetails: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(name).font(.headline)
-            if let error = activity.uploadError {
-                Text(error).textSelection(.enabled)
-            } else {
-                Text("rclone did not report a reason.")
-            }
-            nextAttempt.foregroundStyle(.secondary)
-        }
-        .font(.callout)
-        .foregroundStyle(.primary)
-        .lineLimit(nil)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(14)
-        .frame(width: 320, alignment: .leading)
-    }
-
-    @ViewBuilder private var nextAttempt: some View {
-        switch activity.state {
-        case .failed(let date) where date > .now:
-            Text("Retry \(date, format: .relative(presentation: .named))")
-        case .failed:
-            Text("Retrying soon")
-        default:
-            Text("Uploading again")
-        }
-    }
-
     private func finished(_ title: Text) -> some View {
         Label {
             title
@@ -274,4 +227,50 @@ private struct ActivityRow: View {
     private var name: String { (activity.path as NSString).lastPathComponent }
 
     private var folder: String { (activity.path as NSString).deletingLastPathComponent }
+}
+
+private struct FailedUploadButton: View {
+    let name: String
+    let error: String?
+    let nextAttempt: Date
+    @State private var showingDetails = false
+
+    var body: some View {
+        Button { showingDetails = true } label: {
+            HStack(spacing: 4) {
+                Label("Upload failed", systemImage: "exclamationmark.triangle.fill")
+                Image(systemName: "info.circle").accessibilityHidden(true)
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.orange)
+        .accessibilityLabel("Upload failed, show details")
+        .help("Show why the upload failed")
+        .popover(isPresented: $showingDetails, arrowEdge: .bottom) { details }
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name).font(.headline)
+            if let error {
+                Text(error).textSelection(.enabled)
+            } else {
+                Text("The reason is not available. The log has the details.")
+            }
+            Group {
+                if nextAttempt > .now {
+                    Text("Retry \(nextAttempt, format: .relative(presentation: .named))")
+                } else {
+                    Text("Retrying soon")
+                }
+            }
+            .foregroundStyle(.secondary)
+        }
+        .font(.callout)
+        .foregroundStyle(.primary)
+        .lineLimit(nil)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(14)
+        .frame(width: 320, alignment: .leading)
+    }
 }

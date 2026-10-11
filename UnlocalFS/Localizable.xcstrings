@@ -1239,16 +1239,6 @@
         }
       }
     },
-    "rclone did not report a reason." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O rclone não informou o motivo."
-          }
-        }
-      }
-    },
     "rclone did not report a reason. The log has the details." : {
       "localizations" : {
         "pt-BR" : {
@@ -1494,6 +1484,7 @@
       }
     },
     "Show why the upload failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1589,6 +1580,16 @@
         }
       }
     },
+    "The reason is not available. The log has the details." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O motivo não está disponível. O registro tem os detalhes."
+          }
+        }
+      }
+    },
     "This removes the saved connection, credentials, and local file cache. Remote files are kept." : {
       "localizations" : {
         "pt-BR" : {
@@ -1653,6 +1654,7 @@
       }
     },
     "Trying again after a failed upload" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1684,6 +1686,7 @@
       }
     },
     "Upload failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1694,6 +1697,7 @@
       }
     },
     "Upload failed, show details" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1738,17 +1742,8 @@
         }
       }
     },
-    "Uploading again" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enviando novamente"
-          }
-        }
-      }
-    },
     "Uploads are failing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

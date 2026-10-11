@@ -46,25 +46,17 @@ import UnlocalFSTestSupport
         }
     }
 
-    @Test func uploadErrorShowsOnlyWhileAnUploadHasFailed() async throws {
-        try await withControl { root, _ in
-            { _ in
-                let queue = try String(contentsOf: root.appending(path: "queue"), encoding: .utf8)
-                return statusBatch(
-                    cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
-                    queue: #"{"queue":[\#(queue)]}"#, stats: #"{"lastError":"AccessDenied: Access Denied"}"#
-                )
-            }
-        } operation: { service, connection in
-            let queue = await service.paths.support.appending(path: "queue")
-            var reported: [String?] = []
-            for (tries, uploading, failed) in [(2, false, 1), (3, true, 1), (1, true, 0), (0, false, 0)] {
-                try #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#.write(to: queue, atomically: true, encoding: .utf8)
-                let status = await service.status(connection)
-                #expect(status.failedUploads == failed)
-                reported.append(status.uploadError)
-            }
-            #expect(reported == ["AccessDenied: Access Denied", "AccessDenied: Access Denied", nil, nil])
+    @Test(arguments: [(2, false, true), (3, true, true), (1, false, true), (1, true, false), (0, false, false)])
+    func uploadErrorShowsOnlyWhileAnUploadHasFailed(tries: Int, uploading: Bool, failed: Bool) async throws {
+        let item = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#
+        let batch = statusBatch(
+            cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
+            queue: #"{"queue":[\#(item)]}"#, stats: #"{"lastError":"AccessDenied: Access Denied"}"#
+        )
+        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
+            let status = await service.status(connection)
+            #expect(status.failedUploads == (failed ? 1 : 0))
+            #expect(status.uploadError == (failed ? "AccessDenied: Access Denied" : nil))
         }
     }
 
