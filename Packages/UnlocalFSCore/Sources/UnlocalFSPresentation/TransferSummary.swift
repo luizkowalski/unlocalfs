@@ -9,9 +9,7 @@ public struct TransferSummary {
     public let hiddenFileCount: Int
 
     public init?(_ activity: [FileActivity], now: Date) {
-        let shown = activity.filter { file in
-            file.finishedAt.map { now.timeIntervalSince($0) < 10 } ?? true
-        }
+        let shown = activity.filter { $0.finishedAt.map { now.timeIntervalSince($0) < 10 } ?? true }
         guard !shown.isEmpty else { return nil }
         let moving = shown.filter { $0.finishedAt == nil }
         let uploads = moving.filter { $0.state != .downloading }
