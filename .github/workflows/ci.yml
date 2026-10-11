@@ -30,10 +30,14 @@ jobs:
           xcodebuild build-for-testing -scheme UnlocalFSCore-Package -destination platform=macOS
           -derivedDataPath "$RUNNER_TEMP/build"
 
-      - name: Bundle Swift Testing
+      - name: Bundle test runner
         run: |
-          ditto "$DEVELOPER_DIR/Contents/SharedFrameworks/Testing.framework" "$RUNNER_TEMP/build/Build/Products/Debug/Testing.framework"
-          cp "$DEVELOPER_DIR/Contents/SharedFrameworks/lib_TestingInterop.dylib" "$RUNNER_TEMP/build/Build/Products/Debug/"
+          platform="$DEVELOPER_DIR/Contents/Developer/Platforms/MacOSX.platform/Developer"
+          runner="$RUNNER_TEMP/build/Build/Products/Runner"
+          mkdir "$runner"
+          ditto "$platform/Library/Frameworks" "$runner"
+          ditto "$platform/Library/PrivateFrameworks" "$runner"
+          cp "$platform"/usr/lib/*.dylib "$platform/Library/Xcode/Agents/xctest" "$runner"
 
       - name: Archive tests
         run: tar -C "$RUNNER_TEMP/build/Build" -cf "$RUNNER_TEMP/tests.tar" Products
@@ -52,15 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-15
-            xcode: "26.3"
-          - os: macos-26
-            xcode: "26.6"
-          - os: xcode-27
-            xcode: "27.0"
-    env:
-      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app
+        os: [macos-15, macos-26, xcode-27]
     steps:
       - uses: actions/checkout@v7
 
@@ -80,10 +76,15 @@ jobs:
 
       - name: Test
         working-directory: Packages/UnlocalFSCore
-        run: >-
-          xcodebuild test-without-building -destination platform=macOS
-          -xctestrun "$RUNNER_TEMP"/Products/*.xctestrun
-          -resultBundlePath "$RUNNER_TEMP/tests.xcresult"
+        run: |
+          products="$RUNNER_TEMP/Products"
+          status=0
+          for bundle in "$products"/Debug/*.xctest; do
+            DYLD_FRAMEWORK_PATH="$products/Debug:$products/Debug/PackageFrameworks:$products/Runner" \
+            DYLD_LIBRARY_PATH="$products/Debug:$products/Runner" \
+              "$products/Runner/xctest" "$bundle" || status=1
+          done
+          exit $status
 
       - name: Upload test results
         if: failure()
@@ -92,7 +93,6 @@ jobs:
           name: test-results-${{ matrix.os }}
           if-no-files-found: ignore
           path: |
-            ${{ runner.temp }}/tests.xcresult
             /tmp/uf-*/**/*.log
             ~/Library/Logs/DiagnosticReports
 
