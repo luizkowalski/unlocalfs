@@ -587,6 +587,17 @@
         }
       }
     },
+    "Downloaded" : {
+      "comment" : "Activity table status: the whole file finished downloading",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Baixado"
+          }
+        }
+      }
+    },
     "Downloading" : {
       "localizations" : {
         "pt-BR" : {

@@ -163,12 +163,15 @@ public actor MountService: DriveGateway {
             FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
         }
         let active = queued + transferring
-        let activeUploads = Set(active.filter { $0.state != .downloading }.map(\.path))
-        let uploads = snapshot.finished.filter { $0.isUpload && $0.error.isEmpty && !activeUploads.contains($0.name) }
-        let latestUploads = Dictionary(uploads.map { ($0.name, $0) }) { $0.completedAt > $1.completedAt ? $0 : $1 }.values
-        return active + latestUploads.map {
-            FileActivity(path: $0.name, size: $0.size, state: .uploaded($0.completedAt), bytesTransferred: $0.size)
-        }
+        let finished = snapshot.finished
+            .filter { $0.error.isEmpty && ($0.isUpload || $0.bytes >= $0.size) }
+            .sorted { $0.completedAt < $1.completedAt }
+            .map {
+                FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploaded($0.completedAt) : .downloaded($0.completedAt), bytesTransferred: $0.bytes)
+            }
+        let activeIDs = Set(active.map(\.id))
+        let latestFinished = Dictionary(finished.map { ($0.id, $0) }) { _, later in later }.values.filter { !activeIDs.contains($0.id) }
+        return active + latestFinished
     }
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }

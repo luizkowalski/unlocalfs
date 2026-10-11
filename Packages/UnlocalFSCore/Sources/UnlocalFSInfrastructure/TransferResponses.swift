@@ -33,12 +33,13 @@ struct FinishedTransfers: Decodable {
 struct FinishedTransfer: Decodable {
     let name: String
     let size: Int64
+    let bytes: Int64
     let error: String
     let dstFs: String?
     let completedAt: Date
 
     private enum CodingKeys: String, CodingKey {
-        case name, size, error, dstFs
+        case name, size, bytes, error, dstFs
         case completedAt = "completed_at"
     }
 
@@ -46,6 +47,7 @@ struct FinishedTransfer: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
         size = try container.decode(Int64.self, forKey: .size)
+        bytes = try container.decode(Int64.self, forKey: .bytes)
         error = try container.decode(String.self, forKey: .error)
         dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
         let completed = try container.decode(String.self, forKey: .completedAt)

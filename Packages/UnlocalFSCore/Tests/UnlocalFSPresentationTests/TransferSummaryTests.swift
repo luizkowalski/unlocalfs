@@ -37,55 +37,50 @@ import UnlocalFSPresentation
         #expect(summary.bytesPerSecond == nil)
     }
 
-    @Test func movingFilesListBeforeRetriesAndQueuedUploads() throws {
+    @Test func filesListByNameWhateverTheirState() throws {
         let summary = try #require(TransferSummary([
-            FileActivity(path: "a.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "b.txt", size: 1, state: .retrying, bytesTransferred: nil),
-            FileActivity(path: "c.txt", size: 1, state: .downloading, bytesTransferred: 0),
-            FileActivity(path: "d.txt", size: 1, state: .uploading, bytesTransferred: 0)
+            FileActivity(path: "file10.txt", size: 1, state: .uploading, bytesTransferred: 0),
+            FileActivity(path: "b.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
+            FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil),
+            FileActivity(path: "a.txt", size: 1, state: .retrying, bytesTransferred: nil)
         ], now: now))
 
-        #expect(summary.files.map(\.state) == [.uploading, .downloading, .retrying, .queued])
+        #expect(summary.files.map(\.path) == ["a.txt", "b.txt", "file2.txt", "file10.txt"])
     }
 
-    @Test func filesInTheSameStateListByPath() throws {
-        let summary = try #require(TransferSummary([
-            FileActivity(path: "file10.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil)
-        ], now: now))
-
-        #expect(summary.files.map(\.path) == ["file2.txt", "file10.txt"])
-    }
-
-    @Test func listStopsAtTenFiles() throws {
-        let summary = try #require(TransferSummary((1...12).map {
-            FileActivity(path: "file\($0).txt", size: 1, state: .queued, bytesTransferred: nil)
-        }, now: now))
+    @Test func listStopsAtTenFilesAndKeepsMovingFiles() throws {
+        let summary = try #require(TransferSummary((1...11).map {
+            FileActivity(path: "file\($0).txt", size: 1, state: .uploaded(now), bytesTransferred: 1)
+        } + [FileActivity(path: "zebra.txt", size: 1, state: .downloading, bytesTransferred: 0)], now: now))
 
         #expect(summary.files.count == 10)
+        #expect(summary.files.last?.path == "zebra.txt")
         #expect(summary.hiddenFileCount == 2)
     }
 
-    @Test func finishedUploadsListLastWithoutCountingAsMoving() throws {
+    @Test func finishedFilesDoNotCountAsMoving() throws {
         let summary = try #require(TransferSummary([
-            FileActivity(path: "done.txt", size: 1, state: .uploaded(now.addingTimeInterval(-2)), bytesTransferred: 1),
+            FileActivity(path: "done.txt", size: 1, state: .uploaded(now), bytesTransferred: 1),
+            FileActivity(path: "movie.mkv", size: 1, state: .downloaded(now), bytesTransferred: 1),
             FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil)
         ], now: now))
 
-        #expect(summary.files.map(\.path) == ["photo.jpg", "done.txt"])
+        #expect(summary.isUploading)
         #expect(summary.fileCount == 1)
     }
 
-    @Test func finishedUploadsShowForFiveSeconds() throws {
-        let recent = try #require(TransferSummary([
-            FileActivity(path: "done.txt", size: 1, state: .uploaded(now.addingTimeInterval(-4.9)), bytesTransferred: 1)
+    @Test func finishedFilesShowForTenSeconds() throws {
+        let recent = now.addingTimeInterval(-9.9), old = now.addingTimeInterval(-10)
+        let summary = try #require(TransferSummary([
+            FileActivity(path: "a.txt", size: 1, state: .uploaded(recent), bytesTransferred: 1),
+            FileActivity(path: "b.txt", size: 1, state: .downloaded(recent), bytesTransferred: 1),
+            FileActivity(path: "c.txt", size: 1, state: .uploaded(old), bytesTransferred: 1),
+            FileActivity(path: "d.txt", size: 1, state: .downloaded(old), bytesTransferred: 1)
         ], now: now))
-        #expect(recent.files.map(\.path) == ["done.txt"])
-        #expect(recent.fileCount == 0)
+        #expect(summary.files.map(\.path) == ["a.txt", "b.txt"])
+        #expect(summary.fileCount == 0)
 
-        #expect(TransferSummary([
-            FileActivity(path: "done.txt", size: 1, state: .uploaded(now.addingTimeInterval(-5)), bytesTransferred: 1)
-        ], now: now) == nil)
+        #expect(TransferSummary([FileActivity(path: "c.txt", size: 1, state: .uploaded(old), bytesTransferred: 1)], now: now) == nil)
     }
 
     @Test func nothingMovingHasNoSummary() {

@@ -177,11 +177,9 @@ private struct ActivityRow: View {
         case .retrying:
             Text("Waiting to retry upload").foregroundStyle(.orange)
         case .uploaded:
-            Label {
-                Text("Uploaded")
-            } icon: {
-                Image(systemName: "checkmark").foregroundStyle(.green)
-            }
+            finished(Text("Uploaded"))
+        case .downloaded:
+            finished(Text("Downloaded"))
         case .uploading, .downloading:
             if activity.size > 0, let transferred = activity.bytesTransferred {
                 let fraction = min(Double(transferred) / Double(activity.size), 1)
@@ -199,6 +197,14 @@ private struct ActivityRow: View {
             } else {
                 movingText
             }
+        }
+    }
+
+    private func finished(_ title: Text) -> some View {
+        Label {
+            title
+        } icon: {
+            Image(systemName: "checkmark").foregroundStyle(.green)
         }
     }
 

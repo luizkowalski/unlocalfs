@@ -52,23 +52,25 @@ import UnlocalFSInfrastructure
         #expect(activity.map(\.bytesPerSecond) == [4096])
     }
 
-    @Test func finishedUploadsShowOnceUnlessTheFileUploadsAgain() async throws {
+    @Test func finishedTransfersShowOnceUnlessTheFileMovesAgain() async throws {
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
         """, transferred: """
         {"transferred":[
-            {"name":"photo.jpg","size":10,"error":"","completed_at":"2026-10-11T16:10:35.1+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
-            {"name":"photo.jpg","size":20,"error":"","completed_at":"2026-10-11T16:10:36.750335+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
-            {"name":"video.mov","size":1000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
-            {"name":"denied.txt","size":5,"error":"Access Denied","completed_at":"2026-10-11T16:10:36+02:00","srcFs":"/cache","dstFs":":s3:bucket"},
-            {"name":"movie.mkv","size":5000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","srcFs":":s3:bucket"}
+            {"name":"photo.jpg","size":20,"bytes":20,"error":"","completed_at":"2026-10-11T16:10:36.750335+02:00","dstFs":":s3:bucket"},
+            {"name":"photo.jpg","size":10,"bytes":10,"error":"","completed_at":"2026-10-11T16:10:35.1+02:00","dstFs":":s3:bucket"},
+            {"name":"video.mov","size":1000,"bytes":1000,"error":"","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"},
+            {"name":"denied.txt","size":5,"bytes":0,"error":"Access Denied","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"},
+            {"name":"movie.mkv","size":5000,"bytes":5000,"error":"","completed_at":"2026-10-11T16:10:37+02:00","srcFs":":s3:bucket"},
+            {"name":"preview.mov","size":9000,"bytes":100,"error":"","completed_at":"2026-10-11T16:10:37+02:00","srcFs":":s3:bucket"}
         ]}
         """)
         let uploaded = try Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse("2026-10-11T14:10:36.750335Z")
-        #expect(activity.filter { $0.path != "video.mov" } == [
-            FileActivity(path: "photo.jpg", size: 20, state: .uploaded(uploaded), bytesTransferred: 20)
-        ])
+        let downloaded = try Date.ISO8601FormatStyle().parse("2026-10-11T14:10:37Z")
+        #expect(Set(activity.map(\.id)) == ["upload:video.mov", "upload:photo.jpg", "download:movie.mkv"])
         #expect(activity.first { $0.path == "video.mov" }?.state == .queued)
+        #expect(activity.first { $0.path == "photo.jpg" } == FileActivity(path: "photo.jpg", size: 20, state: .uploaded(uploaded), bytesTransferred: 20))
+        #expect(activity.first { $0.path == "movie.mkv" } == FileActivity(path: "movie.mkv", size: 5000, state: .downloaded(downloaded), bytesTransferred: 5000))
     }
 }
 
