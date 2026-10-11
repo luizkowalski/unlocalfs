@@ -5,7 +5,7 @@ import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
 @Suite struct ActivityTests {
-    @Test(arguments: [(0, false, FileActivity.State.queued), (2, false, .retrying), (1, true, .uploading)])
+    @Test(arguments: [(2, false, FileActivity.State.retrying), (1, true, .uploading)])
     func queuedUploadsShowTheirPathSizeAndState(tries: Int, uploading: Bool, state: FileActivity.State) async throws {
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"photos/holiday.jpg","id":1,"size":2048,"expiry":4,"tries":\(tries),"delay":5,"uploading":\(uploading)}]}

@@ -39,6 +39,15 @@ struct Drive: Sendable {
         }
     }
 
+    func activity(of path: String, where matches: (FileActivity) -> Bool) async throws -> FileActivity {
+        var found: FileActivity?
+        try await waitUntil(timeout: .seconds(10)) {
+            found = try await service.activity(connection).first { $0.path == path && matches($0) }
+            return found != nil
+        }
+        return try #require(found)
+    }
+
     func disconnect() async throws {
         let savedPID = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8)
         let pid = savedPID.flatMap { pid_t($0) }
@@ -78,11 +87,16 @@ func verifyRoundTrip(_ drive: Drive, storage: URL, credentials: Credentials) asy
     try Data("from the server".utf8).write(to: storage.appending(path: "remote.txt"))
     try await drive.service.mount(drive.connection, credentials: credentials)
     #expect(try String(contentsOf: drive.mounted.appending(path: "remote.txt"), encoding: .utf8) == "from the server")
+    let downloaded = try await drive.activity(of: "remote.txt") { if case .downloaded = $0.state { true } else { false } }
+    #expect(downloaded.size == 15 && downloaded.bytesTransferred == 15)
 
     try Data("from Finder".utf8).write(to: drive.mounted.appending(path: "local.txt"))
+    let queued = try await drive.activity(of: "local.txt") { $0.state == .queued }
+    #expect(queued.size == 11)
     await #expect(throws: UploadsPendingError.self) { try await drive.service.unmount(drive.connection) }
     try await drive.waitForUploads()
     #expect(try String(contentsOf: storage.appending(path: "local.txt"), encoding: .utf8) == "from Finder")
+    _ = try await drive.activity(of: "local.txt") { if case .uploaded = $0.state { true } else { false } }
 
     try FileManager.default.removeItem(at: drive.mounted.appending(path: "remote.txt"))
     #expect(!FileManager.default.fileExists(atPath: storage.appending(path: "remote.txt").path))
