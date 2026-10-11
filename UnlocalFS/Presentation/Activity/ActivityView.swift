@@ -174,7 +174,7 @@ private struct ActivityRow: View {
         switch activity.state {
         case .queued:
             Text("Waiting")
-        case .retrying:
+        case .failed:
             Text("Waiting to retry upload").foregroundStyle(.orange)
         case .uploaded:
             finished(Text("Uploaded"))

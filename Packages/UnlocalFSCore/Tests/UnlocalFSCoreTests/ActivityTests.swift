@@ -5,7 +5,7 @@ import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
 @Suite struct ActivityTests {
-    @Test(arguments: [(2, false, FileActivity.State.retrying), (1, true, .uploading)])
+    @Test(arguments: [(0, false, FileActivity.State.queued), (1, true, .uploading)])
     func queuedUploadsShowTheirPathSizeAndState(tries: Int, uploading: Bool, state: FileActivity.State) async throws {
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"photos/holiday.jpg","id":1,"size":2048,"expiry":4,"tries":\(tries),"delay":5,"uploading":\(uploading)}]}
@@ -16,6 +16,40 @@ import UnlocalFSTestSupport
         #expect(item.size == 2048)
         #expect(item.state == state)
         #expect(item.bytesTransferred == nil)
+        #expect(item.uploadError == nil)
+    }
+
+    @Test func failedUploadsShowTheirOwnLatestUploadErrorAndNextAttempt() async throws {
+        let activity = try await fetchActivity(queue: """
+        {"queue":[
+            {"name":"denied.jpg","id":1,"size":10,"expiry":120,"tries":2,"delay":10,"uploading":false},
+            {"name":"unknown.jpg","id":2,"size":10,"expiry":30,"tries":2,"delay":10,"uploading":false},
+            {"name":"read.jpg","id":3,"size":10,"expiry":30,"tries":2,"delay":10,"uploading":false},
+            {"name":"twice.jpg","id":4,"size":10,"expiry":30,"tries":3,"delay":20,"uploading":false},
+            {"name":"again.mov","id":5,"size":1000,"expiry":-1,"tries":3,"delay":20,"uploading":true}
+        ]}
+        """, transferred: """
+        {"transferred":[
+            {"name":"denied.jpg","size":10,"bytes":0,"error":"AccessDenied: Access Denied","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"},
+            {"name":"read.jpg","size":10,"bytes":0,"error":"read failed","completed_at":"2026-10-11T16:10:36+02:00","srcFs":":s3:bucket"},
+            {"name":"twice.jpg","size":10,"bytes":0,"error":"second error","completed_at":"2026-10-11T16:10:40+02:00","dstFs":":s3:bucket"},
+            {"name":"twice.jpg","size":10,"bytes":0,"error":"first error","completed_at":"2026-10-11T16:10:30+02:00","dstFs":":s3:bucket"},
+            {"name":"twice.jpg","size":10,"bytes":10,"error":"","completed_at":"2026-10-11T16:10:20+02:00","dstFs":":s3:bucket"},
+            {"name":"again.mov","size":1000,"bytes":0,"error":"AccessDenied: Access Denied","completed_at":"2026-10-11T16:10:36+02:00","dstFs":":s3:bucket"}
+        ]}
+        """)
+        let byPath = Dictionary(uniqueKeysWithValues: activity.map { ($0.path, $0) })
+        #expect(activity.count == 5)
+        #expect(byPath.mapValues(\.uploadError) == [
+            "denied.jpg": "AccessDenied: Access Denied", "unknown.jpg": nil, "read.jpg": nil,
+            "twice.jpg": "second error", "again.mov": "AccessDenied: Access Denied"
+        ])
+        guard case .failed(let nextAttempt) = byPath["denied.jpg"]?.state else {
+            Issue.record("Expected a failed upload")
+            return
+        }
+        #expect(abs(nextAttempt.timeIntervalSinceNow - 120) < 5)
+        #expect(byPath["again.mov"]?.state == .uploading)
     }
 
     @Test func uploadsUseUploadProgressWhenTheSameFileIsDownloading() async throws {
@@ -81,7 +115,7 @@ private func fetchActivity(queue: String, stats: String = "{}", transferred: Str
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
     try paths.prepare()
     let connection = fixture()
-    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
+    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
     let server = try ControlServer(at: paths.socket(connection)) { _ in batch }
     defer { server.stop() }
     let service = MountService(executable: root.appending(path: "rclone"), helperDirectory: root, paths: paths)

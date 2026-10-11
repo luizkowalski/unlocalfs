@@ -138,7 +138,8 @@ public actor MountService: DriveGateway {
             let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
             status.isRunning = true
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
-            status.failedUploads = snapshot.cache.erroredFiles + snapshot.queue.count { !$0.uploading && $0.tries > 0 }
+            status.failedUploads = snapshot.queue.count(where: \.hasFailed)
+            if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
         } catch {
@@ -154,18 +155,22 @@ public actor MountService: DriveGateway {
         let queue = snapshot.queue
         let transfers = snapshot.transfers
         let queuedPaths = Set(queue.map(\.name))
+        let finishedInOrder = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
+        let uploadErrors = Dictionary(finishedInOrder.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
         let queued = queue.map { item in
-            let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .retrying : .queued
+            let state: FileActivity.State = item.uploading ? .uploading : item.tries > 0 ? .failed(nextAttempt: .now + item.expiry) : .queued
             let transfer = item.uploading ? transfers.first { $0.isUpload && $0.name == item.name } : nil
-            return FileActivity(path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg)
+            return FileActivity(
+                path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg,
+                uploadError: item.hasFailed ? uploadErrors[item.name] : nil
+            )
         }
         let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
             FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
         }
         let active = queued + transferring
-        let finished = snapshot.finished
+        let finished = finishedInOrder
             .filter { $0.error.isEmpty && ($0.isUpload || $0.bytes >= $0.size) }
-            .sorted { $0.completedAt < $1.completedAt }
             .map {
                 FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploaded($0.completedAt) : .downloaded($0.completedAt), bytesTransferred: $0.bytes)
             }

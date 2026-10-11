@@ -42,7 +42,7 @@ import UnlocalFSPresentation
             FileActivity(path: "file10.txt", size: 1, state: .uploading, bytesTransferred: 0),
             FileActivity(path: "b.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
             FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "a.txt", size: 1, state: .retrying, bytesTransferred: nil)
+            FileActivity(path: "a.txt", size: 1, state: .failed(nextAttempt: .now), bytesTransferred: nil)
         ], now: now))
 
         #expect(summary.files.map(\.path) == ["a.txt", "b.txt", "file2.txt", "file10.txt"])

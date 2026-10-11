@@ -29,7 +29,7 @@ private extension FileActivity {
         switch state {
         case .uploading: 0
         case .downloading: 1
-        case .retrying: 2
+        case .failed: 2
         case .queued: 3
         case .uploaded, .downloaded: 4
         }
@@ -38,7 +38,7 @@ private extension FileActivity {
     var finishedAt: Date? {
         switch state {
         case .uploaded(let date), .downloaded(let date): date
-        case .queued, .uploading, .retrying, .downloading: nil
+        case .queued, .uploading, .failed, .downloading: nil
         }
     }
 }

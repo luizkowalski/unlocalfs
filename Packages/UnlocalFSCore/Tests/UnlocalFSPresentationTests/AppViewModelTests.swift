@@ -136,7 +136,7 @@ import UnlocalFSInfrastructure
         defer { fixture.remove() }
         let connection = connectionFixture()
         try fixture.serve(connection, queued: 1)
-        try fixture.queue(#"{"name":"a.dmg","size":4096,"tries":1,"uploading":true}"#)
+        try fixture.queue(#"{"name":"a.dmg","size":4096,"expiry":-1,"tries":1,"uploading":true}"#)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 
