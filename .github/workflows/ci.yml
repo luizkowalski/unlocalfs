@@ -16,8 +16,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-for-testing:
+    runs-on: xcode-27
+    timeout-minutes: 10
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build tests
+        working-directory: Packages/UnlocalFSCore
+        run: >-
+          xcodebuild build-for-testing -scheme UnlocalFSCore-Package -destination platform=macOS
+          -derivedDataPath "$RUNNER_TEMP/build"
+
+      - name: Archive tests
+        run: tar -C "$RUNNER_TEMP/build/Build" -cf "$RUNNER_TEMP/tests.tar" Products
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tests
+          path: ${{ runner.temp }}/tests.tar
+          retention-days: 1
+
   test:
     name: test (${{ matrix.os }})
+    needs: build-for-testing
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -41,10 +65,19 @@ jobs:
           path: .build/rclone
           key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
 
+      - uses: actions/download-artifact@v8
+        with:
+          name: tests
+          path: ${{ runner.temp }}
+
+      - name: Extract tests
+        run: tar -C "$RUNNER_TEMP" -xf "$RUNNER_TEMP/tests.tar"
+
       - name: Test
         working-directory: Packages/UnlocalFSCore
         run: >-
-          xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
+          xcodebuild test-without-building -destination platform=macOS
+          -xctestrun "$RUNNER_TEMP"/Products/*.xctestrun
           -resultBundlePath "$RUNNER_TEMP/tests.xcresult"
 
       - name: Upload test results
