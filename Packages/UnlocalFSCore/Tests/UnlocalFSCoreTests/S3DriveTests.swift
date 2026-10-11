@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite(.timeLimit(.minutes(2))) struct S3DriveTests {
     @Test func driveDownloadsUploadsAndDeletesFiles() async throws {
@@ -82,14 +83,18 @@ import UnlocalFSDomain
             try await drive.service.mount(drive.connection, credentials: s3Credentials)
             let hold = drive.paths.support.appending(path: "hold")
             let entered = drive.paths.support.appending(path: "entered")
-            let slowRclone = drive.paths.support.appending(path: "slow-rclone")
-            try writeRcloneStub("""
-            for argument in "$@"; do
-                if [ "$argument" = 'operations/copyfile' ] && [ -f '\(hold.path)' ]; then touch '\(entered.path)'; sleep 2; fi
-            done
-            exec '\(drive.executable.path)' "$@"
-            """, to: slowRclone)
-            let service = MountService(executable: slowRclone, helperDirectory: helpers, paths: drive.paths)
+            let socket = drive.paths.socket(drive.connection)
+            let rclone = socket.deletingLastPathComponent().appending(path: "rclone.sock")
+            try FileManager.default.moveItem(at: socket, to: rclone)
+            let slowCopies = try ControlServer(at: socket) { request in
+                if request.method == "operations/copyfile", FileManager.default.fileExists(atPath: hold.path) {
+                    FileManager.default.createFile(atPath: entered.path, contents: Data())
+                    try await Task.sleep(for: .seconds(2))
+                }
+                return String(decoding: try await ControlSocket.post(rclone, request.method, body: request.body, timeout: .seconds(10)), as: UTF8.self)
+            }
+            defer { slowCopies.stop() }
+            let service = drive.service
             let connection = drive.connection
 
             try Data().write(to: hold)

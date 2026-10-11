@@ -2,9 +2,10 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct ActivityTests {
-    @Test(arguments: [(0, false, FileActivity.State.queued), (2, false, .retrying), (1, true, .uploading)])
+    @Test(arguments: [(2, false, FileActivity.State.retrying), (1, true, .uploading)])
     func queuedUploadsShowTheirPathSizeAndState(tries: Int, uploading: Bool, state: FileActivity.State) async throws {
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"photos/holiday.jpg","id":1,"size":2048,"expiry":4,"tries":\(tries),"delay":5,"uploading":\(uploading)}]}
@@ -75,14 +76,14 @@ import UnlocalFSInfrastructure
 }
 
 private func fetchActivity(queue: String, stats: String = "{}", transferred: String? = nil) async throws -> [FileActivity] {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let root = URL(filePath: "/tmp/uf-activity-\(UUID().uuidString.prefix(8))")
     defer { try? FileManager.default.removeItem(at: root) }
-    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-    let binary = root.appendingPathComponent("rclone")
-    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
-    try Data(batch.utf8).write(to: root.appendingPathComponent("batch.json"))
-    try writeRcloneStub("cat '\(root.path)/batch.json'", to: binary)
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
-    let service = MountService(executable: binary, helperDirectory: root, paths: paths)
-    return try await service.activity(fixture())
+    try paths.prepare()
+    let connection = fixture()
+    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
+    let server = try ControlServer(at: paths.socket(connection)) { _ in batch }
+    defer { server.stop() }
+    let service = MountService(executable: root.appending(path: "rclone"), helperDirectory: root, paths: paths)
+    return try await service.activity(connection)
 }

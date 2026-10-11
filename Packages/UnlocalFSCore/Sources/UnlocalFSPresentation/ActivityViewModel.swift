@@ -17,7 +17,7 @@ import UnlocalFSDomain
         return TransferSummary(files, now: .now)
     }
 
-    var refreshInterval: Duration { summary == nil ? .seconds(3) : .seconds(1) }
+    var refreshInterval: Duration { summary == nil ? .seconds(1) : .milliseconds(250) }
 
     public func observe(_ connection: Connection) async {
         activity = nil
@@ -35,9 +35,8 @@ import UnlocalFSDomain
             let files = try await drives.activity(connection)
             try Task.checkCancellation()
             activity = .success(files)
-        } catch is CancellationError {
-        } catch {
+        } catch where !Task.isCancelled {
             activity = .failure(error)
-        }
+        } catch {}
     }
 }

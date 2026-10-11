@@ -192,7 +192,7 @@ private struct ActivityRow: View {
                         .contentTransition(.numericText())
                         .frame(width: 34, alignment: .leading)
                 }
-                .animation(reduceMotion ? nil : .linear(duration: 1), value: fraction)
+                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
                 .help(movingText)
             } else {
                 movingText

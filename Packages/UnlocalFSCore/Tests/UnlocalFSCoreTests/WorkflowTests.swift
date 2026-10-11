@@ -268,7 +268,6 @@ private func withWorkflowFixture(
     let executable = root.appending(path: "rclone")
     try writeRcloneStub("""
     printf '%s\\n' "$1" >> '\(root.path)/process-calls'
-    if [ "$1" = 'rc' ]; then printf '%s' '\(statusBatch(cache: #""uploadsQueued":1,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))'; fi
     """, to: executable)
     let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     let drives = MountService(executable: executable, helperDirectory: root, paths: paths)

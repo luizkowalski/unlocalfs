@@ -209,21 +209,22 @@ public actor MountService: DriveGateway {
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
 
-    func control(_ connection: Connection, _ method: String, _ parameters: [String] = []) async throws -> Data {
-        try await Command.run(
-            executable, ["rc", "--unix-socket", paths.socket(connection).path, method] + parameters + ["--config", "/dev/null"],
-            environment: baseEnvironment, timeout: .seconds(4)
-        )
+    func control(_ connection: Connection, _ method: String, _ parameters: [String: String] = [:]) async throws -> Data {
+        try await control(connection, method, body: JSONEncoder().encode(parameters))
+    }
+
+    private func control(_ connection: Connection, _ method: String, body: Data) async throws -> Data {
+        try await ControlSocket.post(paths.socket(connection), method, body: body, timeout: .seconds(4))
     }
 
     func control<Response: Decodable>(
-        _ response: Response.Type, _ connection: Connection, _ method: String, _ parameters: [String] = []
+        _ response: Response.Type, _ connection: Connection, _ method: String, _ parameters: [String: String] = [:]
     ) async throws -> Response {
         try await JSONDecoder().decode(response, from: control(connection, method, parameters))
     }
 
     private func snapshot(_ connection: Connection, _ request: String) async throws -> ControlSnapshot {
-        try await control(ControlSnapshot.self, connection, "job/batch", ["--json", request])
+        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
     }
 
     private func isRunning(_ connection: Connection) -> Bool? {
