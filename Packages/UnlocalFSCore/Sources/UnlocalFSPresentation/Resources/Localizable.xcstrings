@@ -498,6 +498,23 @@
         }
       }
     },
+    "uploadsFailedReason": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some files could not upload: %1$@. UnlocalFS tries again while the drive stays connected."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alguns arquivos não puderam ser enviados: %1$@. O UnlocalFS tenta novamente enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
     "uploadsPending": {
       "extractionState": "manual",
       "localizations": {

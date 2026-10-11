@@ -84,7 +84,7 @@ import UnlocalFSInfrastructure
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = connectionFixture()
-        try fixture.serve(connection, failed: 1)
+        try fixture.serve(connection, failed: 1, lastError: "AccessDenied: Access Denied")
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 
@@ -93,7 +93,30 @@ import UnlocalFSInfrastructure
 
         #expect(app.indicator(connection) == .attention)
         #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
+        #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
         #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
+        #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedReason("AccessDenied: Access Denied"))])
+
+        try fixture.queue()
+        await app.refresh()
+
+        #expect(app.uploadFailure(connection) == nil)
+        #expect(app.statusText(connection) != String(localized: .uploadNeedsAttention))
+    }
+
+    @Test func failedUploadsWithoutAReasonStillNeedAttention() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.serve(connection, failed: 1)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.refresh()
+
+        let failure = try #require(app.uploadFailure(connection))
+        #expect(failure.uploadError == nil)
+        #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedBody)])
     }
 
     @Test func pendingUploadsExplainBlockedDisconnectAndNotifyWhenFinished() async throws {
