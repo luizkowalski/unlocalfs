@@ -17,7 +17,7 @@ import UnlocalFSDomain
         return TransferSummary(files, now: .now)
     }
 
-    var refreshInterval: Duration { summary == nil ? .seconds(3) : .seconds(1) }
+    var refreshInterval: Duration { summary == nil ? .seconds(1) : .milliseconds(250) }
 
     public func observe(_ connection: Connection) async {
         activity = nil

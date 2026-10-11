@@ -16,18 +16,18 @@ extension MountService {
         let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
         defer { reservedCopies[connection.id]?.remove(destination) }
         let job = try await control(StartedJob.self, connection, "operations/copyfile", [
-            "srcFs=\(target)", "srcRemote=\(path)", "dstFs=\(target)", "dstRemote=\(destination)",
-            "_async=true", "_group=\(Self.copyGroup)"
+            "srcFs": target, "srcRemote": path, "dstFs": target, "dstRemote": destination,
+            "_async": "true", "_group": Self.copyGroup
         ])
         while true {
-            let status = try await control(JobStatus.self, connection, "job/status", ["jobid=\(job.jobid)"])
+            let status = try await control(JobStatus.self, connection, "job/status", ["jobid": "\(job.jobid)"])
             if status.finished {
                 guard status.success else { throw AppError(status.error) }
                 break
             }
             try await Task.sleep(for: .milliseconds(500))
         }
-        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [] : ["dir=\(folder)"])
+        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
         return destination
     }
 
@@ -35,7 +35,7 @@ extension MountService {
         guard reservedCopies[connection.id, default: []].isEmpty else { throw AppError(String(localized: .copyInProgress)) }
         guard connection.backend.supportsServerCopy, status.isRunning, !status.needsReconnect else { return }
         for id in try await control(JobList.self, connection, "job/list").runningIds {
-            let job = try await control(JobStatus.self, connection, "job/status", ["jobid=\(id)"])
+            let job = try await control(JobStatus.self, connection, "job/status", ["jobid": "\(id)"])
             if job.group == Self.copyGroup, !job.finished { throw AppError(String(localized: .copyInProgress)) }
         }
     }
@@ -52,7 +52,7 @@ extension MountService {
             reservedCopies[connection.id, default: []].insert(candidate)
             var keep = false
             defer { if !keep { reservedCopies[connection.id]?.remove(candidate) } }
-            keep = try await control(RemoteItem.self, connection, "operations/stat", ["fs=\(target)", "remote=\(candidate)"]).item == nil
+            keep = try await control(RemoteItem.self, connection, "operations/stat", ["fs": target, "remote": candidate]).item == nil
             if keep { return candidate }
         }
     }

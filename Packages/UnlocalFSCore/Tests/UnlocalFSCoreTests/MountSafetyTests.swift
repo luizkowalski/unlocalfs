@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct MountSafetyTests {
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
@@ -26,9 +27,8 @@ import UnlocalFSDomain
         ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":1", false)
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
-        try await withFixture(script: """
-        printf '%s' '\(statusBatch(cache: cache + #","bytesUsed":42"#))'
-        """) { service, connection in
+        let batch = statusBatch(cache: cache + #","bytesUsed":42"#)
+        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.isRunning)
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -39,7 +39,7 @@ import UnlocalFSDomain
 
     @Test func anErrorInsideTheStatusBatchMarksTheDriveForReconnect() async throws {
         let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
-        try await withFixture(script: "printf '%s' '\(batch)'") { service, connection in
+        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.needsReconnect)
             #expect(status.controlError?.contains("core/stats failed") == true)
@@ -47,14 +47,12 @@ import UnlocalFSDomain
     }
 
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
-        try await withFixture { root in
-            """
-            if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
-            pending=0
-            if [ -f '\(root.path)/checked' ]; then pending=1; fi
-            touch '\(root.path)/checked'
-            printf '\(statusBatch(cache: #""uploadsQueued":%s,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))' "$pending"
-            """
+        try await withControl { root, _ in
+            { request in
+                if request.method == "job/list" { return #"{"runningIds":[]}"# }
+                let pending = mark(root.appending(path: "checked")) ? 1 : 0
+                return statusBatch(cache: #""uploadsQueued":\#(pending),"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+            }
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
                 error is UploadsPendingError
@@ -63,13 +61,15 @@ import UnlocalFSDomain
     }
 
     @Test func disconnectKeepsTheServiceAliveWhenUploadStatusBecomesUnavailable() async throws {
-        try await withFixture { root in
-            """
-            if [ "$4" = 'core/quit' ]; then rm "$3"; exit 0; fi
-            if [ -f '\(root.path)/checked' ]; then echo 'Control unavailable' >&2; exit 1; fi
-            touch '\(root.path)/checked'
-            printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))'
-            """
+        try await withControl { root, socket in
+            { request in
+                if request.method == "core/quit" {
+                    try FileManager.default.removeItem(at: socket)
+                    return "{}"
+                }
+                if mark(root.appending(path: "checked")) { throw ControlFailure("Control unavailable") }
+                return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+            }
         } operation: { service, connection in
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
             let status = await service.status(connection)
@@ -79,20 +79,22 @@ import UnlocalFSDomain
 
     @Test func disconnectRefusesWhileRcloneRunsADuplicateBeforeOrAfterEject() async throws {
         var fixtureRoot: URL?
-        try await withFixture { root in
+        try await withControl { root, _ in
             fixtureRoot = root
-            return """
-            case "$4" in
-                job/list)
-                    if [ -f '\(root.path)/listed' ]; then printf '{"runningIds":[3,7]}'; else printf '{"runningIds":[3]}'; fi
-                    touch '\(root.path)/listed' ;;
-                job/status)
-                    if [ "$5" = 'jobid=7' ]; then group=duplicate; else group=''; fi
-                    printf '{"finished":false,"success":false,"error":"","group":"%s"}' "$group" ;;
-                core/quit) touch '\(root.path)/quit' ;;
-                *) printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#))' ;;
-            esac
-            """
+            return { request in
+                switch request.method {
+                case "job/list":
+                    return mark(root.appending(path: "listed")) ? #"{"runningIds":[3,7]}"# : #"{"runningIds":[3]}"#
+                case "job/status":
+                    let group = request.parameter("jobid") == "7" ? "duplicate" : ""
+                    return #"{"finished":false,"success":false,"error":"","group":"\#(group)"}"#
+                case "core/quit":
+                    _ = mark(root.appending(path: "quit"))
+                    return "{}"
+                default:
+                    return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#)
+                }
+            }
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
                 error.localizedDescription == String(localized: .copyInProgress)
@@ -105,7 +107,7 @@ import UnlocalFSDomain
 
     @Test(arguments: ["before", "during", "after"])
     func disconnectSucceedsWhenRcloneExitsDuringShutdown(phase: String) async throws {
-        try await withFixture { shutdownScript(phase: phase, root: $0) } operation: { service, connection in
+        try await withControl { shutdown(phase: phase, root: $0, socket: $1) } operation: { service, connection in
             try await service.unmount(connection)
             let status = await service.status(connection)
             #expect(!status.isMounted && !status.isRunning)
@@ -113,7 +115,7 @@ import UnlocalFSDomain
     }
 
     @Test func disconnectReportsQuitFailuresWhileRcloneRemainsRunning() async throws {
-        try await withFixture { shutdownScript(phase: "running", root: $0) } operation: { service, connection in
+        try await withControl { shutdown(phase: "running", root: $0, socket: $1) } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
                 error is AppError && error.localizedDescription.contains("Quit failed")
             }
@@ -129,8 +131,6 @@ import UnlocalFSDomain
         let password = String(repeating: "private-password", count: passwordRepetitions)
         let script = """
         case "$1" in
-            rc)
-                printf '{}' ;;
             obscure) printf 'obscured-token' ;;
             \(command))
                 printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
@@ -249,28 +249,42 @@ import UnlocalFSDomain
     }
 }
 
-private func shutdownScript(phase: String, root: URL) -> String {
-    """
-    if [ "$4" = 'job/list' ]; then printf '{"runningIds":[]}'; exit 0; fi
-    if [ "$4" = 'core/quit' ]; then
-        if [ '\(phase)' = 'after' ]; then rm "$3"; fi
-        echo 'Quit failed'
-        exit 1
-    fi
-    if [ '\(phase)' = 'before' ] || { [ '\(phase)' = 'during' ] && [ -f '\(root.path)/checked' ]; }; then
-        rm "$3"
-    fi
-    touch '\(root.path)/checked'
-    printf '%s' '\(statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#))'
-    """
+private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Respond {
+    { request in
+        switch request.method {
+        case "job/list":
+            let listed = mark(root.appending(path: "listed"))
+            if phase == "before" || (phase == "during" && listed) { try FileManager.default.removeItem(at: socket) }
+            return #"{"runningIds":[]}"#
+        case "core/quit":
+            if phase == "after" { try FileManager.default.removeItem(at: socket) }
+            throw ControlFailure("Quit failed")
+        default:
+            return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+        }
+    }
+}
+
+private func mark(_ file: URL) -> Bool {
+    defer { FileManager.default.createFile(atPath: file.path, contents: Data()) }
+    return FileManager.default.fileExists(atPath: file.path)
 }
 
 private func withFixture(script: String, operation: (MountService, Connection) async throws -> Void) async throws {
     try await withFixture(script: { _ in script }, operation: operation)
 }
 
-private func withFixture(script: (URL) -> String, operation: (MountService, Connection) async throws -> Void) async throws {
-    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+private func withControl(
+    _ control: @escaping (_ root: URL, _ socket: URL) -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void
+) async throws {
+    try await withFixture(script: { _ in "" }, control: control, operation: operation)
+}
+
+private func withFixture(
+    script: (URL) -> String, control: ((_ root: URL, _ socket: URL) -> ControlServer.Respond)? = nil,
+    operation: (MountService, Connection) async throws -> Void
+) async throws {
+    let root = URL(filePath: "/tmp/uf-safety-\(UUID().uuidString.prefix(8))")
     defer { try? FileManager.default.removeItem(at: root) }
     let paths = AppPaths(
         config: root.appendingPathComponent("config.json"),
@@ -280,7 +294,10 @@ private func withFixture(script: (URL) -> String, operation: (MountService, Conn
     )
     try paths.prepare()
     let connection = fixture()
-    FileManager.default.createFile(atPath: paths.socket(connection).path, contents: Data())
+    let socket = paths.socket(connection)
+    let server = try control.map { try ControlServer(at: socket, respond: $0(root, socket)) }
+    defer { server?.stop() }
+    if server == nil { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
     let binary = root.appendingPathComponent("rclone-fixture")
     try writeRcloneStub(script(root), to: binary)
     try await operation(MountService(executable: binary, helperDirectory: root, paths: paths), connection)

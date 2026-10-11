@@ -3,15 +3,17 @@ import Synchronization
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 struct ViewModelFixture {
     let root: URL
     let paths: AppPaths
     let service: MountService
     let repository: SavedConnectionRepository
+    private let servers = ControlServers()
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appending(path: "uf-view-model-\(UUID().uuidString)")
+        root = URL(filePath: "/tmp/uf-view-model-\(UUID().uuidString.prefix(8))")
         paths = AppPaths(config: root.appending(path: "config.json"), support: root, mounts: root.appending(path: "mounts"), logs: root.appending(path: "logs"))
         try paths.prepare()
         let executable = root.appending(path: "rclone")
@@ -26,13 +28,6 @@ struct ViewModelFixture {
                 fi
                 ;;
             obscure) cat >/dev/null; printf 'prepared-password\\n' ;;
-            rc)
-                case "$4" in
-                    job/batch)
-                        printf '{"results":[%s,%s,%s]}' "$(cat '\(root.path)/vfs-stats.json')" "$(cat '\(root.path)/queue.json')" "$(cat '\(root.path)/stats.json')" ;;
-                    *) exit 1 ;;
-                esac
-                ;;
             config)
                 name="$3"
                 arguments="$*"
@@ -81,7 +76,11 @@ struct ViewModelFixture {
 
     func serve(_ connection: Connection, queued: Int = 0, failed: Int = 0, cached: Int64 = 0, downloading: Bool = false) throws {
         try ConnectionStore(url: paths.config).save(connection)
-        try Data().write(to: paths.socket(connection))
+        try servers.start(at: paths.socket(connection)) { [root] request in
+            guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
+            let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
+            return #"{"results":[\#(results.joined(separator: ","))]}"#
+        }
         let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"erroredFiles":\#(failed),"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
         let transfers = downloading ? #"{"transferring":[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]}"# : "{}"
@@ -100,7 +99,21 @@ struct ViewModelFixture {
         return connection
     }
 
-    func remove() { try? FileManager.default.removeItem(at: root) }
+    func remove() {
+        servers.stop()
+        try? FileManager.default.removeItem(at: root)
+    }
+}
+
+private final class ControlServers: Sendable {
+    private let servers = Mutex<[ControlServer]>([])
+
+    func start(at socket: URL, respond: @escaping ControlServer.Respond) throws {
+        let server = try ControlServer(at: socket, respond: respond)
+        servers.withLock { $0.append(server) }
+    }
+
+    func stop() { servers.withLock { $0.forEach { $0.stop() } } }
 }
 
 func sftpConnectionFixture() -> Connection {
