@@ -30,6 +30,11 @@ jobs:
           xcodebuild build-for-testing -scheme UnlocalFSCore-Package -destination platform=macOS
           -derivedDataPath "$RUNNER_TEMP/build"
 
+      - name: Bundle Swift Testing
+        run: |
+          ditto "$DEVELOPER_DIR/Contents/SharedFrameworks/Testing.framework" "$RUNNER_TEMP/build/Build/Products/Debug/Testing.framework"
+          cp "$DEVELOPER_DIR/Contents/SharedFrameworks/lib_TestingInterop.dylib" "$RUNNER_TEMP/build/Build/Products/Debug/"
+
       - name: Archive tests
         run: tar -C "$RUNNER_TEMP/build/Build" -cf "$RUNNER_TEMP/tests.tar" Products
 
