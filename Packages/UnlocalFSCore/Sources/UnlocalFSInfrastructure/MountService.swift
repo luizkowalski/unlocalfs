@@ -245,7 +245,7 @@ public actor MountService: DriveGateway {
         ["HOME": URL.homeDirectory.path,
          "PATH": "\(helperDirectory.path):/usr/bin:/bin:/usr/sbin:/sbin",
          "TMPDIR": URL.temporaryDirectory.path,
-         "LANG": "en_US.UTF-8",]
+         "LANG": "en_US.UTF-8", ]
     }
 
     private func environment(_ variables: [String: String]) -> [String: String] {
