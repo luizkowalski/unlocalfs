@@ -776,12 +776,12 @@
         }
       }
     },
-    "Folders open faster. Files show when they were uploaded, and a saved file’s date changes after it uploads. Read-only drives always do this." : {
+    "Folders open faster, but files show when they were uploaded, not when they were last changed. Always on for read-only drives." : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As pastas abrem mais rápido. Os arquivos mostram quando foram enviados, e a data de um arquivo salvo muda depois do envio. Unidades somente leitura sempre fazem isso."
+            "value" : "As pastas abrem mais rápido, mas os arquivos mostram quando foram enviados, não quando foram alterados pela última vez. Sempre ativado em unidades somente leitura."
           }
         }
       }

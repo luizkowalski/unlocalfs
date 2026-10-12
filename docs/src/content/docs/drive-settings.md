@@ -10,7 +10,7 @@ Open a connection’s **Settings** tab. You can edit a drive while it is disconn
 | Setting | Default | Effect |
 | --- | --- | --- |
 | Read-only | Off | Blocks apps from creating, changing, or deleting files through this drive. Use read-only storage credentials too when access must be restricted at the provider. |
-| Use upload time as file date | Off | Shown only for Amazon S3 and S3-compatible drives. Folders open faster, because the drive does not ask the server for the date of each file. Files show when they were uploaded instead of their own date, and a saved file’s date changes after it uploads. Read-only drives always use upload times. |
+| Use upload time as file date | Off | Shown only for Amazon S3 and S3-compatible drives. Folders open faster, because the drive does not ask the server for the date of each file. Files show when they were uploaded, not when they were last changed. A saved file’s date changes when its upload finishes. Always on for read-only drives. |
 | Connect on start up | Off | Connects this drive when UnlocalFS opens. Use **Open at Login** in the menu bar to launch the app at login. |
 
 ## Encryption

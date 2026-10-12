@@ -231,7 +231,7 @@ struct ConnectionEditor: View {
                 if viewModel.connection.backend == .s3Compatible {
                     Toggle(isOn: Binding { viewModel.connection.usesUploadTimes } set: { viewModel.connection.prefersUploadTimes = $0 }) {
                         Text("Use upload time as file date")
-                        Text("Folders open faster. Files show when they were uploaded, and a saved file’s date changes after it uploads. Read-only drives always do this.")
+                        Text("Folders open faster, but files show when they were uploaded, not when they were last changed. Always on for read-only drives.")
                     }
                     .disabled(viewModel.connection.readOnly)
                 }
