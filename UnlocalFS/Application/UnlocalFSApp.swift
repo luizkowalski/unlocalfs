@@ -18,7 +18,7 @@ import UnlocalFSPresentation
                     let version = Bundle.main.object(forInfoDictionaryKey: "RcloneVersion") as? String ?? ""
                     let credits = NSAttributedString(string: "rclone \(version)", attributes: [
                         .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
-                        .foregroundColor: NSColor.labelColor
+                        .foregroundColor: NSColor.labelColor,
                     ])
                     NSApp.orderFrontStandardAboutPanel(options: [.credits: credits])
                 }

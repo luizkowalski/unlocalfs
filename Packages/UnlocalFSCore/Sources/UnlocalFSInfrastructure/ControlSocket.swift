@@ -24,7 +24,7 @@ enum ControlSocket {
             "Host: localhost",
             "Content-Type: application/json",
             "Content-Length: \(body.count)",
-            "", ""
+            "", "",
         ].joined(separator: "\r\n")
         return Data(head.utf8) + body
     }

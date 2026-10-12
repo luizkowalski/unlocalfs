@@ -223,7 +223,7 @@ import Testing
         let changes: [(inout SFTPSettings) -> Void] = [
             { $0.host = "other.example.com" }, { $0.port = 2222 }, { $0.username = "other" }, { $0.remotePath = "/srv" },
             { $0.authentication = .agent }, { $0.keyFile = "/Users/me/.ssh/other" },
-            { $0.agentSocket = "/tmp/agent.sock" }
+            { $0.agentSocket = "/tmp/agent.sock" },
         ]
         for change in changes {
             editor.connection.sftp = sftpConnectionFixture().sftp

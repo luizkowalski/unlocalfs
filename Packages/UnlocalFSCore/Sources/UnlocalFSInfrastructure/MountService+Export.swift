@@ -14,7 +14,7 @@ extension MountService {
         let remote = RcloneRemote(connection: connection, credentials: prepared, knownHosts: paths.knownHosts)
         var crypt = [
             "remote": "\(remote.exportName):\(remote.path)", "filename_encryption": "standard",
-            "directory_name_encryption": "true", "filename_encoding": "base32"
+            "directory_name_encryption": "true", "filename_encoding": "base32",
         ]
         crypt["password"] = prepared?.obscuredEncryptionPassword
         do {

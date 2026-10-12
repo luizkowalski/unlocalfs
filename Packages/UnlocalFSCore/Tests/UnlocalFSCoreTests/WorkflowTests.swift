@@ -208,7 +208,7 @@ import UnlocalFSInfrastructure
 
     @Test(arguments: [
         (sftpFixture(), String(localized: .serverCopyUnavailable(sftpFixture().provider.title))),
-        (readOnlyFixture(), String(localized: .driveIsReadOnly))
+        (readOnlyFixture(), String(localized: .driveIsReadOnly)),
     ])
     func duplicatingRefusesTheSelectionBeforeCopyingAnyFile(refused: Connection, message: String) async throws {
         try await withWorkflowFixture { repository, drives, paths, writable in
@@ -249,7 +249,7 @@ typealias Redirection = @Sendable (inout Connection) -> Void
 private let redirections: [Redirection] = [
     { $0.sftp.remotePath = "/elsewhere" },
     { $0.encrypted = true },
-    { $0.provider = .other }
+    { $0.provider = .other },
 ]
 
 private func readOnlyFixture() -> Connection {

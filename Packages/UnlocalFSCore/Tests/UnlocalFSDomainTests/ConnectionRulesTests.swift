@@ -51,12 +51,12 @@ import Testing
             .init(field: .accessKey, message: String(localized: .accessKeyEmpty)),
             .init(field: .secretKey, message: String(localized: .secretKeyEmpty)),
             .init(field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty)),
-            .init(field: .confirmation, message: String(localized: .passwordsDoNotMatch))
+            .init(field: .confirmation, message: String(localized: .passwordsDoNotMatch)),
         ])
         #expect { try errors.requireValid() } throws: { error in
             (error as? AppError)?.errorDescription == [
                 String(localized: .folderPathInvalid), String(localized: .nameAlreadyExists), String(localized: .accessKeyEmpty),
-                String(localized: .secretKeyEmpty), String(localized: .encryptionPasswordEmpty), String(localized: .passwordsDoNotMatch)
+                String(localized: .secretKeyEmpty), String(localized: .encryptionPasswordEmpty), String(localized: .passwordsDoNotMatch),
             ].joined(separator: "\n")
         }
     }

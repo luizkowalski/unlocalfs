@@ -24,7 +24,7 @@ import UnlocalFSTestSupport
         (#""uploadsQueued":1,"uploadsInProgress":0"#, "", true),
         (#""uploadsQueued":0,"uploadsInProgress":1"#, "", true),
         (#""uploadsQueued":0,"uploadsInProgress":0"#, failedItem, false),
-        (#""uploadsQueued":1,"uploadsInProgress":0"#, failedItem, false)
+        (#""uploadsQueued":1,"uploadsInProgress":0"#, failedItem, false),
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, queue: String, pending: Bool) async throws {
         let batch = statusBatch(cache: cache + #","bytesUsed":42"#, queue: #"{"queue":[\#(queue)]}"#)

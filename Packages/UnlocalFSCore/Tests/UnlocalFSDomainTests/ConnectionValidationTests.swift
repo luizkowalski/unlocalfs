@@ -16,7 +16,7 @@ private let badFolder = String(localized: .folderPathInvalid)
         (false, Credentials(), [ConnectionField.accessKey, .secretKey]),
         (true, Credentials(accessKey: " \t", secretKey: "\n", encryptionPassword: " "), [.accessKey, .secretKey, .encryptionPassword]),
         (true, Credentials(accessKey: "a", secretKey: "b"), [.encryptionPassword]),
-        (true, Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw"), [ConnectionField]())
+        (true, Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw"), [ConnectionField]()),
     ])
     func credentialsAreValidatedPerField(encrypted: Bool, credentials: Credentials, fields: [ConnectionField]) {
         var connection = fixture()
@@ -27,7 +27,7 @@ private let badFolder = String(localized: .folderPathInvalid)
     @Test(arguments: [
         fixture(), fixture(endpoint: "http://127.0.0.1:19753"), fixture(folder: "clients/acme"),
         fixture(endpoint: "https://s3.example.com/", folder: " clients/café "),
-        fixture(name: String(repeating: "a", count: 120)), fixture(name: String(repeating: "é", count: 60)), fixture(name: " My files ")
+        fixture(name: String(repeating: "a", count: 120)), fixture(name: String(repeating: "é", count: 60)), fixture(name: " My files "),
     ])
     func validConnectionHasNoIssues(connection: Connection) {
         #expect(connection.validate().isValid)
@@ -67,7 +67,7 @@ private let badFolder = String(localized: .folderPathInvalid)
         (.folder, fixture(folder: "clients//acme"), [badFolder]),
         (.folder, fixture(folder: "clients/../other"), [badFolder]),
         (.folder, fixture(folder: "./clients"), [badFolder]),
-        (.folder, fixture(folder: "bad\nfolder"), [badFolder])
+        (.folder, fixture(folder: "bad\nfolder"), [badFolder]),
     ])
     func invalidInputKeepsEveryMessageInOrder(field: ConnectionField, connection: Connection, messages: [String]) {
         let issues = connection.validate().issues
@@ -109,7 +109,7 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         (.username, sftpSettings { $0.username = "" }),
         (.remotePath, sftpSettings { $0.remotePath = "bad\nfolder" }),
         (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "" }),
-        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" })
+        (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" }),
     ])
     func invalidSFTPInputNamesTheField(field: ConnectionField, settings: SFTPSettings) {
         var connection = sftpFixture()
@@ -145,7 +145,7 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     @Test(arguments: [
         "", "1234abcd-12ab-34cd-56ef-1234567890ab", "mrk-1234abcd12ab34cd56ef1234567890ab", "alias/compliance",
         "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab",
-        "arn:aws-us-gov:kms:us-gov-west-1:111122223333:alias/compliance"
+        "arn:aws-us-gov:kms:us-gov-west-1:111122223333:alias/compliance",
     ])
     func kmsKeyAcceptsKeyIDsAliasesAndARNs(key: String) {
         #expect(awsFixture(kmsKeyID: key).validate().isValid)
@@ -172,7 +172,7 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         #"{"type":"authorized_user","client_email":"a@b.c","private_key":"k"}"#,
         #"{"type":"service_account","private_key":"k"}"#,
         #"{"type":"service_account","client_email":"a@b.c"}"#,
-        #"{"type":"service_account","client_email":"","private_key":"k"}"#
+        #"{"type":"service_account","client_email":"","private_key":"k"}"#,
     ])
     func filesThatAreNotServiceAccountKeysAreRejected(json: String) {
         #expect(throws: AppError.self) { try ServiceAccountKey(importing: Data(json.utf8)) }
