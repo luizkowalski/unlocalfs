@@ -84,7 +84,7 @@ import UnlocalFSInfrastructure
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         let connection = connectionFixture()
-        try fixture.serve(connection, failed: 1)
+        try fixture.serve(connection, failed: 1, lastError: "AccessDenied: Access Denied")
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 
@@ -93,7 +93,33 @@ import UnlocalFSInfrastructure
 
         #expect(app.indicator(connection) == .attention)
         #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
+        #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
         #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
+        #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedReason("AccessDenied: Access Denied"))])
+
+        await app.disconnect(connection)
+        #expect(app.problem(connection) != nil)
+        #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
+
+        try fixture.queue()
+        await app.refresh()
+
+        #expect(app.uploadFailure(connection) == nil)
+        #expect(app.statusText(connection) != String(localized: .uploadNeedsAttention))
+    }
+
+    @Test func failedUploadsWithoutAReasonStillNeedAttention() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let connection = connectionFixture()
+        try fixture.serve(connection, failed: 1)
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        await app.refresh()
+
+        #expect(try #require(app.uploadFailure(connection)).uploadError == nil)
+        #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedBody)])
     }
 
     @Test func pendingUploadsExplainBlockedDisconnectAndNotifyWhenFinished() async throws {
@@ -136,7 +162,7 @@ import UnlocalFSInfrastructure
         defer { fixture.remove() }
         let connection = connectionFixture()
         try fixture.serve(connection, queued: 1)
-        try fixture.queue(#"{"name":"a.dmg","size":4096,"tries":1,"uploading":true}"#)
+        try fixture.queue(#"{"name":"a.dmg","size":4096,"expiry":-1,"tries":1,"uploading":true}"#)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 

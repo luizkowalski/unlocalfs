@@ -21,13 +21,13 @@ import UnlocalFSTestSupport
     }
 
     @Test(arguments: [
-        ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":0", true),
-        ("\"uploadsQueued\":0,\"uploadsInProgress\":1,\"erroredFiles\":0", true),
-        ("\"uploadsQueued\":0,\"uploadsInProgress\":0,\"erroredFiles\":1", false),
-        ("\"uploadsQueued\":1,\"uploadsInProgress\":0,\"erroredFiles\":1", false)
+        (#""uploadsQueued":1,"uploadsInProgress":0"#, "", true),
+        (#""uploadsQueued":0,"uploadsInProgress":1"#, "", true),
+        (#""uploadsQueued":0,"uploadsInProgress":0"#, failedItem, false),
+        (#""uploadsQueued":1,"uploadsInProgress":0"#, failedItem, false)
     ])
-    func unmountRefusesQueuedOrFailedUploads(cache: String, pending: Bool) async throws {
-        let batch = statusBatch(cache: cache + #","bytesUsed":42"#)
+    func unmountRefusesQueuedOrFailedUploads(cache: String, queue: String, pending: Bool) async throws {
+        let batch = statusBatch(cache: cache + #","bytesUsed":42"#, queue: #"{"queue":[\#(queue)]}"#)
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.isRunning)
@@ -37,8 +37,31 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test func cacheItemsRcloneCouldNotClearAreNotFailedUploads() async throws {
+        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":1,"bytesUsed":42"#)
+        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
+            let status = await service.status(connection)
+            #expect(status.failedUploads == 0)
+            #expect(throws: Never.self) { try status.requireSafeDisconnect() }
+        }
+    }
+
+    @Test(arguments: [(2, false, true), (3, true, true), (1, false, true), (1, true, false), (0, false, false)])
+    func uploadErrorShowsOnlyWhileAnUploadHasFailed(tries: Int, uploading: Bool, failed: Bool) async throws {
+        let item = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#
+        let batch = statusBatch(
+            cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
+            queue: #"{"queue":[\#(item)]}"#, stats: #"{"lastError":"AccessDenied: Access Denied"}"#
+        )
+        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
+            let status = await service.status(connection)
+            #expect(status.failedUploads == (failed ? 1 : 0))
+            #expect(status.uploadError == (failed ? "AccessDenied: Access Denied" : nil))
+        }
+    }
+
     @Test func anErrorInsideTheStatusBatchMarksTheDriveForReconnect() async throws {
-        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
+        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.needsReconnect)
@@ -51,7 +74,7 @@ import UnlocalFSTestSupport
             { request in
                 if request.method == "job/list" { return #"{"runningIds":[]}"# }
                 let pending = mark(root.appending(path: "checked")) ? 1 : 0
-                return statusBatch(cache: #""uploadsQueued":\#(pending),"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+                return statusBatch(cache: #""uploadsQueued":\#(pending),"uploadsInProgress":0,"bytesUsed":42"#)
             }
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -68,7 +91,7 @@ import UnlocalFSTestSupport
                     return "{}"
                 }
                 if mark(root.appending(path: "checked")) { throw ControlFailure("Control unavailable") }
-                return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+                return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#)
             }
         } operation: { service, connection in
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
@@ -92,7 +115,7 @@ import UnlocalFSTestSupport
                     _ = mark(root.appending(path: "quit"))
                     return "{}"
                 default:
-                    return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0"#)
+                    return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#)
                 }
             }
         } operation: { service, connection in
@@ -278,10 +301,12 @@ private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Re
             if phase == "after" { try FileManager.default.removeItem(at: socket) }
             throw ControlFailure("Quit failed")
         default:
-            return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":42"#)
+            return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#)
         }
     }
 }
+
+private let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
 
 private func mark(_ file: URL) -> Bool {
     defer { FileManager.default.createFile(atPath: file.path, contents: Data()) }

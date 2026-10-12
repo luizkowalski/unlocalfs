@@ -19,7 +19,7 @@ For encrypted drives, an incorrect password or unencrypted names in the top fold
 
 - **The key is not accepted.** Import the JSON key file you downloaded from Google Cloud. Check that the service account and its key still exist.
 - **Access is denied.** Give the service account the **Storage Object User** role on the bucket. Check the bucket name.
-- **Uploads fail.** Check that the role is on the bucket and that the key is not expired or disabled. The drive's activity list shows the error.
+- **Uploads fail.** Check that the role is on the bucket and that the key is not expired or disabled. The drive page shows the error.
 
 Test Connection shows that UnlocalFS can list the folder. It does not check write permission.
 
@@ -31,7 +31,7 @@ Test Connection shows that UnlocalFS can list the folder. It does not check writ
 - **Sign-in fails.** Check the username, password, or key passphrase. The server must accept the sign-in option you chose.
 - **A folder is not found.** An empty folder means your home folder. A folder that starts with `/` is a path from the server's root.
 
-Test Connection shows that UnlocalFS can list the folder. It does not check write permission. If uploads fail, the drive's activity list shows the error and blocks an unsafe disconnect.
+Test Connection shows that UnlocalFS can list the folder. It does not check write permission. If uploads fail, the drive page shows the error and blocks an unsafe disconnect.
 
 ## A drive needs reconnecting
 
@@ -41,7 +41,7 @@ Wake and network changes refresh drive health. Reconnecting stays manual.
 
 ## Uploads fail or disconnect is blocked
 
-Select the drive to see pending uploads and retries. UnlocalFS sends a notification when files cannot upload. Restore network access and check that the credentials still allow writes.
+Select the drive to see why uploads fail. The drive page shows the latest error, and **Upload failed** in Activity shows each file's error and next try. UnlocalFS sends a notification with the error when files cannot upload. It tries again on its own, up to every 5 minutes, while the drive stays connected. Restore network access and check that the credentials still allow writes and that the storage is not full.
 
 The app will not disconnect while uploads are pending or need a retry. If you tried to disconnect, it sends a notification when uploads finish. Do not delete the cache while uploads are pending.
 

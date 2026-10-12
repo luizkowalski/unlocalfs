@@ -37,15 +37,40 @@ import UnlocalFSPresentation
         #expect(summary.bytesPerSecond == nil)
     }
 
-    @Test func filesListByNameWhateverTheirState() throws {
+    @Test func failedUploadsListFirstThenFilesByName() throws {
         let summary = try #require(TransferSummary([
             FileActivity(path: "file10.txt", size: 1, state: .uploading, bytesTransferred: 0),
             FileActivity(path: "b.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
+            FileActivity(path: "zebra.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
             FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "a.txt", size: 1, state: .retrying, bytesTransferred: nil)
+            FileActivity(path: "a.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil)
         ], now: now))
 
-        #expect(summary.files.map(\.path) == ["a.txt", "b.txt", "file2.txt", "file10.txt"])
+        #expect(summary.files.map(\.path) == ["a.txt", "zebra.txt", "b.txt", "file2.txt", "file10.txt"])
+    }
+
+    @Test func failedUploadsShowBeforeMovingFilesWithinTheTenFileLimit() throws {
+        let summary = try #require(TransferSummary((1...11).map {
+            FileActivity(path: "file\($0).txt", size: 1, state: .uploading, bytesTransferred: 0)
+        } + [FileActivity(path: "zebra.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil)], now: now))
+
+        #expect(summary.files.first?.path == "zebra.txt")
+        #expect(summary.hiddenFileCount == 2)
+    }
+
+    @Test func failedUploadsDoNotCountAsUploading() throws {
+        let failed = (1...12).map { FileActivity(path: "scan\($0).pdf", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil) }
+        let mixed = try #require(TransferSummary(failed + [
+            FileActivity(path: "a.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),
+            FileActivity(path: "b.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100)
+        ], now: now))
+        #expect(mixed.fileCount == 2)
+        #expect(mixed.bytesPerSecond == 200)
+
+        let onlyFailed = try #require(TransferSummary(failed, now: now))
+        #expect(onlyFailed.fileCount == 0)
+        #expect(onlyFailed.files.count == 10)
+        #expect(onlyFailed.hiddenFileCount == 2)
     }
 
     @Test func listStopsAtTenFilesAndKeepsMovingFiles() throws {

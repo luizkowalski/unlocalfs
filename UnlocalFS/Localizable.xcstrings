@@ -1239,6 +1239,16 @@
         }
       }
     },
+    "rclone did not report a reason. The log has the details." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O rclone não informou o motivo. O registro tem os detalhes."
+          }
+        }
+      }
+    },
     "Read-only" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1326,6 +1336,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Substituir…"
+          }
+        }
+      }
+    },
+    "Retry %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tentativa %@"
+          }
+        }
+      }
+    },
+    "Retrying soon" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tentativa em breve"
           }
         }
       }
@@ -1453,6 +1483,17 @@
         }
       }
     },
+    "Show why the upload failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar por que o envio falhou"
+          }
+        }
+      }
+    },
     "Sign in with" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1539,6 +1580,16 @@
         }
       }
     },
+    "The reason is not available. The log has the details." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O motivo não está disponível. O registro tem os detalhes."
+          }
+        }
+      }
+    },
     "This removes the saved connection, credentials, and local file cache. Remote files are kept." : {
       "localizations" : {
         "pt-BR" : {
@@ -1602,6 +1653,17 @@
         }
       }
     },
+    "Trying again after a failed upload" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentando novamente após uma falha no envio"
+          }
+        }
+      }
+    },
     "UnlocalFS is still running" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1609,6 +1671,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O UnlocalFS ainda está em execução"
+          }
+        }
+      }
+    },
+    "UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O UnlocalFS tenta novamente sozinho, no máximo a cada 5 minutos, enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
+    "Upload failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha no envio"
+          }
+        }
+      }
+    },
+    "Upload failed, show details" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha no envio, mostrar detalhes"
           }
         }
       }
@@ -1644,6 +1738,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enviando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
+    "Uploads are failing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os envios estão falhando"
           }
         }
       }
@@ -1697,16 +1802,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aguardando"
-          }
-        }
-      }
-    },
-    "Waiting to retry upload" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aguardando nova tentativa de envio"
           }
         }
       }

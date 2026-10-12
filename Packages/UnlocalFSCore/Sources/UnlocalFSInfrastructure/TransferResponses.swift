@@ -7,13 +7,17 @@ struct UploadQueue: Decodable {
     struct Item: Decodable {
         let name: String
         let size: Int64
+        let expiry: Double
         let tries: Int
         let uploading: Bool
+
+        var hasFailedAttempt: Bool { tries > 1 || (tries > 0 && !uploading) }
     }
 }
 
 struct TransferStats: Decodable {
     let transferring: [Transfer]?
+    let lastError: String?
 
     struct Transfer: Decodable {
         let name: String
@@ -63,18 +67,18 @@ struct VFSStats: Decodable {
     struct DiskCache: Decodable {
         let uploadsQueued: Int
         let uploadsInProgress: Int
-        let erroredFiles: Int
         let bytesUsed: Int64
     }
 }
 
 struct ControlSnapshot: Decodable {
-    static let statusRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"}]}"#
+    static let statusRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats","group":"global_stats"}]}"#
     static let activityRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"},{"_path":"core/transferred"}]}"#
 
     let cache: VFSStats.DiskCache
     let queue: [UploadQueue.Item]
     let transfers: [TransferStats.Transfer]
+    let lastError: String?
     let finished: [FinishedTransfer]
 
     private enum CodingKeys: CodingKey { case results }
@@ -83,7 +87,9 @@ struct ControlSnapshot: Decodable {
         var results = try decoder.container(keyedBy: CodingKeys.self).nestedUnkeyedContainer(forKey: .results)
         cache = try results.decode(BatchResult<VFSStats>.self).value.diskCache
         queue = try results.decode(BatchResult<UploadQueue>.self).value.queue
-        transfers = try results.decode(BatchResult<TransferStats>.self).value.transferring ?? []
+        let stats = try results.decode(BatchResult<TransferStats>.self).value
+        transfers = stats.transferring ?? []
+        lastError = stats.lastError
         finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred
     }
 }

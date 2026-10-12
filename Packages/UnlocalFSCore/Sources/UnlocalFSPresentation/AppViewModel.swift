@@ -317,7 +317,8 @@ extension AppViewModel {
 private extension AppViewModel {
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
-            notify(title: String(localized: .uploadsFailed(connection.name)), body: String(localized: .uploadsFailedBody))
+            let body = status.uploadError.map { String(localized: .uploadsFailedReason($0)) } ?? String(localized: .uploadsFailedBody)
+            notify(title: String(localized: .uploadsFailed(connection.name)), body: body)
         }
         if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
             notifiedFailures.remove(connection.id)

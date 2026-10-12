@@ -17,6 +17,12 @@ extension AppViewModel {
         return status
     }
 
+    public func uploadFailure(_ connection: Connection) -> MountStatus? {
+        guard !busy.contains(connection.id), !isOffline(connection),
+              let status = servingStatus(connection), status.failedUploads > 0 else { return nil }
+        return status
+    }
+
     public func problem(_ connection: Connection) -> String? {
         errors[connection.id] ?? statuses[connection.id]?.controlError
     }

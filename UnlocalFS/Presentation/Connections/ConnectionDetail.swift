@@ -15,6 +15,9 @@ struct ConnectionDetail: View {
                 if let problem = model.problem(connection) {
                     problemNotice(problem)
                 }
+                if let failure = model.uploadFailure(connection) {
+                    uploadFailureNotice(failure.uploadError)
+                }
                 if model.isOffline(connection) {
                     Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
                         .font(.callout).foregroundStyle(.secondary)
@@ -205,12 +208,37 @@ struct ConnectionDetail: View {
     }
 
     private func problemNotice(_ problem: String) -> some View {
+        notice("Connection needs attention") {
+            Text(problem).textSelection(.enabled)
+        } actions: {
+            Button("Check Again") { Task { await model.checkAgain(connection) } }
+        }
+    }
+
+    private func uploadFailureNotice(_ error: String?) -> some View {
+        notice("Uploads are failing") {
+            if let error {
+                Text(error).textSelection(.enabled)
+            } else {
+                Text("rclone did not report a reason. The log has the details.")
+            }
+            Text("UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected.")
+        } actions: {
+            if error == nil {
+                Button("Show Log") { model.openLog(connection) }
+            }
+        }
+    }
+
+    private func notice(
+        _ title: LocalizedStringKey, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View
+    ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Divider()
-            Label("Connection needs attention", systemImage: "exclamationmark.triangle")
+            Label(title, systemImage: "exclamationmark.triangle")
                 .font(.headline)
-            Text(problem).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
-            Button("Check Again") { Task { await model.checkAgain(connection) } }
+            message().font(.callout).foregroundStyle(.secondary)
+            actions()
             Divider()
         }
     }

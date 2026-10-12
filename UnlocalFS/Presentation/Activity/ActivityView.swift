@@ -174,29 +174,41 @@ private struct ActivityRow: View {
         switch activity.state {
         case .queued:
             Text("Waiting")
-        case .retrying:
-            Text("Waiting to retry upload").foregroundStyle(.orange)
+        case .failed(let nextAttempt):
+            FailedUploadButton(name: name, error: activity.uploadError, nextAttempt: nextAttempt)
         case .uploaded:
             finished(Text("Uploaded"))
         case .downloaded:
             finished(Text("Downloaded"))
         case .uploading, .downloading:
-            if activity.size > 0, let transferred = activity.bytesTransferred {
-                let fraction = min(Double(transferred) / Double(activity.size), 1)
-                HStack(spacing: 6) {
-                    ProgressView(value: fraction)
-                        .controlSize(.small)
-                        .accessibilityLabel(movingText)
-                    Text(fraction, format: .percent.precision(.fractionLength(0)))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                        .frame(width: 34, alignment: .leading)
+            HStack(spacing: 6) {
+                if activity.uploadError != nil {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundStyle(.orange)
+                        .accessibilityLabel("Trying again after a failed upload")
+                        .help("Trying again after a failed upload")
                 }
-                .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
-                .help(movingText)
-            } else {
-                movingText
+                progress
             }
+        }
+    }
+
+    @ViewBuilder private var progress: some View {
+        if activity.size > 0, let transferred = activity.bytesTransferred {
+            let fraction = min(Double(transferred) / Double(activity.size), 1)
+            HStack(spacing: 6) {
+                ProgressView(value: fraction)
+                    .controlSize(.small)
+                    .accessibilityLabel(movingText)
+                Text(fraction, format: .percent.precision(.fractionLength(0)))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .frame(width: 34, alignment: .leading)
+            }
+            .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
+            .help(movingText)
+        } else {
+            movingText
         }
     }
 
@@ -215,4 +227,50 @@ private struct ActivityRow: View {
     private var name: String { (activity.path as NSString).lastPathComponent }
 
     private var folder: String { (activity.path as NSString).deletingLastPathComponent }
+}
+
+private struct FailedUploadButton: View {
+    let name: String
+    let error: String?
+    let nextAttempt: Date
+    @State private var showingDetails = false
+
+    var body: some View {
+        Button { showingDetails = true } label: {
+            HStack(spacing: 4) {
+                Label("Upload failed", systemImage: "exclamationmark.triangle.fill")
+                Image(systemName: "info.circle").accessibilityHidden(true)
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.orange)
+        .accessibilityLabel("Upload failed, show details")
+        .help("Show why the upload failed")
+        .popover(isPresented: $showingDetails, arrowEdge: .bottom) { details }
+    }
+
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(name).font(.headline)
+            if let error {
+                Text(error).textSelection(.enabled)
+            } else {
+                Text("The reason is not available. The log has the details.")
+            }
+            Group {
+                if nextAttempt > .now {
+                    Text("Retry \(nextAttempt, format: .relative(presentation: .named))")
+                } else {
+                    Text("Retrying soon")
+                }
+            }
+            .foregroundStyle(.secondary)
+        }
+        .font(.callout)
+        .foregroundStyle(.primary)
+        .lineLimit(nil)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(14)
+        .frame(width: 320, alignment: .leading)
+    }
 }

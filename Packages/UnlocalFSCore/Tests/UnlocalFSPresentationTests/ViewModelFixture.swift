@@ -49,7 +49,7 @@ struct ViewModelFixture {
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
         try Data("{}".utf8).write(to: root.appending(path: "stats.json"))
-        try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
+        try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
         service = MountService(executable: executable, helperDirectory: root, paths: paths)
         repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     }
@@ -74,16 +74,20 @@ struct ViewModelFixture {
         factory(app ?? self.app()).makeEditor(draft)
     }
 
-    func serve(_ connection: Connection, queued: Int = 0, failed: Int = 0, cached: Int64 = 0, downloading: Bool = false) throws {
+    func serve(
+        _ connection: Connection, queued: Int = 0, failed: Int = 0, lastError: String? = nil, cached: Int64 = 0, downloading: Bool = false
+    ) throws {
         try serve(connection) { [root] request in
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
             let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
             return #"{"results":[\#(results.joined(separator: ","))]}"#
         }
-        let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"erroredFiles":\#(failed),"bytesUsed":\#(cached)}}"#
+        let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
-        let transfers = downloading ? #"{"transferring":[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]}"# : "{}"
-        try Data(transfers.utf8).write(to: root.appending(path: "stats.json"))
+        if failed > 0 { try queue(contentsOf: (0..<failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
+        let transfers = downloading ? #"[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]"# : "[]"
+        let error = lastError.map { #","lastError":"\#($0)""# } ?? ""
+        try Data(#"{"transferring":\#(transfers)\#(error)}"#.utf8).write(to: root.appending(path: "stats.json"))
     }
 
     func serve(_ connection: Connection, respond: @escaping ControlServer.Respond) throws {
@@ -91,7 +95,9 @@ struct ViewModelFixture {
         try servers.start(at: paths.socket(connection), respond: respond)
     }
 
-    func queue(_ items: String...) throws {
+    func queue(_ items: String...) throws { try queue(contentsOf: items) }
+
+    private func queue(contentsOf items: [String]) throws {
         try Data(#"{"queue":[\#(items.joined(separator: ","))]}"#.utf8).write(to: root.appending(path: "queue.json"))
     }
 
