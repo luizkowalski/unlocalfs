@@ -9,8 +9,8 @@
     "up": "npx npm-check-updates --interactive --format group"
   },
   "dependencies": {
-    "astro": "^7.3.6",
-    "@astrojs/starlight": "^0.42.5"
+    "astro": "^7.3.8",
+    "@astrojs/starlight": "^0.42.6"
   },
   "overrides": {
     "postcss-selector-parser": "^7.1.6"

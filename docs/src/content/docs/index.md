@@ -9,6 +9,8 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, and 
 
 [Download UnlocalFS](https://github.com/luizkowalski/unlocalfs/releases) · [Connect your first drive](/getting-started/)
 
+![UnlocalFS window with an R2 drive uploading files](../../assets/unlocal.png)
+
 ## What you can do
 
 - Open and edit files from Finder and your Mac apps.

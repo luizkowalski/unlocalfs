@@ -28,6 +28,8 @@ It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any 
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
 - **No tracking:** Connect directly to your storage provider, with no UnlocalFS account, analytics, or telemetry.
 
+![UnlocalFS window with an R2 drive uploading files](assets/unlocal.png)
+
 ## Documentation
 
 Read the [user guide](https://unlocalfs.luizkowalski.net) for installation, connection and drive settings, encryption, sharing links, and troubleshooting.
