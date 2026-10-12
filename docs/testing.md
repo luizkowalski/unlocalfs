@@ -29,7 +29,7 @@ When tests share a setup, one test checks all the outcomes. Keep a test separate
 Each storage type has one suite. Each test starts its own local server and uses its own folder, so the suites run in parallel.
 
 - `S3DriveTests`: a drive downloads, uploads, and deletes files, shows each file in its activity, and does not disconnect while an upload is pending. The activity check reads rclone's real replies, so a changed rclone field fails here. Fakes cover only states that rclone cannot make on demand, such as retries and a drive that stops mid-call. An encrypted drive stores only ciphertext, and its exported rclone config can read it.
-- `SFTPDriveTests`: the same round trip for each login, and approval of a new or changed server key.
+- `SFTPDriveTests`: the same round trip for each login, approval of a new or changed server key, and reconnect after rclone exits, which force-ejects a drive whose server is gone.
 - `GCSDriveTests`: rclone has no GCS server, so this suite checks only the exported config. To add a mount test, start a GCS emulator in `withOfflineDrive` and call `verifyRoundTrip`.
 
 Add a storage test only for app behavior that a stub cannot show, such as what rclone writes to the server.

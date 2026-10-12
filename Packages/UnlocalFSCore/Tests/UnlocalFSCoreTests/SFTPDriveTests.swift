@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import Testing
 import UnlocalFSDomain
@@ -8,6 +9,23 @@ import UnlocalFSInfrastructure
     func driveDownloadsUploadsAndDeletesFiles(login: SFTPLogin) async throws {
         try await withSFTPDrive(login) { drive, sftp in
             try await verifyRoundTrip(drive, storage: sftp.served, credentials: sftp.credentials)
+        }
+    }
+
+    @Test func driveReconnectsAfterMountProcessExits() async throws {
+        try await withSFTPDrive { drive, sftp in
+            try Data("from the server".utf8).write(to: sftp.served.appending(path: "remote.txt"))
+            try await drive.service.mount(drive.connection, credentials: sftp.credentials)
+            let savedPID = try String(contentsOf: drive.paths.pidFile(drive.connection), encoding: .utf8)
+            let pid = try #require(pid_t(savedPID))
+            try #require(kill(pid, SIGKILL) == 0)
+            try await waitUntil(timeout: .seconds(5)) { await !drive.service.status(drive.connection).isRunning }
+            #expect(await drive.service.status(drive.connection).isMounted)
+
+            try await drive.service.reconnect(drive.connection, credentials: sftp.credentials)
+            #expect(try String(contentsOf: drive.mounted.appending(path: "remote.txt"), encoding: .utf8) == "from the server")
+            try await drive.service.unmount(drive.connection)
+            #expect(await !drive.service.status(drive.connection).isActive)
         }
     }
 

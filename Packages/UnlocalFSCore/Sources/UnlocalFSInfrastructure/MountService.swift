@@ -347,10 +347,12 @@ extension MountService {
 
 private extension MountService {
     func eject(_ connection: Connection, force: Bool) async throws {
+        let (executable, flags) = force ? ("/sbin/umount", ["-f"]) : ("/usr/sbin/diskutil", ["unmount"])
+        let arguments = flags + [paths.mount(connection).path]
         let deadline = ContinuousClock.now.advanced(by: Self.ejectRetryTime)
         while true {
             do {
-                _ = try await Command.run(URL(filePath: "/sbin/umount"), (force ? ["-f"] : []) + [paths.mount(connection).path], timeout: .seconds(60))
+                _ = try await Command.run(URL(filePath: executable), arguments, timeout: .seconds(60))
                 break
             } catch where ContinuousClock.now < deadline {
                 try await Task.sleep(for: .seconds(1))
