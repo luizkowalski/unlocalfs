@@ -13,6 +13,7 @@ import UnlocalFSInfrastructure
         connection.region = "auto"
         connection.folder = "clients/acme"
         connection.readOnly = true
+        connection.prefersUploadTimes = true
         connection.connectsAutomatically = true
         connection.encrypted = true
         connection.provider = .aws
@@ -37,6 +38,7 @@ import UnlocalFSInfrastructure
         #expect(connection.cacheLimit == 1_000_000_000)
         #expect(connection.minimumFreeSpace == 0)
         #expect(!connection.readOnly)
+        #expect(!connection.prefersUploadTimes)
         #expect(!connection.connectsAutomatically)
         #expect(!connection.encrypted)
         #expect(connection.bandwidthLimit == 0)
@@ -84,6 +86,17 @@ import UnlocalFSInfrastructure
         #expect(credentials == { var expected = Credentials(accessKey: "a", secretKey: "b", sessionToken: "c", encryptionPassword: "d")
             expected.obscuredEncryptionPassword = "e"
             return expected }())
+    }
+
+    @Test(arguments: [
+        (fixture(), false, false, false), (fixture(), true, false, true), (fixture(), false, true, true),
+        (sftpFixture(), true, true, false), (gcsFixture(), true, true, false)
+    ])
+    func s3DrivesUseUploadTimesWhenChosenOrReadOnly(connection: Connection, readOnly: Bool, prefersUploadTimes: Bool, expected: Bool) {
+        var connection = connection
+        connection.readOnly = readOnly
+        connection.prefersUploadTimes = prefersUploadTimes
+        #expect(connection.usesUploadTimes == expected)
     }
 
     @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {

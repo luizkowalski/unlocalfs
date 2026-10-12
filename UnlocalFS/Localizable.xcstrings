@@ -776,6 +776,16 @@
         }
       }
     },
+    "Folders open faster. Files show when they were uploaded, and a saved file’s date changes after it uploads. Read-only drives always do this." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As pastas abrem mais rápido. Os arquivos mostram quando foram enviados, e a data de um arquivo salvo muda depois do envio. Unidades somente leitura sempre fazem isso."
+          }
+        }
+      }
+    },
     "General" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1780,6 +1790,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use este arquivo com o rclone para ler %1$@ sem o UnlocalFS."
+          }
+        }
+      }
+    },
+    "Use upload time as file date" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar a hora do envio como data do arquivo"
           }
         }
       }

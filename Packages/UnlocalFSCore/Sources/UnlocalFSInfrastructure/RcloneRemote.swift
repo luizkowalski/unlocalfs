@@ -49,7 +49,8 @@ struct RcloneRemote {
             "region": connection.region,
             "env_auth": "false",
             "directory_markers": "true",
-            "no_check_bucket": "true"
+            "no_check_bucket": "true",
+            "no_head": "true"
         ]
         if let credentials {
             options["access_key_id"] = credentials.accessKey

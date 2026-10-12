@@ -228,6 +228,13 @@ struct ConnectionEditor: View {
         return Form {
             Section("General") {
                 Toggle("Read-only", isOn: $viewModel.connection.readOnly)
+                if viewModel.connection.backend == .s3Compatible {
+                    Toggle(isOn: Binding { viewModel.connection.usesUploadTimes } set: { viewModel.connection.prefersUploadTimes = $0 }) {
+                        Text("Use upload time as file date")
+                        Text("Folders open faster. Files show when they were uploaded, and a saved file’s date changes after it uploads. Read-only drives always do this.")
+                    }
+                    .disabled(viewModel.connection.readOnly)
+                }
                 Toggle("Connect on start up", isOn: $viewModel.connection.connectsAutomatically)
             }
             Section("Encryption") {
