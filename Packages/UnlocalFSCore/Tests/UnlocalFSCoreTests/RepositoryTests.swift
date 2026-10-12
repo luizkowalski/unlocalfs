@@ -23,7 +23,7 @@ import UnlocalFSInfrastructure
 
     @Test(arguments: [
         (Provider.sftp, Credentials(password: "hunter2-password", keyPassphrase: "hunter2-passphrase"), "hunter2"),
-        (.googleCloudStorage, Credentials(serviceAccountKey: serviceAccountJSON), "BEGIN PRIVATE KEY")
+        (.googleCloudStorage, Credentials(serviceAccountKey: serviceAccountJSON), "BEGIN PRIVATE KEY"),
     ])
     func savedSettingsAndSecretsSurviveReopening(provider: Provider, credentials: Credentials, secret: String) throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")

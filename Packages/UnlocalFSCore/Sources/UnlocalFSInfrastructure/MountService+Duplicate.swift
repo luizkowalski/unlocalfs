@@ -17,7 +17,7 @@ extension MountService {
         defer { reservedCopies[connection.id]?.remove(destination) }
         let job = try await control(StartedJob.self, connection, "operations/copyfile", [
             "srcFs": target, "srcRemote": path, "dstFs": target, "dstRemote": destination,
-            "_async": "true", "_group": Self.copyGroup
+            "_async": "true", "_group": Self.copyGroup,
         ])
         while true {
             let status = try await control(JobStatus.self, connection, "job/status", ["jobid": "\(job.jobid)"])

@@ -42,7 +42,7 @@ import UnlocalFSTestSupport
         #expect(activity.count == 5)
         #expect(byPath.mapValues(\.uploadError) == [
             "denied.jpg": "AccessDenied: Access Denied", "unknown.jpg": nil, "read.jpg": nil,
-            "twice.jpg": "second error", "again.mov": "AccessDenied: Access Denied"
+            "twice.jpg": "second error", "again.mov": "AccessDenied: Access Denied",
         ])
         guard case .failed(let nextAttempt) = byPath["denied.jpg"]?.state else {
             Issue.record("Expected a failed upload")

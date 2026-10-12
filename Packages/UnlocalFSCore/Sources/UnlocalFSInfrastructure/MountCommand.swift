@@ -20,7 +20,7 @@ struct MountCommand {
             "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--rc", "--rc-no-auth",
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
-            "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)"
+            "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)",
         ]
         if connection.backend != .sftp {
             arguments += ["--vfs-read-chunk-streams", "\(Self.readChunkStreams)", "--vfs-read-chunk-size", Self.readChunkSize]

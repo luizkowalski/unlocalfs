@@ -11,7 +11,7 @@ import UnlocalFSPresentation
             FileActivity(path: "video.mov", size: 1000, state: .uploading, bytesTransferred: 600, bytesPerSecond: 200),
             FileActivity(path: "clip.mov", size: 500, state: .uploading, bytesTransferred: 200, bytesPerSecond: 100),
             FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "notes.txt", size: 300, state: .downloading, bytesTransferred: 100, bytesPerSecond: 5000)
+            FileActivity(path: "notes.txt", size: 300, state: .downloading, bytesTransferred: 100, bytesPerSecond: 5000),
         ], now: now))
 
         #expect(summary.isUploading)
@@ -43,7 +43,7 @@ import UnlocalFSPresentation
             FileActivity(path: "b.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
             FileActivity(path: "zebra.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
             FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "a.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil)
+            FileActivity(path: "a.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
         ], now: now))
 
         #expect(summary.files.map(\.path) == ["a.txt", "zebra.txt", "b.txt", "file2.txt", "file10.txt"])
@@ -62,7 +62,7 @@ import UnlocalFSPresentation
         let failed = (1...12).map { FileActivity(path: "scan\($0).pdf", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil) }
         let mixed = try #require(TransferSummary(failed + [
             FileActivity(path: "a.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),
-            FileActivity(path: "b.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100)
+            FileActivity(path: "b.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),
         ], now: now))
         #expect(mixed.fileCount == 2)
         #expect(mixed.bytesPerSecond == 200)
@@ -87,7 +87,7 @@ import UnlocalFSPresentation
         let summary = try #require(TransferSummary([
             FileActivity(path: "done.txt", size: 1, state: .uploaded(now), bytesTransferred: 1),
             FileActivity(path: "movie.mkv", size: 1, state: .downloaded(now), bytesTransferred: 1),
-            FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil)
+            FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil),
         ], now: now))
 
         #expect(summary.isUploading)
@@ -100,7 +100,7 @@ import UnlocalFSPresentation
             FileActivity(path: "a.txt", size: 1, state: .uploaded(recent), bytesTransferred: 1),
             FileActivity(path: "b.txt", size: 1, state: .downloaded(recent), bytesTransferred: 1),
             FileActivity(path: "c.txt", size: 1, state: .uploaded(old), bytesTransferred: 1),
-            FileActivity(path: "d.txt", size: 1, state: .downloaded(old), bytesTransferred: 1)
+            FileActivity(path: "d.txt", size: 1, state: .downloaded(old), bytesTransferred: 1),
         ], now: now))
         #expect(summary.files.map(\.path) == ["a.txt", "b.txt"])
         #expect(summary.fileCount == 0)

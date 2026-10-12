@@ -40,7 +40,7 @@ public actor MountService: DriveGateway {
             _ = try await Command.run(executable, [
                 "lsf", remote.target, "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
+                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout,
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
             let failure = redacted(error, credentials: credentials)
@@ -245,7 +245,7 @@ public actor MountService: DriveGateway {
         ["HOME": URL.homeDirectory.path,
          "PATH": "\(helperDirectory.path):/usr/bin:/bin:/usr/sbin:/sbin",
          "TMPDIR": URL.temporaryDirectory.path,
-         "LANG": "en_US.UTF-8"]
+         "LANG": "en_US.UTF-8",]
     }
 
     private func environment(_ variables: [String: String]) -> [String: String] {
@@ -288,7 +288,7 @@ public actor MountService: DriveGateway {
             credentials.accessKey, credentials.secretKey, credentials.sessionToken,
             credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
             credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
-            credentials.serviceAccountKey
+            credentials.serviceAccountKey,
         ]
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
@@ -332,7 +332,7 @@ extension MountService {
             output = try await Command.run(executable, [
                 "link", "\(remote.storage)/\(path)", "--expire", expiry.rawValue, "--quiet",
                 "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout
+                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout,
             ], environment: environment(remote.environment), timeout: .seconds(20))
         } catch {
             throw AppError(String(localized: .couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription)))

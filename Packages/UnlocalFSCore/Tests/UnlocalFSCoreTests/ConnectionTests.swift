@@ -90,7 +90,7 @@ import UnlocalFSInfrastructure
 
     @Test(arguments: [
         (fixture(), false, false, false), (fixture(), true, false, true), (fixture(), false, true, true),
-        (sftpFixture(), true, true, false), (gcsFixture(), true, true, false)
+        (sftpFixture(), true, true, false), (gcsFixture(), true, true, false),
     ])
     func s3DrivesUseUploadTimesWhenChosenOrReadOnly(connection: Connection, readOnly: Bool, prefersUploadTimes: Bool, expected: Bool) {
         var connection = connection

@@ -25,7 +25,7 @@ import UnlocalFSInfrastructure
         ("mounts/Photos/a.jpg", "Photos/a.jpg"),
         ("mounts/My files", nil),
         ("mounts/Unknown/a.txt", nil),
-        ("elsewhere/a.txt", nil)
+        ("elsewhere/a.txt", nil),
     ] as [(String, String?)])
     func filesInsideADriveMapToTheirDrivePath(file: String, expected: String?) {
         let root = URL(filePath: "/tmp/unlocalfs-paths")

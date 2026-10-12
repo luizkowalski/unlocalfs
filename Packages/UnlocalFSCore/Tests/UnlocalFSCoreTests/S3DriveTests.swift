@@ -138,7 +138,7 @@ import UnlocalFSTestSupport
                 ["storage_class": "STANDARD_IA", "server_side_encryption": "aws:kms", "sse_kms_key_id": key],
                 ["storage_class": "STANDARD_IA", "server_side_encryption": "AES256"],
                 [:],
-                [:]
+                [:],
             ])
         }
     }

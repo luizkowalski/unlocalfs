@@ -103,7 +103,7 @@ struct SFTPServer {
         let process = try await resources.start(executable, arguments: [
             "serve", "sftp", root.appending(path: "source").path, "--addr", "127.0.0.1:\(port)",
             "--user", "test", "--pass", SFTPFixture.password, "--authorized-keys", authorizedPath,
-            "--key", hostKey.path, "--dir-cache-time", "0s", "--config", "/dev/null"
+            "--key", hostKey.path, "--dir-cache-time", "0s", "--config", "/dev/null",
         ], log: "sftp-server.log")
         let listening = try await requireOutput(of: process, in: resources, matching: #/SFTP server listening on 127\.0\.0\.1:(\d+)/#)
         self.process = process

@@ -50,7 +50,7 @@ struct RcloneRemote {
             "env_auth": "false",
             "directory_markers": "true",
             "no_check_bucket": "true",
-            "no_head": "true"
+            "no_head": "true",
         ]
         if let credentials {
             options["access_key_id"] = credentials.accessKey
@@ -76,7 +76,7 @@ struct RcloneRemote {
         let sftp = connection.sftp
         var options = [
             "host": sftp.host, "port": "\(sftp.port)", "user": sftp.username,
-            "shell_type": "none", "known_hosts_file": knownHosts.path, "idle_timeout": "3m"
+            "shell_type": "none", "known_hosts_file": knownHosts.path, "idle_timeout": "3m",
         ]
         switch sftp.authentication {
         case .password:

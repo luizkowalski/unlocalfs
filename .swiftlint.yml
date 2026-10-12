@@ -4,7 +4,11 @@ included:
   - Packages/UnlocalFSCore/Tests
 disabled_rules:
   - optional_data_string_conversion
+
 line_length: 180
 
 type_body_length:
   - 300
+
+trailing_comma:
+  mandatory_comma: true
