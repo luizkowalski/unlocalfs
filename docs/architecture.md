@@ -22,7 +22,7 @@ flowchart LR
 | ShareFilesUseCase | Resolves selected files to drives and creates links, refusing SFTP, GCS, and encrypted drives before it loads credentials; identifies the failed file |
 | DuplicateFilesUseCase | Resolves selected files to drives and copies each one on the server, refusing SFTP and read-only drives; never loads credentials; identifies the failed file |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
-| QuitUseCase | Refuses quit during an operation or while a drive remains active |
+| QuitUseCase | Offers disconnect for active drives, waits during an operation, and tries every drive before quit without blocking on disconnect failures |
 
 `ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. View models call the gateway directly for simple status, test, refresh, and activity operations; workflows with rules go through a use case. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.
 

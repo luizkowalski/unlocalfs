@@ -73,9 +73,6 @@ struct MainView: View {
         } message: { _ in
             Text("This removes the saved connection, credentials, and local file cache. Remote files are kept.")
         }
-        .confirmationDialog("Disconnect all drives?", isPresented: $model.isConfirmingDisconnectAll, titleVisibility: .visible) {
-            Button("Disconnect All") { Task { await model.disconnectAll() } }
-        }
     }
 }
 
@@ -123,7 +120,7 @@ private struct ConnectionRow: View {
                 .disabled(!model.canConnect(connection))
             Button("Disconnect") { Task { await model.disconnect(connection) } }
                 .disabled(!model.canDisconnect(connection))
-            Button("Disconnect All…") { model.requestDisconnectAll() }
+            Button("Disconnect All") { Task { await model.disconnectAll() } }
             if model.needsReconnect(connection) {
                 Button("Reconnect") { Task { await model.toggle(connection) } }
                     .disabled(!model.canToggle(connection))

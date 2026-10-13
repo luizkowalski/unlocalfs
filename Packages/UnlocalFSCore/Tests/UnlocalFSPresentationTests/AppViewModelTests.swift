@@ -69,17 +69,6 @@ import UnlocalFSInfrastructure
         #expect(app.statuses[connection.id] == MountStatus())
     }
 
-    @Test func quitShowsWhyActiveDrivesMustDisconnect() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        try fixture.serve(connectionFixture())
-        let app = fixture.app()
-
-        #expect(await !app.canQuit())
-
-        #expect(app.alert == String(localized: .disconnectBeforeQuitting))
-    }
-
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
@@ -216,33 +205,6 @@ import UnlocalFSInfrastructure
         #expect(app.needsReconnect(connection))
         #expect(!app.canConnect(connection))
         #expect(!app.canDisconnect(connection))
-    }
-
-    @Test func disconnectAllWithNothingConnectedDoesNotAsk() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        try ConnectionStore(url: fixture.paths.config).save(connectionFixture())
-        let app = fixture.app()
-        await app.refresh()
-
-        app.requestDisconnectAll()
-
-        #expect(!app.isConfirmingDisconnectAll)
-    }
-
-    @Test func disconnectAllAsksWhenAnyDriveIsConnected() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let idle = connectionFixture()
-        let connected = connectionFixture()
-        try ConnectionStore(url: fixture.paths.config).save(idle)
-        try fixture.serve(connected)
-        let app = fixture.app()
-        await app.refresh()
-
-        app.requestDisconnectAll()
-
-        #expect(app.isConfirmingDisconnectAll)
     }
 
     @Test func disconnectAllStopsAtTheFirstDriveWithPendingUploads() async throws {

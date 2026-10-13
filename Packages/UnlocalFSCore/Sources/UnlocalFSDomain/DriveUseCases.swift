@@ -23,14 +23,22 @@ public struct ConnectDriveUseCase: Sendable {
 }
 
 public struct QuitUseCase: Sendable {
+    public enum Decision: Equatable, Sendable { case quit, disconnect, wait(String) }
     private let drives: any DriveGateway
 
     public init(drives: any DriveGateway) { self.drives = drives }
 
-    public func execute(connections: [Connection], operationInProgress: Bool) async throws {
-        guard !operationInProgress else { throw AppError(String(localized: .waitBeforeQuitting)) }
+    public func execute(connections: [Connection], operationInProgress: Bool) async -> Decision {
+        guard !operationInProgress else { return .wait(String(localized: .waitBeforeQuitting)) }
         for connection in connections where await drives.status(connection).isActive {
-            throw AppError(String(localized: .disconnectBeforeQuitting))
+            return .disconnect
+        }
+        return .quit
+    }
+
+    public func disconnectAll(connections: [Connection]) async {
+        for connection in connections where await drives.status(connection).isActive {
+            try? await drives.unmount(connection)
         }
     }
 }
