@@ -28,9 +28,9 @@ struct ActivityTable<Empty: View>: View {
             }
             .width(74)
         }
-        .tableStyle(.inset(alternatesRowBackgrounds: !files.isEmpty))
+        .tableStyle(.inset(alternatesRowBackgrounds: files.count > 1))
         .lineLimit(1)
-        .frame(height: CGFloat(max(files.count, 2)) * 24 + 36)
+        .frame(height: files.isEmpty ? 84 : CGFloat(files.count) * 24 + 36)
         .overlay {
             if files.isEmpty { empty.padding(.top, 28) }
         }
