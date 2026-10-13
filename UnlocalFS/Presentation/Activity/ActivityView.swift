@@ -14,7 +14,9 @@ struct ActivityView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Activity").font(.headline)
                 Spacer()
-                headline(summary).foregroundStyle(.secondary)
+                if let summary, summary.fileCount > 0 {
+                    transfers(summary).foregroundStyle(.secondary)
+                }
             }
             if case .failure(let error) = viewModel?.activity {
                 Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
@@ -26,7 +28,7 @@ struct ActivityView: View {
                 case nil:
                     Text("Checking activity…").foregroundStyle(.secondary)
                 case .failure:
-                    Text("Activity unavailable").foregroundStyle(.secondary)
+                    Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             }
             if let summary, summary.hiddenFileCount > 0 {
@@ -40,19 +42,6 @@ struct ActivityView: View {
             let viewModel = self.viewModel ?? viewModels.makeActivity()
             self.viewModel = viewModel
             await viewModel.observe(connection)
-        }
-    }
-
-    @ViewBuilder private func headline(_ summary: TransferSummary?) -> some View {
-        switch viewModel?.activity {
-        case nil:
-            Text("Checking activity…")
-        case .failure:
-            Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
-        case .success:
-            if let summary, summary.fileCount > 0 {
-                transfers(summary)
-            }
         }
     }
 
