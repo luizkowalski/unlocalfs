@@ -52,15 +52,14 @@ struct ActivityView: View {
     }
 
     private var idle: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "checkmark.circle")
-                .foregroundStyle(.green)
+        let titleText = connection.readOnly ? "No transfers in progress" : "All changes are uploaded"
+        return HStack(spacing: 6) {
+            Image(systemName: "checkmark.rectangle.stack.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
                 .accessibilityHidden(true)
-            if connection.readOnly {
-                Text("No transfers in progress")
-            } else {
-                Text("All changes are uploaded")
-            }
+            Text(titleText).font(.title3)
         }
         .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity)
