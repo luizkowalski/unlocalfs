@@ -226,20 +226,19 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func quitRefusesAnActiveDrive() async throws {
+    @Test(arguments: [false, true])
+    func quitOffersDisconnectOnlyForActiveDrives(active: Bool) async throws {
         try await withWorkflowFixture { _, drives, paths, connection in
-            try Data().write(to: paths.socket(connection))
-            await #expect(throws: AppError.self) {
-                try await QuitUseCase(drives: drives).execute(connections: [connection], operationInProgress: false)
-            }
+            if active { try Data().write(to: paths.socket(connection)) }
+            let decision = await QuitUseCase(drives: drives).execute(connections: [connection], operationInProgress: false)
+            #expect(decision == (active ? .disconnect : .quit))
         }
     }
 
     @Test func quitWaitsForTheCurrentOperation() async throws {
         try await withWorkflowFixture { _, drives, _, _ in
-            await #expect(throws: AppError.self) {
-                try await QuitUseCase(drives: drives).execute(connections: [], operationInProgress: true)
-            }
+            let decision = await QuitUseCase(drives: drives).execute(connections: [], operationInProgress: true)
+            #expect(decision == .wait(String(localized: .waitBeforeQuitting)))
         }
     }
 }

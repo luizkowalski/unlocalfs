@@ -105,23 +105,6 @@
         }
       }
     },
-    "disconnectBeforeQuitting": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Disconnect your drives before quitting. This keeps pending uploads safe. Closing the window leaves UnlocalFS in the menu bar."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desconecte suas unidades antes de sair. Isso preserva os envios pendentes. Fechar a janela mantém o UnlocalFS na barra de menus."
-          }
-        }
-      }
-    },
     "driveIsReadOnly" : {
       "extractionState" : "manual",
       "localizations" : {

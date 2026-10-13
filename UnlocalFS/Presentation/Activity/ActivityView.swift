@@ -57,7 +57,7 @@ struct ActivityView: View {
             Image(systemName: "checkmark.rectangle.stack.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 28, height: 28)
+                .frame(width: 23, height: 23)
                 .accessibilityHidden(true)
             Text(titleText).font(.title3)
         }

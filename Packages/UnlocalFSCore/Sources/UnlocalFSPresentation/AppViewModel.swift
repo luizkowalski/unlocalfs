@@ -18,7 +18,6 @@ import UnlocalFSDomain
     public var uploadsBlockingDisconnect: Connection?
     public var editor: ConnectionDraft?
     public var deleting: Connection?
-    public var isConfirmingDisconnectAll = false
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
     private var networkAvailable = true
@@ -208,10 +207,6 @@ import UnlocalFSDomain
         await drives.cancelServerTrust(challenge)
     }
 
-    public func requestDisconnectAll() {
-        isConfirmingDisconnectAll = connections.contains(where: canDisconnect)
-    }
-
     public func disconnectAll() async {
         for connection in connections where canDisconnect(connection) {
             await disconnect(connection)
@@ -290,16 +285,16 @@ import UnlocalFSDomain
         await refresh()
     }
 
-    public func canQuit() async -> Bool {
+    public func quitDecision() async -> QuitUseCase.Decision {
         checkingQuit = true
-        defer { checkingQuit = false }
-        do {
-            try await quit.execute(connections: connections, operationInProgress: !busy.isEmpty)
-            return true
-        } catch {
-            alert = error.localizedDescription
-            return false
-        }
+        return await quit.execute(connections: connections, operationInProgress: !busy.isEmpty)
+    }
+
+    public func cancelQuit() { checkingQuit = false }
+
+    public func disconnectForQuit() async {
+        checkingQuit = true
+        await quit.disconnectAll(connections: connections)
     }
 }
 

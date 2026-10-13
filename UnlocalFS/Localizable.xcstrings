@@ -141,6 +141,7 @@
       }
     },
     "All changes are uploaded" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -541,7 +542,6 @@
       }
     },
     "Disconnect All" : {
-      "comment" : "Confirmation button: disconnect every connected drive",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
@@ -552,37 +552,24 @@
         }
       }
     },
-    "Disconnect all drives?" : {
-      "comment" : "Confirmation title before disconnecting every connected drive",
+    "Disconnect All and Quit" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desconectar todas as unidades?"
+            "value" : "Desconectar todas e sair"
           }
         }
       }
     },
-    "Disconnect All…" : {
-      "comment" : "Menu item: ask to disconnect every connected drive",
+    "Disconnect all drives before quitting?" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desconectar todas…"
-          }
-        }
-      }
-    },
-    "Disconnect your drives before quitting." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desconecte suas unidades antes de sair."
+            "value" : "Desconectar todas as unidades antes de sair?"
           }
         }
       }
@@ -1021,6 +1008,7 @@
       }
     },
     "No transfers in progress" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
