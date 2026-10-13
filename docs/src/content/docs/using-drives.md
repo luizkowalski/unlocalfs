@@ -15,7 +15,7 @@ Changes made to the bucket from other apps or Macs show within 5 minutes. To see
 
 If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. Recovery stops if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
 
-The activity table shows each file’s name, folder, transfer status, and size. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
+The activity table shows each file’s name, folder, transfer status, and size. When you switch drives, the table shows **Checking activity…** until it receives that drive’s activity. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
 
 ## Menu bar and quitting
 

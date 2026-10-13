@@ -19,8 +19,15 @@ struct ActivityView: View {
             if case .failure(let error) = viewModel?.activity {
                 Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
-            if case .success = viewModel?.activity {
-                ActivityTable(files: summary?.files ?? []) { idle }
+            ActivityTable(files: summary?.files ?? []) {
+                switch viewModel?.activity {
+                case .success:
+                    idle
+                case nil:
+                    Text("Checking activity…").foregroundStyle(.secondary)
+                case .failure:
+                    Text("Activity unavailable").foregroundStyle(.secondary)
+                }
             }
             if let summary, summary.hiddenFileCount > 0 {
                 Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
