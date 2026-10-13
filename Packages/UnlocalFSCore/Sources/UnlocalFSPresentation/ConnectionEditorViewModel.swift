@@ -30,6 +30,7 @@ import UnlocalFSDomain
     private let drives: any DriveGateway
     private let saveConnection: SaveConnectionUseCase
     private let onSave: (Connection, [Connection]) -> Void
+    private let readServiceAccountKey: @Sendable (Result<URL, any Error>) async -> Result<Data, any Error>
 
     init(
         draft: ConnectionDraft,
@@ -37,7 +38,8 @@ import UnlocalFSDomain
         repository: any ConnectionRepository,
         drives: any DriveGateway,
         saveConnection: SaveConnectionUseCase,
-        onSave: @escaping (Connection, [Connection]) -> Void
+        onSave: @escaping (Connection, [Connection]) -> Void,
+        readServiceAccountKey: @escaping @Sendable (Result<URL, any Error>) async -> Result<Data, any Error>
     ) {
         connection = draft.connection
         credentialsSource = draft.credentialsSource
@@ -49,6 +51,7 @@ import UnlocalFSDomain
         self.drives = drives
         self.saveConnection = saveConnection
         self.onSave = onSave
+        self.readServiceAccountKey = readServiceAccountKey
     }
 
     public var title: String {
@@ -83,9 +86,10 @@ import UnlocalFSDomain
         } catch { self.error = error.localizedDescription }
     }
 
-    public func importServiceAccountKey(_ result: Result<Data, any Error>) {
+    public func importServiceAccountKey(_ result: Result<URL, any Error>) async {
         do {
-            credentials.serviceAccountKey = try ServiceAccountKey(importing: result.get()).json
+            let data = try await readServiceAccountKey(result).get()
+            credentials.serviceAccountKey = try ServiceAccountKey(importing: data).json
             error = nil
         } catch { self.error = error.localizedDescription }
     }

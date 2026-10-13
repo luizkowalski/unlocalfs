@@ -66,8 +66,16 @@ struct ViewModelFixture {
         )
     }
 
-    @MainActor func factory(_ app: AppViewModel) -> ViewModelFactory {
-        ViewModelFactory(app: app, repository: repository, drives: service, saveConnection: SaveConnectionUseCase(repository: repository, drives: service))
+    @MainActor func factory(
+        _ app: AppViewModel,
+        readServiceAccountKey: @escaping @Sendable (Result<URL, any Error>) async -> Result<Data, any Error> = { result in
+            Result { try Data(contentsOf: result.get()) }
+        }
+    ) -> ViewModelFactory {
+        ViewModelFactory(
+            app: app, repository: repository, drives: service,
+            saveConnection: SaveConnectionUseCase(repository: repository, drives: service), readServiceAccountKey: readServiceAccountKey
+        )
     }
 
     @MainActor func editor(draft: ConnectionDraft, app: AppViewModel? = nil) -> ConnectionEditorViewModel {

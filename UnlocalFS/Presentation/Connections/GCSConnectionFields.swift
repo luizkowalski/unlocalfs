@@ -36,7 +36,7 @@ struct GCSConnectionFields: View {
         }
         .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { result in
             Task {
-                viewModel.importServiceAccountKey(await MacOSDesktopServices.readServiceAccountKey(result))
+                await viewModel.importServiceAccountKey(result)
             }
         }
     }
