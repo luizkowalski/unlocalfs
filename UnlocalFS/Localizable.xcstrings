@@ -87,7 +87,6 @@
       }
     },
     "Activity unavailable" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
