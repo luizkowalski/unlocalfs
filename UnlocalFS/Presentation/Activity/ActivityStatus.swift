@@ -5,7 +5,7 @@ struct ActivityStatus: View {
     let activity: FileActivity
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @ViewBuilder var body: some View {
+    var body: some View {
         switch activity.state {
         case .queued:
             Text("Waiting")

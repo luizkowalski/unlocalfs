@@ -10,13 +10,13 @@ struct SFTPConnectionFields: View {
 
     var body: some View {
         Form {
-            serverSection()
-            authenticationSection()
+            serverSection
+            authenticationSection
         }
     }
 
-    private func serverSection() -> some View {
-        return Section {
+    private var serverSection: some View {
+        Section {
             ConnectionIdentityFields(viewModel: viewModel, errors: errors, focus: focus)
             ConnectionEditorField(field: .host, error: errors[.host], focus: focus) {
                 TextField("Host", text: $viewModel.connection.sftp.host, prompt: Text(verbatim: "files.example.com"))
@@ -39,8 +39,8 @@ struct SFTPConnectionFields: View {
         }
     }
 
-    private func authenticationSection() -> some View {
-        return Section {
+    private var authenticationSection: some View {
+        Section {
             Picker("Sign in with", selection: $viewModel.connection.sftp.authentication) {
                 ForEach(SFTPAuthentication.allCases) { Text($0.title).tag($0) }
             }
@@ -87,5 +87,4 @@ struct SFTPConnectionFields: View {
         panel.directoryURL = URL(filePath: NSString(string: current).expandingTildeInPath).deletingLastPathComponent()
         return panel.runModal() == .OK ? panel.url?.path : nil
     }
-
 }

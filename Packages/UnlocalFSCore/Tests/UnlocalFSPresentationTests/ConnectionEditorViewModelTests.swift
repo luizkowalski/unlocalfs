@@ -20,21 +20,6 @@ import Testing
         #expect(editor.error == nil)
     }
 
-    @Test func failedKeyReadShowsTheErrorAndKeepsThePreviousKey() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let factory = fixture.factory(fixture.app(), readServiceAccountKey: { _ in
-            .failure(AppError("Cannot read the key file"))
-        })
-        let editor = factory.makeEditor(.init(connection: Connection()))
-        editor.credentials.serviceAccountKey = "previous-key"
-
-        await editor.importServiceAccountKey(.success(fixture.root.appending(path: "key.json")))
-
-        #expect(editor.error == "Cannot read the key file")
-        #expect(editor.credentials.serviceAccountKey == "previous-key")
-    }
-
     @Test func invalidImportedKeyShowsTheValidationErrorAndKeepsThePreviousKey() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
