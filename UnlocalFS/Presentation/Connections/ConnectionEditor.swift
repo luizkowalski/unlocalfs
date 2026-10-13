@@ -1,13 +1,10 @@
-import AppKit
 import SwiftUI
 import UnlocalFSDomain
-import UniformTypeIdentifiers
 import UnlocalFSPresentation
 
 struct ConnectionEditor: View {
     @State private var viewModel: ConnectionEditorViewModel
     @State private var pane = Pane.connection
-    @State private var importingKey = false
     @FocusState private var focus: ConnectionField?
     @Environment(\.dismiss) private var dismiss
 
@@ -49,7 +46,12 @@ struct ConnectionEditor: View {
             .padding(.bottom, 4)
             Group {
                 switch pane {
-                case .connection: connectionForm(errors: errors)
+                case .connection:
+                    switch viewModel.connection.backend {
+                    case .s3Compatible: S3ConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
+                    case .sftp: SFTPConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
+                    case .gcs: GCSConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
+                    }
                 case .settings: settingsForm(errors: errors)
                 }
             }
@@ -97,132 +99,6 @@ struct ConnectionEditor: View {
         }
     }
 
-    private func connectionForm(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        return Form {
-            switch viewModel.connection.backend {
-            case .s3Compatible: s3Sections(errors: errors)
-            case .sftp: sftpSections(errors: errors)
-            case .gcs: gcsSections(errors: errors)
-            }
-        }
-        .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { result in
-            Task {
-                viewModel.importServiceAccountKey(await MacOSDesktopServices.readServiceAccountKey(result))
-            }
-        }
-    }
-
-    @ViewBuilder private func s3Sections(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        Section {
-            nameField(errors: errors)
-            providerPicker
-            validated(.endpoint, error: errors[.endpoint]) { TextField("Endpoint", text: $viewModel.connection.endpoint, prompt: Text(verbatim: "https://s3.example.com")) }
-            TextField("Region", text: $viewModel.connection.region, prompt: Text("us-east-1 or auto"))
-            bucketFields(errors: errors)
-        } header: {
-            Text("Storage")
-        } footer: {
-            Text("Use the endpoint without the bucket name. For Cloudflare R2, use region auto.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        Section {
-            validated(.accessKey, error: errors[.accessKey]) { TextField("Access key", text: $viewModel.credentials.accessKey) }
-            validated(.secretKey, error: errors[.secretKey]) { SecureField("Secret key", text: $viewModel.credentials.secretKey) }
-            SecureField("Session token", text: $viewModel.credentials.sessionToken, prompt: Text("Optional"))
-        } header: {
-            Text("Credentials")
-        } footer: {
-            Text("Credentials are stored in your Mac’s Keychain.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder private func sftpSections(errors: [ConnectionField: String]) -> some View {
-        serverSection(errors: errors)
-        authenticationSection(errors: errors)
-    }
-
-    private func serverSection(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        return Section {
-            nameField(errors: errors)
-            providerPicker
-            validated(.host, error: errors[.host]) { TextField("Host", text: $viewModel.connection.sftp.host, prompt: Text(verbatim: "files.example.com")) }
-            validated(.port, error: errors[.port]) {
-                TextField("Port", value: $viewModel.connection.sftp.port, format: .number.grouping(.never))
-            }
-            validated(.username, error: errors[.username]) { TextField("Username", text: $viewModel.connection.sftp.username) }
-            validated(.remotePath, error: errors[.remotePath]) {
-                TextField("Remote folder", text: $viewModel.connection.sftp.remotePath, prompt: Text("Optional, for example /srv/files"))
-            }
-            .disabled(viewModel.locksRemoteFolder)
-        } header: {
-            Text("Server")
-        } footer: {
-            Text(viewModel.locksRemoteFolder
-                 ? "To use a different folder, duplicate this drive."
-                 : "Leave the folder empty for your home folder. Start it with / for a path from the server’s root.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private func authenticationSection(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        return Section {
-            Picker("Sign in with", selection: $viewModel.connection.sftp.authentication) {
-                ForEach(SFTPAuthentication.allCases) { Text($0.title).tag($0) }
-            }
-            switch viewModel.connection.sftp.authentication {
-            case .password:
-                validated(.password, error: errors[.password]) { SecureField("Password", text: $viewModel.credentials.password) }
-            case .privateKey:
-                validated(.keyFile, error: errors[.keyFile]) {
-                    fileChooser(String(localized: "Private key"), path: $viewModel.connection.sftp.keyFile, prompt: "~/.ssh/id_ed25519")
-                }
-                SecureField("Passphrase", text: $viewModel.credentials.keyPassphrase, prompt: Text("If the key has one"))
-            case .agent:
-                TextField("Agent socket", text: $viewModel.connection.sftp.agentSocket, prompt: Text("Optional, uses your Mac’s agent"))
-            }
-        } header: {
-            Text("Authentication")
-        } footer: {
-            Text(authenticationHelp).font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private var authenticationHelp: LocalizedStringKey {
-        switch viewModel.connection.sftp.authentication {
-        case .password: "Your password is stored in your Mac’s Keychain."
-        case .privateKey: "The key file stays where it is. A passphrase is stored in your Mac’s Keychain."
-        case .agent: "Uses a key loaded in your ssh-agent. Nothing is stored for this option."
-        }
-    }
-
-    private func nameField(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        return validated(.name, error: errors[.name]) { TextField("Name", text: $viewModel.connection.name, prompt: Text("My storage")) }
-    }
-
-    private func fileChooser(_ title: String, path: Binding<String>, prompt: String) -> some View {
-        HStack {
-            TextField(title, text: path, prompt: Text(verbatim: prompt))
-            Button("Choose…") {
-                if let chosen = Self.chooseFile(title: title, current: path.wrappedValue) { path.wrappedValue = chosen }
-            }
-        }
-    }
-
-    private static func chooseFile(title: String, current: String) -> String? {
-        let panel = NSOpenPanel()
-        panel.title = title
-        panel.showsHiddenFiles = true
-        panel.canChooseDirectories = false
-        panel.directoryURL = URL(filePath: NSString(string: current).expandingTildeInPath).deletingLastPathComponent()
-        return panel.runModal() == .OK ? panel.url?.path : nil
-    }
-
     private func settingsForm(errors: [ConnectionField: String]) -> some View {
         @Bindable var viewModel = viewModel
         return Form {
@@ -246,8 +122,10 @@ struct ConnectionEditor: View {
                 }
                 .disabled(!viewModel.isNew)
                 if viewModel.isNew && viewModel.connection.encrypted {
-                    validated(.encryptionPassword, error: errors[.encryptionPassword]) { SecureField("Encryption password", text: $viewModel.credentials.encryptionPassword) }
-                    validated(.confirmation, error: errors[.confirmation]) { SecureField("Confirm password", text: $viewModel.confirmation) }
+                    ConnectionEditorField(field: .encryptionPassword, error: errors[.encryptionPassword], focus: $focus) {
+                        SecureField("Encryption password", text: $viewModel.credentials.encryptionPassword)
+                    }
+                    ConnectionEditorField(field: .confirmation, error: errors[.confirmation], focus: $focus) { SecureField("Confirm password", text: $viewModel.confirmation) }
                 }
             }
             if viewModel.connection.provider == .aws { awsSection(errors: errors) }
@@ -291,22 +169,6 @@ struct ConnectionEditor: View {
         }
     }
 
-    private func validated(_ field: ConnectionField, error: String?, @ViewBuilder input: () -> some View) -> some View {
-        LabeledContent {
-            VStack(alignment: .trailing, spacing: 4) {
-                input()
-                    .labelsHidden()
-                    .focused($focus, equals: field)
-                if let error {
-                    Label(error, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption).foregroundStyle(.red).multilineTextAlignment(.trailing)
-                }
-            }
-        } label: {
-            Text(field.displayName).foregroundStyle(error == nil ? Color.primary : Color.red)
-        }
-    }
-
     private func focusFirstInvalidField() {
         guard let field = viewModel.firstInvalidField else { return }
         pane = [.encryptionPassword, .confirmation, .kmsKey].contains(field) ? .settings : .connection
@@ -326,7 +188,7 @@ private extension ConnectionEditor {
                 ForEach(ServerSideEncryption.allCases) { Text($0.title).tag(Optional($0)) }
             }
             if viewModel.connection.aws.serverSideEncryption == .kms {
-                validated(.kmsKey, error: errors[.kmsKey]) {
+                ConnectionEditorField(field: .kmsKey, error: errors[.kmsKey], focus: $focus) {
                     TextField("KMS key", text: $viewModel.connection.aws.kmsKeyID, prompt: Text("Optional: key ID, alias, or ARN"))
                 }
             }
@@ -335,54 +197,6 @@ private extension ConnectionEditor {
         } footer: {
             Text("Applies to new uploads. Infrequent-access classes bill a minimum size and storage time. AWS can read files it encrypts; Encrypt files keeps them private.")
                 .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder func bucketFields(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        validated(.bucket, error: errors[.bucket]) { TextField("Bucket", text: $viewModel.connection.bucket, prompt: Text("my-bucket")) }
-        validated(.folder, error: errors[.folder]) { TextField("Folder", text: $viewModel.connection.folder, prompt: Text("Optional, for example clients/acme")) }
-    }
-
-    @ViewBuilder func gcsSections(errors: [ConnectionField: String]) -> some View {
-        @Bindable var viewModel = viewModel
-        Section {
-            nameField(errors: errors)
-            providerPicker
-            bucketFields(errors: errors)
-        } header: {
-            Text("Storage")
-        }
-        Section {
-            validated(.serviceAccountKey, error: errors[.serviceAccountKey]) {
-                let email = viewModel.credentials.serviceAccountEmail
-                HStack {
-                    if let email {
-                        Text(verbatim: email).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
-                    }
-                    Button(email == nil ? "Import key…" : "Replace…") { importingKey = true }
-                }
-            }
-        } header: {
-            Text("Credentials")
-        } footer: {
-            Text("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.")
-                .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    var providerPicker: some View {
-        @Bindable var viewModel = viewModel
-        let providers = viewModel.availableProviders
-        return Picker("Provider", selection: $viewModel.connection.provider) {
-            Section { providerOptions(providers.filter { !$0.isGeneric }) }
-            Section { providerOptions(providers.filter(\.isGeneric)) }
-        }
-    }
-
-    func providerOptions(_ providers: [Provider]) -> some View {
-        ForEach(providers) { provider in
-            Label { Text(provider.title) } icon: { provider.logo.renderingMode(.template) }.tag(provider)
         }
     }
 }

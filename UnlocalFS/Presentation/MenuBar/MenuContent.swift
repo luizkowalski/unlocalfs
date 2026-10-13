@@ -11,7 +11,7 @@ struct MenuContent: View {
         Divider()
         if model.connections.isEmpty { Text("No connections yet") }
         ForEach(model.connections) { connection in
-            Menu(connection.name) {
+            Menu {
                 Text(model.statusText(connection))
                 Button(model.toggleTitle(connection)) {
                     Task {
@@ -24,6 +24,13 @@ struct MenuContent: View {
                     .disabled(!model.canOpen(connection))
                 Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
                     .disabled(!model.canOpen(connection))
+            } label: {
+                Label {
+                    Text(verbatim: connection.encrypted ? "\(connection.name) \u{1003A1}" : connection.name)
+                } icon: {
+                    connection.provider.logo.renderingMode(.template)
+                }
+                .labelStyle(.titleAndIcon)
             }
         }
         Divider()

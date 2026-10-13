@@ -4,20 +4,25 @@ import UnlocalFSPresentation
 
 struct MenuBarIcon: View {
     let activity: AppViewModel.Activity
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var angle = 0.0
 
     var body: some View {
         Image(nsImage: image)
             .accessibilityLabel("UnlocalFS")
             .accessibilityValue(accessibilityValue)
-            .task(id: activity) {
-                guard activity == .uploading else { return }
+            .task(id: animatesUploads) {
+                guard animatesUploads else { return }
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(80))
+                    do {
+                        try await Task.sleep(for: .milliseconds(80))
+                    } catch { return }
                     angle -= 30
                 }
             }
     }
+
+    private var animatesUploads: Bool { activity == .uploading && !reduceMotion }
 
     private var image: NSImage {
         switch activity {
