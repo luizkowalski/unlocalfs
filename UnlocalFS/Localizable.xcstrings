@@ -141,7 +141,7 @@
       }
     },
     "All changes are uploaded" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -754,6 +754,7 @@
     },
     "Folder" : {
       "comment" : "Field label: folder inside the bucket or on the server",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -956,6 +957,7 @@
     },
     "Name" : {
       "comment" : "Field label: name of the connection",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1008,7 +1010,7 @@
       }
     },
     "No transfers in progress" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1505,6 +1507,7 @@
     },
     "Size" : {
       "comment" : "Activity table column: file size",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1516,6 +1519,7 @@
     },
     "Status" : {
       "comment" : "Activity table column: transfer status",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

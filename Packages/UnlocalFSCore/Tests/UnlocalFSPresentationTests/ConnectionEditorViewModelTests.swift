@@ -5,6 +5,35 @@ import Testing
 @testable import UnlocalFSPresentation
 
 @MainActor @Suite struct ConnectionEditorViewModelTests {
+    @Test func importedKeyLoadsFromTheSelectedFileAndClearsThePreviousError() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let editor = fixture.editor(draft: .init(connection: Connection()))
+        await editor.importServiceAccountKey(.failure(AppError("Could not choose a key")))
+        let url = fixture.root.appending(path: "service-account.json")
+        let data = Data(#"{"type":"service_account","client_email":"files@example.com","private_key":"key"}"#.utf8)
+        try data.write(to: url)
+
+        await editor.importServiceAccountKey(.success(url))
+
+        #expect(editor.credentials.serviceAccountEmail == "files@example.com")
+        #expect(editor.error == nil)
+    }
+
+    @Test func invalidImportedKeyShowsTheValidationErrorAndKeepsThePreviousKey() async throws {
+        let fixture = try ViewModelFixture()
+        defer { fixture.remove() }
+        let editor = fixture.editor(draft: .init(connection: Connection()))
+        editor.credentials.serviceAccountKey = "previous-key"
+        let url = fixture.root.appending(path: "invalid-key.json")
+        try Data("{}".utf8).write(to: url)
+
+        await editor.importServiceAccountKey(.success(url))
+
+        #expect(editor.error == String(localized: .notAServiceAccountKey))
+        #expect(editor.credentials.serviceAccountKey == "previous-key")
+    }
+
     @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }

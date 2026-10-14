@@ -83,9 +83,11 @@ import UnlocalFSDomain
         } catch { self.error = error.localizedDescription }
     }
 
-    public func importServiceAccountKey(_ result: Result<Data, any Error>) {
+    public func importServiceAccountKey(_ result: Result<URL, any Error>) async {
         do {
-            credentials.serviceAccountKey = try ServiceAccountKey(importing: result.get()).json
+            let url = try result.get()
+            let data = try await Task.detached { try Data(contentsOf: url) }.value
+            credentials.serviceAccountKey = try ServiceAccountKey(importing: data).json
             error = nil
         } catch { self.error = error.localizedDescription }
     }

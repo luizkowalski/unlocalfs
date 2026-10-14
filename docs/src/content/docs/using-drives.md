@@ -15,9 +15,13 @@ Changes made to the bucket from other apps or Macs show within 5 minutes. To see
 
 If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. Recovery stops if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
 
+The activity table shows each file’s name, folder, transfer status, and size. When you switch drives, the table shows **Checking activity…** until it receives that drive’s activity. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
+
 ## Menu bar and quitting
 
-Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. The menu-bar icon shows turning yellow arrows while uploads are pending and a blue arrow while files download. Finder previews also count as downloads. If a menu-bar disconnect is blocked by pending uploads or an eject failure, the main window opens to show its alert. When you quit with drives connected, choose **Disconnect All and Quit** to try to disconnect them first, or **Cancel** to keep the app running. The app tries every active drive and quits even if some cannot disconnect. Those drives keep running and are picked up when you open the app again. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
+Each drive in the menu shows its provider icon. Encrypted drives also show a lock after their name.
+
+Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar, where you can connect, disconnect, and open drives. Choose **Open UnlocalFS** to show the window and Dock icon again. The menu-bar icon shows turning yellow arrows while uploads are pending and a blue arrow while files download. With Reduce Motion enabled, the upload arrows stay still. Finder previews also count as downloads. If a menu-bar disconnect is blocked by pending uploads or an eject failure, the main window opens to show its alert. When you quit with drives connected, choose **Disconnect All and Quit** to try to disconnect them first, or **Cancel** to keep the app running. The app tries every active drive and quits even if some cannot disconnect. Those drives keep running and are picked up when you open the app again. If the app closes unexpectedly, the drives keep running and the app picks them up again the next time it opens.
 
 ## Shortcuts
 
