@@ -45,11 +45,12 @@ import UnlocalFSDomain
         let status = await fixture.service.status(connected)
         try #require(status.isRunning && status.controlError == nil)
 
-        await app.disconnectForQuit()
+        let failure = await app.disconnectForQuit()
 
         #expect(await fixture.service.status(blocked).isActive)
         #expect(await !fixture.service.status(connected).isActive)
         #expect(app.uploadsBlockingDisconnect == nil)
-        #expect(app.disconnectFailure == nil)
+        #expect(failure == blocked)
+        #expect(app.disconnectFailure == blocked)
     }
 }
