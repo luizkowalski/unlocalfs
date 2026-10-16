@@ -6,6 +6,7 @@ struct MountCommand {
     private static let readChunkStreams = 4
     private static let readChunkSize = "16M"
     private static let readBufferSize = "32M"
+    private static let maxBufferMemory = "256M"
     private static let readChunkSizeLimit = "1G"
 
     let remote: RcloneRemote
@@ -18,7 +19,8 @@ struct MountCommand {
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B", "--vfs-cache-max-age", "off",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
-            "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
+            "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
+            "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--rc", "--rc-no-auth",
 //            "--no-modtime",
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
