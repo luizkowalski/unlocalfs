@@ -52,5 +52,8 @@ import UnlocalFSDomain
         #expect(app.uploadsBlockingDisconnect == nil)
         #expect(failure?.connection == blocked)
         #expect(failure?.error is UploadsPendingError)
+        #expect(app.busy.isEmpty)
+        #expect(app.isActive(blocked))
+        #expect(!app.isActive(connected))
     }
 }

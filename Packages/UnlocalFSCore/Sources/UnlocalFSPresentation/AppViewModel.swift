@@ -294,7 +294,12 @@ import UnlocalFSDomain
 
     public func disconnectForQuit() async -> (connection: Connection, error: any Error)? {
         checkingQuit = true
-        return await quit.disconnectAll(connections: connections)
+        let active = Set(connections.filter(isActive).map(\.id))
+        busy.formUnion(active)
+        let failure = await quit.disconnectAll(connections: connections)
+        busy.subtract(active)
+        await refresh()
+        return failure
     }
 }
 
