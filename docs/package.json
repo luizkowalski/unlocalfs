@@ -9,7 +9,7 @@
     "up": "npx npm-check-updates --interactive --format group"
   },
   "dependencies": {
-    "astro": "^7.3.8",
+    "astro": "^7.4.0",
     "@astrojs/starlight": "^0.42.6"
   },
   "overrides": {
