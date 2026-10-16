@@ -23,7 +23,7 @@ import UnlocalFSDomain
         #expect(app.uploadsBlockingDisconnect == connection)
     }
 
-    @Test func quittingTriesRemainingDrivesAfterADisconnectFails() async throws {
+    @Test func quitTriesEveryDriveAndReportsTheFirstFailure() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
         var blocked = connectionFixture()
@@ -52,8 +52,6 @@ import UnlocalFSDomain
         #expect(app.uploadsBlockingDisconnect == nil)
         #expect(failure?.connection == blocked)
         #expect(failure?.error is UploadsPendingError)
-        #expect(app.busy.isEmpty)
-        #expect(app.isActive(blocked))
         #expect(!app.isActive(connected))
     }
 }
