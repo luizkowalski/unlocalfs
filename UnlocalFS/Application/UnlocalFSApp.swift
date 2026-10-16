@@ -98,7 +98,7 @@ import UnlocalFSPresentation
         guard !checkingQuit else { return .terminateCancel }
         checkingQuit = true
         Task {
-            let allowed: Bool
+            var allowed: Bool
             switch await model.quitDecision() {
             case .quit:
                 allowed = true
@@ -109,7 +109,13 @@ import UnlocalFSPresentation
                 alert.addButton(withTitle: String(localized: "Disconnect All and Quit"))
                 alert.addButton(withTitle: String(localized: "Cancel"))
                 allowed = alert.runModal() == .alertFirstButtonReturn
-                if allowed { await model.disconnectForQuit() }
+                if allowed, let failure = await model.disconnectForQuit() {
+                    let alert = NSAlert()
+                    alert.messageText = String(localized: "“\(failure.connection.name)” couldn’t be disconnected.")
+                    alert.informativeText = failure.error.localizedDescription
+                    alert.runModal()
+                    allowed = false
+                }
             case .wait(let message):
                 sender.activate()
                 let alert = NSAlert()

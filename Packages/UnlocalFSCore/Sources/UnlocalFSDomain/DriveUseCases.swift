@@ -36,9 +36,15 @@ public struct QuitUseCase: Sendable {
         return .quit
     }
 
-    public func disconnectAll(connections: [Connection]) async {
+    public func disconnectAll(connections: [Connection]) async -> (connection: Connection, error: any Error)? {
+        var failure: (connection: Connection, error: any Error)?
         for connection in connections where await drives.status(connection).isActive {
-            try? await drives.unmount(connection)
+            do {
+                try await drives.unmount(connection)
+            } catch {
+                failure = failure ?? (connection, error)
+            }
         }
+        return failure
     }
 }

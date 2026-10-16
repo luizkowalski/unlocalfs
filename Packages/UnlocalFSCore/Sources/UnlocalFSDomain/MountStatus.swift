@@ -1,7 +1,11 @@
 import Foundation
 
-public struct DriveEjectError: Error, Sendable {
+public struct DriveEjectError: LocalizedError, Sendable {
     public init() {}
+
+    public var errorDescription: String? {
+        String(localized: .driveStillConnected)
+    }
 }
 
 public struct UploadsPendingError: LocalizedError, Sendable {
