@@ -292,11 +292,9 @@ import UnlocalFSDomain
 
     public func cancelQuit() { checkingQuit = false }
 
-    public func disconnectForQuit() async -> Connection? {
+    public func disconnectForQuit() async -> (connection: Connection, error: any Error)? {
         checkingQuit = true
-        let failure = await quit.disconnectAll(connections: connections)
-        disconnectFailure = failure
-        return failure
+        return await quit.disconnectAll(connections: connections)
     }
 }
 

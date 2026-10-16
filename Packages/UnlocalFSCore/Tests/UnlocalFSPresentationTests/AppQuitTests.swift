@@ -50,7 +50,7 @@ import UnlocalFSDomain
         #expect(await fixture.service.status(blocked).isActive)
         #expect(await !fixture.service.status(connected).isActive)
         #expect(app.uploadsBlockingDisconnect == nil)
-        #expect(failure == blocked)
-        #expect(app.disconnectFailure == blocked)
+        #expect(failure?.connection == blocked)
+        #expect(failure?.error is UploadsPendingError)
     }
 }

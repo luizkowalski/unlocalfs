@@ -122,6 +122,23 @@
         }
       }
     },
+    "driveStillConnected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close files and stop apps using this drive, then try again. The drive is still connected."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feche os arquivos e pare os apps que usam esta unidade. Depois, tente novamente. A unidade continua conectada."
+          }
+        }
+      }
+    },
     "duplicateChangesLockedAttributes": {
       "extractionState": "manual",
       "localizations": {

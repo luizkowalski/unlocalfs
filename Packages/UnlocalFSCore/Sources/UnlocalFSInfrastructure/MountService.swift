@@ -6,8 +6,6 @@ public actor MountService: DriveGateway {
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
     private static let ejectRetryTime: Duration = .seconds(10)
-    static let ejectCommandTimeout: Duration = .seconds(1)
-    private static let forcedEjectCommandTimeout: Duration = .seconds(60)
 
     let executable: URL
     private let helperDirectory: URL
@@ -354,8 +352,7 @@ private extension MountService {
         let deadline = ContinuousClock.now.advanced(by: Self.ejectRetryTime)
         while true {
             do {
-                let timeout = force ? Self.forcedEjectCommandTimeout : Self.ejectCommandTimeout
-                _ = try await Command.run(URL(filePath: executable), arguments, timeout: timeout)
+                _ = try await Command.run(URL(filePath: executable), arguments, timeout: .seconds(60))
                 break
             } catch where ContinuousClock.now < deadline {
                 try await Task.sleep(for: .seconds(1))

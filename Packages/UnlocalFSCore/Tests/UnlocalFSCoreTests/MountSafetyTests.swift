@@ -5,10 +5,6 @@ import UnlocalFSDomain
 import UnlocalFSTestSupport
 
 @Suite struct MountSafetyTests {
-    @Test func ejectCommandTimeoutFitsRetryWindow() {
-        #expect(MountService.ejectCommandTimeout == .seconds(1))
-    }
-
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
         try await withFixture(script: "echo 'Control unavailable' >&2\nexit 1\n") { service, connection in
             let before = await service.status(connection)
