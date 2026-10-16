@@ -56,7 +56,7 @@ jobs:
           mkdir "$RUNNER_TEMP/dmg"
           ditto dist/UnlocalFS.app "$RUNNER_TEMP/dmg/UnlocalFS.app"
           ln -s /Applications "$RUNNER_TEMP/dmg/Applications"
-          hdiutil create -srcdir "$RUNNER_TEMP/dmg" -volname UnlocalFS -format UDZO "UnlocalFS-${TAG#v}.dmg"
+          diskutil image create from --format UDZO --volumeName UnlocalFS "$RUNNER_TEMP/dmg" "UnlocalFS-${TAG#v}.dmg"
 
       - name: Notarize
         if: vars.SIGN_IDENTITY != ''
