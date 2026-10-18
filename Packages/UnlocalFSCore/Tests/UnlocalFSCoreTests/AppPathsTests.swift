@@ -2,13 +2,14 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct AppPathsTests {
     @Test func removingCacheDeletesAllCachedFiles() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let paths = paths(root: root)
-        let connection = fixture()
+        let connection = Connection.s3()
         let cache = paths.cache(connection)
         try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
         try Data("cached".utf8).write(to: cache.appendingPathComponent("file"))
@@ -29,7 +30,7 @@ import UnlocalFSInfrastructure
     ] as [(String, String?)])
     func filesInsideADriveMapToTheirDrivePath(file: String, expected: String?) {
         let root = URL(filePath: "/tmp/unlocalfs-paths")
-        let connections = ["My files", "Photos", "Photos 2"].map { fixture(name: $0) }
+        let connections = ["My files", "Photos", "Photos 2"].map { Connection.s3(name: $0) }
 
         let location = paths(root: root).drive(containing: root.appending(path: file), among: connections)
 

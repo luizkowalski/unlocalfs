@@ -17,7 +17,7 @@ Before you add a test, name the bug it catches. If a test already catches that b
 Put each test at the layer that owns the rule:
 
 - Domain rules and presentation values, such as validation and `TransferSummary`: plain values.
-- Use cases, view models, and `MountService` decisions: real repositories, a stub `rclone` script, and a fake control socket (`ViewModelFixture`, `withWorkflowFixture`). `ControlServer` in `Tests/UnlocalFSTestSupport` answers rc calls on the drive's socket. Socket paths must stay under 104 bytes, so these fixtures use short folders in `/tmp`.
+- Use cases, view models, and `MountService` decisions: real repositories, a stub `rclone` script, and a fake control socket. `StubbedDrives` in `Tests/UnlocalFSTestSupport` makes a short folder in `/tmp`, writes the stub `rclone`, and records each call in `rcloneCalls`. Socket paths must stay under 104 bytes. `ControlServer` answers rc calls on the drive's socket. View model suites are classes that make a `ViewModelFixture` in `init` and remove it in `deinit`.
 - Real storage: only the smoke suites below.
 
 Stub only at the edges: the rclone process and its control socket, the Keychain, desktop services, and the clock. Do not change production code only to make a test possible.
@@ -40,5 +40,6 @@ A failed storage test keeps its folder in `/tmp/uf-*`, with the server and drive
 
 ## Fixture notes
 
+- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`.
 - Use ASCII file names with `rclone serve s3`. Accented names make the tests flaky.
 - A password-only SFTP server gets an empty `--authorized-keys`. rclone 1.75.1 loops when the authorized-keys file contains only a newline.

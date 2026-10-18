@@ -20,8 +20,8 @@ let package = Package(
             .product(name: "Subprocess", package: "swift-subprocess")
         ], resources: [.process("Resources")]),
         .target(name: "UnlocalFSPresentation", dependencies: ["UnlocalFSDomain"], resources: [.process("Resources")]),
-        .target(name: "UnlocalFSTestSupport", path: "Tests/UnlocalFSTestSupport"),
-        .testTarget(name: "UnlocalFSDomainTests", dependencies: ["UnlocalFSDomain"]),
+        .target(name: "UnlocalFSTestSupport", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure"], path: "Tests/UnlocalFSTestSupport"),
+        .testTarget(name: "UnlocalFSDomainTests", dependencies: ["UnlocalFSDomain", "UnlocalFSTestSupport"]),
         .testTarget(name: "UnlocalFSCoreTests", dependencies: [
             "UnlocalFSDomain", "UnlocalFSInfrastructure", "UnlocalFSPresentation", "UnlocalFSTestSupport"
         ]),

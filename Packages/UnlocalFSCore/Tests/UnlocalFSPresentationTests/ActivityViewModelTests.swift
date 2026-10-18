@@ -1,14 +1,19 @@
 import Foundation
 import Testing
+import UnlocalFSDomain
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite struct ActivityViewModelTests {
+@MainActor @Suite final class ActivityViewModelTests {
+    let fixture: ViewModelFixture
+
+    init() throws { fixture = try ViewModelFixture() }
+
+    deinit { fixture.remove() }
+
     @Test func activityRecoversAfterTheControlServiceReturns() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
         try Data("unavailable".utf8).write(to: fixture.root.appending(path: "queue.json"))
 
@@ -26,9 +31,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func busyConnectionsWaitBeforeLoadingActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
         var busy = true
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in busy })
@@ -42,10 +45,8 @@ import UnlocalFSTestSupport
     }
 
     @Test func activityRefreshesFourTimesASecondWhileFilesShow() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
 
         await viewModel.refresh(connection)
@@ -57,12 +58,9 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledRefreshDoesNotReplaceTheNextDrivesActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
-        var previous = connectionFixture()
-        previous.name = "Previous"
-        let current = connectionFixture()
+        let previous = Connection.s3(name: "Previous")
+        let current = Connection.s3()
         try fixture.serve(previous) { _ in
             try await Task.sleep(for: .milliseconds(300))
             throw ControlFailure("Previous drive failed")
@@ -78,10 +76,8 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
-        let task = Task { await viewModel.observe(connectionFixture()) }
+        let task = Task { await viewModel.observe(Connection.s3()) }
         task.cancel()
 
         await task.value

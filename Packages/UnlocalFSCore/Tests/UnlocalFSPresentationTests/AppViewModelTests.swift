@@ -4,12 +4,16 @@ import Testing
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 
-@MainActor @Suite struct AppViewModelTests {
+@MainActor @Suite final class AppViewModelTests {
+    let fixture: ViewModelFixture
+
+    init() throws { fixture = try ViewModelFixture() }
+
+    deinit { fixture.remove() }
+
     @Test func activatingACheckingDriveDoesNothing() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
-        try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        let connection = Connection.s3()
+        try fixture.repository.save(connection, credentials: Credentials.s3())
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 
@@ -21,9 +25,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func activatingAnEjectedDriveKeepsItsServiceRunning() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
@@ -37,10 +39,8 @@ import UnlocalFSInfrastructure
     }
 
     @Test func failedActivationShowsTheConnectErrorWithoutOpeningFinder() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
-        try fixture.repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        let connection = Connection.s3()
+        try fixture.repository.save(connection, credentials: Credentials.s3())
         try "Connection failed".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
@@ -54,12 +54,10 @@ import UnlocalFSInfrastructure
     }
 
     @Test func savePublishesTheSavedConnectionAndSelection() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let app = fixture.app()
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         let editor = fixture.editor(draft: .init(connection: connection), app: app)
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        editor.credentials = Credentials.s3()
 
         #expect(await editor.save())
 
@@ -70,9 +68,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection, failed: 1, lastError: "AccessDenied: Access Denied")
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
@@ -98,9 +94,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func failedUploadsWithoutAReasonStillNeedAttention() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection, failed: 1)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
@@ -112,9 +106,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func pendingUploadsExplainBlockedDisconnectAndNotifyWhenFinished() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection, queued: 1, cached: 2048)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
@@ -147,9 +139,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func uploadsInProgressAreNotReportedAsFailed() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection, queued: 1)
         try fixture.queue(#"{"name":"a.dmg","size":4096,"expiry":-1,"tries":1,"uploading":true}"#)
         let desktop = TestDesktopServices(paths: fixture.paths)
@@ -162,9 +152,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func activeDriveShowsTheNetworkIsUnavailable() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
         let app = fixture.app()
 
@@ -176,10 +164,8 @@ import UnlocalFSInfrastructure
     }
 
     @Test func connectAndDisconnectFollowTheConnectionState() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let idle = connectionFixture()
-        let connected = connectionFixture()
+        let idle = Connection.s3()
+        let connected = Connection.s3()
         try ConnectionStore(url: fixture.paths.config).save(idle)
         try fixture.serve(connected)
         let app = fixture.app()
@@ -193,9 +179,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func driveThatNeedsReconnectCanNeitherConnectNorDisconnect() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection)
         try Data("unavailable".utf8).write(to: fixture.root.appending(path: "vfs-stats.json"))
         let app = fixture.app()
@@ -208,11 +192,8 @@ import UnlocalFSInfrastructure
     }
 
     @Test func disconnectAllStopsAtTheFirstDriveWithPendingUploads() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let first = connectionFixture()
-        var second = connectionFixture()
-        second.name = "Second drive"
+        let first = Connection.s3()
+        let second = Connection.s3(name: "Second drive")
         try fixture.serve(first, queued: 1)
         try fixture.serve(second, queued: 1)
         let desktop = TestDesktopServices(paths: fixture.paths)
@@ -232,9 +213,7 @@ import UnlocalFSInfrastructure
     }
 
     @Test func checkAgainClearsTheErrorAndReloadsTheStatus() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try ConnectionStore(url: fixture.paths.config).save(connection)
         let app = fixture.app()
         await app.refreshFiles(connection)
@@ -248,21 +227,17 @@ import UnlocalFSInfrastructure
     }
 
     @Test func cancellingTheExportWritesNothing() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = try fixture.saveEncryptedConnection()
         let app = fixture.app()
 
         await app.exportRcloneConfig(connection)
 
         #expect(app.alert == nil)
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+        #expect(fixture.rcloneCalls.isEmpty)
     }
 
     @Test(arguments: ["unlocalfs-s3", "unlocalfs"])
     func failedExportKeepsTheDestinationAndShowsAnAlertWithoutSecrets(remote: String) async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = try fixture.saveEncryptedConnection()
         try remote.write(to: fixture.root.appending(path: "config-error"), atomically: true, encoding: .utf8)
         let desktop = TestDesktopServices(paths: fixture.paths)
@@ -284,14 +259,13 @@ import UnlocalFSInfrastructure
 
     @Test(arguments: [true, false])
     func sftpExportKeepsHostVerificationAndNeverReadsLocalFiles(includesSecrets: Bool) async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        var connection = sftpConnectionFixture()
-        connection.encrypted = true
-        connection.sftp.remotePath = "/srv/files"
-        connection.sftp.authentication = .privateKey
-        connection.sftp.keyFile = "/nonexistent/id_ed25519"
-        connection.sftp.agentSocket = "/tmp/agent.sock"
+        let connection = Connection.sftp {
+            $0.encrypted = true
+            $0.sftp.remotePath = "/srv/files"
+            $0.sftp.authentication = .privateKey
+            $0.sftp.keyFile = "/nonexistent/id_ed25519"
+            $0.sftp.agentSocket = "/tmp/agent.sock"
+        }
         try fixture.repository.save(connection, credentials: Credentials(encryptionPassword: "saved-password", keyPassphrase: "saved-phrase"))
         let desktop = TestDesktopServices(paths: fixture.paths)
         let destination = fixture.root.appending(path: "My files rclone.conf")
@@ -313,21 +287,17 @@ import UnlocalFSInfrastructure
     }
 
     @Test func unencryptedDrivesCannotExportAConfig() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.repository.save(connection, credentials: Credentials(accessKey: "saved-access", secretKey: "saved-secret"))
         let export = ExportRcloneConfigUseCase(repository: fixture.repository, drives: fixture.service)
 
         await #expect(throws: AppError.self) {
             try await export.execute(connection, to: fixture.root.appending(path: "My files rclone.conf"), includesSecrets: true)
         }
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+        #expect(fixture.rcloneCalls.isEmpty)
     }
 
     @Test func loginFailureKeepsTheSystemStateAndShowsAnError() throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let desktop = TestDesktopServices(paths: fixture.paths)
         desktop.loginError = AppError("Login registration failed")
         let app = fixture.app(desktop: desktop)

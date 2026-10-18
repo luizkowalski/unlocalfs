@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
+import UnlocalFSTestSupport
 
 @Suite struct ConnectionRulesTests {
     @Test func duplicateUsesANewIdentityAndKeepsTheCredentialsSource() {
@@ -14,9 +15,8 @@ import Testing
     }
 
     @Test func driveNamesAreUniqueRegardlessOfCase() {
-        var duplicate = fixture()
-        duplicate.name = "my files"
-        #expect(duplicate.validate(against: [fixture()]).issues.map(\.field) == [.name])
+        let duplicate = Connection.s3(name: "my files")
+        #expect(duplicate.validate(against: [Connection.s3()]).issues.map(\.field) == [.name])
     }
 
     @Test func newEncryptedDriveRequiresMatchingPasswords() {
@@ -42,9 +42,8 @@ import Testing
     }
 
     @Test func saveIssuesKeepConnectionCredentialsAndConfirmationOrder() {
-        var connection = fixture(name: "my files", folder: "bad//folder")
-        connection.encrypted = true
-        let errors = connection.validate(credentials: Credentials(), confirmation: "different", against: [fixture()])
+        let connection = Connection.s3(name: "my files", folder: "bad//folder") { $0.encrypted = true }
+        let errors = connection.validate(credentials: Credentials(), confirmation: "different", against: [Connection.s3()])
         #expect(errors.issues == [
             .init(field: .folder, message: String(localized: .folderPathInvalid)),
             .init(field: .name, message: String(localized: .nameAlreadyExists)),
@@ -63,7 +62,7 @@ import Testing
 
     @Test func unencryptedDriveIgnoresConfirmation() {
         let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
-        #expect(fixture().validate(credentials: credentials, confirmation: "different", against: []).isValid)
+        #expect(Connection.s3().validate(credentials: credentials, confirmation: "different", against: []).isValid)
     }
 
     @Test func automaticConnectionRequiresAnEnabledInactiveDrive() {

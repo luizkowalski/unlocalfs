@@ -115,8 +115,7 @@ import UnlocalFSTestSupport
 
     @Test func onlyAmazonS3DrivesExportStorageClassAndEncryption() async throws {
         let key = "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
-        var amazon = fixture()
-        amazon.provider = .aws
+        var amazon = Connection.s3 { $0.provider = .aws }
         let defaults = amazon
         amazon.aws.storageClass = .standardInfrequentAccess
         amazon.aws.serverSideEncryption = .kms
@@ -125,7 +124,7 @@ import UnlocalFSTestSupport
         leftoverKey.aws.serverSideEncryption = .s3Managed
         var minio = amazon
         minio.provider = .minio
-        try await withOfflineDrive(fixture()) { drive in
+        try await withOfflineDrive(Connection.s3()) { drive in
             func exported(_ connection: Connection) async throws -> [String: String] {
                 let config = drive.paths.config.deletingLastPathComponent().appending(path: "\(UUID()).conf")
                 try await drive.service.exportRcloneConfig(connection, credentials: nil, to: config)

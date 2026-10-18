@@ -11,7 +11,7 @@ import UnlocalFSTestSupport
             #expect(before.needsReconnect)
             #expect(!before.isRunning)
             await #expect {
-                try await service.reconnect(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+                try await service.reconnect(connection, credentials: Credentials.s3())
             } throws: { error in
                 error is AppError && error.localizedDescription == String(localized: .couldNotStopOldService)
             }
@@ -208,10 +208,11 @@ import UnlocalFSTestSupport
         esac
         """
         try await withFixture(script: script) { service, _ in
-            var connection = sftpFixture()
-            connection.encrypted = true
-            connection.sftp.authentication = .privateKey
-            connection.sftp.keyFile = key.path
+            let connection = Connection.sftp {
+                $0.encrypted = true
+                $0.sftp.authentication = .privateKey
+                $0.sftp.keyFile = key.path
+            }
             let credentials = Credentials(encryptionPassword: "private-password", password: "private-ssh", keyPassphrase: "private-phrase")
             await #expect {
                 try await service.test(connection, credentials: credentials)
@@ -230,7 +231,7 @@ import UnlocalFSTestSupport
             fixtureRoot = root
             return "if [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
         } operation: { service, _ in
-            var connection = sftpFixture()
+            var connection = Connection.sftp()
             let root = try #require(fixtureRoot)
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = "/nonexistent/id"
@@ -251,7 +252,7 @@ import UnlocalFSTestSupport
             """
         } operation: { service, connection in
             await #expect {
-                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+                _ = try await service.shareLink(for: connection, path: "a.txt", expiry: .day, credentials: Credentials.s3())
             } throws: { error in
                 error is AppError && error.localizedDescription == String(localized: .reconnectForLinks)
             }
@@ -276,7 +277,7 @@ import UnlocalFSTestSupport
             } throws: { error in
                 error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
-            connection = sftpFixture()
+            connection = Connection.sftp()
             connection.encrypted = true
             connection.sftp.remotePath = "/srv/files "
             await #expect {
@@ -327,21 +328,16 @@ private func withFixture(
     script: (URL) -> String, control: ((_ root: URL, _ socket: URL) -> ControlServer.Respond)? = nil,
     operation: (MountService, Connection) async throws -> Void
 ) async throws {
-    let root = URL(filePath: "/tmp/uf-safety-\(UUID().uuidString.prefix(8))")
-    defer { try? FileManager.default.removeItem(at: root) }
-    let paths = AppPaths(
-        config: root.appendingPathComponent("config.json"),
-        support: root,
-        mounts: root.appendingPathComponent("drives"),
-        logs: root.appendingPathComponent("logs")
-    )
-    try paths.prepare()
-    let connection = fixture()
-    let socket = paths.socket(connection)
-    let server = try control.map { try ControlServer(at: socket, respond: $0(root, socket)) }
+    let drives = try StubbedDrives("safety", rclone: script)
+    defer { drives.remove() }
+    let connection = Connection.s3()
+    let socket = drives.paths.socket(connection)
+    let server = try control.map { try ControlServer(at: socket, respond: $0(drives.root, socket)) }
     defer { server?.stop() }
     if server == nil { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
-    let binary = root.appendingPathComponent("rclone-fixture")
-    try writeRcloneStub(script(root), to: binary)
-    try await operation(MountService(executable: binary, helperDirectory: root, paths: paths), connection)
+    try await operation(drives.service, connection)
+}
+
+func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = "{}", transferred: String? = nil) -> String {
+    #"{"results":[{"diskCache":{\#(cache)}},\#(queue),\#(stats)\#(transferred.map { ",\($0)" } ?? "")]}"#
 }

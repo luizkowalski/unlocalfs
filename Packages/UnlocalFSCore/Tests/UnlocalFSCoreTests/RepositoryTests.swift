@@ -3,17 +3,18 @@ import Synchronization
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct RepositoryTests {
     @Test func concurrentSavesKeepEveryConnection() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
         let repository = SavedConnectionRepository(store: ConnectionStore(url: root.appending(path: "config.json")), credentials: MemoryCredentialStorage())
-        let connections = (0..<40).map { fixture(name: "Drive \($0)") }
+        let connections = (0..<40).map { Connection.s3(name: "Drive \($0)") }
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for connection in connections {
-                group.addTask { try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret")) }
+                group.addTask { try repository.save(connection, credentials: Credentials.s3()) }
             }
             try await group.waitForAll()
         }
@@ -31,7 +32,7 @@ import UnlocalFSInfrastructure
         let url = root.appending(path: "config.json")
         let service = "app.unlocalfs.tests.\(UUID())"
         let keychain = Keychain(service: service)
-        var connection = provider == .sftp ? sftpFixture() : gcsFixture()
+        var connection = provider == .sftp ? Connection.sftp() : Connection.gcs()
         connection.folder = "clients/acme"
         if provider == .sftp {
             connection.sftp.port = 2222
@@ -56,9 +57,9 @@ import UnlocalFSInfrastructure
         defer { try? FileManager.default.removeItem(at: root) }
         let url = root.appending(path: "config.json")
         let store = ConnectionStore(url: url)
-        let unrelated = fixture(name: "Other files")
+        let unrelated = Connection.s3(name: "Other files")
         try store.save(unrelated)
-        let original = fixture()
+        let original = Connection.s3()
         if updating { try store.save(original) }
         let previous = updating ? [original, unrelated] : [unrelated]
         var edited = original
@@ -66,7 +67,7 @@ import UnlocalFSInfrastructure
         let repository = SavedConnectionRepository(store: store, credentials: UnavailableCredentialStorage())
 
         #expect(throws: AppError.self) {
-            try repository.save(edited, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+            try repository.save(edited, credentials: Credentials.s3())
         }
 
         #expect(try ConnectionStore(url: url).all() == previous)
@@ -75,9 +76,9 @@ import UnlocalFSInfrastructure
     @Test func failedConfigWriteKeepsTheCredentials() throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
-        let credentials = Credentials(accessKey: "key", secretKey: "secret")
+        let credentials = Credentials.s3()
         let repository = SavedConnectionRepository(store: ConnectionStore(url: root.appending(path: "config.json")), credentials: MemoryCredentialStorage())
-        let connection = fixture()
+        let connection = Connection.s3()
         try repository.save(connection, credentials: credentials)
         try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: root.path)
         defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: root.path) }
