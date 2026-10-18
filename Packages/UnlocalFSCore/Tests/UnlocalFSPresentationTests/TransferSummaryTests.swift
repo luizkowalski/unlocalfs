@@ -16,7 +16,6 @@ import UnlocalFSPresentation
 
         #expect(summary.isUploading)
         #expect(summary.fileCount == 3)
-        #expect(summary.bytesPerSecond == 300)
     }
 
     @Test func downloadsLeadWhenNothingUploads() throws {
@@ -26,15 +25,6 @@ import UnlocalFSPresentation
 
         #expect(!summary.isUploading)
         #expect(summary.fileCount == 1)
-        #expect(summary.bytesPerSecond == 4096)
-    }
-
-    @Test func queuedUploadsAloneHaveNoSpeed() throws {
-        let summary = try #require(TransferSummary([
-            FileActivity(path: "photo.jpg", size: 500, state: .queued, bytesTransferred: nil)
-        ], now: now))
-
-        #expect(summary.bytesPerSecond == nil)
     }
 
     @Test func failedUploadsListFirstThenFilesByName() throws {
@@ -65,7 +55,6 @@ import UnlocalFSPresentation
             FileActivity(path: "b.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),
         ], now: now))
         #expect(mixed.fileCount == 2)
-        #expect(mixed.bytesPerSecond == 200)
 
         let onlyFailed = try #require(TransferSummary(failed, now: now))
         #expect(onlyFailed.fileCount == 0)

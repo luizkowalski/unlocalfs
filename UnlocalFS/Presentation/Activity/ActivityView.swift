@@ -76,13 +76,6 @@ struct ActivityView: View {
             } else {
                 Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
             }
-            if let bytesPerSecond = summary.bytesPerSecond {
-                Text(verbatim: "·")
-                Text("\(bytesPerSecond, format: .byteCount(style: .file))/s")
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .default, value: bytesPerSecond)
-            }
         }
     }
 }

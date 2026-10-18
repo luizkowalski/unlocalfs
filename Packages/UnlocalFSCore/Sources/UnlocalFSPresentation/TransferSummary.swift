@@ -4,7 +4,6 @@ import UnlocalFSDomain
 public struct TransferSummary {
     public let isUploading: Bool
     public let fileCount: Int
-    public let bytesPerSecond: Int64?
     public let files: [FileActivity]
 
     public init?(_ activity: [FileActivity], now: Date) {
@@ -15,8 +14,6 @@ public struct TransferSummary {
         let leading = uploads.isEmpty ? moving : uploads
         isUploading = !uploads.isEmpty
         fileCount = leading.count
-        let speed = Int64(activity.bytesPerSecond(isUploading ? .uploading : .downloading).rounded())
-        bytesPerSecond = speed > 0 ? speed : nil
         let byName = [KeyPathComparator(\FileActivity.path, comparator: .localizedStandard), KeyPathComparator(\FileActivity.id)]
         files = shown.sorted(using: [KeyPathComparator(\.failedFirst)] + byName)
     }
