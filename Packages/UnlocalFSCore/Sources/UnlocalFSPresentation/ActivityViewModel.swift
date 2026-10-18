@@ -6,10 +6,12 @@ import UnlocalFSDomain
     public private(set) var activity: Result<[FileActivity], any Error>?
     private let drives: any DriveGateway
     private let isBusy: (UUID) -> Bool
+    private let recordSpeed: (SpeedSample, UUID) -> Void
 
-    init(drives: any DriveGateway, isBusy: @escaping (UUID) -> Bool) {
+    init(drives: any DriveGateway, isBusy: @escaping (UUID) -> Bool, recordSpeed: @escaping (SpeedSample, UUID) -> Void) {
         self.drives = drives
         self.isBusy = isBusy
+        self.recordSpeed = recordSpeed
     }
 
     public var summary: TransferSummary? {
@@ -35,6 +37,7 @@ import UnlocalFSDomain
             let files = try await drives.activity(connection)
             try Task.checkCancellation()
             activity = .success(files)
+            recordSpeed(SpeedSample(files, at: .now), connection.id)
         } catch where !Task.isCancelled {
             activity = .failure(error)
         } catch {}

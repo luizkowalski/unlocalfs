@@ -4,13 +4,28 @@ import UnlocalFSPresentation
 
 struct ActivityView: View {
     let connection: Connection
+    @Environment(AppViewModel.self) private var model
     @Environment(ViewModelFactory.self) private var viewModels
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel: ActivityViewModel?
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            activity
+            if let speeds = model.speeds[connection.id] {
+                SpeedChart(speeds: speeds)
+            }
+        }
+        .task(id: connection.id) {
+            let viewModel = self.viewModel ?? viewModels.makeActivity()
+            self.viewModel = viewModel
+            await viewModel.observe(connection)
+        }
+    }
+
+    private var activity: some View {
         let summary = viewModel?.summary
-        VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Activity").font(.headline)
                 Spacer()
@@ -37,11 +52,6 @@ struct ActivityView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
             }
-        }
-        .task(id: connection.id) {
-            let viewModel = self.viewModel ?? viewModels.makeActivity()
-            self.viewModel = viewModel
-            await viewModel.observe(connection)
         }
     }
 

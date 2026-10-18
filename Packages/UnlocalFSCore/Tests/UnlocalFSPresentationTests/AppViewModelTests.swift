@@ -178,6 +178,28 @@ import UnlocalFSInfrastructure
         #expect(app.canDisconnect(connected))
     }
 
+    @Test func statusChecksKeepSpeedHistoryForRunningDrivesOnly() async throws {
+        let stopped = Connection.s3()
+        let running = Connection.s3(name: "Running")
+        try ConnectionStore(url: fixture.paths.config).save(stopped)
+        try fixture.serve(running)
+        try fixture.queue(#"{"name":"a.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
+        try Data("""
+        {"transferring":[
+            {"name":"a.mov","size":1000,"bytes":100,"speedAvg":3000,"srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"b.mov","size":1000,"bytes":100,"speedAvg":2000,"srcFs":"/cache","dstFs":":s3:bucket"},
+            {"name":"c.mov","size":1000,"bytes":100,"speedAvg":500,"srcFs":":s3:bucket"}
+        ]}
+        """.utf8).write(to: fixture.root.appending(path: "stats.json"))
+        let app = fixture.app()
+
+        await app.refresh()
+        await app.refresh()
+
+        #expect(app.speeds[running.id]?.map { [$0.upload, $0.download] } == [[2000, 500], [2000, 500]])
+        #expect(app.speeds[stopped.id] == nil)
+    }
+
     @Test func driveThatNeedsReconnectCanNeitherConnectNorDisconnect() async throws {
         let connection = Connection.s3()
         try fixture.serve(connection)

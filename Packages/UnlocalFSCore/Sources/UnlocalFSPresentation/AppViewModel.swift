@@ -8,7 +8,9 @@ import UnlocalFSDomain
 
     public private(set) var connections: [Connection] = []
     public var selection: UUID?
+    public static let speedWindow: TimeInterval = 60
     public private(set) var statuses: [UUID: MountStatus] = [:]
+    public private(set) var speeds: [UUID: [SpeedSample]] = [:]
     public private(set) var errors: [UUID: String] = [:]
     public private(set) var busy: Set<UUID> = []
     public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
@@ -310,6 +312,14 @@ extension AppViewModel {
 
     public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
 
+    func recordSpeed(_ sample: SpeedSample, for id: UUID) {
+        var samples = speeds[id, default: []]
+        samples.removeAll { sample.date.timeIntervalSince($0.date) >= Self.speedWindow }
+        if samples.count > 1, sample.date.timeIntervalSince(samples[samples.count - 2].date) < 1 { samples.removeLast() }
+        samples.append(sample)
+        speeds[id] = samples
+    }
+
     public func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
     public func openLog(_ connection: Connection) { desktop.openLog(connection) }
 }
@@ -327,6 +337,11 @@ private extension AppViewModel {
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }
+        if status.isRunning {
+            recordSpeed(SpeedSample(status, at: .now), for: connection.id)
+        } else {
+            speeds[connection.id] = nil
+        }
     }
 
     func notify(title: String, body: String) {

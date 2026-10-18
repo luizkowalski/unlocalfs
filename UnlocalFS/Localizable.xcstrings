@@ -53,6 +53,17 @@
         }
       }
     },
+    "1 min ago" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "há 1 min"
+          }
+        }
+      }
+    },
     "About UnlocalFS" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -529,6 +540,17 @@
         }
       }
     },
+    "Direction" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direção"
+          }
+        }
+      }
+    },
     "Disconnect" : {
       "comment" : "Menu item: disconnect the drive (verb)",
       "extractionState" : "stale",
@@ -570,6 +592,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desconectar todas as unidades antes de sair?"
+          }
+        }
+      }
+    },
+    "Download speed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade de download"
           }
         }
       }
@@ -727,6 +760,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exportar configuração do rclone…"
+          }
+        }
+      }
+    },
+    "Fastest upload %@/s, fastest download %@/s" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envio mais rápido %@/s, download mais rápido %@/s"
           }
         }
       }
@@ -1027,6 +1070,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não definido"
+          }
+        }
+      }
+    },
+    "Now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora"
           }
         }
       }
@@ -1517,6 +1571,27 @@
         }
       }
     },
+    "Speed" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade"
+          }
+        }
+      }
+    },
+    "Speed in the last minute" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade no último minuto"
+          }
+        }
+      }
+    },
     "Status" : {
       "comment" : "Activity table column: transfer status",
       "extractionState" : "manual",
@@ -1608,6 +1683,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este servidor tem uma chave diferente. Confira a impressão digital com o administrador antes de substituir a chave confiável."
+          }
+        }
+      }
+    },
+    "Time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hora"
           }
         }
       }
@@ -1705,6 +1791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Falha no envio, mostrar detalhes"
+          }
+        }
+      }
+    },
+    "Upload speed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade de envio"
           }
         }
       }

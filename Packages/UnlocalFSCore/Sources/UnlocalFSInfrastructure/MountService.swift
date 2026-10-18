@@ -142,6 +142,9 @@ public actor MountService: DriveGateway {
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
+            let files = activeFiles(snapshot)
+            status.uploadSpeed = files.bytesPerSecond(.uploading)
+            status.downloadSpeed = files.bytesPerSecond(.downloading)
         } catch {
             if status.isMounted || running != false {
                 status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))
@@ -152,24 +155,8 @@ public actor MountService: DriveGateway {
 
     public func activity(_ connection: Connection) async throws -> [FileActivity] {
         let snapshot = try await snapshot(connection, ControlSnapshot.activityRequest)
-        let queue = snapshot.queue
-        let transfers = snapshot.transfers
-        let queuedPaths = Set(queue.map(\.name))
-        let finishedInOrder = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
-        let uploadErrors = Dictionary(finishedInOrder.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
-        let queued = queue.map { item in
-            let state: FileActivity.State = item.uploading ? .uploading : item.hasFailedAttempt ? .failed(nextAttempt: .now + item.expiry) : .queued
-            let transfer = item.uploading ? transfers.first { $0.isUpload && $0.name == item.name } : nil
-            return FileActivity(
-                path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg,
-                uploadError: item.hasFailedAttempt ? uploadErrors[item.name] : nil
-            )
-        }
-        let transferring = transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
-            FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
-        }
-        let active = queued + transferring
-        let finished = finishedInOrder
+        let active = activeFiles(snapshot)
+        let finished = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
             .filter { $0.error.isEmpty && ($0.isUpload || $0.bytes >= $0.size) }
             .map {
                 FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploaded($0.completedAt) : .downloaded($0.completedAt), bytesTransferred: $0.bytes)
@@ -177,6 +164,24 @@ public actor MountService: DriveGateway {
         let activeIDs = Set(active.map(\.id))
         let latestFinished = Dictionary(finished.map { ($0.id, $0) }) { _, later in later }.values.filter { !activeIDs.contains($0.id) }
         return active + latestFinished
+    }
+
+    private func activeFiles(_ snapshot: ControlSnapshot) -> [FileActivity] {
+        let queuedPaths = Set(snapshot.queue.map(\.name))
+        let finishedInOrder = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
+        let uploadErrors = Dictionary(finishedInOrder.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
+        let queued = snapshot.queue.map { item in
+            let state: FileActivity.State = item.uploading ? .uploading : item.hasFailedAttempt ? .failed(nextAttempt: .now + item.expiry) : .queued
+            let transfer = item.uploading ? snapshot.transfers.first { $0.isUpload && $0.name == item.name } : nil
+            return FileActivity(
+                path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg,
+                uploadError: item.hasFailedAttempt ? uploadErrors[item.name] : nil
+            )
+        }
+        let transferring = snapshot.transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
+            FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploading : .downloading, bytesTransferred: $0.bytes, bytesPerSecond: $0.speedAvg)
+        }
+        return queued + transferring
     }
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
