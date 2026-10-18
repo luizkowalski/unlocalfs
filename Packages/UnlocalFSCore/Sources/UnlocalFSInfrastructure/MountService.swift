@@ -156,7 +156,7 @@ public actor MountService: DriveGateway {
     public func activity(_ connection: Connection) async throws -> [FileActivity] {
         let snapshot = try await snapshot(connection, ControlSnapshot.activityRequest)
         let active = activeFiles(snapshot)
-        let finished = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
+        let finished = snapshot.finished
             .filter { $0.error.isEmpty && ($0.isUpload || $0.bytes >= $0.size) }
             .map {
                 FileActivity(path: $0.name, size: $0.size, state: $0.isUpload ? .uploaded($0.completedAt) : .downloaded($0.completedAt), bytesTransferred: $0.bytes)
@@ -168,8 +168,7 @@ public actor MountService: DriveGateway {
 
     private func activeFiles(_ snapshot: ControlSnapshot) -> [FileActivity] {
         let queuedPaths = Set(snapshot.queue.map(\.name))
-        let finishedInOrder = snapshot.finished.sorted { $0.completedAt < $1.completedAt }
-        let uploadErrors = Dictionary(finishedInOrder.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
+        let uploadErrors = Dictionary(snapshot.finished.filter { $0.isUpload && !$0.error.isEmpty }.map { ($0.name, $0.error) }) { _, later in later }
         let queued = snapshot.queue.map { item in
             let state: FileActivity.State = item.uploading ? .uploading : item.hasFailedAttempt ? .failed(nextAttempt: .now + item.expiry) : .queued
             let transfer = item.uploading ? snapshot.transfers.first { $0.isUpload && $0.name == item.name } : nil
