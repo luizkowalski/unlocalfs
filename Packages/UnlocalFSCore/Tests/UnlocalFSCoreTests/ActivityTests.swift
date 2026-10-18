@@ -110,14 +110,11 @@ import UnlocalFSTestSupport
 }
 
 private func fetchActivity(queue: String, stats: String = "{}", transferred: String? = nil) async throws -> [FileActivity] {
-    let root = URL(filePath: "/tmp/uf-activity-\(UUID().uuidString.prefix(8))")
-    defer { try? FileManager.default.removeItem(at: root) }
-    let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
-    try paths.prepare()
+    let drives = try StubbedDrives("activity")
+    defer { drives.remove() }
     let connection = Connection.s3()
     let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
-    let server = try ControlServer(at: paths.socket(connection)) { _ in batch }
+    let server = try ControlServer(at: drives.paths.socket(connection)) { _ in batch }
     defer { server.stop() }
-    let service = MountService(executable: root.appending(path: "rclone"), helperDirectory: root, paths: paths)
-    return try await service.activity(connection)
+    return try await drives.service.activity(connection)
 }

@@ -5,10 +5,14 @@ import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite struct FinderServicesTests {
+@MainActor @Suite final class FinderServicesTests {
+    let fixture: ViewModelFixture
+
+    init() throws { fixture = try ViewModelFixture() }
+
+    deinit { fixture.remove() }
+
     @Test func failedSharesKeepTheClipboardAndExplainWhy() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let encrypted = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
         let previousLink = URL(string: "https://example.com/previous")!
@@ -28,12 +32,10 @@ import UnlocalFSTestSupport
         let notification = try #require(desktop.notifications.last)
         #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
         #expect(notification.body == String(localized: .linksUnavailableEncrypted))
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+        #expect(fixture.rcloneCalls.isEmpty)
     }
 
     @Test func refusedDuplicateNamesTheFileAndExplainsWhy() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let server = Connection.sftp()
         try fixture.repository.save(server, credentials: Credentials(password: "secret"))
         let desktop = TestDesktopServices(paths: fixture.paths)
@@ -45,6 +47,6 @@ import UnlocalFSTestSupport
         #expect(notification.title == String(localized: .couldNotDuplicate("plan.pdf")))
         #expect(notification.body.contains(server.provider.title))
         #expect(notification.fallbackToAlert)
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+        #expect(fixture.rcloneCalls.isEmpty)
     }
 }

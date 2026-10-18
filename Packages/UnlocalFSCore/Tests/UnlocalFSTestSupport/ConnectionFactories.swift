@@ -33,3 +33,7 @@ extension Connection {
         return connection
     }
 }
+
+extension Credentials {
+    public static func s3() -> Credentials { Credentials(accessKey: "key", secretKey: "secret") }
+}

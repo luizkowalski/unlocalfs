@@ -6,52 +6,49 @@ import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
 struct ViewModelFixture {
-    let root: URL
-    let paths: AppPaths
-    let service: MountService
     let repository: SavedConnectionRepository
+    private let drives: StubbedDrives
     private let servers = ControlServers()
 
+    var root: URL { drives.root }
+    var paths: AppPaths { drives.paths }
+    var service: MountService { drives.service }
+    var rcloneCalls: [String] { drives.rcloneCalls }
+
     init() throws {
-        root = URL(filePath: "/tmp/uf-view-model-\(UUID().uuidString.prefix(8))")
-        paths = AppPaths(config: root.appending(path: "config.json"), support: root, mounts: root.appending(path: "mounts"), logs: root.appending(path: "logs"))
-        try paths.prepare()
-        let executable = root.appending(path: "rclone")
-        try """
-        #!/bin/sh
-        printf '%s\\n' "$1" >> '\(root.path)/process-calls'
-        case "$1" in
-            lsf)
-                if [ -f '\(root.path)/test-error' ]; then
-                    cat '\(root.path)/test-error' >&2
-                    exit 1
-                fi
-                ;;
-            obscure) cat >/dev/null; printf 'prepared-password\\n' ;;
-            config)
-                name="$3"
-                arguments="$*"
-                while [ $# -gt 0 ]; do
-                    if [ "$1" = '--config' ]; then config="$2"; fi
-                    shift
-                done
-                printf '%s' "$config" > '\(root.path)/export-config'
-                printf '%s\\n' "$arguments" >> '\(root.path)/config-arguments'
-                if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
-                    printf 'Failed to create %s: %s' "$name" "$arguments" >&2
-                    exit 1
-                fi
-                printf '[%s]\\n' "$name" >> "$config"
-                ;;
-            *) exit 1 ;;
-        esac
-        """.write(to: executable, atomically: true, encoding: .utf8)
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        drives = try StubbedDrives("view-model") { root in
+            """
+            case "$1" in
+                lsf)
+                    if [ -f '\(root.path)/test-error' ]; then
+                        cat '\(root.path)/test-error' >&2
+                        exit 1
+                    fi
+                    ;;
+                obscure) printf 'prepared-password\\n' ;;
+                config)
+                    name="$3"
+                    arguments="$*"
+                    while [ $# -gt 0 ]; do
+                        if [ "$1" = '--config' ]; then config="$2"; fi
+                        shift
+                    done
+                    printf '%s' "$config" > '\(root.path)/export-config'
+                    printf '%s\\n' "$arguments" >> '\(root.path)/config-arguments'
+                    if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
+                        printf 'Failed to create %s: %s' "$name" "$arguments" >&2
+                        exit 1
+                    fi
+                    printf '[%s]\\n' "$name" >> "$config"
+                    ;;
+                *) exit 1 ;;
+            esac
+            """
+        }
+        repository = SavedConnectionRepository(store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage())
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
         try Data("{}".utf8).write(to: root.appending(path: "stats.json"))
         try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
-        service = MountService(executable: executable, helperDirectory: root, paths: paths)
-        repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     }
 
     @MainActor func app(desktop: TestDesktopServices? = nil) -> AppViewModel {
@@ -110,7 +107,7 @@ struct ViewModelFixture {
 
     func remove() {
         servers.stop()
-        try? FileManager.default.removeItem(at: root)
+        drives.remove()
     }
 }
 

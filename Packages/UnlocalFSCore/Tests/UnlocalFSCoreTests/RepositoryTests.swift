@@ -14,7 +14,7 @@ import UnlocalFSTestSupport
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for connection in connections {
-                group.addTask { try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret")) }
+                group.addTask { try repository.save(connection, credentials: Credentials.s3()) }
             }
             try await group.waitForAll()
         }
@@ -67,7 +67,7 @@ import UnlocalFSTestSupport
         let repository = SavedConnectionRepository(store: store, credentials: UnavailableCredentialStorage())
 
         #expect(throws: AppError.self) {
-            try repository.save(edited, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+            try repository.save(edited, credentials: Credentials.s3())
         }
 
         #expect(try ConnectionStore(url: url).all() == previous)
@@ -76,7 +76,7 @@ import UnlocalFSTestSupport
     @Test func failedConfigWriteKeepsTheCredentials() throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
-        let credentials = Credentials(accessKey: "key", secretKey: "secret")
+        let credentials = Credentials.s3()
         let repository = SavedConnectionRepository(store: ConnectionStore(url: root.appending(path: "config.json")), credentials: MemoryCredentialStorage())
         let connection = Connection.s3()
         try repository.save(connection, credentials: credentials)

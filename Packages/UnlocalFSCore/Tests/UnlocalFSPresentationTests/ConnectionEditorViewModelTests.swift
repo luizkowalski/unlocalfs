@@ -5,10 +5,14 @@ import Testing
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite struct ConnectionEditorViewModelTests {
+@MainActor @Suite final class ConnectionEditorViewModelTests {
+    let fixture: ViewModelFixture
+
+    init() throws { fixture = try ViewModelFixture() }
+
+    deinit { fixture.remove() }
+
     @Test func importedKeyLoadsFromTheSelectedFileAndClearsThePreviousError() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection()))
         await editor.importServiceAccountKey(.failure(AppError("Could not choose a key")))
         let url = fixture.root.appending(path: "service-account.json")
@@ -22,8 +26,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func invalidImportedKeyShowsTheValidationErrorAndKeepsThePreviousKey() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection()))
         editor.credentials.serviceAccountKey = "previous-key"
         let url = fixture.root.appending(path: "invalid-key.json")
@@ -36,8 +38,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection()))
 
         #expect(editor.fieldErrors.isEmpty)
@@ -59,8 +59,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func testRevealsErrorsWithoutRunningAProcess() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = Connection.s3(bucket: " ") { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
@@ -73,16 +71,14 @@ import UnlocalFSTestSupport
         #expect(editor.fieldErrors[.bucket] == String(localized: .bucketEmpty))
         #expect(editor.firstInvalidField == .bucket)
         #expect(!editor.tested)
-        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "process-calls").path))
+        #expect(fixture.rcloneCalls.isEmpty)
     }
 
     @Test func duplicateNameFromSavedConnectionsTakesFocusInFormOrder() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
-        try fixture.repository.save(Connection.s3(), credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        try fixture.repository.save(Connection.s3(), credentials: Credentials.s3())
         let connection = Connection.s3(name: "my files", folder: "bad//folder")
         let editor = fixture.editor(draft: .init(connection: connection))
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        editor.credentials = Credentials.s3()
 
         await editor.test()
 
@@ -92,11 +88,9 @@ import UnlocalFSTestSupport
     }
 
     @Test func staleEditorNameListShowsTheSaveErrorAndKeepsTheApp() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let app = fixture.app()
         let editor = fixture.editor(draft: .init(connection: Connection.s3()), app: app)
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        editor.credentials = Credentials.s3()
         let saved = Connection.s3()
         try fixture.repository.save(saved, credentials: Credentials(accessKey: "old-key", secretKey: "old-secret"))
 
@@ -109,8 +103,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func validSavePreparesCredentialsAndReturnsSavedConnectionsToTheApp() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let app = fixture.app()
         let connection = Connection.s3 { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection), app: app)
@@ -124,12 +116,10 @@ import UnlocalFSTestSupport
         var expected = editor.credentials
         expected.obscuredEncryptionPassword = "prepared-password"
         #expect(try fixture.repository.credentials(for: connection.id) == expected)
-        #expect(try String(contentsOf: fixture.root.appending(path: "process-calls"), encoding: .utf8) == "obscure\n")
+        #expect(fixture.rcloneCalls == ["obscure"])
     }
 
     @Test func duplicateLoadsTheOriginalCredentials() throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = Connection.s3 { $0.encrypted = true }
         let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
         try fixture.repository.save(connection, credentials: credentials)
@@ -148,8 +138,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func newEncryptedConnectionRequiresMatchingPasswords() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = Connection.s3 { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
@@ -163,10 +151,8 @@ import UnlocalFSTestSupport
     }
 
     @Test func changingTheEndpointOrCredentialsClearsTheSuccessfulTest() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection.s3()))
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        editor.credentials = Credentials.s3()
         await editor.test()
         #expect(editor.tested)
 
@@ -180,8 +166,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func failedConnectionTestShowsAnErrorWithoutCredentials() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         try "Cannot connect with test-secret".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let connection = Connection.s3()
         let editor = fixture.editor(draft: .init(connection: connection))
@@ -197,12 +181,10 @@ import UnlocalFSTestSupport
     }
 
     @Test func failedSaveKeepsTheDraftAndShowsAnError() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let app = fixture.app()
         let connection = Connection.s3()
         let editor = fixture.editor(draft: .init(connection: connection), app: app)
-        editor.credentials = Credentials(accessKey: "key", secretKey: "secret")
+        editor.credentials = Credentials.s3()
         try FileManager.default.createDirectory(at: fixture.paths.config, withIntermediateDirectories: true)
 
         #expect(await editor.save() == false)
@@ -214,8 +196,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func sftpDraftValidatesTheSelectedModeAndSwitchingBackRestoresS3() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection.sftp()))
         await editor.test()
         #expect(editor.firstInvalidField == .password)
@@ -232,8 +212,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func editingConnectionAffectingSFTPFieldsClearsTheSuccessfulTest() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let editor = fixture.editor(draft: .init(connection: Connection.sftp()))
         editor.credentials = Credentials(password: "secret")
         await editor.test()
@@ -259,11 +237,9 @@ import UnlocalFSTestSupport
     }
 
     @Test func savedDrivesKeepTheirProtocolAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let s3Connection = Connection.s3()
         let sftp = Connection.sftp()
-        try fixture.repository.save(s3Connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
+        try fixture.repository.save(s3Connection, credentials: Credentials.s3())
         try fixture.repository.save(sftp, credentials: Credentials(password: "saved-password"))
 
         let savedS3 = fixture.editor(draft: .init(connection: s3Connection))

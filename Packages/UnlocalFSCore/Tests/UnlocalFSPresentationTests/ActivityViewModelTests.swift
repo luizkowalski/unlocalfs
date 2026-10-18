@@ -4,10 +4,14 @@ import UnlocalFSDomain
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite struct ActivityViewModelTests {
+@MainActor @Suite final class ActivityViewModelTests {
+    let fixture: ViewModelFixture
+
+    init() throws { fixture = try ViewModelFixture() }
+
+    deinit { fixture.remove() }
+
     @Test func activityRecoversAfterTheControlServiceReturns() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
         let connection = Connection.s3()
         try fixture.serve(connection)
@@ -27,8 +31,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func busyConnectionsWaitBeforeLoadingActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let connection = Connection.s3()
         try fixture.serve(connection)
         var busy = true
@@ -43,8 +45,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func activityRefreshesFourTimesASecondWhileFilesShow() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
         let connection = Connection.s3()
         try fixture.serve(connection)
@@ -58,8 +58,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledRefreshDoesNotReplaceTheNextDrivesActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
         let previous = Connection.s3(name: "Previous")
         let current = Connection.s3()
@@ -78,8 +76,6 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
-        let fixture = try ViewModelFixture()
-        defer { fixture.remove() }
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
         let task = Task { await viewModel.observe(Connection.s3()) }
         task.cancel()
