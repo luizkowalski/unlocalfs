@@ -31,13 +31,12 @@ struct SpeedChart: View {
     }
 
     private var selectedSample: SpeedSample? {
-        guard let selectedDate else { return nil }
-        return speeds.min { abs($0.date.timeIntervalSince(selectedDate)) < abs($1.date.timeIntervalSince(selectedDate)) }
+        selectedDate.flatMap(speeds.nearest)
     }
 
     private func chart(end: Date) -> some View {
         let start = end.addingTimeInterval(-AppViewModel.speedWindow)
-        let peak = max(speeds.map { max($0.upload, $0.download) }.max() ?? 0, 100_000) * 1.1
+        let peak = speeds.axisLimit
         return Chart {
             ForEach(speeds, id: \.date) { sample in
                 plot(sample.date, sample.upload, direction: .upload)
@@ -84,7 +83,7 @@ struct SpeedChart: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed in the last minute")
         .accessibilityValue(Text(
-            "Fastest upload \(byteCount(speeds.map(\.upload).max() ?? 0))/s, fastest download \(byteCount(speeds.map(\.download).max() ?? 0))/s"
+            "Fastest upload \(byteCount(speeds.fastestUpload))/s, fastest download \(byteCount(speeds.fastestDownload))/s"
         ))
     }
 
