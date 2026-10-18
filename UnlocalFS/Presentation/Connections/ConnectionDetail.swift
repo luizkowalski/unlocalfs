@@ -12,16 +12,7 @@ struct ConnectionDetail: View {
         let status = model.servingStatus(connection)
         VStack(alignment: .leading, spacing: 20) {
             header
-            if let problem = model.problem(connection) {
-                problemNotice(problem)
-            }
-            if let failure = model.uploadFailure(connection) {
-                uploadFailureNotice(failure.uploadError)
-            }
-            if model.isOffline(connection) {
-                Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
-                    .font(.callout).foregroundStyle(.secondary)
-            }
+            notices
             if status != nil {
                 ActivityView(connection: connection)
             } else if model.isDisconnected(connection) {
@@ -236,6 +227,26 @@ struct ConnectionDetail: View {
         }
     }
 
+    @ViewBuilder private var notices: some View {
+        let problem = model.problem(connection)
+        let failure = model.uploadFailure(connection)
+        let isOffline = model.isOffline(connection)
+        if problem != nil || failure != nil || isOffline {
+            FittedScrollView {
+                if let problem {
+                    problemNotice(problem)
+                }
+                if let failure {
+                    uploadFailureNotice(failure.uploadError)
+                }
+                if isOffline {
+                    Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
     private func problemNotice(_ problem: String) -> some View {
         notice("Connection needs attention") {
             Text(problem).textSelection(.enabled)
@@ -266,7 +277,7 @@ struct ConnectionDetail: View {
             Divider()
             Label(title, systemImage: "exclamationmark.triangle")
                 .font(.headline)
-            ScrollingMessage { message() }.font(.callout).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) { message() }.font(.callout).foregroundStyle(.secondary)
             actions()
             Divider()
         }
@@ -277,18 +288,18 @@ struct ConnectionDetail: View {
     }
 }
 
-private struct ScrollingMessage<Content: View>: View {
+private struct FittedScrollView<Content: View>: View {
     @ViewBuilder let content: Content
     @State private var height: CGFloat = 0
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) { content }
+            VStack(alignment: .leading, spacing: 20) { content }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(height: min(height, 100))
+        .frame(maxHeight: height)
     }
 }
 
