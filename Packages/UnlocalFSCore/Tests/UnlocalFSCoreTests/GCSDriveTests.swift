@@ -2,13 +2,15 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct GCSDriveTests {
     @Test func keyReachesRcloneAndExportsOnOneLineOnlyWithSecrets() async throws {
         let storedKey = try ServiceAccountKey(importing: Data(serviceAccountJSON.utf8)).json
-        var connection = gcsFixture()
-        connection.encrypted = true
-        connection.folder = #"clients/a"b,c #1;x"#
+        let connection = Connection.gcs {
+            $0.encrypted = true
+            $0.folder = #"clients/a"b,c #1;x"#
+        }
         try await withOfflineDrive(connection) { drive in
             let credentials = Credentials(encryptionPassword: "-correct horse ", serviceAccountKey: storedKey)
             let tested = await #expect(throws: (any Error).self) { try await drive.service.test(drive.connection, credentials: credentials) }

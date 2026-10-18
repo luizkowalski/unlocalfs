@@ -1,5 +1,6 @@
 import Foundation
 import UnlocalFSDomain
+import UnlocalFSTestSupport
 
 let s3Credentials = Credentials(accessKey: "test-key", secretKey: "test-secret")
 
@@ -21,8 +22,7 @@ func withS3Drive(encrypted: Bool = false, _ body: (Drive, _ bucket: URL) async t
         let bucket = resources.root.appending(path: "source/my-bucket")
         try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: true)
         let server = try await S3Server(executable: executable, resources: resources)
-        var connection = fixture(endpoint: server.endpoint)
-        connection.encrypted = encrypted
+        let connection = Connection.s3(endpoint: server.endpoint) { $0.encrypted = encrypted }
         let drive = await makeDrive(executable: executable, resources: resources, connection: connection)
         try await body(drive, bucket)
     }

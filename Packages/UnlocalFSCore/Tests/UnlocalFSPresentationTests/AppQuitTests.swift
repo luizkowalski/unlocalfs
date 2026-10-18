@@ -2,12 +2,13 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 @MainActor @Suite struct AppQuitTests {
     @Test func quitPromptBlocksDriveChangesUntilCancelled() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let connection = connectionFixture()
+        let connection = Connection.s3()
         try fixture.serve(connection, queued: 1)
         let app = fixture.app()
         await app.refresh()
@@ -26,10 +27,8 @@ import UnlocalFSDomain
     @Test func quitTriesEveryDriveAndReportsTheFirstFailure() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        var blocked = connectionFixture()
-        blocked.name = "A blocked drive"
-        var connected = connectionFixture()
-        connected.name = "B connected drive"
+        let blocked = Connection.s3(name: "A blocked drive")
+        let connected = Connection.s3(name: "B connected drive")
         try fixture.serve(blocked, queued: 1)
         let socket = fixture.paths.socket(connected)
         try fixture.serve(connected) { request in

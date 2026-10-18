@@ -2,6 +2,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 enum SFTPLogin: CaseIterable {
     case password, key, protectedKey, agent
@@ -58,10 +59,11 @@ struct SFTPFixture {
     }
 
     var connection: Connection {
-        var connection = sftpFixture()
-        connection.sftp.host = "127.0.0.1"
-        connection.sftp.port = port
-        connection.sftp.username = "test"
+        var connection = Connection.sftp {
+            $0.sftp.host = "127.0.0.1"
+            $0.sftp.port = port
+            $0.sftp.username = "test"
+        }
         switch login {
         case .password:
             connection.sftp.authentication = .password

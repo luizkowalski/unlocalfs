@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
+import UnlocalFSTestSupport
 
 private let emptyName = String(localized: .nameEmpty)
 private let badName = String(localized: .nameHasForbiddenCharacters)
@@ -19,55 +20,54 @@ private let badFolder = String(localized: .folderPathInvalid)
         (true, Credentials(accessKey: "a", secretKey: "b", encryptionPassword: "pw"), [ConnectionField]()),
     ])
     func credentialsAreValidatedPerField(encrypted: Bool, credentials: Credentials, fields: [ConnectionField]) {
-        var connection = fixture()
-        connection.encrypted = encrypted
+        let connection = Connection.s3 { $0.encrypted = encrypted }
         #expect(credentials.validate(for: connection).issues.map(\.field) == fields)
     }
 
     @Test(arguments: [
-        fixture(), fixture(endpoint: "http://127.0.0.1:19753"), fixture(folder: "clients/acme"),
-        fixture(endpoint: "https://s3.example.com/", folder: " clients/café "),
-        fixture(name: String(repeating: "a", count: 120)), fixture(name: String(repeating: "é", count: 60)), fixture(name: " My files "),
+        Connection.s3(), Connection.s3(endpoint: "http://127.0.0.1:19753"), Connection.s3(folder: "clients/acme"),
+        Connection.s3(endpoint: "https://s3.example.com/", folder: " clients/café "),
+        Connection.s3(name: String(repeating: "a", count: 120)), Connection.s3(name: String(repeating: "é", count: 60)), Connection.s3(name: " My files "),
     ])
     func validConnectionHasNoIssues(connection: Connection) {
         #expect(connection.validate().isValid)
     }
 
     @Test(arguments: [
-        (ConnectionField.name, fixture(name: ""), [emptyName]),
-        (.name, fixture(name: " "), [emptyName]),
-        (.name, fixture(name: " \t\n"), [emptyName, badName]),
-        (.name, fixture(name: "."), [badName]),
-        (.name, fixture(name: ".."), [badName]),
-        (.name, fixture(name: "a/b"), [badName]),
-        (.name, fixture(name: "a:b"), [badName]),
-        (.name, fixture(name: "bad\nname"), [badName]),
-        (.name, fixture(name: String(repeating: "a", count: 121)), [longName]),
-        (.name, fixture(name: String(repeating: "é", count: 61)), [longName]),
-        (.endpoint, fixture(endpoint: ""), [invalidURL, badEndpoint]),
-        (.endpoint, fixture(endpoint: "example.com"), [invalidURL, badEndpoint]),
-        (.endpoint, fixture(endpoint: "https:example.com"), [invalidURL, badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://["), [invalidURL, badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://"), [invalidURL, badEndpoint]),
-        (.endpoint, fixture(endpoint: "ftp://example.com"), [badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://example.com/bucket"), [badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://user:pass@example.com"), [badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://example.com?secret=value"), [badEndpoint]),
-        (.endpoint, fixture(endpoint: "https://example.com#fragment"), [badEndpoint]),
-        (.bucket, fixture(bucket: ""), [emptyBucket]),
-        (.bucket, fixture(bucket: " "), [emptyBucket, badBucket]),
-        (.bucket, fixture(bucket: "."), [badBucket]),
-        (.bucket, fixture(bucket: ".."), [badBucket]),
-        (.bucket, fixture(bucket: "a/b"), [badBucket]),
-        (.bucket, fixture(bucket: "a:b"), [badBucket]),
-        (.bucket, fixture(bucket: "bad bucket"), [badBucket]),
-        (.bucket, fixture(bucket: "bad\nbucket"), [badBucket]),
-        (.folder, fixture(folder: "/clients"), [badFolder]),
-        (.folder, fixture(folder: "clients/"), [badFolder]),
-        (.folder, fixture(folder: "clients//acme"), [badFolder]),
-        (.folder, fixture(folder: "clients/../other"), [badFolder]),
-        (.folder, fixture(folder: "./clients"), [badFolder]),
-        (.folder, fixture(folder: "bad\nfolder"), [badFolder]),
+        (ConnectionField.name, Connection.s3(name: ""), [emptyName]),
+        (.name, Connection.s3(name: " "), [emptyName]),
+        (.name, Connection.s3(name: " \t\n"), [emptyName, badName]),
+        (.name, Connection.s3(name: "."), [badName]),
+        (.name, Connection.s3(name: ".."), [badName]),
+        (.name, Connection.s3(name: "a/b"), [badName]),
+        (.name, Connection.s3(name: "a:b"), [badName]),
+        (.name, Connection.s3(name: "bad\nname"), [badName]),
+        (.name, Connection.s3(name: String(repeating: "a", count: 121)), [longName]),
+        (.name, Connection.s3(name: String(repeating: "é", count: 61)), [longName]),
+        (.endpoint, Connection.s3(endpoint: ""), [invalidURL, badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "example.com"), [invalidURL, badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https:example.com"), [invalidURL, badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://["), [invalidURL, badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://"), [invalidURL, badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "ftp://example.com"), [badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://example.com/bucket"), [badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://user:pass@example.com"), [badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://example.com?secret=value"), [badEndpoint]),
+        (.endpoint, Connection.s3(endpoint: "https://example.com#fragment"), [badEndpoint]),
+        (.bucket, Connection.s3(bucket: ""), [emptyBucket]),
+        (.bucket, Connection.s3(bucket: " "), [emptyBucket, badBucket]),
+        (.bucket, Connection.s3(bucket: "."), [badBucket]),
+        (.bucket, Connection.s3(bucket: ".."), [badBucket]),
+        (.bucket, Connection.s3(bucket: "a/b"), [badBucket]),
+        (.bucket, Connection.s3(bucket: "a:b"), [badBucket]),
+        (.bucket, Connection.s3(bucket: "bad bucket"), [badBucket]),
+        (.bucket, Connection.s3(bucket: "bad\nbucket"), [badBucket]),
+        (.folder, Connection.s3(folder: "/clients"), [badFolder]),
+        (.folder, Connection.s3(folder: "clients/"), [badFolder]),
+        (.folder, Connection.s3(folder: "clients//acme"), [badFolder]),
+        (.folder, Connection.s3(folder: "clients/../other"), [badFolder]),
+        (.folder, Connection.s3(folder: "./clients"), [badFolder]),
+        (.folder, Connection.s3(folder: "bad\nfolder"), [badFolder]),
     ])
     func invalidInputKeepsEveryMessageInOrder(field: ConnectionField, connection: Connection, messages: [String]) {
         let issues = connection.validate().issues
@@ -76,28 +76,17 @@ private let badFolder = String(localized: .folderPathInvalid)
     }
 
     @Test func paddedCredentialsAreValidAndConfirmationMatchesExactly() {
-        var connection = fixture()
-        connection.encrypted = true
+        let connection = Connection.s3 { $0.encrypted = true }
         let credentials = Credentials(accessKey: " key ", secretKey: " secret ", encryptionPassword: " password ")
         #expect(connection.validate(credentials: credentials, confirmation: " password ", against: []).isValid)
         #expect(connection.validate(credentials: credentials, confirmation: "password", against: []).issues.map(\.field) == [.confirmation])
     }
 }
 
-func fixture(name: String = "My files", endpoint: String = "https://s3.example.com", bucket: String = "my-bucket", folder: String = "") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.endpoint = endpoint
-    connection.bucket = bucket
-    connection.folder = folder
-    return connection
-}
-
 @Suite struct SFTPValidationTests {
     @Test(arguments: ["", "uploads", "/srv/files", "~/files", " spaced path /"])
     func validSFTPConnectionHasNoIssues(remotePath: String) {
-        var connection = sftpFixture()
-        connection.sftp.remotePath = remotePath
+        let connection = Connection.sftp { $0.sftp.remotePath = remotePath }
         #expect(connection.validate(credentials: Credentials(password: "secret"), confirmation: "", against: []).isValid)
     }
 
@@ -112,13 +101,12 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
         (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "id_ed25519" }),
     ])
     func invalidSFTPInputNamesTheField(field: ConnectionField, settings: SFTPSettings) {
-        var connection = sftpFixture()
-        connection.sftp = settings
+        let connection = Connection.sftp { $0.sftp = settings }
         #expect(connection.validate().issues.map(\.field) == [field])
     }
 
     @Test func passwordModeRequiresAPasswordButOtherModesDoNot() {
-        var connection = sftpFixture()
+        var connection = Connection.sftp()
         #expect(Credentials().validate(for: connection).issues.map(\.field) == [.password])
         connection.sftp.authentication = .privateKey
         connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
@@ -128,15 +116,15 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     }
 
     @Test func inactiveAuthenticationInputsAreIgnored() {
-        var connection = sftpFixture()
-        connection.sftp.authentication = .agent
-        connection.sftp.keyFile = "not a path"
+        let connection = Connection.sftp {
+            $0.sftp.authentication = .agent
+            $0.sftp.keyFile = "not a path"
+        }
         #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).isValid)
     }
 
     @Test func switchingBackToS3RestoresS3Validation() {
-        var connection = sftpFixture()
-        connection.provider = .other
+        let connection = Connection.sftp { $0.provider = .other }
         #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).issues.map(\.field) == [.endpoint, .endpoint, .bucket, .accessKey, .secretKey])
     }
 }
@@ -189,7 +177,7 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
     }
 
     @Test func connectionNeedsABucketAndAKeyButNoEndpoint() throws {
-        var connection = gcsFixture()
+        var connection = Connection.gcs()
         #expect(connection.validate().isValid)
         #expect(Credentials().validate(for: connection).issues.map(\.field) == [.serviceAccountKey])
         let key = try ServiceAccountKey(importing: Data(serviceAccountJSON.utf8))
@@ -200,34 +188,17 @@ func fixture(name: String = "My files", endpoint: String = "https://s3.example.c
 }
 
 private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {
-    var settings = sftpFixture().sftp
+    var settings = Connection.sftp().sftp
     change(&settings)
     return settings
 }
 
-func sftpFixture(name: String = "Server") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.provider = .sftp
-    connection.sftp.host = "files.example.com"
-    connection.sftp.username = "me"
-    return connection
-}
-
 private func awsFixture(kmsKeyID: String) -> Connection {
-    var connection = fixture()
-    connection.provider = .aws
-    connection.aws.serverSideEncryption = .kms
-    connection.aws.kmsKeyID = kmsKeyID
-    return connection
-}
-
-func gcsFixture(name: String = "Bucket") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.provider = .googleCloudStorage
-    connection.bucket = "my-bucket"
-    return connection
+    Connection.s3 {
+        $0.provider = .aws
+        $0.aws.serverSideEncryption = .kms
+        $0.aws.kmsKeyID = kmsKeyID
+    }
 }
 
 let serviceAccountJSON = """

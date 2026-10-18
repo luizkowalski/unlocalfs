@@ -102,8 +102,7 @@ struct ViewModelFixture {
     }
 
     func saveEncryptedConnection() throws -> Connection {
-        var connection = connectionFixture()
-        connection.encrypted = true
+        let connection = Connection.s3 { $0.encrypted = true }
         try repository.save(connection, credentials: Credentials(
             accessKey: "saved-access", secretKey: "saved-secret", sessionToken: "saved-token", encryptionPassword: "saved-password"))
         return connection
@@ -124,23 +123,6 @@ private final class ControlServers: Sendable {
     }
 
     func stop() { servers.withLock { $0.forEach { $0.stop() } } }
-}
-
-func sftpConnectionFixture() -> Connection {
-    var connection = Connection()
-    connection.name = "Server"
-    connection.provider = .sftp
-    connection.sftp.host = "files.example.com"
-    connection.sftp.username = "me"
-    return connection
-}
-
-func connectionFixture() -> Connection {
-    var connection = Connection()
-    connection.name = "My files"
-    connection.endpoint = "https://s3.example.com"
-    connection.bucket = "my-bucket"
-    return connection
 }
 
 final class MemoryCredentialStorage: CredentialStorage {

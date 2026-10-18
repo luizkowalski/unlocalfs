@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct WorkflowTests {
     @Test func saveRejectsANameAddedAfterTheEditorOpened() async throws {
@@ -26,7 +27,7 @@ import UnlocalFSInfrastructure
     @Test(arguments: redirections)
     func savedSFTPDriveCannotBeRedirected(change: Redirection) async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
-            let connection = sftpFixture()
+            let connection = Connection.sftp()
             let credentials = Credentials(password: "secret")
             try repository.save(connection, credentials: credentials)
             var edited = connection
@@ -45,8 +46,7 @@ import UnlocalFSInfrastructure
     @Test func savedS3DriveCannotBecomeSFTP() async throws {
         try await withWorkflowFixture { repository, drives, _, connection in
             try repository.save(connection, credentials: Credentials(accessKey: "key", secretKey: "secret"))
-            var edited = sftpFixture(name: connection.name)
-            edited.id = connection.id
+            let edited = Connection.sftp(name: connection.name) { $0.id = connection.id }
             await #expect(throws: AppError.self) {
                 _ = try await SaveConnectionUseCase(repository: repository, drives: drives)
                     .execute(edited, credentials: Credentials(password: "secret"))
@@ -57,8 +57,7 @@ import UnlocalFSInfrastructure
 
     @Test func savedEncryptedSFTPDriveKeepsItsEncryptionPassword() async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
-            var connection = sftpFixture()
-            connection.encrypted = true
+            let connection = Connection.sftp { $0.encrypted = true }
             try repository.save(connection, credentials: Credentials(encryptionPassword: "original", password: "secret"))
             await #expect(throws: AppError.self) {
                 _ = try await SaveConnectionUseCase(repository: repository, drives: drives)
@@ -70,7 +69,7 @@ import UnlocalFSInfrastructure
 
     @Test func savedSFTPDriveKeepsEditingHostPortAndUsername() async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
-            var connection = sftpFixture()
+            var connection = Connection.sftp()
             try repository.save(connection, credentials: Credentials(password: "secret"))
             connection.sftp.host = "other.example.com"
             connection.sftp.port = 2222
@@ -83,8 +82,7 @@ import UnlocalFSInfrastructure
 
     @Test func savedSFTPDriveKeepsEditingAuthentication() async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
-            var connection = sftpFixture()
-            connection.encrypted = true
+            var connection = Connection.sftp { $0.encrypted = true }
             try repository.save(connection, credentials: Credentials(encryptionPassword: "crypt", password: "secret"))
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
@@ -99,10 +97,11 @@ import UnlocalFSInfrastructure
     @Test(arguments: [SFTPAuthentication.password, .privateKey, .agent])
     func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication) async throws {
         try await withWorkflowFixture { repository, drives, _, _ in
-            var connection = sftpFixture()
-            connection.encrypted = true
-            connection.sftp.authentication = authentication
-            connection.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
+            let connection = Connection.sftp {
+                $0.encrypted = true
+                $0.sftp.authentication = authentication
+                $0.sftp.keyFile = "/Users/me/.ssh/id_ed25519"
+            }
             try repository.save(connection, credentials: Credentials(encryptionPassword: "crypt"))
             _ = try await SaveConnectionUseCase(repository: repository, drives: drives).execute(
                 connection, credentials: Credentials(
@@ -117,7 +116,7 @@ import UnlocalFSInfrastructure
 
     @Test func duplicatingASFTPDriveAllowsANewFolderUnderANewIdentity() async throws {
         try await withWorkflowFixture { repository, drives, paths, _ in
-            let original = sftpFixture()
+            let original = Connection.sftp()
             try repository.save(original, credentials: Credentials(password: "secret"))
             let cache = paths.cache(original).appending(path: "file.txt")
             try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -152,8 +151,8 @@ import UnlocalFSInfrastructure
             let key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILJkXRt3/O+0kRoTjuNk0ZipZ0gJOFlaqbU46bIXehpe\n"
             let other = "other.example.com " + key
             try Data(("files.example.com " + key + other).utf8).write(to: knownHosts)
-            let drive = sftpFixture()
-            let sibling = sftpFixture(name: "Sibling")
+            let drive = Connection.sftp()
+            let sibling = Connection.sftp(name: "Sibling")
             try repository.save(drive, credentials: Credentials(password: "secret"))
             try repository.save(sibling, credentials: Credentials(password: "secret"))
             let delete = DeleteConnectionUseCase(repository: repository, drives: drives)
@@ -178,7 +177,7 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test(arguments: [sftpFixture(), gcsFixture()])
+    @Test(arguments: [Connection.sftp(), Connection.gcs()])
     func sharingIsUnsupportedBeforeCredentialsAreLoaded(connection: Connection) async throws {
         try await withWorkflowFixture { _, drives, paths, _ in
             let repository = SavedConnectionRepository(
@@ -207,8 +206,8 @@ import UnlocalFSInfrastructure
     }
 
     @Test(arguments: [
-        (sftpFixture(), String(localized: .serverCopyUnavailable(sftpFixture().provider.title))),
-        (readOnlyFixture(), String(localized: .driveIsReadOnly)),
+        (Connection.sftp(), String(localized: .serverCopyUnavailable(Connection.sftp().provider.title))),
+        (Connection.s3(name: "Archive") { $0.readOnly = true }, String(localized: .driveIsReadOnly)),
     ])
     func duplicatingRefusesTheSelectionBeforeCopyingAnyFile(refused: Connection, message: String) async throws {
         try await withWorkflowFixture { repository, drives, paths, writable in
@@ -251,12 +250,6 @@ private let redirections: [Redirection] = [
     { $0.provider = .other },
 ]
 
-private func readOnlyFixture() -> Connection {
-    var connection = fixture(name: "Archive")
-    connection.readOnly = true
-    return connection
-}
-
 private func withWorkflowFixture(
     operation: (SavedConnectionRepository, MountService, AppPaths, Connection) async throws -> Void
 ) async throws {
@@ -270,5 +263,5 @@ private func withWorkflowFixture(
     """, to: executable)
     let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: MemoryCredentialStorage())
     let drives = MountService(executable: executable, helperDirectory: root, paths: paths)
-    try await operation(repository, drives, paths, fixture())
+    try await operation(repository, drives, paths, Connection.s3())
 }

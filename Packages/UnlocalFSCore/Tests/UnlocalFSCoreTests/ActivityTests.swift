@@ -114,7 +114,7 @@ private func fetchActivity(queue: String, stats: String = "{}", transferred: Str
     defer { try? FileManager.default.removeItem(at: root) }
     let paths = AppPaths(config: root, support: root, mounts: root, logs: root)
     try paths.prepare()
-    let connection = fixture()
+    let connection = Connection.s3()
     let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
     let server = try ControlServer(at: paths.socket(connection)) { _ in batch }
     defer { server.stop() }

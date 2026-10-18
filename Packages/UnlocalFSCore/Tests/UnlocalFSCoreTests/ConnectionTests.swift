@@ -2,13 +2,14 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 @Suite struct ConnectionTests {
     @Test func savedConnectionsSurviveReopenUpdateAndDelete() throws {
         let url = configURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         let store = ConnectionStore(url: url)
-        var connection = fixture()
+        var connection = Connection.s3()
         try store.save(connection)
         connection.region = "auto"
         connection.folder = "clients/acme"
@@ -89,8 +90,8 @@ import UnlocalFSInfrastructure
     }
 
     @Test(arguments: [
-        (fixture(), false, false, false), (fixture(), true, false, true), (fixture(), false, true, true),
-        (sftpFixture(), true, true, false), (gcsFixture(), true, true, false),
+        (Connection.s3(), false, false, false), (Connection.s3(), true, false, true), (Connection.s3(), false, true, true),
+        (Connection.sftp(), true, true, false), (Connection.gcs(), true, true, false),
     ])
     func s3DrivesUseUploadTimesWhenChosenOrReadOnly(connection: Connection, readOnly: Bool, prefersUploadTimes: Bool, expected: Bool) {
         var connection = connection
@@ -103,32 +104,6 @@ import UnlocalFSInfrastructure
         let credentials = try JSONDecoder().decode(Credentials.self, from: Data(#"{"accessKey":"a","secretKey":"b","sessionToken":""}"#.utf8))
         #expect(credentials == Credentials(accessKey: "a", secretKey: "b"))
     }
-}
-
-func fixture(name: String = "My files", endpoint: String = "https://s3.example.com", bucket: String = "my-bucket", folder: String = "") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.endpoint = endpoint
-    connection.bucket = bucket
-    connection.folder = folder
-    return connection
-}
-
-func sftpFixture(name: String = "Server") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.provider = .sftp
-    connection.sftp.host = "files.example.com"
-    connection.sftp.username = "me"
-    return connection
-}
-
-func gcsFixture(name: String = "Bucket") -> Connection {
-    var connection = Connection()
-    connection.name = name
-    connection.provider = .googleCloudStorage
-    connection.bucket = "my-bucket"
-    return connection
 }
 
 let serviceAccountJSON = """

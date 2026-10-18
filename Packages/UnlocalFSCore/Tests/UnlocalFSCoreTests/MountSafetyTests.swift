@@ -208,10 +208,11 @@ import UnlocalFSTestSupport
         esac
         """
         try await withFixture(script: script) { service, _ in
-            var connection = sftpFixture()
-            connection.encrypted = true
-            connection.sftp.authentication = .privateKey
-            connection.sftp.keyFile = key.path
+            let connection = Connection.sftp {
+                $0.encrypted = true
+                $0.sftp.authentication = .privateKey
+                $0.sftp.keyFile = key.path
+            }
             let credentials = Credentials(encryptionPassword: "private-password", password: "private-ssh", keyPassphrase: "private-phrase")
             await #expect {
                 try await service.test(connection, credentials: credentials)
@@ -230,7 +231,7 @@ import UnlocalFSTestSupport
             fixtureRoot = root
             return "if [ \"$1\" = 'lsf' ]; then touch '\(root.path)/ran'; fi\n"
         } operation: { service, _ in
-            var connection = sftpFixture()
+            var connection = Connection.sftp()
             let root = try #require(fixtureRoot)
             connection.sftp.authentication = .privateKey
             connection.sftp.keyFile = "/nonexistent/id"
@@ -276,7 +277,7 @@ import UnlocalFSTestSupport
             } throws: { error in
                 error.localizedDescription == String(localized: .folderEndsWithSpace)
             }
-            connection = sftpFixture()
+            connection = Connection.sftp()
             connection.encrypted = true
             connection.sftp.remotePath = "/srv/files "
             await #expect {
@@ -336,7 +337,7 @@ private func withFixture(
         logs: root.appendingPathComponent("logs")
     )
     try paths.prepare()
-    let connection = fixture()
+    let connection = Connection.s3()
     let socket = paths.socket(connection)
     let server = try control.map { try ControlServer(at: socket, respond: $0(root, socket)) }
     defer { server?.stop() }

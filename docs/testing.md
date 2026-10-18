@@ -40,5 +40,6 @@ A failed storage test keeps its folder in `/tmp/uf-*`, with the server and drive
 
 ## Fixture notes
 
+- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`.
 - Use ASCII file names with `rclone serve s3`. Accented names make the tests flaky.
 - A password-only SFTP server gets an empty `--authorized-keys`. rclone 1.75.1 loops when the authorized-keys file contains only a newline.

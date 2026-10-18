@@ -3,6 +3,7 @@ import Testing
 @testable import UnlocalFSDomain
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 @MainActor @Suite struct FinderServicesTests {
     @Test func failedSharesKeepTheClipboardAndExplainWhy() async throws {
@@ -33,7 +34,7 @@ import UnlocalFSInfrastructure
     @Test func refusedDuplicateNamesTheFileAndExplainsWhy() async throws {
         let fixture = try ViewModelFixture()
         defer { fixture.remove() }
-        let server = sftpConnectionFixture()
+        let server = Connection.sftp()
         try fixture.repository.save(server, credentials: Credentials(password: "secret"))
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
