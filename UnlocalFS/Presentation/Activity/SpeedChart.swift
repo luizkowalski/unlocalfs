@@ -23,7 +23,7 @@ struct SpeedChart: View {
                 rate(shown?.download ?? 0, direction: .download)
             }
             chart(end: end)
-                .frame(height: 140)
+                .frame(minHeight: 100, maxHeight: 180)
                 .padding(14)
                 .background(.fill.quinary, in: .rect(cornerRadius: 10))
                 .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
@@ -37,7 +37,7 @@ struct SpeedChart: View {
 
     private func chart(end: Date) -> some View {
         let start = end.addingTimeInterval(-AppViewModel.speedWindow)
-        let peak = max(speeds.map { max($0.upload, $0.download) }.max() ?? 0, 1_000_000) * 1.1
+        let peak = max(speeds.map { max($0.upload, $0.download) }.max() ?? 0, 100_000) * 1.1
         return Chart {
             ForEach(speeds, id: \.date) { sample in
                 plot(sample.date, sample.upload, direction: .upload)

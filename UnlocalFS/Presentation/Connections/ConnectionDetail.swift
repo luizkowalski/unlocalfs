@@ -5,32 +5,33 @@ import UnlocalFSPresentation
 
 struct ConnectionDetail: View {
     @Environment(AppViewModel.self) private var model
+    @AppStorage("showsDriveInfo") private var showsInfo = false
     let connection: Connection
 
     var body: some View {
         let status = model.servingStatus(connection)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                if let problem = model.problem(connection) {
-                    problemNotice(problem)
-                }
-                if let failure = model.uploadFailure(connection) {
-                    uploadFailureNotice(failure.uploadError)
-                }
-                if model.isOffline(connection) {
-                    Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-                if status != nil {
-                    ActivityView(connection: connection)
-                }
-                details
+        VStack(alignment: .leading, spacing: 20) {
+            header
+            if let problem = model.problem(connection) {
+                problemNotice(problem)
             }
-            .padding(28)
+            if let failure = model.uploadFailure(connection) {
+                uploadFailureNotice(failure.uploadError)
+            }
+            if model.isOffline(connection) {
+                Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            if status != nil {
+                ActivityView(connection: connection)
+            } else if model.isDisconnected(connection) {
+                disconnected
+            }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let status { cacheFooter(status) }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .inspector(isPresented: $showsInfo) {
+            info(status).inspectorColumnWidth(min: 220, ideal: 260, max: 360)
         }
         .toolbar { actions }
         .navigationTitle(connection.name)
@@ -74,6 +75,10 @@ struct ConnectionDetail: View {
             .menuIndicator(.hidden)
             .help("More")
         }
+        ToolbarItem {
+            Button(showsInfo ? "Hide Info" : "Show Info", systemImage: "sidebar.trailing") { showsInfo.toggle() }
+                .help(showsInfo ? "Hide Info" : "Show Info")
+        }
     }
 
     private var header: some View {
@@ -82,7 +87,7 @@ struct ConnectionDetail: View {
                 .frame(width: 34, height: 34)
                 .foregroundStyle(.tint)
                 .frame(width: 56, height: 56)
-                .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
+                .background(.fill.quaternary, in: .rect(cornerRadius: 12))
                 .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 3) {
                 Text(connection.name).font(.title2.weight(.semibold))
@@ -96,14 +101,21 @@ struct ConnectionDetail: View {
         }
     }
 
-    private func cacheFooter(_ status: MountStatus) -> some View {
-        Text("\(status.bytesCached, format: .size) cached on this Mac. When the cache is full, the oldest copies are cleared.")
-            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
-            .background(.bar)
-            .overlay(alignment: .top) { Divider() }
+    private var disconnected: some View {
+        ContentUnavailableView {
+            Label {
+                Text("\(connection.name) is disconnected")
+            } icon: {
+                logo.frame(width: 48, height: 48)
+            }
+        } description: {
+            Text("Connect to open it in Finder and see its transfers.")
+        } actions: {
+            Button("Connect") { Task { await model.toggle(connection, opensFinder: true) } }
+                .buttonStyle(.borderedProminent)
+                .disabled(!model.canConnect(connection))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder private var logo: some View {
@@ -114,24 +126,26 @@ struct ConnectionDetail: View {
         }
     }
 
-    private var details: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
+    private func info(_ status: MountStatus?) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                infoSection("Drive")
                 detail("Mount point") { Text(tildePath(model.mountLocation(connection))) }
                 Divider()
                 detail("Read-only") { connection.readOnly ? Text("On") : Text("Off") }
                 Divider()
-                detail("Cache limit") { Text(connection.cacheLimit, format: .size) }
+                if let status {
+                    detail("Cache") { cacheUse(status) }
+                } else {
+                    detail("Cache limit") { Text(connection.cacheLimit, format: .size) }
+                }
                 Divider()
                 detail("Keep free") {
                     connection.minimumFreeSpace > 0
                         ? Text(connection.minimumFreeSpace, format: .size)
                         : Text("Not set")
                 }
-            }
-            .padding(.horizontal, 14)
-            Divider()
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 0) {
+                infoSection("Storage")
                 switch connection.backend {
                 case .gcs:
                     bucketDetail
@@ -148,10 +162,24 @@ struct ConnectionDetail: View {
                 Divider()
                 detail("Encryption") { connection.encrypted ? Text("On") : Text("Off") }
             }
-            .padding(.horizontal, 14)
+            .padding(16)
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
+    }
+
+    private func infoSection(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.top, 12)
+            .padding(.bottom, 2)
+    }
+
+    private func cacheUse(_ status: MountStatus) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ProgressView(value: Double(min(status.bytesCached, connection.cacheLimit)), total: Double(connection.cacheLimit))
+            Text("\(status.bytesCached, format: .size) of \(connection.cacheLimit, format: .size)").monospacedDigit()
+        }
+        .help("When the cache is full, the oldest copies are cleared.")
     }
 
     private var storageName: String {
@@ -190,14 +218,15 @@ struct ConnectionDetail: View {
     }
 
     private func detail(_ label: LocalizedStringKey, @ViewBuilder value: () -> some View) -> some View {
-        GridRow {
-            Text(label).foregroundStyle(.secondary).frame(minHeight: 34)
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label).font(.caption).foregroundStyle(.secondary)
             value()
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
     }
 
     private func copyable(_ value: String) -> some View {
@@ -237,7 +266,7 @@ struct ConnectionDetail: View {
             Divider()
             Label(title, systemImage: "exclamationmark.triangle")
                 .font(.headline)
-            message().font(.callout).foregroundStyle(.secondary)
+            ScrollingMessage { message() }.font(.callout).foregroundStyle(.secondary)
             actions()
             Divider()
         }
@@ -245,6 +274,21 @@ struct ConnectionDetail: View {
 
     private func tildePath(_ url: URL) -> String {
         (url.path(percentEncoded: false) as NSString).abbreviatingWithTildeInPath
+    }
+}
+
+private struct ScrollingMessage<Content: View>: View {
+    @ViewBuilder let content: Content
+    @State private var height: CGFloat = 0
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) { content }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(height: min(height, 100))
     }
 }
 

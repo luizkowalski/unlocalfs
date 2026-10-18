@@ -169,9 +169,12 @@ import UnlocalFSInfrastructure
         try ConnectionStore(url: fixture.paths.config).save(idle)
         try fixture.serve(connected)
         let app = fixture.app()
+        #expect(!app.isDisconnected(idle))
 
         await app.refresh()
 
+        #expect(app.isDisconnected(idle))
+        #expect(!app.isDisconnected(connected))
         #expect(app.canConnect(idle))
         #expect(!app.canDisconnect(idle))
         #expect(!app.canConnect(connected))
@@ -194,10 +197,33 @@ import UnlocalFSInfrastructure
         let app = fixture.app()
 
         await app.refresh()
-        await app.refresh()
 
-        #expect(app.speeds[running.id]?.map { [$0.upload, $0.download] } == [[2000, 500], [2000, 500]])
+        #expect(app.speeds[running.id]?.map { [$0.upload, $0.download] } == [[2000, 500]])
         #expect(app.speeds[stopped.id] == nil)
+    }
+
+    @Test func speedHistoryKeepsTheNewestSampleOfEachSecondForOneMinute() {
+        let app = fixture.app()
+        let drive = UUID()
+        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+        func record(_ offset: TimeInterval, _ speed: Double) {
+            var status = MountStatus()
+            status.uploadSpeed = speed
+            app.recordSpeed(SpeedSample(status, at: start + offset), for: drive)
+        }
+
+        record(0, 1)
+        record(0.4, 2)
+        record(0.9, 3)
+        record(1.1, 4)
+        record(2, 5)
+        #expect(app.speeds[drive]?.map(\.upload) == [3, 4, 5])
+
+        record(61.5, 6)
+        #expect(app.speeds[drive]?.map(\.upload) == [5, 6])
+
+        record(10, 7)
+        #expect(app.speeds[drive]?.map(\.upload) == [5, 7])
     }
 
     @Test func driveThatNeedsReconnectCanNeitherConnectNorDisconnect() async throws {

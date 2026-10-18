@@ -30,10 +30,9 @@ struct ActivityTable<Empty: View>: View {
         }
         .tableStyle(.inset(alternatesRowBackgrounds: files.count > 1))
         .lineLimit(1)
-        .frame(height: files.isEmpty ? 84 : CGFloat(files.count) * 24 + 33)
-        .scrollDisabled(true)
+        .frame(minHeight: 120, maxHeight: .infinity)
         .overlay {
-            if files.isEmpty { empty.padding(.top, 28) }
+            if files.isEmpty { empty }
         }
         .clipShape(.rect(cornerRadius: 10))
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }

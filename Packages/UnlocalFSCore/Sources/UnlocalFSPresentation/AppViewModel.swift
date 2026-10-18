@@ -314,8 +314,10 @@ extension AppViewModel {
 
     func recordSpeed(_ sample: SpeedSample, for id: UUID) {
         var samples = speeds[id, default: []]
-        samples.removeAll { sample.date.timeIntervalSince($0.date) >= Self.speedWindow }
-        if samples.count > 1, sample.date.timeIntervalSince(samples[samples.count - 2].date) < 1 { samples.removeLast() }
+        samples.removeAll { !(0..<Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
+        if let last = samples.last, floor(last.date.timeIntervalSinceReferenceDate) == floor(sample.date.timeIntervalSinceReferenceDate) {
+            samples.removeLast()
+        }
         samples.append(sample)
         speeds[id] = samples
     }
@@ -337,10 +339,10 @@ private extension AppViewModel {
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }
-        if status.isRunning {
+        if !status.isRunning {
+            if speeds[connection.id] != nil { speeds[connection.id] = nil }
+        } else if !status.needsReconnect {
             recordSpeed(SpeedSample(status, at: .now), for: connection.id)
-        } else {
-            speeds[connection.id] = nil
         }
     }
 

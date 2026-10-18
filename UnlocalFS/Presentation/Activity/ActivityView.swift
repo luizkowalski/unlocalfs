@@ -46,12 +46,6 @@ struct ActivityView: View {
                     Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             }
-            if let summary, summary.hiddenFileCount > 0 {
-                Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-            }
         }
     }
 
