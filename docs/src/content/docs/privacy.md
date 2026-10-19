@@ -13,3 +13,5 @@ description: Where credentials and files are stored.
 Files you open are cached on your Mac in `~/Library/Application Support/UnlocalFS/cache`. Encryption protects files uploaded to your provider; the local cache contains the files your apps read and edit.
 
 Drive logs are stored in `~/Library/Logs/UnlocalFS`. Review log contents before sharing them.
+
+[Traffic](/traffic/) is stored in `~/Library/Application Support/UnlocalFS/traffic.sqlite`: each drive's name and the bytes it uploaded and downloaded each day. It holds no file names and never leaves your Mac.
