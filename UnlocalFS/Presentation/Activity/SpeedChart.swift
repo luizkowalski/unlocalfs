@@ -61,7 +61,7 @@ struct SpeedChart: View {
         .chartXSelection(value: $selectedDate)
         .chartXAxis {
             AxisMarks(values: stride(from: 0, through: AppViewModel.speedWindow, by: 15).map { start.addingTimeInterval($0) }) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 3])).foregroundStyle(.quaternary)
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
                 if value.index == 0 {
                     AxisValueLabel("1 min ago", anchor: .topLeading)
                 } else if value.index == value.count - 1 {
@@ -75,7 +75,7 @@ struct SpeedChart: View {
                 if speed == 0 {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(.tertiary)
                 } else {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [2, 3])).foregroundStyle(.quaternary)
+                    AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
                     AxisValueLabel { speedText(abs(speed)) }
                 }
             }
