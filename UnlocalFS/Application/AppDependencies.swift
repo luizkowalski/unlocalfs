@@ -31,7 +31,8 @@ import UnlocalFSPresentation
             quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths)
         )
         return AppDependencies(model: model, viewModels: ViewModelFactory(
-            app: model, repository: repository, drives: drives, saveConnection: SaveConnectionUseCase(repository: repository, drives: drives)
+            app: model, repository: repository, drives: drives, saveConnection: SaveConnectionUseCase(repository: repository, drives: drives),
+            traffic: traffic
         ))
     }
 }
