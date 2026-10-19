@@ -38,7 +38,7 @@ import UnlocalFSTestSupport
         let connection = try #require(try ConnectionStore(url: url).all().first)
         #expect(connection.cacheLimit == 1_000_000_000)
         #expect(connection.minimumFreeSpace == 0)
-        #expect(!connection.readOnly)
+        #expect(connection.readAndWrite())
         #expect(!connection.prefersUploadTimes)
         #expect(!connection.connectsAutomatically)
         #expect(!connection.encrypted)
