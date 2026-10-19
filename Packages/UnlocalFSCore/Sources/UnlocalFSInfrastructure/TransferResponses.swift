@@ -18,15 +18,22 @@ struct UploadQueue: Decodable {
 struct TransferStats: Decodable {
     let transferring: [Transfer]?
     let lastError: String?
+    let bytes: Int64
+    let serverSideCopyBytes: Int64
+    let serverSideMoveBytes: Int64
+
+    var networkBytes: Int64 { bytes - serverSideCopyBytes - serverSideMoveBytes }
 
     struct Transfer: Decodable {
         let name: String
         let size: Int64
         let bytes: Int64?
         let speedAvg: Double?
+        let srcFs: String?
         let dstFs: String?
 
         var isUpload: Bool { dstFs != nil }
+        var isServerSide: Bool { srcFs == dstFs }
     }
 }
 
@@ -39,11 +46,12 @@ struct FinishedTransfer: Decodable {
     let size: Int64
     let bytes: Int64
     let error: String
+    let srcFs: String?
     let dstFs: String?
     let completedAt: Date
 
     private enum CodingKeys: String, CodingKey {
-        case name, size, bytes, error, dstFs
+        case name, size, bytes, error, srcFs, dstFs
         case completedAt = "completed_at"
     }
 
@@ -53,11 +61,13 @@ struct FinishedTransfer: Decodable {
         size = try container.decode(Int64.self, forKey: .size)
         bytes = try container.decode(Int64.self, forKey: .bytes)
         error = try container.decode(String.self, forKey: .error)
+        srcFs = try container.decodeIfPresent(String.self, forKey: .srcFs)
         dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
         completedAt = try rcloneDate(container.decode(String.self, forKey: .completedAt))
     }
 
     var isUpload: Bool { dstFs != nil }
+    var isServerSide: Bool { srcFs == dstFs }
 }
 
 struct VFSStats: Decodable {
@@ -71,13 +81,17 @@ struct VFSStats: Decodable {
 }
 
 struct ControlSnapshot: Decodable {
-    static let statusRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats","group":"global_stats"}]}"#
+    static let statusRequest = #"""
+    {"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats","group":"global_stats"},
+    {"_path":"core/transferred","group":"global_stats"}]}
+    """#
     static let activityRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"},{"_path":"core/transferred"}]}"#
 
     let cache: VFSStats.DiskCache
     let queue: [UploadQueue.Item]
     let transfers: [TransferStats.Transfer]
     let lastError: String?
+    let networkBytes: Int64
     let finished: [FinishedTransfer]
 
     private enum CodingKeys: CodingKey { case results }
@@ -89,6 +103,7 @@ struct ControlSnapshot: Decodable {
         let stats = try results.decode(BatchResult<TransferStats>.self).value
         transfers = stats.transferring ?? []
         lastError = stats.lastError
+        networkBytes = stats.networkBytes
         finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred.sorted { $0.completedAt < $1.completedAt }
     }
 }

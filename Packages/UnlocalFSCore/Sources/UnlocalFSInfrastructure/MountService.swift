@@ -5,7 +5,7 @@ import UnlocalFSDomain
 public actor MountService: DriveGateway {
     private static let timeout = "5s"
     private static let lowLevelTimeout = "10s"
-    private static let ejectRetryTime: Duration = .seconds(10)
+    static let ejectRetryTime: Duration = .seconds(10)
 
     let executable: URL
     private let helperDirectory: URL
@@ -15,14 +15,18 @@ public actor MountService: DriveGateway {
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
     var reservedCopies: [UUID: Set<String>] = [:]
+    let traffic: TrafficStore
+    var meters: [UUID: TrafficMeter] = [:]
+    var uploadTallies: [UUID: UploadTally] = [:]
 
     public init(
-        executable: URL, helperDirectory: URL, paths: AppPaths,
+        executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) {
         self.executable = executable
         self.helperDirectory = helperDirectory
         self.paths = paths
+        self.traffic = traffic
         serverTrust = SFTPTrustStore(paths: paths)
         hostEnvironment = environment
     }
@@ -145,6 +149,7 @@ public actor MountService: DriveGateway {
             let files = activeFiles(snapshot)
             status.uploadSpeed = files.bytesPerSecond(.uploading)
             status.downloadSpeed = files.bytesPerSecond(.downloading)
+            status.unsavedTraffic = recordTraffic(snapshot, for: connection)
         } catch {
             if status.isMounted || running != false {
                 status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))
@@ -200,6 +205,7 @@ public actor MountService: DriveGateway {
         }
         try current.requireSafeDisconnect()
         try await requireNoCopies(connection, status: current)
+        saveTraffic(connection)
         if current.isMounted { try await eject(connection, force: !current.isRunning) }
         if current.needsReconnect {
             try await stop(connection)
@@ -214,6 +220,8 @@ public actor MountService: DriveGateway {
             }
         }
         processes[connection.id] = nil
+        meters[connection.id] = nil
+        uploadTallies[connection.id] = nil
         let pidFile = paths.pidFile(connection)
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
@@ -236,7 +244,7 @@ public actor MountService: DriveGateway {
         try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
     }
 
-    private func isRunning(_ connection: Connection) -> Bool? {
+    func isRunning(_ connection: Connection) -> Bool? {
         guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8),
               let pid = pid_t(saved), pid > 0 else {
             return processes[connection.id]?.isRunning
@@ -346,54 +354,5 @@ extension MountService {
             throw AppError(String(localized: .couldNotCreateLink))
         }
         return link
-    }
-}
-
-private extension MountService {
-    func eject(_ connection: Connection, force: Bool) async throws {
-        let (executable, flags) = force ? ("/sbin/umount", ["-f"]) : ("/usr/sbin/diskutil", ["unmount"])
-        let arguments = flags + [paths.mount(connection).path]
-        let deadline = ContinuousClock.now.advanced(by: Self.ejectRetryTime)
-        while true {
-            do {
-                _ = try await Command.run(URL(filePath: executable), arguments, timeout: .seconds(60))
-                break
-            } catch where ContinuousClock.now < deadline {
-                try await Task.sleep(for: .seconds(1))
-            } catch {
-                throw DriveEjectError()
-            }
-        }
-        for _ in 0..<20 {
-            if !isMounted(paths.mount(connection)) { return }
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        throw DriveEjectError()
-    }
-
-    func stop(_ connection: Connection) async throws {
-        var quitError: any Error = AppError(String(localized: .driveStillStopping))
-        do {
-            _ = try await control(connection, "core/quit")
-        } catch {
-            quitError = error
-        }
-        try await waitForStop(connection, error: quitError)
-    }
-
-    func waitForStop(_ connection: Connection, error: any Error) async throws {
-        for _ in 0..<20 {
-            let running = isRunning(connection)
-            let socket = paths.socket(connection)
-            if running != true, !isMounted(paths.mount(connection)) {
-                if !FileManager.default.fileExists(atPath: socket.path) { return }
-                if running == false {
-                    try FileManager.default.removeItem(at: socket)
-                    return
-                }
-            }
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        throw error
     }
 }

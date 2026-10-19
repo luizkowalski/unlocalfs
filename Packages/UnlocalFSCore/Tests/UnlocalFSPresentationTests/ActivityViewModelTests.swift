@@ -99,7 +99,7 @@ import UnlocalFSTestSupport
     }
 
     private func transferring(speed: Int) throws {
-        try Data(#"{"transferring":[{"name":"c.mov","size":1000,"bytes":100,"speedAvg":\#(speed),"srcFs":":s3:bucket"}]}"#.utf8)
+        try Data(#"{\#(rcloneCounters),"transferring":[{"name":"c.mov","size":1000,"bytes":100,"speedAvg":\#(speed),"srcFs":":s3:bucket"}]}"#.utf8)
             .write(to: fixture.root.appending(path: "stats.json"))
     }
 }

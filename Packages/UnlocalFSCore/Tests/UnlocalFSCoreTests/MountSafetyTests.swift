@@ -51,7 +51,7 @@ import UnlocalFSTestSupport
         let item = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#
         let batch = statusBatch(
             cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
-            queue: #"{"queue":[\#(item)]}"#, stats: #"{"lastError":"AccessDenied: Access Denied"}"#
+            queue: #"{"queue":[\#(item)]}"#, stats: #"{\#(rcloneCounters),"lastError":"AccessDenied: Access Denied"}"#
         )
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
@@ -338,6 +338,6 @@ private func withFixture(
     try await operation(drives.service, connection)
 }
 
-func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = "{}", transferred: String? = nil) -> String {
+func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = #"{\#(rcloneCounters)}"#, transferred: String? = nil) -> String {
     #"{"results":[{"diskCache":{\#(cache)}},\#(queue),\#(stats)\#(transferred.map { ",\($0)" } ?? "")]}"#
 }

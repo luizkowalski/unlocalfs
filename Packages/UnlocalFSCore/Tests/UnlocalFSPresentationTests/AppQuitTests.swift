@@ -39,7 +39,7 @@ import UnlocalFSTestSupport
                 try FileManager.default.removeItem(at: socket)
                 return "{}"
             }
-            return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{}]}"#
+            return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
         }
         let app = fixture.app()
         await app.refresh()

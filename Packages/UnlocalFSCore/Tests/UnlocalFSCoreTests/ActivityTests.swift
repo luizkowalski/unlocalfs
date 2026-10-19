@@ -56,7 +56,7 @@ import UnlocalFSTestSupport
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":-2,"tries":1,"delay":5,"uploading":true}]}
         """, stats: """
-        {"transferring":[
+        {\(rcloneCounters),"transferring":[
             {"name":"video.mov","size":1000,"bytes":100,"srcFs":":s3:bucket"},
             {"name":"video.mov","size":1000,"bytes":600,"speedAvg":250000.5,"srcFs":"/cache","dstFs":":s3:bucket"}
         ]}
@@ -75,14 +75,14 @@ import UnlocalFSTestSupport
         let activity = try await fetchActivity(queue: """
         {"queue":[{"name":"video.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}]}
         """, stats: """
-        {"transferring":[{"name":"video.mov","size":1000,"bytes":600,"speedAvg":250000,"srcFs":"/cache","dstFs":":s3:bucket"}]}
+        {\(rcloneCounters),"transferring":[{"name":"video.mov","size":1000,"bytes":600,"speedAvg":250000,"srcFs":"/cache","dstFs":":s3:bucket"}]}
         """)
         #expect(activity.map(\.bytesPerSecond) == [nil])
     }
 
     @Test func downloadsReportTheirSpeed() async throws {
         let activity = try await fetchActivity(queue: #"{"queue":[]}"#, stats: """
-        {"transferring":[{"name":"movie.mkv","size":5000,"bytes":100,"speedAvg":4096,"srcFs":":s3:bucket"}]}
+        {\(rcloneCounters),"transferring":[{"name":"movie.mkv","size":5000,"bytes":100,"speedAvg":4096,"srcFs":":s3:bucket"}]}
         """)
         #expect(activity.map(\.bytesPerSecond) == [4096])
     }
@@ -109,7 +109,7 @@ import UnlocalFSTestSupport
     }
 }
 
-private func fetchActivity(queue: String, stats: String = "{}", transferred: String? = nil) async throws -> [FileActivity] {
+private func fetchActivity(queue: String, stats: String = #"{\#(rcloneCounters)}"#, transferred: String? = nil) async throws -> [FileActivity] {
     let drives = try StubbedDrives("activity")
     defer { drives.remove() }
     let connection = Connection.s3()

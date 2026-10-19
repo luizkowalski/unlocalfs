@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
+import UnlocalFSTestSupport
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 
@@ -188,7 +189,7 @@ import UnlocalFSInfrastructure
         try fixture.serve(running)
         try fixture.queue(#"{"name":"a.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         try Data("""
-        {"transferring":[
+        {\(rcloneCounters),"transferring":[
             {"name":"a.mov","size":1000,"bytes":100,"speedAvg":3000,"srcFs":"/cache","dstFs":":s3:bucket"},
             {"name":"b.mov","size":1000,"bytes":100,"speedAvg":2000,"srcFs":"/cache","dstFs":":s3:bucket"},
             {"name":"c.mov","size":1000,"bytes":100,"speedAvg":500,"srcFs":":s3:bucket"}

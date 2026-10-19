@@ -47,7 +47,7 @@ struct ViewModelFixture {
         }
         repository = SavedConnectionRepository(store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage())
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
-        try Data("{}".utf8).write(to: root.appending(path: "stats.json"))
+        try Data(#"{\#(rcloneCounters)}"#.utf8).write(to: root.appending(path: "stats.json"))
         try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
     }
 
@@ -84,7 +84,7 @@ struct ViewModelFixture {
         if failed > 0 { try queue(contentsOf: (0..<failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
         let transfers = downloading ? #"[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]"# : "[]"
         let error = lastError.map { #","lastError":"\#($0)""# } ?? ""
-        try Data(#"{"transferring":\#(transfers)\#(error)}"#.utf8).write(to: root.appending(path: "stats.json"))
+        try Data(#"{\#(rcloneCounters),"transferring":\#(transfers)\#(error)}"#.utf8).write(to: root.appending(path: "stats.json"))
     }
 
     func serve(_ connection: Connection, respond: @escaping ControlServer.Respond) throws {

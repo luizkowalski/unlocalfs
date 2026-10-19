@@ -10,7 +10,7 @@ import UnlocalFSDomain
 
     @Test func savesOnTheSameDayAddUpAndRangesSumPerDrive() throws {
         defer { try? FileManager.default.removeItem(at: file) }
-        let store = try TrafficStore(url: file)
+        let store = TrafficStore(url: file)
         let other = Connection.sftp { $0.name = "Server" }
         try store.save(save("2026-10-18", upload: 1, download: 2), for: drive)
         try store.save(save("2026-10-19", upload: 10, download: 20), for: drive)
@@ -27,7 +27,7 @@ import UnlocalFSDomain
 
     @Test func driveKeepsItsLatestNameAndShowsOnlyInRangesWithTraffic() throws {
         defer { try? FileManager.default.removeItem(at: file) }
-        let store = try TrafficStore(url: file)
+        let store = TrafficStore(url: file)
         try store.save(save("2026-10-18", upload: 1, download: 0), for: drive)
         var renamed = drive
         renamed.name = "Holiday Photos"

@@ -3,15 +3,19 @@ import GRDB
 import UnlocalFSDomain
 
 public final class TrafficStore: TrafficRepository {
-    private let database: DatabaseQueue
+    private let database: Result<DatabaseQueue, any Error>
 
-    public init(url: URL) throws {
-        database = try DatabaseQueue(path: url.path)
-        try Self.migrator.migrate(database)
+    public init(url: URL) {
+        database = Result {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let database = try DatabaseQueue(path: url.path)
+            try Self.migrator.migrate(database)
+            return database
+        }
     }
 
     public func traffic(from first: TrafficDay, through last: TrafficDay) throws -> [DriveTraffic] {
-        try database.read { sqlite in
+        try database.get().read { sqlite in
             try Row.fetchAll(sqlite, sql: """
                 SELECT unlocal.id, unlocal.name, unlocal.provider, SUM(traffic.upload) AS upload, SUM(traffic.download) AS download
                 FROM traffic JOIN unlocal ON unlocal.id = traffic.unlocal_id
@@ -28,7 +32,7 @@ public final class TrafficStore: TrafficRepository {
     }
 
     func checkpoint(for id: UUID) throws -> TrafficCheckpoint? {
-        try database.read { sqlite in
+        try database.get().read { sqlite in
             guard let row = try Row.fetchOne(sqlite, sql: "SELECT * FROM unlocal WHERE id = ?", arguments: [id]) else { return nil }
             return TrafficCheckpoint(
                 process: RcloneProcess(pid: row["pid"], startedAt: Date(timeIntervalSinceReferenceDate: row["process_started_at"])),
@@ -39,7 +43,7 @@ public final class TrafficStore: TrafficRepository {
 
     func save(_ save: TrafficSave, for connection: Connection) throws {
         let checkpoint = save.checkpoint
-        try database.write { sqlite in
+        try database.get().write { sqlite in
             try sqlite.execute(sql: """
                 INSERT INTO unlocal (id, name, provider, pid, process_started_at, network, uploaded, saved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (id) DO UPDATE SET

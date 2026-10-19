@@ -101,3 +101,5 @@ public final class ControlServer: Sendable {
         }
     }
 }
+
+public let rcloneCounters = #""bytes":0,"serverSideCopyBytes":0,"serverSideMoveBytes":0"#
