@@ -1,7 +1,7 @@
 import Foundation
 import UnlocalFSDomain
 
-public enum TrafficPeriod: Hashable, CaseIterable, Sendable {
+public enum TrafficPeriod: Hashable, Sendable {
     case today, week, month, year, custom
 
     public func days(now: Date, custom: ClosedRange<Date>, calendar: Calendar) -> ClosedRange<TrafficDay> {

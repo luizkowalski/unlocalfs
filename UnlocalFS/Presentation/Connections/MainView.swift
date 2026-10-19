@@ -93,15 +93,8 @@ private struct ConnectionRow: View {
     let connection: Connection
 
     private var icon: some View {
-        Group {
-            if connection.provider == .other {
-                connection.provider.logo.font(.system(size: 18))
-            } else {
-                connection.provider.logo.renderingMode(.template).resizable().scaledToFit()
-            }
-        }
-        .frame(width: 20, height: 20)
-        .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
+        ProviderIcon(provider: connection.provider, size: 20)
+            .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
     }
 
     var body: some View {

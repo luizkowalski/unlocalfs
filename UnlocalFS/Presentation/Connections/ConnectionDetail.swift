@@ -329,7 +329,3 @@ private struct CopyButton: View {
         }
     }
 }
-
-private extension FormatStyle where Self == ByteCountFormatStyle {
-    static var size: Self { .byteCount(style: .file, spellsOutZero: false) }
-}

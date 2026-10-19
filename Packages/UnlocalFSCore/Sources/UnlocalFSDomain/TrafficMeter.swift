@@ -51,7 +51,7 @@ public struct TrafficSave: Equatable, Sendable {
 }
 
 public struct TrafficMeter: Sendable {
-    public static let saveInterval: TimeInterval = 3_600
+    private static let saveInterval: TimeInterval = 3_600
 
     public private(set) var checkpoint: TrafficCheckpoint?
     private var latest: TrafficReading?
@@ -77,17 +77,19 @@ public struct TrafficMeter: Sendable {
     }
 
     public mutating func save(calendar: Calendar) -> TrafficSave? {
-        guard let latest, traffic(to: latest) != Traffic() || checkpoint?.process != latest.process else { return nil }
+        guard let latest else { return nil }
         return save(through: latest, calendar: calendar)
     }
 
-    private mutating func save(through reading: TrafficReading, calendar: Calendar) -> TrafficSave {
+    private mutating func save(through reading: TrafficReading, calendar: Calendar) -> TrafficSave? {
+        lastSave = reading.date
+        let traffic = traffic(to: reading)
+        guard traffic != Traffic() else { return nil }
         let save = TrafficSave(
-            day: TrafficDay(reading.date, calendar: calendar), traffic: traffic(to: reading),
+            day: TrafficDay(reading.date, calendar: calendar), traffic: traffic,
             checkpoint: TrafficCheckpoint(process: reading.process, network: reading.network, uploaded: reading.uploaded, savedAt: reading.date)
         )
         checkpoint = save.checkpoint
-        lastSave = reading.date
         return save
     }
 

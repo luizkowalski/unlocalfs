@@ -41,7 +41,7 @@ struct FinishedTransfers: Decodable {
     let transferred: [FinishedTransfer]
 }
 
-struct FinishedTransfer: Decodable {
+struct FinishedTransfer: Decodable, Hashable {
     let name: String
     let size: Int64
     let bytes: Int64

@@ -16,8 +16,7 @@ public actor MountService: DriveGateway {
     private var starting: Set<UUID> = []
     var reservedCopies: [UUID: Set<String>] = [:]
     let traffic: TrafficStore
-    var meters: [UUID: TrafficMeter] = [:]
-    var uploadTallies: [UUID: UploadTally] = [:]
+    var trackers: [UUID: TrafficTracker] = [:]
 
     public init(
         executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore,
@@ -220,8 +219,7 @@ public actor MountService: DriveGateway {
             }
         }
         processes[connection.id] = nil
-        meters[connection.id] = nil
-        uploadTallies[connection.id] = nil
+        trackers[connection.id] = nil
         let pidFile = paths.pidFile(connection)
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
@@ -245,10 +243,7 @@ public actor MountService: DriveGateway {
     }
 
     func isRunning(_ connection: Connection) -> Bool? {
-        guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8),
-              let pid = pid_t(saved), pid > 0 else {
-            return processes[connection.id]?.isRunning
-        }
+        guard let pid = savedPID(connection) else { return processes[connection.id]?.isRunning }
         if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning }
         return kill(pid, 0) == 0 || errno != ESRCH
     }

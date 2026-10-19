@@ -78,6 +78,13 @@ import UnlocalFSDomain
         #expect(meter.read(reading(network: 4_000, uploaded: 1_000, at: noon + 3_700), calendar: utc) == nil)
     }
 
+    @Test func idleHourWritesNothing() {
+        let saved = checkpoint(network: 1_000, uploaded: 0, savedAt: noon)
+        var meter = TrafficMeter(checkpoint: saved)
+        #expect(meter.read(reading(network: 1_000, uploaded: 0, at: noon + 3_600), calendar: utc) == nil)
+        #expect(meter.checkpoint == saved)
+    }
+
     @Test func firstReadingStartsTheHourWhenNothingWasSaved() {
         var meter = TrafficMeter(checkpoint: nil)
         #expect(meter.read(reading(network: 1_000, uploaded: 0, at: noon), calendar: utc) == nil)

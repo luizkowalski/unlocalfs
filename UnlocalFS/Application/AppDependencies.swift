@@ -10,17 +10,17 @@ import UnlocalFSPresentation
     static func live() -> AppDependencies {
         let paths = AppPaths.standard
         let contents = Bundle.main.bundleURL.appending(path: "Contents")
+        let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: Keychain())
+        let initialConnections = Result {
+            try paths.prepare()
+            return try repository.all()
+        }
         let traffic = TrafficStore(url: paths.traffic)
         let drives = MountService(
             executable: contents.appending(path: "Helpers/rclone"),
             helperDirectory: contents.appending(path: "Resources/libexec"),
             paths: paths, traffic: traffic
         )
-        let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: Keychain())
-        let initialConnections = Result {
-            try paths.prepare()
-            return try repository.all()
-        }
         let model = AppViewModel(
             initialConnections: initialConnections, drives: drives,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),

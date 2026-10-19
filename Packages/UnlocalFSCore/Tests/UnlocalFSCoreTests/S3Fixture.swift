@@ -23,7 +23,7 @@ func withS3Drive(encrypted: Bool = false, _ body: (Drive, _ bucket: URL) async t
         try FileManager.default.createDirectory(at: bucket, withIntermediateDirectories: true)
         let server = try await S3Server(executable: executable, resources: resources)
         let connection = Connection.s3(endpoint: server.endpoint) { $0.encrypted = encrypted }
-        let drive = await makeDrive(executable: executable, resources: resources, connection: connection)
+        let drive = try await makeDrive(executable: executable, resources: resources, connection: connection)
         try await body(drive, bucket)
     }
 }

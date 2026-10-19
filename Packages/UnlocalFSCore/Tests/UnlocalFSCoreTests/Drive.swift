@@ -70,12 +70,13 @@ struct Drive: Sendable {
     }
 }
 
-func makeDrive(executable: URL, resources: FixtureResources, connection: Connection) async -> Drive {
+func makeDrive(executable: URL, resources: FixtureResources, connection: Connection) async throws -> Drive {
     let root = resources.root
     let paths = AppPaths(
         config: root.appending(path: "config.json"), support: root.appending(path: "app"),
         mounts: root.appending(path: "drives"), logs: root.appending(path: "logs")
     )
+    try paths.prepare()
     let traffic = TrafficStore(url: paths.traffic)
     let drive = Drive(
         executable: executable, paths: paths,

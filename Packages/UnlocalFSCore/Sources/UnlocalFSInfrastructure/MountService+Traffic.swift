@@ -2,27 +2,37 @@ import Darwin
 import Foundation
 import UnlocalFSDomain
 
+struct TrafficTracker {
+    var meter: TrafficMeter
+    var uploads: UploadTally
+
+    init(meter: TrafficMeter, process: RcloneProcess) {
+        self.meter = meter
+        uploads = UploadTally(process: process, checkpoint: meter.checkpoint)
+    }
+}
+
 struct UploadTally {
     let process: RcloneProcess
     private var finished: Int64
     private var uploaded: Int64
-    private var since: Date?
-    private var counted: Set<String> = []
+    private let since: Date
+    private var counted: Set<FinishedTransfer> = []
 
     init(process: RcloneProcess, checkpoint: TrafficCheckpoint?) {
         self.process = process
         let resumed = checkpoint?.process == process ? checkpoint : nil
         finished = resumed?.uploaded ?? 0
         uploaded = finished
-        since = resumed?.savedAt
+        since = resumed?.savedAt ?? .distantPast
     }
 
     mutating func read(_ snapshot: ControlSnapshot) -> Int64 {
         let finishedUploads = snapshot.finished.filter { $0.isUpload && !$0.isServerSide }
-        for transfer in finishedUploads where !counted.contains(transfer.key) && since.map({ transfer.completedAt > $0 }) ?? true {
+        for transfer in finishedUploads where !counted.contains(transfer) && transfer.completedAt > since {
             finished += transfer.bytes
         }
-        counted = Set(finishedUploads.map(\.key))
+        counted = Set(finishedUploads)
         let inFlight = snapshot.transfers.filter { $0.isUpload && !$0.isServerSide }.reduce(0) { $0 + ($1.bytes ?? 0) }
         uploaded = max(uploaded, finished + inFlight)
         return uploaded
@@ -39,30 +49,32 @@ extension MountService {
         return RcloneProcess(pid: pid, startedAt: Date(timeIntervalSince1970: Double(start.tv_sec) + Double(start.tv_usec) / 1_000_000))
     }
 
+    func savedPID(_ connection: Connection) -> pid_t? {
+        guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8), let pid = pid_t(saved), pid > 0 else { return nil }
+        return pid
+    }
+
     func recordTraffic(_ snapshot: ControlSnapshot, for connection: Connection) -> Traffic {
-        guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8),
-              let pid = pid_t(saved), let process = Self.process(pid: pid) else { return Traffic() }
+        guard let pid = savedPID(connection), let process = Self.process(pid: pid) else { return Traffic() }
         do {
-            var meter = try meters[connection.id] ?? TrafficMeter(checkpoint: traffic.checkpoint(for: connection.id))
-            var tally = uploadTallies[connection.id].flatMap { $0.process == process ? $0 : nil }
-                ?? UploadTally(process: process, checkpoint: meter.checkpoint)
-            let reading = TrafficReading(process: process, network: snapshot.networkBytes, uploaded: tally.read(snapshot), date: .now)
-            if let save = meter.read(reading, calendar: .current) { try traffic.save(save, for: connection) }
-            meters[connection.id] = meter
-            uploadTallies[connection.id] = tally
-            return meter.unsaved
+            var tracker = try trackers[connection.id] ?? TrafficTracker(meter: TrafficMeter(checkpoint: traffic.checkpoint(for: connection.id)), process: process)
+            if tracker.uploads.process != process { tracker = TrafficTracker(meter: tracker.meter, process: process) }
+            let reading = TrafficReading(process: process, network: snapshot.networkBytes, uploaded: tracker.uploads.read(snapshot), date: .now)
+            if let save = tracker.meter.read(reading, calendar: .current) { try traffic.save(save, for: connection) }
+            trackers[connection.id] = tracker
+            return tracker.meter.unsaved
         } catch {
-            return meters[connection.id]?.unsaved ?? Traffic()
+            return trackers[connection.id]?.meter.unsaved ?? Traffic()
         }
     }
 
     func saveTraffic(_ connection: Connection) {
-        guard var meter = meters[connection.id], let save = meter.save(calendar: .current),
-              (try? traffic.save(save, for: connection)) != nil else { return }
-        meters[connection.id] = meter
+        guard var tracker = trackers[connection.id], let save = tracker.meter.save(calendar: .current) else { return }
+        do {
+            try traffic.save(save, for: connection)
+        } catch {
+            return
+        }
+        trackers[connection.id] = tracker
     }
-}
-
-private extension FinishedTransfer {
-    var key: String { "\(name)\n\(completedAt.timeIntervalSinceReferenceDate)" }
 }

@@ -19,7 +19,7 @@ struct TrafficView: View {
             viewModel.reload()
             self.viewModel = viewModel
         }
-        .onChange(of: model.statuses) { viewModel?.reload() }
+        .onChange(of: model.statuses.mapValues(\.unsavedTraffic)) { viewModel?.reload() }
         .onChange(of: model.connections) { viewModel?.reload() }
     }
 }
@@ -58,8 +58,8 @@ private struct TrafficPage: View {
             if let total = viewModel.total {
                 Text(total.total, format: .size).font(.system(size: 34, weight: .semibold)).monospacedDigit()
                 HStack(spacing: 12) {
-                    Label { Text("\(total.upload, format: .size) upload") } icon: { Image(systemName: "arrow.up").foregroundStyle(.tint) }
-                    Label { Text("\(total.download, format: .size) download") } icon: { Image(systemName: "arrow.down").foregroundStyle(.teal) }
+                    Label { Text("\(total.upload, format: .size) upload") } icon: { arrow(.upload) }
+                    Label { Text("\(total.download, format: .size) download") } icon: { arrow(.download) }
                 }
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -67,6 +67,10 @@ private struct TrafficPage: View {
         }
         .lineLimit(1)
         .fixedSize()
+    }
+
+    private func arrow(_ direction: Direction) -> some View {
+        Image(systemName: direction.symbol).foregroundStyle(direction.color)
     }
 
     private var picker: some View {
@@ -102,7 +106,7 @@ private struct TrafficTable: View {
                 Label {
                     Text(row.name)
                 } icon: {
-                    logo(row.provider)
+                    ProviderIcon(provider: row.provider, size: 16)
                 }
             }
             TableColumn("Total") { row in
@@ -127,14 +131,6 @@ private struct TrafficTable: View {
         .clipShape(.rect(cornerRadius: 10))
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(.separator) }
     }
-
-    @ViewBuilder private func logo(_ provider: Provider) -> some View {
-        if provider == .other {
-            provider.logo
-        } else {
-            provider.logo.renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16)
-        }
-    }
 }
 
 private struct ShareBar: View {
@@ -146,16 +142,12 @@ private struct ShareBar: View {
             let width = proxy.size.width * Double(traffic.total) / Double(peak)
             let upload = traffic.total > 0 ? width * Double(traffic.upload) / Double(traffic.total) : 0
             HStack(spacing: 0) {
-                Rectangle().fill(.tint).frame(width: upload)
-                Rectangle().fill(.teal).frame(width: width - upload)
+                Rectangle().fill(Direction.upload.color).frame(width: upload)
+                Rectangle().fill(Direction.download.color).frame(width: width - upload)
             }
             .clipShape(.rect(cornerRadius: 2))
             .frame(height: 8)
             .frame(maxHeight: .infinity)
         }
     }
-}
-
-private extension FormatStyle where Self == ByteCountFormatStyle {
-    static var size: Self { .byteCount(style: .file, spellsOutZero: false) }
 }

@@ -7,7 +7,6 @@ public final class TrafficStore: TrafficRepository {
 
     public init(url: URL) {
         database = Result {
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let database = try DatabaseQueue(path: url.path)
             try Self.migrator.migrate(database)
             return database
