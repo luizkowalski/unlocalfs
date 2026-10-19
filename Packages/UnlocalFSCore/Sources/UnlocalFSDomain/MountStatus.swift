@@ -23,6 +23,8 @@ public struct MountStatus: Equatable, Sendable {
     public var failedUploads = 0
     public var uploadError: String?
     public var isDownloading = false
+    public var uploadSpeed: Double = 0
+    public var downloadSpeed: Double = 0
     public var bytesCached: Int64 = 0
     public var controlError: String?
     public init() {}

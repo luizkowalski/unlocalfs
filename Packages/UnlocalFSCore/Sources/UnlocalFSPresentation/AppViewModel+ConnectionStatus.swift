@@ -12,6 +12,10 @@ extension AppViewModel {
         statuses[connection.id]?.isActive == true
     }
 
+    public func isDisconnected(_ connection: Connection) -> Bool {
+        statuses[connection.id].map { !$0.isActive } ?? false
+    }
+
     public func servingStatus(_ connection: Connection) -> MountStatus? {
         guard let status = statuses[connection.id], status.isRunning, !status.needsReconnect else { return nil }
         return status

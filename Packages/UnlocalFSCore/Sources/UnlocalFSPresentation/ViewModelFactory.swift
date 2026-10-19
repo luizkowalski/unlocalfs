@@ -22,6 +22,6 @@ import UnlocalFSDomain
     }
 
     public func makeActivity() -> ActivityViewModel {
-        ActivityViewModel(drives: drives) { [app] in app.busy.contains($0) }
+        ActivityViewModel(drives: drives, isBusy: { [app] in app.busy.contains($0) }, recordSpeed: app.recordSpeed)
     }
 }

@@ -90,7 +90,7 @@ struct ControlSnapshot: Decodable {
         let stats = try results.decode(BatchResult<TransferStats>.self).value
         transfers = stats.transferring ?? []
         lastError = stats.lastError
-        finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred
+        finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred.sorted { $0.completedAt < $1.completedAt }
     }
 }
 

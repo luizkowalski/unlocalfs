@@ -30,3 +30,9 @@ public struct FileActivity: Identifiable, Equatable, Sendable {
         }
     }
 }
+
+extension Sequence<FileActivity> {
+    public func bytesPerSecond(_ state: FileActivity.State) -> Double {
+        reduce(0) { $1.state == state ? $0 + ($1.bytesPerSecond ?? 0) : $0 }
+    }
+}

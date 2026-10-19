@@ -26,12 +26,22 @@
     "%@" : {
 
     },
-    "%@ cached on this Mac. When the cache is full, the oldest copies are cleared." : {
+    "%@ is disconnected" : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ em cache neste Mac. Quando o cache enche, as cópias mais antigas são apagadas."
+            "value" : "%@ está desconectada"
+          }
+        }
+      }
+    },
+    "%@ of %@" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ de %@"
           }
         }
       }
@@ -39,16 +49,13 @@
     "%@/s" : {
 
     },
-    "^[%@ more file](inflect: true)" : {
-
-    },
-    "^[%lld more file](inflect: true)" : {
+    "1 min ago" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mais ^[%lld arquivo](inflect: true)"
+            "value" : "há 1 min"
           }
         }
       }
@@ -398,6 +405,16 @@
         }
       }
     },
+    "Connect to open it in Finder and see its transfers." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte para abrir no Finder e ver as transferências."
+          }
+        }
+      }
+    },
     "Connected" : {
       "localizations" : {
         "pt-BR" : {
@@ -529,6 +546,17 @@
         }
       }
     },
+    "Direction" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direção"
+          }
+        }
+      }
+    },
     "Disconnect" : {
       "comment" : "Menu item: disconnect the drive (verb)",
       "extractionState" : "stale",
@@ -574,6 +602,17 @@
         }
       }
     },
+    "Download speed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade de download"
+          }
+        }
+      }
+    },
     "Downloaded" : {
       "comment" : "Activity table status: the whole file finished downloading",
       "localizations" : {
@@ -605,6 +644,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Baixando ^[%lld arquivo](inflect: true)"
+          }
+        }
+      }
+    },
+    "Drive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unidade"
           }
         }
       }
@@ -731,6 +781,16 @@
         }
       }
     },
+    "Fastest upload %@/s, fastest download %@/s" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envio mais rápido %@/s, download mais rápido %@/s"
+          }
+        }
+      }
+    },
     "Files and names are encrypted before they upload. Without the password, nobody can read them, including you." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -781,6 +841,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geral"
+          }
+        }
+      }
+    },
+    "Hide Info" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar informações"
           }
         }
       }
@@ -1027,6 +1098,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não definido"
+          }
+        }
+      }
+    },
+    "Now" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora"
           }
         }
       }
@@ -1471,6 +1553,17 @@
         }
       }
     },
+    "Show Info" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar informações"
+          }
+        }
+      }
+    },
     "Show Log" : {
       "comment" : "Menu item: open the drive log file",
       "extractionState" : "stale",
@@ -1513,6 +1606,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tamanho"
+          }
+        }
+      }
+    },
+    "Speed" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade"
+          }
+        }
+      }
+    },
+    "Speed in the last minute" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade no último minuto"
           }
         }
       }
@@ -1612,6 +1726,17 @@
         }
       }
     },
+    "Time" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hora"
+          }
+        }
+      }
+    },
     "To use a different folder, duplicate this drive." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1705,6 +1830,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Falha no envio, mostrar detalhes"
+          }
+        }
+      }
+    },
+    "Upload speed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velocidade de envio"
           }
         }
       }
@@ -1814,6 +1950,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aguardando"
+          }
+        }
+      }
+    },
+    "When the cache is full, the oldest copies are cleared." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando o cache fica cheio, as cópias mais antigas são apagadas."
           }
         }
       }

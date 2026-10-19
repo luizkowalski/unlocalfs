@@ -4,13 +4,28 @@ import UnlocalFSPresentation
 
 struct ActivityView: View {
     let connection: Connection
+    @Environment(AppViewModel.self) private var model
     @Environment(ViewModelFactory.self) private var viewModels
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var viewModel: ActivityViewModel?
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            activity
+            if let speeds = model.speeds[connection.id] {
+                SpeedChart(speeds: speeds)
+            }
+        }
+        .task(id: connection.id) {
+            let viewModel = self.viewModel ?? viewModels.makeActivity()
+            self.viewModel = viewModel
+            await viewModel.observe(connection)
+        }
+    }
+
+    private var activity: some View {
         let summary = viewModel?.summary
-        VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Activity").font(.headline)
                 Spacer()
@@ -31,17 +46,6 @@ struct ActivityView: View {
                     Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             }
-            if let summary, summary.hiddenFileCount > 0 {
-                Text("^[\(summary.hiddenFileCount) more file](inflect: true)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 12)
-            }
-        }
-        .task(id: connection.id) {
-            let viewModel = self.viewModel ?? viewModels.makeActivity()
-            self.viewModel = viewModel
-            await viewModel.observe(connection)
         }
     }
 
@@ -71,13 +75,6 @@ struct ActivityView: View {
                 Text("Uploading ^[\(summary.fileCount) file](inflect: true)")
             } else {
                 Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
-            }
-            if let bytesPerSecond = summary.bytesPerSecond {
-                Text(verbatim: "·")
-                Text("\(bytesPerSecond, format: .byteCount(style: .file))/s")
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(reduceMotion ? nil : .default, value: bytesPerSecond)
             }
         }
     }

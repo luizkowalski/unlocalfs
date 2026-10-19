@@ -12,7 +12,7 @@ import UnlocalFSTestSupport
     deinit { fixture.remove() }
 
     @Test func activityRecoversAfterTheControlServiceReturns() async throws {
-        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let connection = Connection.s3()
         try fixture.serve(connection)
         try Data("unavailable".utf8).write(to: fixture.root.appending(path: "queue.json"))
@@ -34,7 +34,7 @@ import UnlocalFSTestSupport
         let connection = Connection.s3()
         try fixture.serve(connection)
         var busy = true
-        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in busy })
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in busy }, recordSpeed: { _, _ in })
 
         await viewModel.refresh(connection)
         #expect(viewModel.activity == nil)
@@ -45,7 +45,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func activityRefreshesFourTimesASecondWhileFilesShow() async throws {
-        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let connection = Connection.s3()
         try fixture.serve(connection)
 
@@ -57,8 +57,21 @@ import UnlocalFSTestSupport
         #expect(viewModel.refreshInterval == .milliseconds(250))
     }
 
+    @Test func openDrivePageUpdatesTheSpeedHistoryLive() async throws {
+        let connection = Connection.s3()
+        try fixture.serve(connection)
+        let app = fixture.app()
+        let viewModel = fixture.factory(app).makeActivity()
+        await app.refresh()
+
+        try transferring(speed: 700)
+        await viewModel.refresh(connection)
+
+        #expect(app.speeds[connection.id]?.last?.download == 700)
+    }
+
     @Test func cancelledRefreshDoesNotReplaceTheNextDrivesActivity() async throws {
-        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let previous = Connection.s3(name: "Previous")
         let current = Connection.s3()
         try fixture.serve(previous) { _ in
@@ -76,12 +89,17 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
-        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false })
+        let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let task = Task { await viewModel.observe(Connection.s3()) }
         task.cancel()
 
         await task.value
 
         #expect(viewModel.activity == nil)
+    }
+
+    private func transferring(speed: Int) throws {
+        try Data(#"{"transferring":[{"name":"c.mov","size":1000,"bytes":100,"speedAvg":\#(speed),"srcFs":":s3:bucket"}]}"#.utf8)
+            .write(to: fixture.root.appending(path: "stats.json"))
     }
 }
