@@ -11,13 +11,15 @@ let package = Package(
         .library(name: "UnlocalFSPresentation", targets: ["UnlocalFSPresentation"])
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0")
+        .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
+        .package(url: "https://github.com/groue/GRDB.swift", from: "7.11.1")
     ],
     targets: [
         .target(name: "UnlocalFSDomain", resources: [.process("Resources")]),
         .target(name: "UnlocalFSInfrastructure", dependencies: [
             "UnlocalFSDomain",
-            .product(name: "Subprocess", package: "swift-subprocess")
+            .product(name: "Subprocess", package: "swift-subprocess"),
+            .product(name: "GRDB", package: "GRDB.swift")
         ], resources: [.process("Resources")]),
         .target(name: "UnlocalFSPresentation", dependencies: ["UnlocalFSDomain"], resources: [.process("Resources")]),
         .target(name: "UnlocalFSTestSupport", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure"], path: "Tests/UnlocalFSTestSupport"),

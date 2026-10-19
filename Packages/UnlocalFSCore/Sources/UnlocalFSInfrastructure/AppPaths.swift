@@ -47,6 +47,7 @@ public struct AppPaths: Sendable {
     public func socket(_ connection: Connection) -> URL { sockets.appending(path: "\(connection.id.uuidString.prefix(18)).sock") }
     public func pidFile(_ connection: Connection) -> URL { socket(connection).appendingPathExtension("pid") }
     var knownHosts: URL { support.appending(path: "known_hosts") }
+    public var traffic: URL { support.appending(path: "traffic.sqlite") }
 
     private var sockets: URL { support.appending(path: "run") }
 }

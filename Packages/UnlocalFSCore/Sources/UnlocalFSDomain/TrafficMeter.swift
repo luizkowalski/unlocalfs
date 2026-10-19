@@ -42,6 +42,12 @@ public struct TrafficSave: Equatable, Sendable {
     public let day: TrafficDay
     public let traffic: Traffic
     public let checkpoint: TrafficCheckpoint
+
+    public init(day: TrafficDay, traffic: Traffic, checkpoint: TrafficCheckpoint) {
+        self.day = day
+        self.traffic = traffic
+        self.checkpoint = checkpoint
+    }
 }
 
 public struct TrafficMeter: Sendable {
