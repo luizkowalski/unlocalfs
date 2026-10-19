@@ -15,6 +15,8 @@ public enum Backend: Sendable {
         }
     }
 
+    public var supportsUploadCleanup: Bool { self == .s3Compatible }
+
     public var locksFolderAfterSave: Bool {
         switch self {
         case .s3Compatible, .gcs: false

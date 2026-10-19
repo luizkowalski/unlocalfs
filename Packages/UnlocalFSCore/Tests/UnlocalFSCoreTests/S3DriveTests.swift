@@ -77,6 +77,26 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test(arguments: [false, true])
+    func cleanupListsUnfinishedUploadsAndKeepsRecentOnes(encrypted: Bool) async throws {
+        try await withS3Drive(encrypted: encrypted) { drive, _ in
+            let credentials = try await drive.service.prepareCredentials(
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : "")
+            )
+            try await drive.service.mount(drive.connection, credentials: credentials)
+            _ = try await Command.run(URL(filePath: "/usr/bin/curl"), [
+                "--fail", "--silent", "--show-error", "--request", "POST", "\(drive.connection.endpoint)/my-bucket/big.bin?uploads",
+                "--aws-sigv4", "aws:amz:us-east-1:s3", "--user", "test-key:test-secret",
+            ])
+
+            let uploads = try await drive.service.unfinishedUploads(in: drive.connection)
+            try #require(uploads.map(\.key) == ["big.bin"])
+            try await drive.service.removeAbandonedUploads(in: drive.connection)
+            #expect(try await drive.service.unfinishedUploads(in: drive.connection) == uploads)
+            try await drive.service.unmount(drive.connection)
+        }
+    }
+
     @Test func duplicatesInFlightKeepTheirNamesApartAndBlockDisconnect() async throws {
         try await withS3Drive { drive, bucket in
             try Data("report".utf8).write(to: bucket.appending(path: "report.txt"))

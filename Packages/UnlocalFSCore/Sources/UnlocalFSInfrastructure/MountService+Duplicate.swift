@@ -19,16 +19,22 @@ extension MountService {
             "srcFs": target, "srcRemote": path, "dstFs": target, "dstRemote": destination,
             "_async": "true", "_group": Self.copyGroup,
         ])
+        try await waitForJob(job, on: connection)
+        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
+        return destination
+    }
+
+    @discardableResult
+    func waitForJob(_ job: StartedJob, on connection: Connection) async throws -> Data {
         while true {
-            let status = try await control(JobStatus.self, connection, "job/status", ["jobid": "\(job.jobid)"])
+            let reply = try await control(connection, "job/status", ["jobid": "\(job.jobid)"])
+            let status = try JSONDecoder().decode(JobStatus.self, from: reply)
             if status.finished {
                 guard status.success else { throw AppError(status.error) }
-                break
+                return reply
             }
             try await Task.sleep(for: .milliseconds(500))
         }
-        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
-        return destination
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {

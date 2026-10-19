@@ -58,6 +58,10 @@ struct ConnectionDetail: View {
                 if connection.encrypted {
                     Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
                 }
+                if connection.backend.supportsUploadCleanup {
+                    Button("Clean Up Unfinished Uploads…") { Task { await model.reviewUnfinishedUploads(connection) } }
+                        .disabled(!model.canCleanUpUploads(connection))
+                }
                 Button("Show Log") { model.openLog(connection) }
                 Divider()
                 Button("Delete…", role: .destructive) { model.deleting = connection }

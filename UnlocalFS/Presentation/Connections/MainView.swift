@@ -73,6 +73,15 @@ struct MainView: View {
         } message: { _ in
             Text("This removes the saved connection, credentials, and local file cache. Remote files are kept.")
         }
+        .confirmationDialog(
+            model.uploadCleanup?.title ?? "",
+            item: $model.uploadCleanup,
+            titleVisibility: .visible
+        ) { cleanup in
+            Button("Remove Uploads", role: .destructive) { Task { await model.cleanUpUnfinishedUploads(cleanup) } }
+        } message: { cleanup in
+            Text(cleanup.message)
+        }
     }
 }
 
