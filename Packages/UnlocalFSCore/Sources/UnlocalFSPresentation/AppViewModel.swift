@@ -12,7 +12,7 @@ import UnlocalFSDomain
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var speeds: [UUID: [SpeedSample]] = [:]
     public private(set) var errors: [UUID: String] = [:]
-    public private(set) var busy: Set<UUID> = []
+    public internal(set) var busy: Set<UUID> = []
     public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
     private var trustOpensFinder: [UUID: Bool] = [:]
     public var alert: String?
@@ -20,12 +20,13 @@ import UnlocalFSDomain
     public var uploadsBlockingDisconnect: Connection?
     public var editor: ConnectionDraft?
     public var deleting: Connection?
+    public var uploadCleanup: UploadCleanup?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
     private var networkAvailable = true
     private var sleeping = false
 
-    private let drives: any DriveGateway
+    let drives: any DriveGateway
     private let deleteConnection: DeleteConnectionUseCase
     private let connectDrive: ConnectDriveUseCase
     let shareFiles: ShareFilesUseCase

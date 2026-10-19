@@ -17,6 +17,14 @@ If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar
 
 The activity table shows each file’s name, folder, transfer status, and size. When you switch drives, the table shows **Checking activity…** until it receives that drive’s activity. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
 
+## Clean up unfinished uploads
+
+S3 uploads a large file in parts. If an upload stops before it finishes, for example because the Mac lost power or UnlocalFS was forced to quit, the parts stay in the bucket. Finder and the S3 console do not list them, but the storage provider still bills them until a lifecycle rule removes them.
+
+To remove them, connect the drive and choose **Clean Up Unfinished Uploads…** from the **More** menu on the drive page. UnlocalFS first counts the unfinished uploads in the drive's bucket and folder. Uploads that started more than a day ago are removed after you confirm. Newer uploads stay, because they can still be running on this or another Mac. Your files do not change. If the bucket has no uploads older than a day, UnlocalFS says so and removes nothing. The command is not available for read-only drives, SFTP, or Google Cloud Storage.
+
+A drive with a folder also includes unfinished uploads in sibling folders whose names start with the same text, such as `photos2` for `photos`. Only uploads older than a day are removed there too.
+
 ## Menu bar and quitting
 
 Each drive in the menu shows its provider icon. Encrypted drives also show a lock after their name.

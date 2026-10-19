@@ -351,6 +351,18 @@
         }
       }
     },
+    "Clean Up Unfinished Uploads…" : {
+      "comment" : "Drive menu item: remove multipart upload parts left in an S3 bucket",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar envios inacabados…"
+          }
+        }
+      }
+    },
     "Close files and stop apps using this drive, then try again. The drive is still connected." : {
       "localizations" : {
         "pt-BR" : {
@@ -1395,6 +1407,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pasta remota"
+          }
+        }
+      }
+    },
+    "Remove Uploads" : {
+      "comment" : "Destructive button that removes unfinished uploads",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover envios"
           }
         }
       }

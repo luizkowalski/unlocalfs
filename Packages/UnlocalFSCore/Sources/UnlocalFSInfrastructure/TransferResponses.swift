@@ -54,8 +54,7 @@ struct FinishedTransfer: Decodable {
         bytes = try container.decode(Int64.self, forKey: .bytes)
         error = try container.decode(String.self, forKey: .error)
         dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
-        let completed = try container.decode(String.self, forKey: .completedAt)
-        completedAt = try (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(completed)) ?? Date.ISO8601FormatStyle().parse(completed)
+        completedAt = try rcloneDate(container.decode(String.self, forKey: .completedAt))
     }
 
     var isUpload: Bool { dstFs != nil }
@@ -126,4 +125,36 @@ struct RemoteItem: Decodable {
     struct Item: Decodable {}
 
     let item: Item?
+}
+
+struct MultipartUploads: Decodable {
+    let output: Output
+
+    struct Output: Decodable {
+        let result: [String: [MultipartUpload]?]
+    }
+
+    var uploads: [UnfinishedUpload] {
+        output.result.values.flatMap { $0 ?? [] }.map { UnfinishedUpload(key: $0.key, startedAt: $0.initiated) }
+    }
+}
+
+struct MultipartUpload: Decodable {
+    let key: String
+    let initiated: Date
+
+    private enum CodingKeys: String, CodingKey {
+        case key = "Key"
+        case initiated = "Initiated"
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        key = try container.decode(String.self, forKey: .key)
+        initiated = try rcloneDate(container.decode(String.self, forKey: .initiated))
+    }
+}
+
+private func rcloneDate(_ string: String) throws -> Date {
+    try (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(string)) ?? Date.ISO8601FormatStyle().parse(string)
 }
