@@ -10,13 +10,14 @@ struct MainView: View {
         @Bindable var model = model
         NavigationSplitView {
             List(selection: $model.selection) {
+                Label("Traffic", systemImage: "chart.bar.xaxis").tag(AppViewModel.SidebarItem.traffic)
                 Section("Unlocals") {
                     ForEach(model.connections) { ConnectionRow(connection: $0) }
                 }
             }
-            .contextMenu(forSelectionType: UUID.self) { _ in
-            } primaryAction: { ids in
-                if let connection = model.connections.first(where: { ids.contains($0.id) }) {
+            .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
+            } primaryAction: { items in
+                if let connection = model.connections.first(where: { items.contains(.drive($0.id)) }) {
                     Task { await model.activate(connection) }
                 }
             }
@@ -29,7 +30,9 @@ struct MainView: View {
                     .padding()
             }
         } detail: {
-            if let connection = model.selected {
+            if model.selection == .traffic {
+                TrafficView()
+            } else if let connection = model.selected {
                 ConnectionDetail(connection: connection)
             } else {
                 ContentUnavailableView {
@@ -123,7 +126,7 @@ private struct ConnectionRow: View {
                 .frame(width: 12)
                 .accessibilityHidden(true)
         }
-        .tag(connection.id)
+        .tag(AppViewModel.SidebarItem.drive(connection.id))
         .contextMenu {
             Button("Connect") { Task { await model.activate(connection) } }
                 .disabled(!model.canConnect(connection))

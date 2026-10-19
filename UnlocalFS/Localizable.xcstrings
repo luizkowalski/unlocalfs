@@ -26,6 +26,17 @@
     "%@" : {
 
     },
+    "%@ download" : {
+      "comment" : "Traffic page: bytes downloaded in the period. %@ is a size such as 5.06 GB",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ baixados"
+          }
+        }
+      }
+    },
     "%@ is disconnected" : {
       "localizations" : {
         "pt-BR" : {
@@ -42,6 +53,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ de %@"
+          }
+        }
+      }
+    },
+    "%@ upload" : {
+      "comment" : "Traffic page: bytes uploaded in the period. %@ is a size such as 14.25 GB",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ enviados"
           }
         }
       }
@@ -154,6 +176,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todas as alterações foram enviadas"
+          }
+        }
+      }
+    },
+    "All drives" : {
+      "comment" : "Traffic page heading above the total of every drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas as unidades"
           }
         }
       }
@@ -503,6 +536,17 @@
         }
       }
     },
+    "Custom" : {
+      "comment" : "Traffic period: a date range the user picks",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        }
+      }
+    },
     "Default" : {
       "comment" : "Value shown when the region field is empty",
       "localizations" : {
@@ -610,6 +654,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desconectar todas as unidades antes de sair?"
+          }
+        }
+      }
+    },
+    "Download" : {
+      "comment" : "Traffic table column: bytes downloaded",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
           }
         }
       }
@@ -842,6 +897,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "As pastas abrem mais rápido, mas os arquivos mostram quando foram enviados, não quando foram alterados pela última vez. Sempre ativado em unidades somente leitura."
+          }
+        }
+      }
+    },
+    "From" : {
+      "comment" : "Traffic custom range: first day",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De"
           }
         }
       }
@@ -1283,6 +1349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Senha"
+          }
+        }
+      }
+    },
+    "Period" : {
+      "comment" : "Accessibility label for the traffic period picker",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Período"
           }
         }
       }
@@ -1730,6 +1807,17 @@
         }
       }
     },
+    "This Month" : {
+      "comment" : "Traffic period: the current calendar month",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mês"
+          }
+        }
+      }
+    },
     "This removes the saved connection, credentials, and local file cache. Remote files are kept." : {
       "localizations" : {
         "pt-BR" : {
@@ -1750,6 +1838,28 @@
         }
       }
     },
+    "This Week" : {
+      "comment" : "Traffic period: the current calendar week",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta semana"
+          }
+        }
+      }
+    },
+    "This Year" : {
+      "comment" : "Traffic period: the current calendar year",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este ano"
+          }
+        }
+      }
+    },
     "Time" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1761,6 +1871,17 @@
         }
       }
     },
+    "To" : {
+      "comment" : "Traffic custom range: last day",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Até"
+          }
+        }
+      }
+    },
     "To use a different folder, duplicate this drive." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1768,6 +1889,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Para usar uma pasta diferente, duplique esta unidade."
+          }
+        }
+      }
+    },
+    "Today" : {
+      "comment" : "Traffic period: today",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoje"
+          }
+        }
+      }
+    },
+    "Total" : {
+      "comment" : "Traffic table column: upload plus download",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        }
+      }
+    },
+    "Traffic" : {
+      "comment" : "Sidebar item and page title: bytes each drive uploaded and downloaded",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tráfego"
           }
         }
       }
@@ -1832,6 +1986,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O UnlocalFS tenta novamente sozinho, no máximo a cada 5 minutos, enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
+    "Upload" : {
+      "comment" : "Traffic table column: bytes uploaded",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envio"
           }
         }
       }

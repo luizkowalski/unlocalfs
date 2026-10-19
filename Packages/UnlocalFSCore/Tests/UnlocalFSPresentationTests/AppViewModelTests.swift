@@ -68,6 +68,24 @@ import UnlocalFSInfrastructure
         #expect(app.statuses[connection.id] == MountStatus())
     }
 
+    @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
+        let first = Connection.s3 { $0.name = "First" }
+        let second = Connection.s3 { $0.name = "Second" }
+        let third = Connection.s3 { $0.name = "Third" }
+        for connection in [first, second, third] { try fixture.repository.save(connection, credentials: Credentials()) }
+        let app = fixture.app()
+        #expect(app.selection == .drive(first.id))
+
+        app.selection = .traffic
+        await app.delete(second)
+        #expect(app.selection == .traffic)
+        #expect(app.selected == nil)
+
+        app.selection = .drive(third.id)
+        await app.delete(third)
+        #expect(app.selected == first)
+    }
+
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
         let connection = Connection.s3()
         try fixture.serve(connection, failed: 1, lastError: "AccessDenied: Access Denied")

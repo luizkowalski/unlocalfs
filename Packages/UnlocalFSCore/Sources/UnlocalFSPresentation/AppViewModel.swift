@@ -5,9 +5,10 @@ import UnlocalFSDomain
 @MainActor @Observable public final class AppViewModel {
     public enum Activity { case idle, connected, uploading, downloading }
     public enum Indicator { case working, attention, connected, idle }
+    public enum SidebarItem: Hashable, Sendable { case traffic, drive(UUID) }
 
     public private(set) var connections: [Connection] = []
-    public var selection: UUID?
+    public var selection: SidebarItem?
     public static let speedWindow: TimeInterval = 60
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var speeds: [UUID: [SpeedSample]] = [:]
@@ -63,7 +64,7 @@ import UnlocalFSDomain
         switch initialConnections {
         case .success(let connections):
             self.connections = connections
-            selection = connections.first?.id
+            selection = connections.first.map { .drive($0.id) }
             ready = true
         case .failure(let error):
             alert = error.localizedDescription
@@ -81,7 +82,10 @@ import UnlocalFSDomain
         }
     }
 
-    public var selected: Connection? { connections.first { $0.id == selection } }
+    public var selected: Connection? {
+        guard case .drive(let id) = selection else { return nil }
+        return connections.first { $0.id == id }
+    }
 
     public var isShowingAlert: Bool {
         get { alert != nil }
@@ -113,7 +117,7 @@ import UnlocalFSDomain
 
     func connectionSaved(_ connection: Connection, connections: [Connection]) {
         self.connections = connections
-        selection = connection.id
+        selection = .drive(connection.id)
         statuses[connection.id] = MountStatus()
         errors[connection.id] = nil
     }
@@ -125,7 +129,7 @@ import UnlocalFSDomain
             connections = try await deleteConnection.execute(connection)
             statuses[connection.id] = nil
             errors[connection.id] = nil
-            selection = connections.first?.id
+            if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
         } catch { alert = error.localizedDescription }
     }
 
@@ -162,7 +166,7 @@ import UnlocalFSDomain
             serverTrust[connection.id] = challenge
             trustOpensFinder[connection.id] = opensFinder
             errors[connection.id] = challenge.localizedDescription
-            selection = connection.id
+            selection = .drive(connection.id)
         } catch {
             errors[connection.id] = error.localizedDescription
         }
@@ -181,7 +185,7 @@ import UnlocalFSDomain
         } catch is UploadsPendingError {
             uploadsBlockingDisconnect = connection
             waitingToDisconnect.insert(connection.id)
-            selection = connection.id
+            selection = .drive(connection.id)
         } catch is DriveEjectError {
             disconnectFailure = connection
         } catch {
@@ -214,7 +218,7 @@ import UnlocalFSDomain
         for connection in connections where canDisconnect(connection) {
             await disconnect(connection)
             if isActive(connection) {
-                selection = connection.id
+                selection = .drive(connection.id)
                 return
             }
         }
