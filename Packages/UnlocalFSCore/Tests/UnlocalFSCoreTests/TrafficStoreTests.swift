@@ -25,6 +25,19 @@ import UnlocalFSDomain
         #expect(traffic.first { $0.id == other.id }?.traffic == Traffic(upload: 5, download: 0))
     }
 
+    @Test func dailyTrafficSumsEveryDriveForEachDayInTheRange() throws {
+        defer { try? FileManager.default.removeItem(at: file) }
+        let store = TrafficStore(url: file)
+        try store.save(save("2026-10-18", upload: 1, download: 2), for: drive)
+        try store.save(save("2026-10-19", upload: 10, download: 20), for: drive)
+        try store.save(save("2026-10-19", upload: 5, download: 0), for: Connection.sftp { $0.name = "Server" })
+        try store.save(save("2026-10-21", upload: 100, download: 200), for: drive)
+
+        #expect(try store.dailyTraffic(in: TrafficDay(rawValue: "2026-10-19")...TrafficDay(rawValue: "2026-10-20")) == [
+            TrafficDay(rawValue: "2026-10-19"): Traffic(upload: 15, download: 20),
+        ])
+    }
+
     @Test func driveKeepsItsLatestNameAndShowsOnlyInRangesWithTraffic() throws {
         defer { try? FileManager.default.removeItem(at: file) }
         let store = TrafficStore(url: file)

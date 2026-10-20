@@ -4,29 +4,29 @@ import UnlocalFSDomain
 import UnlocalFSPresentation
 
 @Suite struct TrafficPeriodTests {
-    private let wednesday = utc.date(from: DateComponents(year: 2026, month: 10, day: 21, hour: 15))!
+    private let wednesday = date(2026, 10, 21, hour: 15)
 
     @Test(arguments: [
-        (TrafficPeriod.today, "2026-10-21", "2026-10-21"),
-        (.week, "2026-10-19", "2026-10-25"),
-        (.month, "2026-10-01", "2026-10-31"),
-        (.year, "2026-01-01", "2026-12-31"),
+        (TrafficPeriod.last30Days, date(2026, 9, 22), date(2026, 10, 22)),
+        (.last90Days, date(2026, 7, 24), date(2026, 10, 22)),
+        (.last12Months, date(2025, 11, 1), date(2026, 10, 22)),
+        (.custom, date(2026, 9, 30), date(2026, 10, 3)),
     ])
-    func periodCoversItsCalendarDays(period: TrafficPeriod, first: String, last: String) {
-        let days = period.days(now: wednesday, custom: wednesday...wednesday, calendar: mondayFirst)
-        #expect(days == TrafficDay(rawValue: first)...TrafficDay(rawValue: last))
+    func periodCoversWholeDays(period: TrafficPeriod, start: Date, end: Date) {
+        let custom = date(2026, 9, 30, hour: 23)...date(2026, 10, 2, hour: 8)
+        #expect(period.interval(now: wednesday, custom: custom, calendar: utc) == DateInterval(start: start, end: end))
     }
 
-    @Test func weekStartsOnTheCalendarsFirstWeekday() {
-        var sundayFirst = mondayFirst
-        sundayFirst.firstWeekday = 1
-        #expect(TrafficPeriod.week.days(now: wednesday, custom: wednesday...wednesday, calendar: sundayFirst).lowerBound == TrafficDay(rawValue: "2026-10-18"))
-    }
-
-    @Test func customCoversFromThroughTo() {
-        let from = utc.date(from: DateComponents(year: 2026, month: 9, day: 30, hour: 23))!
-        let days = TrafficPeriod.custom.days(now: wednesday, custom: from...wednesday, calendar: mondayFirst)
-        #expect(days == TrafficDay(rawValue: "2026-09-30")...TrafficDay(rawValue: "2026-10-21"))
+    @Test(arguments: [
+        (TrafficPreset.today, date(2026, 10, 21), date(2026, 10, 21)),
+        (.yesterday, date(2026, 10, 20), date(2026, 10, 20)),
+        (.last7Days, date(2026, 10, 15), date(2026, 10, 21)),
+        (.thisMonth, date(2026, 10, 1), date(2026, 10, 21)),
+        (.lastMonth, date(2026, 9, 1), date(2026, 9, 30)),
+        (.thisYear, date(2026, 1, 1), date(2026, 10, 21)),
+    ])
+    func presetPicksItsCalendarDays(preset: TrafficPreset, first: Date, last: Date) {
+        #expect(preset.days(now: wednesday, calendar: utc) == first...last)
     }
 }
 
@@ -36,8 +36,6 @@ private let utc: Calendar = {
     return calendar
 }()
 
-private let mondayFirst: Calendar = {
-    var calendar = utc
-    calendar.firstWeekday = 2
-    return calendar
-}()
+private func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0) -> Date {
+    utc.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+}

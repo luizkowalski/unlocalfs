@@ -30,6 +30,18 @@ public final class TrafficStore: TrafficRepository {
         }
     }
 
+    public func dailyTraffic(in days: ClosedRange<TrafficDay>) throws -> [TrafficDay: Traffic] {
+        try database.get().read { sqlite in
+            let rows = try Row.fetchAll(sqlite, sql: """
+                SELECT day, SUM(upload) AS upload, SUM(download) AS download FROM traffic
+                WHERE day BETWEEN ? AND ?
+                GROUP BY day
+                """, arguments: [days.lowerBound.rawValue, days.upperBound.rawValue]
+            )
+            return Dictionary(uniqueKeysWithValues: rows.map { (TrafficDay(rawValue: $0["day"]), Traffic(upload: $0["upload"], download: $0["download"])) })
+        }
+    }
+
     func checkpoint(for id: UUID) throws -> TrafficCheckpoint? {
         try database.get().read { sqlite in
             guard let row = try Row.fetchOne(sqlite, sql: "SELECT * FROM unlocal WHERE id = ?", arguments: [id]) else { return nil }

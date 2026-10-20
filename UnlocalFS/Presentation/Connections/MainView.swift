@@ -5,48 +5,23 @@ import UnlocalFSPresentation
 struct MainView: View {
     @Environment(AppViewModel.self) private var model
     @Environment(ViewModelFactory.self) private var viewModels
+    @State private var traffic: TrafficViewModel?
 
     var body: some View {
         @Bindable var model = model
         NavigationSplitView {
-            List(selection: $model.selection) {
-                Label("Traffic", systemImage: "chart.bar.xaxis").tag(AppViewModel.SidebarItem.traffic)
-                Section("Unlocals") {
-                    ForEach(model.connections) { ConnectionRow(connection: $0) }
-                }
-            }
-            .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
-            } primaryAction: { items in
-                if let connection = model.connections.first(where: { items.contains(.drive($0.id)) }) {
-                    Task { await model.activate(connection) }
-                }
-            }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 230)
-            .safeAreaInset(edge: .bottom) {
-                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
-                    .buttonStyle(.borderless)
-                    .disabled(!model.ready)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-            }
+            sidebar
         } detail: {
-            if model.selection == .traffic {
-                TrafficView()
-            } else if let connection = model.selected {
-                ConnectionDetail(connection: connection)
-            } else {
-                ContentUnavailableView {
-                    Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
-                } description: {
-                    Text("Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac.")
-                } actions: {
-                    Button("Add Connection") { model.edit(Connection()) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!model.ready)
-                }
-            }
+            detail
         }
         .frame(minWidth: 720, minHeight: 680)
+        .task {
+            let traffic = viewModels.makeTraffic()
+            traffic.reload()
+            self.traffic = traffic
+        }
+        .onChange(of: model.statuses.mapValues(\.unsavedTraffic)) { traffic?.reload() }
+        .onChange(of: model.connections) { traffic?.reload() }
         .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}
@@ -84,6 +59,52 @@ struct MainView: View {
             Button("Remove Uploads", role: .destructive) { Task { await model.cleanUpUnfinishedUploads(cleanup) } }
         } message: { cleanup in
             Text(cleanup.message)
+        }
+    }
+
+    private var sidebar: some View {
+        @Bindable var model = model
+        return List(selection: $model.selection) {
+            Section("Unlocals") {
+                ForEach(model.connections) { ConnectionRow(connection: $0) }
+            }
+        }
+        .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
+        } primaryAction: { items in
+            if let connection = model.connections.first(where: { items.contains(.drive($0.id)) }) {
+                Task { await model.activate(connection) }
+            }
+        }
+        .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+        .safeAreaInset(edge: .bottom) {
+            VStack(alignment: .leading, spacing: 12) {
+                if let traffic {
+                    TrafficCard(viewModel: traffic, isSelected: model.selection == .traffic) { model.selection = .traffic }
+                }
+                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
+                    .buttonStyle(.borderless)
+                    .disabled(!model.ready)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+    }
+
+    @ViewBuilder private var detail: some View {
+        if model.selection == .traffic {
+            if let traffic { TrafficView(viewModel: traffic) }
+        } else if let connection = model.selected {
+            ConnectionDetail(connection: connection)
+        } else {
+            ContentUnavailableView {
+                Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
+            } description: {
+                Text("Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac.")
+            } actions: {
+                Button("Add Connection") { model.edit(Connection()) }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!model.ready)
+            }
         }
     }
 }
