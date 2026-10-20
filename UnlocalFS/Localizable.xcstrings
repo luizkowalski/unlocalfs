@@ -660,6 +660,7 @@
     },
     "Download" : {
       "comment" : "Traffic table column: bytes downloaded",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -903,6 +904,7 @@
     },
     "From" : {
       "comment" : "Traffic custom range: first day",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1355,6 +1357,7 @@
     },
     "Period" : {
       "comment" : "Accessibility label for the traffic period picker",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1873,6 +1876,7 @@
     },
     "To" : {
       "comment" : "Traffic custom range: last day",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1906,6 +1910,7 @@
     },
     "Total" : {
       "comment" : "Traffic table column: upload plus download",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1917,6 +1922,7 @@
     },
     "Traffic" : {
       "comment" : "Sidebar item and page title: bytes each drive uploaded and downloaded",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1992,6 +1998,7 @@
     },
     "Upload" : {
       "comment" : "Traffic table column: bytes uploaded",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
