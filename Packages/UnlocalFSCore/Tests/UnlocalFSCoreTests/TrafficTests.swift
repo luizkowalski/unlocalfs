@@ -12,20 +12,26 @@ import UnlocalFSTestSupport
     ]}
     """
 
-    @Test func statusReportsUnsavedNetworkTrafficAndWritesNothingYet() async throws {
+    @Test func networkTrafficStaysUnsavedUntilDisconnectSavesItForToday() async throws {
         try await withRclone(stats: busyStats) { drives, connection, _ in
             let status = await drives.service.status(connection)
-            let saved = try drives.traffic.traffic(from: today, through: today)
+            let beforeDisconnect = try drives.traffic.traffic(from: today, through: today)
             #expect(status.unsavedTraffic == Traffic(upload: 4_000, download: 6_000))
-            #expect(saved.isEmpty)
+            #expect(beforeDisconnect.isEmpty)
+
+            try await drives.service.unmount(connection)
+            #expect(try drives.traffic.traffic(from: today, through: today).map(\.traffic) == [Traffic(upload: 4_000, download: 6_000)])
         }
     }
 
-    @Test func disconnectSavesTodaysTrafficBeforeRcloneStops() async throws {
+    @Test func brokenTrafficDatabaseNeverBlocksStatusOrDisconnect() async throws {
         try await withRclone(stats: busyStats) { drives, connection, _ in
-            _ = await drives.service.status(connection)
-            try await drives.service.unmount(connection)
-            #expect(try drives.traffic.traffic(from: today, through: today).map(\.traffic) == [Traffic(upload: 4_000, download: 6_000)])
+            let broken = TrafficStore(url: URL(filePath: "/dev/null/traffic.sqlite"))
+            let service = MountService(executable: drives.root.appending(path: "rclone"), helperDirectory: drives.root, paths: drives.paths, traffic: broken)
+            let status = await service.status(connection)
+            #expect(status.isRunning && status.controlError == nil)
+            try await service.unmount(connection)
+            #expect(await !service.status(connection).isActive)
         }
     }
 
@@ -49,6 +55,28 @@ import UnlocalFSTestSupport
             try drives.traffic.save(TrafficSave(day: today, traffic: Traffic(), checkpoint: earlier), for: connection)
             #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 3_000))
         }
+    }
+
+    @Test func olderSnapshotDoesNotCountFinishedUploadsAgain() throws {
+        var tally = UploadTally(process: RcloneProcess(pid: 1, startedAt: .distantPast), checkpoint: nil)
+        let newer = try snapshot(network: 5_000, uploads: ["a.mov", "b.mov"])
+        let older = try snapshot(network: 3_000, uploads: ["a.mov"])
+
+        #expect(tally.read(newer) == 2_000)
+        #expect(tally.read(older) == 2_000)
+        #expect(tally.read(newer) == 2_000)
+    }
+
+    private func snapshot(network: Int64, uploads: [String]) throws -> ControlSnapshot {
+        let finished = uploads.map {
+            #"{"name":"\#($0)","size":1000,"bytes":1000,"error":"","completed_at":"2026-10-19T10:00:00Z","srcFs":"/cache","dstFs":":s3:bucket"}"#
+        }
+        let batch = statusBatch(
+            cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#,
+            stats: #"{"bytes":\#(network),"serverSideCopyBytes":0,"serverSideMoveBytes":0}"#,
+            transferred: #"{"transferred":[\#(finished.joined(separator: ","))]}"#
+        )
+        return try JSONDecoder().decode(ControlSnapshot.self, from: Data(batch.utf8))
     }
 }
 

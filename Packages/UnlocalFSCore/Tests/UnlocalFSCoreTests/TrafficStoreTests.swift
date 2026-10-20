@@ -31,10 +31,10 @@ import UnlocalFSDomain
         try store.save(save("2026-10-18", upload: 1, download: 0), for: drive)
         var renamed = drive
         renamed.name = "Holiday Photos"
-        try store.save(save("2026-10-19", upload: 0, download: 0), for: renamed)
+        try store.save(save("2026-10-19", upload: 0, download: 5), for: renamed)
 
         #expect(try store.traffic(from: TrafficDay(rawValue: "2026-10-01"), through: TrafficDay(rawValue: "2026-10-31")).map(\.name) == ["Holiday Photos"])
-        #expect(try store.traffic(from: TrafficDay(rawValue: "2026-10-19"), through: TrafficDay(rawValue: "2026-10-31")).isEmpty)
+        #expect(try store.traffic(from: TrafficDay(rawValue: "2026-10-20"), through: TrafficDay(rawValue: "2026-10-31")).isEmpty)
     }
 
     @Test func checkpointSurvivesReopeningTheFile() throws {

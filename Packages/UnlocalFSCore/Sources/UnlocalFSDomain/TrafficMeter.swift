@@ -68,7 +68,7 @@ public struct TrafficMeter: Sendable {
         guard !isStale(reading) else { return nil }
         let previous = latest
         latest = reading
-        if let previous, TrafficDay(previous.date, calendar: calendar) != TrafficDay(reading.date, calendar: calendar) {
+        if let previous, previous.process != reading.process || TrafficDay(previous.date, calendar: calendar) != TrafficDay(reading.date, calendar: calendar) {
             return save(through: previous, calendar: calendar)
         }
         let lastSave = lastSave ?? reading.date

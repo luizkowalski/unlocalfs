@@ -127,7 +127,6 @@ func withSFTPDrive(
         var sftp = try await SFTPFixture(executable: executable, resources: resources, login: login)
         let drive = try await makeDrive(executable: executable, resources: resources, connection: sftp.connection)
         if trusted {
-            try drive.paths.prepare()
             try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
         }
         try await body(drive, &sftp)

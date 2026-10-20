@@ -52,7 +52,8 @@ import UnlocalFSDomain
                 )
             }
             rows = traffic.values.sorted {
-                $0.traffic.total == $1.traffic.total ? $0.name.localizedStandardCompare($1.name) == .orderedAscending : $0.traffic.total > $1.traffic.total
+                if $0.traffic.total != $1.traffic.total { return $0.traffic.total > $1.traffic.total }
+                return $0.name.localizedStandardCompare($1.name) == .orderedAscending
             }
             error = nil
         } catch {

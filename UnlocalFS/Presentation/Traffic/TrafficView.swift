@@ -140,10 +140,10 @@ private struct ShareBar: View {
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width * Double(traffic.total) / Double(peak)
-            let upload = traffic.total > 0 ? width * Double(traffic.upload) / Double(traffic.total) : 0
+            let uploadShare = traffic.total > 0 ? Double(traffic.upload) / Double(traffic.total) : 0
             HStack(spacing: 0) {
-                Rectangle().fill(Direction.upload.color).frame(width: upload)
-                Rectangle().fill(Direction.download.color).frame(width: width - upload)
+                Rectangle().fill(Direction.upload.color).frame(width: width * uploadShare)
+                Rectangle().fill(Direction.download.color).frame(width: width * (1 - uploadShare))
             }
             .clipShape(.rect(cornerRadius: 2))
             .frame(height: 8)

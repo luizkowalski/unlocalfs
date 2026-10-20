@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import OSLog
 import UnlocalFSDomain
 
 struct TrafficTracker {
@@ -18,6 +19,7 @@ struct UploadTally {
     private var uploaded: Int64
     private let since: Date
     private var counted: Set<FinishedTransfer> = []
+    private var network: Int64 = 0
 
     init(process: RcloneProcess, checkpoint: TrafficCheckpoint?) {
         self.process = process
@@ -28,6 +30,8 @@ struct UploadTally {
     }
 
     mutating func read(_ snapshot: ControlSnapshot) -> Int64 {
+        guard snapshot.networkBytes >= network else { return uploaded }
+        network = snapshot.networkBytes
         let finishedUploads = snapshot.finished.filter { $0.isUpload && !$0.isServerSide }
         for transfer in finishedUploads where !counted.contains(transfer) && transfer.completedAt > since {
             finished += transfer.bytes
@@ -64,6 +68,7 @@ extension MountService {
             trackers[connection.id] = tracker
             return tracker.meter.unsaved
         } catch {
+            Logger().error("Could not record traffic: \(error, privacy: .public)")
             return trackers[connection.id]?.meter.unsaved ?? Traffic()
         }
     }
@@ -73,6 +78,7 @@ extension MountService {
         do {
             try traffic.save(save, for: connection)
         } catch {
+            Logger().error("Could not save traffic: \(error, privacy: .public)")
             return
         }
         trackers[connection.id] = tracker

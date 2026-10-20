@@ -54,7 +54,6 @@ public final class TrafficStore: TrafficRepository {
                     checkpoint.savedAt.timeIntervalSinceReferenceDate,
                 ]
             )
-            guard save.traffic != Traffic() else { return }
             try sqlite.execute(sql: """
                 INSERT INTO traffic (unlocal_id, day, upload, download) VALUES (?, ?, ?, ?)
                 ON CONFLICT (unlocal_id, day) DO UPDATE SET upload = upload + excluded.upload, download = download + excluded.download
