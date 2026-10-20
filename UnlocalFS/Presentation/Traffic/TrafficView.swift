@@ -8,7 +8,7 @@ struct TrafficView: View {
     @State private var viewModel: TrafficViewModel?
 
     var body: some View {
-        Group {
+        VStack(alignment: .leading) {
             if let viewModel { TrafficPage(viewModel: viewModel) }
         }
         .padding(28)
