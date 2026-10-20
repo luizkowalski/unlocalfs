@@ -44,5 +44,5 @@ public struct DriveTraffic: Identifiable, Equatable, Sendable {
 }
 
 public protocol TrafficRepository: Sendable {
-    func traffic(from first: TrafficDay, through last: TrafficDay) throws -> [DriveTraffic]
+    func traffic(in days: ClosedRange<TrafficDay>) throws -> [DriveTraffic]
 }

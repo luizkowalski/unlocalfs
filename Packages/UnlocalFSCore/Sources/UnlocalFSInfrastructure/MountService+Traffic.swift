@@ -6,34 +6,22 @@ import UnlocalFSDomain
 struct TrafficTracker {
     var meter: TrafficMeter
     var uploads: UploadTally
-
-    init(meter: TrafficMeter, process: RcloneProcess) {
-        self.meter = meter
-        uploads = UploadTally(process: process, checkpoint: meter.checkpoint)
-    }
 }
 
 struct UploadTally {
     let process: RcloneProcess
-    private var finished: Int64
-    private var uploaded: Int64
-    private let since: Date
+    private var finished: Int64 = 0
+    private var uploaded: Int64 = 0
     private var counted: Set<FinishedTransfer> = []
     private var network: Int64 = 0
 
-    init(process: RcloneProcess, checkpoint: TrafficCheckpoint?) {
-        self.process = process
-        let resumed = checkpoint?.process == process ? checkpoint : nil
-        finished = resumed?.uploaded ?? 0
-        uploaded = finished
-        since = resumed?.savedAt ?? .distantPast
-    }
+    init(process: RcloneProcess) { self.process = process }
 
     mutating func read(_ snapshot: ControlSnapshot) -> Int64 {
         guard snapshot.networkBytes >= network else { return uploaded }
         network = snapshot.networkBytes
         let finishedUploads = snapshot.finished.filter { $0.isUpload && !$0.isServerSide }
-        for transfer in finishedUploads where !counted.contains(transfer) && transfer.completedAt > since {
+        for transfer in finishedUploads where !counted.contains(transfer) {
             finished += transfer.bytes
         }
         counted = Set(finishedUploads)
@@ -61,8 +49,9 @@ extension MountService {
     func recordTraffic(_ snapshot: ControlSnapshot, for connection: Connection) -> Traffic {
         guard let pid = savedPID(connection), let process = Self.process(pid: pid) else { return Traffic() }
         do {
-            var tracker = try trackers[connection.id] ?? TrafficTracker(meter: TrafficMeter(checkpoint: traffic.checkpoint(for: connection.id)), process: process)
-            if tracker.uploads.process != process { tracker = TrafficTracker(meter: tracker.meter, process: process) }
+            var tracker = try trackers[connection.id]
+                ?? TrafficTracker(meter: TrafficMeter(checkpoint: traffic.checkpoint(for: connection.id)), uploads: UploadTally(process: process))
+            if tracker.uploads.process != process { tracker.uploads = UploadTally(process: process) }
             let reading = TrafficReading(process: process, network: snapshot.networkBytes, uploaded: tracker.uploads.read(snapshot), date: .now)
             if let save = tracker.meter.read(reading, calendar: .current) { try traffic.save(save, for: connection) }
             trackers[connection.id] = tracker

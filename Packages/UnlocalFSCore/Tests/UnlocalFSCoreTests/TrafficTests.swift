@@ -15,12 +15,12 @@ import UnlocalFSTestSupport
     @Test func networkTrafficStaysUnsavedUntilDisconnectSavesItForToday() async throws {
         try await withRclone(stats: busyStats) { drives, connection, _ in
             let status = await drives.service.status(connection)
-            let beforeDisconnect = try drives.traffic.traffic(from: today, through: today)
+            let beforeDisconnect = try drives.traffic.traffic(in: today...today)
             #expect(status.unsavedTraffic == Traffic(upload: 4_000, download: 6_000))
             #expect(beforeDisconnect.isEmpty)
 
             try await drives.service.unmount(connection)
-            #expect(try drives.traffic.traffic(from: today, through: today).map(\.traffic) == [Traffic(upload: 4_000, download: 6_000)])
+            #expect(try drives.traffic.traffic(in: today...today).map(\.traffic) == [Traffic(upload: 4_000, download: 6_000)])
         }
     }
 
@@ -41,7 +41,7 @@ import UnlocalFSTestSupport
         {"transferred":[{"name":"old.mov","size":1500,"bytes":1500,"error":"","completed_at":"2026-01-01T10:00:00Z","srcFs":"/cache","dstFs":":s3:bucket"}]}
         """
         try await withRclone(stats: stats, transferred: transferred) { drives, connection, rclone in
-            let earlier = TrafficCheckpoint(process: rclone, network: 10_000, uploaded: 1_500, savedAt: .now - 60)
+            let earlier = TrafficCheckpoint(process: rclone, network: 10_000, savedAt: .now - 60)
             try drives.traffic.save(TrafficSave(day: today, traffic: Traffic(), checkpoint: earlier), for: connection)
             #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 2_000))
         }
@@ -51,14 +51,14 @@ import UnlocalFSTestSupport
         let stats = #"{"bytes":3000,"serverSideCopyBytes":0,"serverSideMoveBytes":0,"transferring":[]}"#
         try await withRclone(stats: stats) { drives, connection, _ in
             let previous = RcloneProcess(pid: 1, startedAt: Date(timeIntervalSince1970: 0))
-            let earlier = TrafficCheckpoint(process: previous, network: 50_000, uploaded: 0, savedAt: .now - 60)
+            let earlier = TrafficCheckpoint(process: previous, network: 50_000, savedAt: .now - 60)
             try drives.traffic.save(TrafficSave(day: today, traffic: Traffic(), checkpoint: earlier), for: connection)
             #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 3_000))
         }
     }
 
     @Test func olderSnapshotDoesNotCountFinishedUploadsAgain() throws {
-        var tally = UploadTally(process: RcloneProcess(pid: 1, startedAt: .distantPast), checkpoint: nil)
+        var tally = UploadTally(process: RcloneProcess(pid: 1, startedAt: .distantPast))
         let newer = try snapshot(network: 5_000, uploads: ["a.mov", "b.mov"])
         let older = try snapshot(network: 3_000, uploads: ["a.mov"])
 

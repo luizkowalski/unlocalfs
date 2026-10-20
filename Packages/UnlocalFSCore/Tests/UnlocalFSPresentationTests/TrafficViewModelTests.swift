@@ -59,17 +59,6 @@ import UnlocalFSTestSupport
         #expect(traffic.rows.map(\.traffic) == [Traffic()])
     }
 
-    @Test func customRangeStaysInThePastAndInOrder() {
-        let traffic = fixture.factory(fixture.app()).makeTraffic()
-
-        traffic.end = .distantFuture
-        #expect(traffic.end <= .now)
-        traffic.start = .distantFuture
-        #expect(traffic.start == traffic.end)
-        traffic.end = .distantPast
-        #expect(traffic.start == .distantPast)
-    }
-
     @Test func failedQueryShowsTheErrorAndNoNumbers() {
         let broken = TrafficStore(url: URL(filePath: "/dev/null/traffic.sqlite"))
         let traffic = TrafficViewModel(repository: broken, connections: { [Connection.s3()] }, unsaved: { [:] })
@@ -84,7 +73,7 @@ import UnlocalFSTestSupport
     private var yesterday: Date { Calendar.current.date(byAdding: .day, value: -1, to: .now)! }
 
     private func record(_ traffic: Traffic, for connection: Connection, on date: Date) throws {
-        let checkpoint = TrafficCheckpoint(process: RcloneProcess(pid: 1, startedAt: .distantPast), network: 0, uploaded: 0, savedAt: date)
+        let checkpoint = TrafficCheckpoint(process: RcloneProcess(pid: 1, startedAt: .distantPast), network: 0, savedAt: date)
         try fixture.traffic.save(TrafficSave(day: TrafficDay(date, calendar: .current), traffic: traffic, checkpoint: checkpoint), for: connection)
     }
 }

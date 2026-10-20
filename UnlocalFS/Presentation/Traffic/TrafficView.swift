@@ -33,15 +33,11 @@ private struct TrafficPage: View {
                 HStack(alignment: .top, spacing: 16) {
                     summary
                     Spacer(minLength: 0)
-                    VStack(alignment: .trailing, spacing: 10) {
-                        picker
-                        if viewModel.period == .custom { dates }
-                    }
+                    controls(alignment: .trailing)
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     summary
-                    picker
-                    if viewModel.period == .custom { dates }
+                    controls(alignment: .leading)
                 }
             }
             if let error = viewModel.error {
@@ -73,6 +69,13 @@ private struct TrafficPage: View {
         Image(systemName: direction.symbol).foregroundStyle(direction.color)
     }
 
+    private func controls(alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 10) {
+            picker
+            if viewModel.period == .custom { dates }
+        }
+    }
+
     private var picker: some View {
         Picker("Period", selection: $viewModel.period) {
             Text("Today").tag(TrafficPeriod.today)
@@ -88,8 +91,8 @@ private struct TrafficPage: View {
 
     private var dates: some View {
         HStack(spacing: 8) {
-            DatePicker("From", selection: $viewModel.start, in: ...Date.now, displayedComponents: .date)
-            DatePicker("To", selection: $viewModel.end, in: ...Date.now, displayedComponents: .date)
+            DatePicker("From", selection: $viewModel.start, in: ...viewModel.end, displayedComponents: .date)
+            DatePicker("To", selection: $viewModel.end, in: viewModel.start...Date.now, displayedComponents: .date)
         }
         .datePickerStyle(.field)
         .fixedSize()

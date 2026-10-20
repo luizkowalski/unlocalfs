@@ -4,9 +4,10 @@ import UnlocalFSDomain
 
 @MainActor @Observable public final class TrafficViewModel {
     public var period = TrafficPeriod.month { didSet { reload() } }
+    public var start: Date { didSet { if period == .custom { reload() } } }
+    public var end: Date { didSet { if period == .custom { reload() } } }
     public private(set) var rows: [DriveTraffic] = []
     public private(set) var error: String?
-    private var customRange: ClosedRange<Date> { didSet { if period == .custom { reload() } } }
 
     private let repository: any TrafficRepository
     private let connections: () -> [Connection]
@@ -17,33 +18,18 @@ import UnlocalFSDomain
         self.connections = connections
         self.unsaved = unsaved
         let now = Date.now
-        customRange = (Calendar.current.date(byAdding: .day, value: -20, to: now) ?? now)...now
+        end = now
+        start = Calendar.current.date(byAdding: .day, value: -20, to: now) ?? now
     }
 
     public var total: Traffic? { error == nil ? rows.reduce(Traffic()) { $0 + $1.traffic } : nil }
 
-    public var start: Date {
-        get { customRange.lowerBound }
-        set {
-            let start = min(newValue, .now)
-            customRange = start...max(start, customRange.upperBound)
-        }
-    }
-
-    public var end: Date {
-        get { customRange.upperBound }
-        set {
-            let end = min(newValue, .now)
-            customRange = min(customRange.lowerBound, end)...end
-        }
-    }
-
     public func reload() {
         let now = Date.now
         let calendar = Calendar.current
-        let days = period.days(now: now, custom: customRange, calendar: calendar)
+        let days = period.days(now: now, custom: start...max(start, end), calendar: calendar)
         do {
-            var traffic = Dictionary(uniqueKeysWithValues: try repository.traffic(from: days.lowerBound, through: days.upperBound).map { ($0.id, $0) })
+            var traffic = Dictionary(uniqueKeysWithValues: try repository.traffic(in: days).map { ($0.id, $0) })
             let pending = days.contains(TrafficDay(now, calendar: calendar)) ? unsaved() : [:]
             for connection in connections() {
                 let saved = traffic[connection.id]?.traffic ?? Traffic()

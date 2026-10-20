@@ -112,7 +112,7 @@ func verifyRoundTrip(_ drive: Drive, storage: URL, credentials: Credentials) asy
     try await drive.service.unmount(drive.connection)
     #expect(await !drive.service.status(drive.connection).isActive)
     let today = TrafficDay(.now, calendar: .current)
-    let recorded = try #require(try drive.traffic.traffic(from: today, through: today).first { $0.id == drive.connection.id })
+    let recorded = try #require(try drive.traffic.traffic(in: today...today).first { $0.id == drive.connection.id })
     #expect(recorded.traffic.upload >= 11 && recorded.traffic.download >= 15)
 }
 

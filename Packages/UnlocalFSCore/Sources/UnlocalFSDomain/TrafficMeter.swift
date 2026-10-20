@@ -27,13 +27,11 @@ public struct TrafficReading: Equatable, Sendable {
 public struct TrafficCheckpoint: Equatable, Sendable {
     public let process: RcloneProcess
     public let network: Int64
-    public let uploaded: Int64
     public let savedAt: Date
 
-    public init(process: RcloneProcess, network: Int64, uploaded: Int64, savedAt: Date) {
+    public init(process: RcloneProcess, network: Int64, savedAt: Date) {
         self.process = process
         self.network = network
-        self.uploaded = uploaded
         self.savedAt = savedAt
     }
 }
@@ -56,6 +54,7 @@ public struct TrafficMeter: Sendable {
     public private(set) var checkpoint: TrafficCheckpoint?
     private var latest: TrafficReading?
     private var lastSave: Date?
+    private var uploadedAtSave: Int64 = 0
 
     public init(checkpoint: TrafficCheckpoint?) {
         self.checkpoint = checkpoint
@@ -68,9 +67,14 @@ public struct TrafficMeter: Sendable {
         guard !isStale(reading) else { return nil }
         let previous = latest
         latest = reading
+        var due: TrafficSave?
         if let previous, previous.process != reading.process || TrafficDay(previous.date, calendar: calendar) != TrafficDay(reading.date, calendar: calendar) {
-            return save(through: previous, calendar: calendar)
+            due = save(through: previous, calendar: calendar)
         }
+        if previous?.process != reading.process {
+            uploadedAtSave = checkpoint?.process == reading.process ? reading.uploaded : 0
+        }
+        if let due { return due }
         let lastSave = lastSave ?? reading.date
         self.lastSave = lastSave
         return reading.date.timeIntervalSince(lastSave) >= Self.saveInterval ? save(through: reading, calendar: calendar) : nil
@@ -85,24 +89,25 @@ public struct TrafficMeter: Sendable {
         lastSave = reading.date
         let traffic = traffic(to: reading)
         guard traffic != Traffic() else { return nil }
+        uploadedAtSave = reading.uploaded
         let save = TrafficSave(
             day: TrafficDay(reading.date, calendar: calendar), traffic: traffic,
-            checkpoint: TrafficCheckpoint(process: reading.process, network: reading.network, uploaded: reading.uploaded, savedAt: reading.date)
+            checkpoint: TrafficCheckpoint(process: reading.process, network: reading.network, savedAt: reading.date)
         )
         checkpoint = save.checkpoint
         return save
     }
 
     private func traffic(to reading: TrafficReading) -> Traffic {
-        let base = checkpoint?.process == reading.process ? checkpoint : nil
-        let network = reading.network - (base?.network ?? 0)
-        let upload = min(max(reading.uploaded - (base?.uploaded ?? 0), 0), network)
+        let base = checkpoint?.process == reading.process ? checkpoint?.network ?? 0 : 0
+        let network = reading.network - base
+        let upload = min(reading.uploaded - uploadedAtSave, network)
         return Traffic(upload: upload, download: network - upload)
     }
 
     private func isStale(_ reading: TrafficReading) -> Bool {
-        let newest = latest.map { ($0.process, $0.network) } ?? checkpoint.map { ($0.process, $0.network) }
-        guard let newest, newest.0 == reading.process else { return false }
-        return reading.network < newest.1
+        let process = latest?.process ?? checkpoint?.process
+        let network = latest?.network ?? checkpoint?.network ?? 0
+        return process == reading.process && reading.network < network
     }
 }
