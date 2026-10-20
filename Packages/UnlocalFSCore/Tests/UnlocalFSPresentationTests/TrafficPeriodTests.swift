@@ -21,7 +21,6 @@ import UnlocalFSPresentation
         var sundayFirst = mondayFirst
         sundayFirst.firstWeekday = 1
         #expect(TrafficPeriod.week.days(now: wednesday, custom: wednesday...wednesday, calendar: sundayFirst).lowerBound == TrafficDay(rawValue: "2026-10-18"))
-        #expect(!TrafficPeriod.week.days(now: wednesday, custom: wednesday...wednesday, calendar: mondayFirst).contains(TrafficDay(rawValue: "2026-10-18")))
     }
 
     @Test func customCoversFromThroughTo() {

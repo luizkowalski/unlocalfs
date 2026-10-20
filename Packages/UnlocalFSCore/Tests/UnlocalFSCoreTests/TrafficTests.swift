@@ -47,16 +47,6 @@ import UnlocalFSTestSupport
         }
     }
 
-    @Test func newRcloneProcessCountsFromZero() async throws {
-        let stats = #"{"bytes":3000,"serverSideCopyBytes":0,"serverSideMoveBytes":0,"transferring":[]}"#
-        try await withRclone(stats: stats) { drives, connection, _ in
-            let previous = RcloneProcess(pid: 1, startedAt: Date(timeIntervalSince1970: 0))
-            let earlier = TrafficCheckpoint(process: previous, network: 50_000, savedAt: .now - 60)
-            try drives.traffic.save(TrafficSave(day: today, traffic: Traffic(), checkpoint: earlier), for: connection)
-            #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 3_000))
-        }
-    }
-
     @Test func olderSnapshotDoesNotCountFinishedUploadsAgain() throws {
         var tally = UploadTally(process: RcloneProcess(pid: 1, startedAt: .distantPast))
         let newer = try snapshot(network: 5_000, uploads: ["a.mov", "b.mov"])

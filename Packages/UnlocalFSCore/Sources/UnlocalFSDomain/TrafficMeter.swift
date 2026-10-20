@@ -51,7 +51,7 @@ public struct TrafficSave: Equatable, Sendable {
 public struct TrafficMeter: Sendable {
     private static let saveInterval: TimeInterval = 3_600
 
-    public private(set) var checkpoint: TrafficCheckpoint?
+    private var checkpoint: TrafficCheckpoint?
     private var latest: TrafficReading?
     private var lastSave: Date?
     private var uploadedAtSave: Int64 = 0
