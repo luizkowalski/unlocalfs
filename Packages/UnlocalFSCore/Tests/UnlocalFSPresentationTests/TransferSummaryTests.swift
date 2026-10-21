@@ -27,16 +27,18 @@ import UnlocalFSPresentation
         #expect(summary.fileCount == 1)
     }
 
-    @Test func failedUploadsListFirstThenFilesByName() throws {
+    @Test func filesListFailedThenMovingThenWaitingThenDoneEachByName() throws {
         let summary = try #require(TransferSummary([
+            FileActivity(path: "a.txt", size: 1, state: .uploaded(now), bytesTransferred: 1),
+            FileActivity(path: "b.txt", size: 1, state: .queued, bytesTransferred: nil),
             FileActivity(path: "file10.txt", size: 1, state: .uploading, bytesTransferred: 0),
-            FileActivity(path: "b.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
             FileActivity(path: "zebra.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
-            FileActivity(path: "file2.txt", size: 1, state: .queued, bytesTransferred: nil),
-            FileActivity(path: "a.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
+            FileActivity(path: "file2.txt", size: 1, state: .downloading, bytesTransferred: 0),
+            FileActivity(path: "c.txt", size: 1, state: .downloaded(now), bytesTransferred: 1),
+            FileActivity(path: "y.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil),
         ], now: now))
 
-        #expect(summary.files.map(\.path) == ["a.txt", "zebra.txt", "b.txt", "file2.txt", "file10.txt"])
+        #expect(summary.files.map(\.path) == ["y.txt", "zebra.txt", "file2.txt", "file10.txt", "b.txt", "a.txt", "c.txt"])
     }
 
     @Test func everyFileShowsWhenMoreThanTenMove() throws {
@@ -71,8 +73,8 @@ import UnlocalFSPresentation
         #expect(summary.fileCount == 1)
     }
 
-    @Test func finishedFilesShowForTenSeconds() throws {
-        let recent = now.addingTimeInterval(-9.9), old = now.addingTimeInterval(-10)
+    @Test func finishedFilesShowForThirtySeconds() throws {
+        let recent = now.addingTimeInterval(-29.9), old = now.addingTimeInterval(-30)
         let summary = try #require(TransferSummary([
             FileActivity(path: "a.txt", size: 1, state: .uploaded(recent), bytesTransferred: 1),
             FileActivity(path: "b.txt", size: 1, state: .downloaded(recent), bytesTransferred: 1),
