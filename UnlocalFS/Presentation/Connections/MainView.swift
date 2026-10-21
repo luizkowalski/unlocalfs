@@ -22,6 +22,7 @@ struct MainView: View {
         }
         .onChange(of: model.statuses.mapValues(\.unsavedTraffic)) { traffic?.reload() }
         .onChange(of: model.connections) { traffic?.reload() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in traffic?.reload() }
         .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}

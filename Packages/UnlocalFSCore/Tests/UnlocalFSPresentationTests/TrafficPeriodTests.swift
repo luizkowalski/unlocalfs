@@ -28,6 +28,11 @@ import UnlocalFSPresentation
     func presetPicksItsCalendarDays(preset: TrafficPreset, first: Date, last: Date) {
         #expect(preset.days(now: wednesday, calendar: utc) == first...last)
     }
+
+    @Test func dayCountIncludesEveryCalendarDayTheRangeTouches() {
+        #expect((date(2026, 10, 21)...date(2026, 10, 21)).dayCount(calendar: utc) == 1)
+        #expect((date(2026, 9, 30, hour: 23)...date(2026, 10, 2, hour: 8)).dayCount(calendar: utc) == 3)
+    }
 }
 
 private let utc: Calendar = {

@@ -39,6 +39,12 @@ public struct TrafficBar: Identifiable, Equatable, Sendable {
     public var id: Date { interval.start }
 }
 
+extension ClosedRange where Bound == Date {
+    public func dayCount(calendar: Calendar) -> Int {
+        (calendar.dateComponents([.day], from: calendar.startOfDay(for: lowerBound), to: calendar.startOfDay(for: upperBound)).day ?? 0) + 1
+    }
+}
+
 extension Date {
     func adding(_ component: Calendar.Component, _ value: Int, _ calendar: Calendar) -> Date {
         calendar.date(byAdding: component, value: value, to: self) ?? self

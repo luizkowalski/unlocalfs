@@ -25,7 +25,8 @@ struct UploadTally {
             finished += transfer.bytes
         }
         counted = Set(finishedUploads)
-        let inFlight = snapshot.transfers.filter { $0.isUpload && !$0.isServerSide }.reduce(0) { $0 + ($1.bytes ?? 0) }
+        let finishedNames = Set(finishedUploads.map(\.name))
+        let inFlight = snapshot.transfers.filter { $0.isUpload && !$0.isServerSide && !finishedNames.contains($0.name) }.reduce(0) { $0 + ($1.bytes ?? 0) }
         uploaded = max(uploaded, finished + inFlight)
         return uploaded
     }

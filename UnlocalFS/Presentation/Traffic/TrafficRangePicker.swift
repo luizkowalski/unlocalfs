@@ -51,9 +51,8 @@ struct TrafficRangePicker: View {
                 Divider()
                 HStack {
                     if pending == nil {
-                        let days = Calendar.current.dateComponents([.day], from: draft.lowerBound, to: draft.upperBound).day ?? 0
                         Text(DateInterval(start: draft.lowerBound, end: draft.upperBound.addingTimeInterval(1)).formattedDays)
-                        Text("· ^[\(days + 1) day](inflect: true)")
+                        Text("· ^[\(draft.dayCount(calendar: .current)) day](inflect: true)")
                     } else {
                         Text("Click the last day")
                     }

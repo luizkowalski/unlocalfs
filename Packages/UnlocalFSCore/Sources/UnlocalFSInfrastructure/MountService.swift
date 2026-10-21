@@ -212,6 +212,7 @@ public actor MountService: DriveGateway {
             let remaining = await status(connection)
             try remaining.requireSafeDisconnect()
             try await requireNoCopies(connection, status: remaining)
+            saveTraffic(connection)
             if let error = remaining.controlError {
                 try await waitForStop(connection, error: AppError(error))
             } else if remaining.isRunning {
