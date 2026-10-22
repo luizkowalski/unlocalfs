@@ -4,6 +4,7 @@ import UnlocalFSPresentation
 
 struct SpeedChart: View {
     let speeds: [SpeedSample]
+    var showsPlaceholderLine = false
     @State private var selectedDate: Date?
 
     var body: some View {
@@ -41,6 +42,9 @@ struct SpeedChart: View {
                 plot(sample.date, sample.upload, direction: .upload)
                 plot(sample.date, -sample.download, direction: .download)
             }
+            if showsPlaceholderLine {
+                placeholderLine(end: end)
+            }
             if let selected = selectedSample {
                 RuleMark(x: .value("Time", selected.date))
                     .foregroundStyle(.secondary)
@@ -58,32 +62,46 @@ struct SpeedChart: View {
         .chartXScale(domain: start...end)
         .chartYScale(domain: -peak...peak)
         .chartXSelection(value: $selectedDate)
-        .chartXAxis {
-            AxisMarks(values: stride(from: 0, through: AppViewModel.speedWindow, by: 15).map { start.addingTimeInterval($0) }) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
-                if value.index == 0 {
-                    AxisValueLabel("1 min ago", anchor: .topLeading)
-                } else if value.index == value.count - 1 {
-                    AxisValueLabel("Now", anchor: .topTrailing)
-                }
-            }
-        }
-        .chartYAxis {
-            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
-                let speed = value.as(Double.self) ?? 0
-                if speed == 0 {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(.tertiary)
-                } else {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
-                    AxisValueLabel { speedText(abs(speed)) }
-                }
-            }
-        }
+        .chartXAxis { xAxis(start: start) }
+        .chartYAxis { yAxis }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed in the last minute")
         .accessibilityValue(Text(
             "Fastest upload \(byteCount(speeds.fastestUpload))/s, fastest download \(byteCount(speeds.fastestDownload))/s"
         ))
+    }
+
+    private func xAxis(start: Date) -> some AxisContent {
+        AxisMarks(values: stride(from: 0, through: AppViewModel.speedWindow, by: 15).map { start.addingTimeInterval($0) }) { value in
+            AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
+            if value.index == 0 {
+                AxisValueLabel("1 min ago", anchor: .topLeading)
+            } else if value.index == value.count - 1 {
+                AxisValueLabel("Now", anchor: .topTrailing)
+            }
+        }
+    }
+
+    private var yAxis: some AxisContent {
+        AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
+            let speed = value.as(Double.self) ?? 0
+            if speed == 0 {
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(.tertiary)
+            } else {
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [2, 3])).foregroundStyle(.tertiary)
+                AxisValueLabel { speedText(abs(speed)) }
+            }
+        }
+    }
+
+    private func placeholderLine(end: Date) -> some ChartContent {
+        RuleMark(
+            xStart: .value("Time", end.addingTimeInterval(-6)),
+            xEnd: .value("Time", end),
+            y: .value("Speed", 0)
+        )
+            .foregroundStyle(Direction.download.color)
+            .lineStyle(StrokeStyle(lineWidth: 1.5, lineJoin: .round))
     }
 
     @ChartContentBuilder private func plot(_ date: Date, _ speed: Double, direction: Direction) -> some ChartContent {
