@@ -37,14 +37,25 @@ public struct QuitUseCase: Sendable {
     }
 
     public func disconnectAll(connections: [Connection]) async -> (connection: Connection, error: any Error)? {
-        var failure: (connection: Connection, error: any Error)?
-        for connection in connections where await drives.status(connection).isActive {
-            do {
-                try await drives.unmount(connection)
-            } catch {
-                failure = failure ?? (connection, error)
+        await withTaskGroup(of: (Int, (any Error)?).self) { group in
+            for (index, connection) in connections.enumerated() {
+                group.addTask { [drives] in
+                    guard await drives.status(connection).isActive else { return (index, nil) }
+                    do {
+                        try await drives.unmount(connection)
+                        return (index, nil)
+                    } catch {
+                        return (index, error)
+                    }
+                }
             }
+            var first: (index: Int, error: any Error)?
+            for await (index, error) in group {
+                guard let error else { continue }
+                if let first, first.index <= index { continue }
+                first = (index, error)
+            }
+            return first.map { (connections[$0.index], $0.error) }
         }
-        return failure
     }
 }
