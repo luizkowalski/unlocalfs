@@ -39,7 +39,7 @@ struct ActivityView: View {
             ActivityTable(files: summary?.files ?? []) {
                 switch viewModel?.activity {
                 case .success:
-                    ActivityIdle(readOnly: connection.readOnly)
+                    idle
                 case nil:
                     Text("Checking activity…").foregroundStyle(.secondary)
                 case .failure:
@@ -47,6 +47,21 @@ struct ActivityView: View {
                 }
             }
         }
+    }
+
+    private var idle: some View {
+        let titleText: LocalizedStringKey = connection.readOnly ? "No transfers in progress" : "All changes are uploaded"
+        return HStack(spacing: 6) {
+            Image(systemName: "checkmark.rectangle.stack.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 23, height: 23)
+                .accessibilityHidden(true)
+            Text(titleText).font(.title3)
+        }
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
     }
 
     private func transfers(_ summary: TransferSummary) -> some View {
@@ -62,24 +77,5 @@ struct ActivityView: View {
                 Text("Downloading ^[\(summary.fileCount) file](inflect: true)")
             }
         }
-    }
-}
-
-struct ActivityIdle: View {
-    let readOnly: Bool
-
-    var body: some View {
-        let titleText: LocalizedStringKey = readOnly ? "No transfers in progress" : "All changes are uploaded"
-        return HStack(spacing: 6) {
-            Image(systemName: "checkmark.rectangle.stack.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 23, height: 23)
-                .accessibilityHidden(true)
-            Text(titleText).font(.title3)
-        }
-        .foregroundStyle(.secondary)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
     }
 }

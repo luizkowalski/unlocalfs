@@ -97,16 +97,12 @@ struct ConnectionDetail: View {
     }
 
     private var disconnected: some View {
-        let opacity             = 0.40
-        let allowsHitTesting    = false
-        let accessibilityHidden = true
-
-        return ZStack {
-            DisconnectedActivityPlaceholder(connection: connection)
+        ZStack {
+            DisconnectedActivityPlaceholder()
                 .blur(radius: 2)
-                .opacity(opacity)
-                .allowsHitTesting(allowsHitTesting)
-                .accessibilityHidden(accessibilityHidden)
+                .opacity(0.4)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             ContentUnavailableView {
                 Label {
                     Text("\(connection.name) is disconnected")
@@ -120,7 +116,8 @@ struct ConnectionDetail: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.canConnect(connection))
             }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder private var logo: some View {
