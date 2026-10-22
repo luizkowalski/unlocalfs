@@ -189,34 +189,34 @@ public actor MountService: DriveGateway {
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
 
-    public func unmount(_ connection: Connection) async throws { try await disconnect(connection, recovering: false) }
+    public func unmount(_ connection: Connection) async throws { try await disconnect(connection) }
 
     public func reconnect(_ connection: Connection, credentials: Credentials) async throws {
-        try await disconnect(connection, recovering: true)
+        try await disconnect(connection)
         try await mount(connection, credentials: credentials)
     }
 
-    private func disconnect(_ connection: Connection, recovering: Bool) async throws {
-        let current = await status(connection)
-        if let error = current.controlError, !recovering { throw AppError(error) }
+    private func disconnect(_ connection: Connection) async throws {
+        var current = await status(connection)
         if current.needsReconnect, isRunning(connection) == nil {
             throw AppError(String(localized: .couldNotStopOldService))
         }
+        let reachable = try await reachesControl(connection, updating: &current)
         try current.requireSafeDisconnect()
         try await requireNoCopies(connection, status: current)
         saveTraffic(connection)
-        if current.isMounted { try await eject(connection, force: !current.isRunning) }
+        if current.isMounted { try await eject(connection, force: !current.isRunning || !reachable) }
         if current.needsReconnect {
-            try await stop(connection)
+            try await stop(connection, askingToQuit: reachable)
         } else if current.isRunning {
             let remaining = await status(connection)
             try remaining.requireSafeDisconnect()
             try await requireNoCopies(connection, status: remaining)
             saveTraffic(connection)
             if let error = remaining.controlError {
-                try await waitForStop(connection, error: AppError(error))
+                guard try await waitForStop(connection) else { throw AppError(error) }
             } else if remaining.isRunning {
-                try await stop(connection)
+                try await stop(connection, askingToQuit: true)
             }
         }
         processes[connection.id] = nil
@@ -246,7 +246,9 @@ public actor MountService: DriveGateway {
     func isRunning(_ connection: Connection) -> Bool? {
         guard let pid = savedPID(connection) else { return processes[connection.id]?.isRunning }
         if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning }
-        return kill(pid, 0) == 0 || errno != ESRCH
+        let saved = try? paths.pidFile(connection).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        guard let process = Self.process(pid: pid), let saved else { return false }
+        return process.startedAt <= saved
     }
 
     var baseEnvironment: [String: String] {

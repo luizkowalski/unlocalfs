@@ -8,6 +8,8 @@ struct MountCommand {
     private static let readBufferSize = "32M"
     private static let maxBufferMemory = "256M"
     private static let readChunkSizeLimit = "1G"
+    private static let jobExpiry = "5s"
+    private static let jobExpiryCheck = "2s"
 
     let remote: RcloneRemote
     let paths: AppPaths
@@ -21,7 +23,7 @@ struct MountCommand {
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
-            "--rc", "--rc-no-auth",
+            "--rc", "--rc-no-auth", "--rc-job-expire-duration", Self.jobExpiry, "--rc-job-expire-interval", Self.jobExpiryCheck,
 //            "--no-modtime",
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
             "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)",

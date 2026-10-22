@@ -13,7 +13,9 @@ import UnlocalFSDomain
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var speeds: [UUID: [SpeedSample]] = [:]
     public private(set) var errors: [UUID: String] = [:]
-    public internal(set) var busy: Set<UUID> = []
+    public internal(set) var busy: Set<UUID> = [] {
+        didSet { if refreshing { refreshRequested = true } }
+    }
     public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
     private var trustOpensFinder: [UUID: Bool] = [:]
     public var alert: String?
@@ -249,7 +251,7 @@ import UnlocalFSDomain
         syncOpensAtLogin()
     }
 
-    private func syncOpensAtLogin() {
+    public func syncOpensAtLogin() {
         let enabled = desktop.opensAtLogin
         if opensAtLogin != enabled { opensAtLogin = enabled }
     }
@@ -272,10 +274,15 @@ import UnlocalFSDomain
         defer { refreshing = false }
         repeat {
             refreshRequested = false
-            syncOpensAtLogin()
-            for connection in connections where !busy.contains(connection.id) && !sleeping {
-                let status = await drives.status(connection)
-                if !sleeping, !busy.contains(connection.id) { update(status, for: connection) }
+            let checked = connections.filter { !busy.contains($0.id) }
+            await withTaskGroup(of: (Connection, MountStatus).self) { group in
+                for connection in checked {
+                    group.addTask { [drives] in (connection, await drives.status(connection)) }
+                }
+                for await (connection, status) in group {
+                    guard !sleeping, !refreshRequested, !busy.contains(connection.id) else { continue }
+                    update(status, for: connection)
+                }
             }
         } while refreshRequested && !sleeping
     }

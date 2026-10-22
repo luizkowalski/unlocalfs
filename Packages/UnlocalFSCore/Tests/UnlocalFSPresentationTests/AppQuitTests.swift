@@ -28,6 +28,35 @@ import UnlocalFSTestSupport
         #expect(app.uploadsBlockingDisconnect == connection)
     }
 
+    @Test func quitDisconnectsEveryDriveAtTheSameTime() async throws {
+        let overlap = Overlap()
+        for name in ["A drive", "B drive"] {
+            let connection = Connection.s3(name: name)
+            let socket = fixture.paths.socket(connection)
+            try fixture.serve(connection) { request in
+                switch request.method {
+                case "job/list":
+                    overlap.hold()
+                    defer { overlap.release() }
+                    try await Task.sleep(for: .milliseconds(200))
+                    return #"{"runningIds":[]}"#
+                case "core/quit":
+                    try FileManager.default.removeItem(at: socket)
+                    return "{}"
+                default:
+                    return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
+                }
+            }
+        }
+        let app = fixture.app()
+        await app.refresh()
+
+        let failure = await app.disconnectForQuit()
+
+        #expect(failure == nil)
+        #expect(overlap.peak == 2)
+    }
+
     @Test func quitTriesEveryDriveAndReportsTheFirstFailure() async throws {
         let blocked = Connection.s3(name: "A blocked drive")
         let connected = Connection.s3(name: "B connected drive")

@@ -43,6 +43,10 @@ enum ControlSocket {
     }
 }
 
+struct ControlUnreachable: LocalizedError {
+    let errorDescription: String?
+}
+
 private struct RcloneError: Decodable {
     let error: String
 }
@@ -59,7 +63,7 @@ private struct UnixConnection {
         withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: pathBytes) }
 
         descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
-        guard descriptor >= 0 else { throw Self.error(errno) }
+        guard descriptor >= 0 else { throw AppError(String(cString: strerror(errno))) }
         self.deadline = deadline
         setOption(SO_NOSIGPIPE, Int32(1))
 
@@ -110,9 +114,9 @@ private struct UnixConnection {
         withUnsafeBytes(of: value) { _ = setsockopt(descriptor, SOL_SOCKET, option, $0.baseAddress, socklen_t($0.count)) }
     }
 
-    private static var timedOut: AppError { AppError(String(localized: .commandTimedOut)) }
+    private static var timedOut: ControlUnreachable { ControlUnreachable(errorDescription: String(localized: .commandTimedOut)) }
 
-    private static func error(_ code: Int32) -> AppError {
-        code == EAGAIN ? timedOut : AppError(String(cString: strerror(code)))
+    private static func error(_ code: Int32) -> ControlUnreachable {
+        code == EAGAIN ? timedOut : ControlUnreachable(errorDescription: String(cString: strerror(code)))
     }
 }
