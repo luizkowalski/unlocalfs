@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
+import UnlocalFSTestSupport
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 
@@ -65,6 +66,24 @@ import UnlocalFSInfrastructure
         #expect(try fixture.repository.all() == app.connections)
         #expect(try fixture.repository.credentials(for: connection.id) == editor.credentials)
         #expect(app.statuses[connection.id] == MountStatus())
+    }
+
+    @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
+        let first = Connection.s3 { $0.name = "First" }
+        let second = Connection.s3 { $0.name = "Second" }
+        let third = Connection.s3 { $0.name = "Third" }
+        for connection in [first, second, third] { try fixture.repository.save(connection, credentials: Credentials()) }
+        let app = fixture.app()
+        #expect(app.selection == .drive(first.id))
+
+        app.selection = .traffic
+        await app.delete(second)
+        #expect(app.selection == .traffic)
+        #expect(app.selected == nil)
+
+        app.selection = .drive(third.id)
+        await app.delete(third)
+        #expect(app.selected == first)
     }
 
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
@@ -188,7 +207,7 @@ import UnlocalFSInfrastructure
         try fixture.serve(running)
         try fixture.queue(#"{"name":"a.mov","id":1,"size":1000,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         try Data("""
-        {"transferring":[
+        {\(rcloneCounters),"transferring":[
             {"name":"a.mov","size":1000,"bytes":100,"speedAvg":3000,"srcFs":"/cache","dstFs":":s3:bucket"},
             {"name":"b.mov","size":1000,"bytes":100,"speedAvg":2000,"srcFs":"/cache","dstFs":":s3:bucket"},
             {"name":"c.mov","size":1000,"bytes":100,"speedAvg":500,"srcFs":":s3:bucket"}

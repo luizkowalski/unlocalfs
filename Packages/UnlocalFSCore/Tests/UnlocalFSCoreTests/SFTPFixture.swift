@@ -125,9 +125,8 @@ func withSFTPDrive(
     let executable = try await rcloneExecutable.value
     try await withFixture { resources in
         var sftp = try await SFTPFixture(executable: executable, resources: resources, login: login)
-        let drive = await makeDrive(executable: executable, resources: resources, connection: sftp.connection)
+        let drive = try await makeDrive(executable: executable, resources: resources, connection: sftp.connection)
         if trusted {
-            try drive.paths.prepare()
             try Data(sftp.knownHostsEntry.utf8).write(to: drive.knownHosts)
         }
         try await body(drive, &sftp)

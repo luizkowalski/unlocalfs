@@ -26,6 +26,7 @@ public struct MountStatus: Equatable, Sendable {
     public var uploadSpeed: Double = 0
     public var downloadSpeed: Double = 0
     public var bytesCached: Int64 = 0
+    public var unsavedTraffic = Traffic()
     public var controlError: String?
     public init() {}
 

@@ -111,7 +111,7 @@ private let day = 24 * hour
             case "job/status":
                 return #"{"finished":true,"success":true,"error":"","output":{"result":{"my-bucket":\#(storage.listing())}}}"#
             default:
-                return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{}]}"#
+                return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
             }
         }
         return storage

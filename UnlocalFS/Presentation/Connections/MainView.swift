@@ -5,45 +5,24 @@ import UnlocalFSPresentation
 struct MainView: View {
     @Environment(AppViewModel.self) private var model
     @Environment(ViewModelFactory.self) private var viewModels
+    @State private var traffic: TrafficViewModel?
 
     var body: some View {
         @Bindable var model = model
         NavigationSplitView {
-            List(selection: $model.selection) {
-                Section("Unlocals") {
-                    ForEach(model.connections) { ConnectionRow(connection: $0) }
-                }
-            }
-            .contextMenu(forSelectionType: UUID.self) { _ in
-            } primaryAction: { ids in
-                if let connection = model.connections.first(where: { ids.contains($0.id) }) {
-                    Task { await model.activate(connection) }
-                }
-            }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 230)
-            .safeAreaInset(edge: .bottom) {
-                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
-                    .buttonStyle(.borderless)
-                    .disabled(!model.ready)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-            }
+            sidebar
         } detail: {
-            if let connection = model.selected {
-                ConnectionDetail(connection: connection)
-            } else {
-                ContentUnavailableView {
-                    Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
-                } description: {
-                    Text("Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac.")
-                } actions: {
-                    Button("Add Connection") { model.edit(Connection()) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(!model.ready)
-                }
-            }
+            detail
         }
         .frame(minWidth: 720, minHeight: 680)
+        .task {
+            let traffic = viewModels.makeTraffic()
+            traffic.reload()
+            self.traffic = traffic
+        }
+        .onChange(of: model.statuses.mapValues(\.unsavedTraffic)) { traffic?.reload() }
+        .onChange(of: model.connections) { traffic?.reload() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in traffic?.reload() }
         .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }
         .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
             Button("OK", role: .cancel) {}
@@ -83,6 +62,52 @@ struct MainView: View {
             Text(cleanup.message)
         }
     }
+
+    private var sidebar: some View {
+        @Bindable var model = model
+        return List(selection: $model.selection) {
+            Section("Unlocals") {
+                ForEach(model.connections) { ConnectionRow(connection: $0) }
+            }
+        }
+        .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
+        } primaryAction: { items in
+            if let connection = model.connections.first(where: { items.contains(.drive($0.id)) }) {
+                Task { await model.activate(connection) }
+            }
+        }
+        .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+        .safeAreaInset(edge: .bottom) {
+            VStack(alignment: .leading, spacing: 12) {
+                if let traffic {
+                    TrafficCard(viewModel: traffic, isSelected: model.selection == .traffic) { model.selection = .traffic }
+                }
+                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
+                    .buttonStyle(.borderless)
+                    .disabled(!model.ready)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+    }
+
+    @ViewBuilder private var detail: some View {
+        if model.selection == .traffic {
+            if let traffic { TrafficView(viewModel: traffic) }
+        } else if let connection = model.selected {
+            ConnectionDetail(connection: connection)
+        } else {
+            ContentUnavailableView {
+                Label("Your storage, in Finder", systemImage: "externaldrive.badge.icloud")
+            } description: {
+                Text("Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac.")
+            } actions: {
+                Button("Add Connection") { model.edit(Connection()) }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!model.ready)
+            }
+        }
+    }
 }
 
 private struct ConnectionRow: View {
@@ -90,15 +115,8 @@ private struct ConnectionRow: View {
     let connection: Connection
 
     private var icon: some View {
-        Group {
-            if connection.provider == .other {
-                connection.provider.logo.font(.system(size: 18))
-            } else {
-                connection.provider.logo.renderingMode(.template).resizable().scaledToFit()
-            }
-        }
-        .frame(width: 20, height: 20)
-        .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
+        ProviderIcon(provider: connection.provider, size: 20)
+            .foregroundStyle(model.isActive(connection) ? .primary : .secondary)
     }
 
     var body: some View {
@@ -123,7 +141,7 @@ private struct ConnectionRow: View {
                 .frame(width: 12)
                 .accessibilityHidden(true)
         }
-        .tag(connection.id)
+        .tag(AppViewModel.SidebarItem.drive(connection.id))
         .contextMenu {
             Button("Connect") { Task { await model.activate(connection) } }
                 .disabled(!model.canConnect(connection))

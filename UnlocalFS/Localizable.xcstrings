@@ -1,6 +1,21 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "· ^[%@ day](inflect: true)" : {
+
+    },
+    "· ^[%lld day](inflect: true)" : {
+      "comment" : "Traffic date picker: length of the picked range. %lld is a number of days",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "· ^[%lld dia](inflect: true)"
+          }
+        }
+      }
+    },
     "“%@” couldn’t be disconnected." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -56,6 +71,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "há 1 min"
+          }
+        }
+      }
+    },
+    "12 Months" : {
+      "comment" : "Traffic period: the last 12 calendar months, by month",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 meses"
+          }
+        }
+      }
+    },
+    "30 Days" : {
+      "comment" : "Traffic period: the last 30 days, by day",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 dias"
+          }
+        }
+      }
+    },
+    "90 Days" : {
+      "comment" : "Traffic period: the last 90 days, by day",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "90 dias"
           }
         }
       }
@@ -222,6 +270,18 @@
         }
       }
     },
+    "Apply" : {
+      "comment" : "Traffic date picker: use the picked range",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar"
+          }
+        }
+      }
+    },
     "Authentication" : {
       "localizations" : {
         "pt-BR" : {
@@ -309,6 +369,18 @@
         }
       }
     },
+    "Change Dates" : {
+      "comment" : "Traffic page: help for the custom range title, which opens the date picker",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alterar datas"
+          }
+        }
+      }
+    },
     "Check Again" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -359,6 +431,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Limpar envios inacabados…"
+          }
+        }
+      }
+    },
+    "Click the last day" : {
+      "comment" : "Traffic date picker: shown after the first day of a range is clicked",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clique no último dia"
           }
         }
       }
@@ -503,6 +586,29 @@
         }
       }
     },
+    "Custom" : {
+      "comment" : "Traffic period: opens the date picker for a range the user picks",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizado"
+          }
+        }
+      }
+    },
+    "Date" : {
+      "comment" : "Traffic chart: x axis value for each bar",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        }
+      }
+    },
     "Default" : {
       "comment" : "Value shown when the region field is empty",
       "localizations" : {
@@ -614,6 +720,17 @@
         }
       }
     },
+    "Download" : {
+      "comment" : "Traffic total and table column: bytes downloaded",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        }
+      }
+    },
     "Download speed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -660,8 +777,19 @@
         }
       }
     },
-    "Drive" : {
+    "Drag across the chart to pick days" : {
+      "comment" : "Traffic page: hint under the period title",
       "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arraste no gráfico para escolher dias"
+          }
+        }
+      }
+    },
+    "Drive" : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -991,6 +1119,61 @@
         }
       }
     },
+    "Last 7 Days" : {
+      "comment" : "Traffic date picker preset: the last 7 days, today included",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 7 dias"
+          }
+        }
+      }
+    },
+    "Last 12 Months" : {
+      "comment" : "Traffic page title for the 12 Months period",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 12 meses"
+          }
+        }
+      }
+    },
+    "Last 30 Days" : {
+      "comment" : "Traffic page title for the 30 Days period",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 30 dias"
+          }
+        }
+      }
+    },
+    "Last 90 Days" : {
+      "comment" : "Traffic page title for the 90 Days period",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos 90 dias"
+          }
+        }
+      }
+    },
+    "Last Month" : {
+      "comment" : "Traffic date picker preset: the previous calendar month",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mês passado"
+          }
+        }
+      }
+    },
     "Leave the folder empty for your home folder. Start it with / for a path from the server’s root." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1072,6 +1255,18 @@
         }
       }
     },
+    "Next Month" : {
+      "comment" : "Traffic date picker: show the next month",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo mês"
+          }
+        }
+      }
+    },
     "No connections yet" : {
       "localizations" : {
         "pt-BR" : {
@@ -1082,12 +1277,34 @@
         }
       }
     },
+    "No drive moved data in this period." : {
+      "comment" : "Traffic page: no drive has traffic in the period",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma unidade transferiu dados neste período."
+          }
+        }
+      }
+    },
     "No drives connected" : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma unidade conectada"
+          }
+        }
+      }
+    },
+    "No traffic from %@." : {
+      "comment" : "Traffic page: drives with no traffic in the period. %@ is a list of drive names, such as Homelab, Media, and Personal",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem tráfego em %@."
           }
         }
       }
@@ -1287,6 +1504,30 @@
         }
       }
     },
+    "Period" : {
+      "comment" : "Accessibility label for the traffic period picker",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Período"
+          }
+        }
+      }
+    },
+    "Picked on the chart" : {
+      "comment" : "Traffic page: under the title when days are picked on the chart",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolhido no gráfico"
+          }
+        }
+      }
+    },
     "Port" : {
       "comment" : "Field label: network port number",
       "extractionState" : "stale",
@@ -1295,6 +1536,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Porta"
+          }
+        }
+      }
+    },
+    "Previous Month" : {
+      "comment" : "Traffic date picker: show the previous month",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mês anterior"
           }
         }
       }
@@ -1600,6 +1853,18 @@
         }
       }
     },
+    "Show Whole Period" : {
+      "comment" : "Traffic page: clears the days picked on the chart",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar período inteiro"
+          }
+        }
+      }
+    },
     "Show why the upload failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1730,6 +1995,17 @@
         }
       }
     },
+    "This Month" : {
+      "comment" : "Traffic date picker preset: the current calendar month, through today",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mês"
+          }
+        }
+      }
+    },
     "This removes the saved connection, credentials, and local file cache. Remote files are kept." : {
       "localizations" : {
         "pt-BR" : {
@@ -1746,6 +2022,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este servidor tem uma chave diferente. Confira a impressão digital com o administrador antes de substituir a chave confiável."
+          }
+        }
+      }
+    },
+    "This Year" : {
+      "comment" : "Traffic date picker preset: the current calendar year, through today",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este ano"
           }
         }
       }
@@ -1768,6 +2055,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Para usar uma pasta diferente, duplique esta unidade."
+          }
+        }
+      }
+    },
+    "Today" : {
+      "comment" : "Traffic date picker preset: today",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoje"
+          }
+        }
+      }
+    },
+    "Total" : {
+      "comment" : "Traffic total and table column: upload plus download",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total"
+          }
+        }
+      }
+    },
+    "Traffic" : {
+      "comment" : "Traffic page title: bytes each drive uploaded and downloaded",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tráfego"
+          }
+        }
+      }
+    },
+    "Traffic, last 30 days" : {
+      "comment" : "Sidebar card that opens the Traffic page; shows the total of the last 30 days",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tráfego, últimos 30 dias"
           }
         }
       }
@@ -1832,6 +2164,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O UnlocalFS tenta novamente sozinho, no máximo a cada 5 minutos, enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
+    "Upload" : {
+      "comment" : "Traffic total and table column: bytes uploaded",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envio"
           }
         }
       }
@@ -1985,6 +2328,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando o cache fica cheio, as cópias mais antigas são apagadas."
+          }
+        }
+      }
+    },
+    "Yesterday" : {
+      "comment" : "Traffic date picker preset: yesterday",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ontem"
           }
         }
       }

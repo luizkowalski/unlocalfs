@@ -5,6 +5,7 @@ public struct StubbedDrives: Sendable {
     public let root: URL
     public let paths: AppPaths
     public let service: MountService
+    public let traffic: TrafficStore
 
     public init(_ name: String, rclone script: (URL) -> String = { _ in "" }) throws {
         root = URL(filePath: "/tmp/uf-\(name)-\(UUID().uuidString.prefix(8))")
@@ -18,7 +19,8 @@ public struct StubbedDrives: Sendable {
         \(script(root))
         """.write(to: executable, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
-        service = MountService(executable: executable, helperDirectory: root, paths: paths)
+        traffic = TrafficStore(url: paths.traffic)
+        service = MountService(executable: executable, helperDirectory: root, paths: paths, traffic: traffic)
     }
 
     public var rcloneCalls: [String] {

@@ -117,11 +117,11 @@ struct SpeedChart: View {
     }
 
     private func byteCount(_ speed: Double) -> String {
-        Int64(speed.rounded()).formatted(.byteCount(style: .file, spellsOutZero: false))
+        Int64(speed.rounded()).formatted(.size)
     }
 }
 
-private enum Direction: String, Plottable {
+enum Direction: String, Plottable {
     case upload, download
 
     var color: Color { self == .upload ? .accentColor : .teal }

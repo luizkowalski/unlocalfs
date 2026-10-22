@@ -13,6 +13,7 @@ struct ViewModelFixture {
     var root: URL { drives.root }
     var paths: AppPaths { drives.paths }
     var service: MountService { drives.service }
+    var traffic: TrafficStore { drives.traffic }
     var rcloneCalls: [String] { drives.rcloneCalls }
 
     init() throws {
@@ -47,7 +48,7 @@ struct ViewModelFixture {
         }
         repository = SavedConnectionRepository(store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage())
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
-        try Data("{}".utf8).write(to: root.appending(path: "stats.json"))
+        try Data(#"{\#(rcloneCounters)}"#.utf8).write(to: root.appending(path: "stats.json"))
         try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
     }
 
@@ -64,7 +65,9 @@ struct ViewModelFixture {
     }
 
     @MainActor func factory(_ app: AppViewModel) -> ViewModelFactory {
-        ViewModelFactory(app: app, repository: repository, drives: service, saveConnection: SaveConnectionUseCase(repository: repository, drives: service))
+        ViewModelFactory(
+            app: app, repository: repository, drives: service, saveConnection: SaveConnectionUseCase(repository: repository, drives: service), traffic: traffic
+        )
     }
 
     @MainActor func editor(draft: ConnectionDraft, app: AppViewModel? = nil) -> ConnectionEditorViewModel {
@@ -72,7 +75,8 @@ struct ViewModelFixture {
     }
 
     func serve(
-        _ connection: Connection, queued: Int = 0, failed: Int = 0, lastError: String? = nil, cached: Int64 = 0, downloading: Bool = false
+        _ connection: Connection, queued: Int = 0, failed: Int = 0, lastError: String? = nil, cached: Int64 = 0, downloading: Bool = false,
+        downloaded: Int64 = 0
     ) throws {
         try serve(connection) { [root] request in
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
@@ -84,7 +88,9 @@ struct ViewModelFixture {
         if failed > 0 { try queue(contentsOf: (0..<failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
         let transfers = downloading ? #"[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]"# : "[]"
         let error = lastError.map { #","lastError":"\#($0)""# } ?? ""
-        try Data(#"{"transferring":\#(transfers)\#(error)}"#.utf8).write(to: root.appending(path: "stats.json"))
+        let counters = #""bytes":\#(downloaded),"serverSideCopyBytes":0,"serverSideMoveBytes":0"#
+        try Data(#"{\#(counters),"transferring":\#(transfers)\#(error)}"#.utf8).write(to: root.appending(path: "stats.json"))
+        if downloaded > 0 { try String(getpid()).write(to: paths.pidFile(connection), atomically: true, encoding: .utf8) }
     }
 
     func serve(_ connection: Connection, respond: @escaping ControlServer.Respond) throws {

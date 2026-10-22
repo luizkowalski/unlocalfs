@@ -17,6 +17,7 @@ struct Drive: Sendable {
     let executable: URL
     let paths: AppPaths
     let service: MountService
+    let traffic: TrafficStore
     let connection: Connection
 
     var mounted: URL { paths.mount(connection) }
@@ -69,15 +70,17 @@ struct Drive: Sendable {
     }
 }
 
-func makeDrive(executable: URL, resources: FixtureResources, connection: Connection) async -> Drive {
+func makeDrive(executable: URL, resources: FixtureResources, connection: Connection) async throws -> Drive {
     let root = resources.root
     let paths = AppPaths(
         config: root.appending(path: "config.json"), support: root.appending(path: "app"),
         mounts: root.appending(path: "drives"), logs: root.appending(path: "logs")
     )
+    try paths.prepare()
+    let traffic = TrafficStore(url: paths.traffic)
     let drive = Drive(
         executable: executable, paths: paths,
-        service: MountService(executable: executable, helperDirectory: helpers, paths: paths), connection: connection
+        service: MountService(executable: executable, helperDirectory: helpers, paths: paths, traffic: traffic), traffic: traffic, connection: connection
     )
     await resources.track(drive)
     return drive
@@ -101,8 +104,16 @@ func verifyRoundTrip(_ drive: Drive, storage: URL, credentials: Credentials) asy
     try FileManager.default.removeItem(at: drive.mounted.appending(path: "remote.txt"))
     #expect(!FileManager.default.fileExists(atPath: storage.appending(path: "remote.txt").path))
 
+    let beforeRename = await drive.service.status(drive.connection).unsavedTraffic
+    try FileManager.default.moveItem(at: drive.mounted.appending(path: "local.txt"), to: drive.mounted.appending(path: "renamed.txt"))
+    try await waitUntil(timeout: .seconds(10)) { FileManager.default.fileExists(atPath: storage.appending(path: "renamed.txt").path) }
+    #expect(await drive.service.status(drive.connection).unsavedTraffic == beforeRename)
+
     try await drive.service.unmount(drive.connection)
     #expect(await !drive.service.status(drive.connection).isActive)
+    let today = TrafficDay(.now, calendar: .current)
+    let recorded = try #require(try drive.traffic.traffic(in: today...today).first { $0.id == drive.connection.id })
+    #expect(recorded.traffic.upload >= 11 && recorded.traffic.download >= 15)
 }
 
 func rclone(_ drive: Drive, _ config: URL, _ arguments: String...) async throws -> String {

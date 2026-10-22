@@ -15,3 +15,19 @@ extension Provider {
         }
     }
 }
+
+struct ProviderIcon: View {
+    let provider: Provider
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if provider == .other {
+                provider.logo.font(.system(size: size * 0.9))
+            } else {
+                provider.logo.renderingMode(.template).resizable().scaledToFit()
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
