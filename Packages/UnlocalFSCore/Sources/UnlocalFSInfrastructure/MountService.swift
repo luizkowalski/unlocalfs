@@ -197,16 +197,17 @@ public actor MountService: DriveGateway {
     }
 
     private func disconnect(_ connection: Connection) async throws {
-        let current = await status(connection)
+        var current = await status(connection)
         if current.needsReconnect, isRunning(connection) == nil {
             throw AppError(String(localized: .couldNotStopOldService))
         }
+        let reachable = try await reachesControl(connection, updating: &current)
         try current.requireSafeDisconnect()
         try await requireNoCopies(connection, status: current)
         saveTraffic(connection)
-        if current.isMounted { try await eject(connection, force: !current.isRunning || current.needsReconnect) }
+        if current.isMounted { try await eject(connection, force: !current.isRunning || !reachable) }
         if current.needsReconnect {
-            try await stop(connection, askingToQuit: false)
+            try await stop(connection, askingToQuit: reachable)
         } else if current.isRunning {
             let remaining = await status(connection)
             try remaining.requireSafeDisconnect()
@@ -245,7 +246,9 @@ public actor MountService: DriveGateway {
     func isRunning(_ connection: Connection) -> Bool? {
         guard let pid = savedPID(connection) else { return processes[connection.id]?.isRunning }
         if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning }
-        return kill(pid, 0) == 0 || errno != ESRCH
+        let saved = try? paths.pidFile(connection).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        guard let process = Self.process(pid: pid), let saved else { return false }
+        return process.startedAt <= saved
     }
 
     var baseEnvironment: [String: String] {

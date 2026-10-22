@@ -13,7 +13,7 @@ If macOS cannot eject a drive, a system alert asks you to close files and stop a
 
 Changes made to the bucket from other apps or Macs show within 5 minutes. To see them sooner, click **Refresh** in the app, or choose **Refresh Files** in the sidebar menu or the menu bar.
 
-If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. Recovery stops if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
+If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects again using the same cache. A service that does not answer at all is force-ejected and stopped. Recovery stops while uploads are pending, or if the drive cannot eject or the old service cannot be stopped. Wake and network changes refresh drive health; reconnecting stays manual.
 
 The activity table shows each file’s name, folder, transfer status, and size. When you switch drives, the table shows **Checking activity…** until it receives that drive’s activity. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
 

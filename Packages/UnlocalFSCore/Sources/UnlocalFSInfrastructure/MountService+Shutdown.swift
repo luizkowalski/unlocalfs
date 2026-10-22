@@ -24,6 +24,20 @@ extension MountService {
         throw DriveEjectError()
     }
 
+    func reachesControl(_ connection: Connection, updating status: inout MountStatus) async throws -> Bool {
+        guard let problem = status.controlError else { return true }
+        do {
+            let queue = try await control(UploadQueue.self, connection, "vfs/queue").queue
+            status.pendingUploads = queue.count
+            status.failedUploads = queue.count(where: \.hasFailedAttempt)
+            return true
+        } catch is ControlUnreachable {
+            return false
+        } catch {
+            throw AppError(problem)
+        }
+    }
+
     func stop(_ connection: Connection, askingToQuit: Bool) async throws {
         var quitError: any Error = AppError(String(localized: .driveStillStopping))
         if askingToQuit {
@@ -34,10 +48,10 @@ extension MountService {
             }
             if try await waitForStop(connection) { return }
         }
-        if let pid = savedPID(connection) {
+        if isRunning(connection) == true, let pid = savedPID(connection) {
             _ = kill(pid, SIGTERM)
             if try await waitForStop(connection) { return }
-            _ = kill(pid, SIGKILL)
+            if isRunning(connection) == true { _ = kill(pid, SIGKILL) }
         }
         guard try await waitForStop(connection) else { throw quitError }
     }

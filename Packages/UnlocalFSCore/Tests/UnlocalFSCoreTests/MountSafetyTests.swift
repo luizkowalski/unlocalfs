@@ -60,15 +60,6 @@ import UnlocalFSTestSupport
         }
     }
 
-    @Test func anErrorInsideTheStatusBatchMarksTheDriveForReconnect() async throws {
-        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
-        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
-            let status = await service.status(connection)
-            #expect(status.needsReconnect)
-            #expect(status.controlError?.contains("core/stats failed") == true)
-        }
-    }
-
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withControl { root, _ in
             { request in
@@ -141,7 +132,7 @@ import UnlocalFSTestSupport
         let started = ContinuousClock.now
 
         await #expect { _ = try await ControlSocket.post(socket, "core/stats", body: Data("{}".utf8), timeout: .milliseconds(300)) } throws: { error in
-            error.localizedDescription == String(localized: .commandTimedOut)
+            error is ControlUnreachable && error.localizedDescription == String(localized: .commandTimedOut)
         }
         #expect(ContinuousClock.now - started < .seconds(1))
     }
@@ -162,25 +153,6 @@ import UnlocalFSTestSupport
             }
             let status = await service.status(connection)
             #expect(status.isRunning)
-        }
-    }
-
-    @Test func quitStopsAServiceThatCannotAnswerTheControlSocket() async throws {
-        let helper = try Process.run(URL(filePath: "/bin/sleep"), arguments: ["300"])
-        defer { helper.terminate() }
-
-        try await withControl { _, socket in
-            try? String(helper.processIdentifier).write(to: socket.appendingPathExtension("pid"), atomically: true, encoding: .utf8)
-            return { _ in throw ControlFailure("Control unavailable") }
-        } operation: { service, connection in
-            try await service.unmount(connection)
-
-            for _ in 0..<40 where helper.isRunning {
-                try await Task.sleep(for: .milliseconds(50))
-            }
-            let status = await service.status(connection)
-            #expect(!helper.isRunning)
-            #expect(!status.isActive)
         }
     }
 
@@ -333,18 +305,18 @@ private func mark(_ file: URL) -> Bool {
     return FileManager.default.fileExists(atPath: file.path)
 }
 
-private func withFixture(script: String, operation: (MountService, Connection) async throws -> Void) async throws {
+func withFixture(script: String, operation: (MountService, Connection) async throws -> Void) async throws {
     try await withFixture(script: { _ in script }, operation: operation)
 }
 
-private func withControl(
-    _ control: @escaping (_ root: URL, _ socket: URL) -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void
+func withControl(
+    _ control: @escaping (_ root: URL, _ socket: URL) throws -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void
 ) async throws {
     try await withFixture(script: { _ in "" }, control: control, operation: operation)
 }
 
 private func withFixture(
-    script: (URL) -> String, control: ((_ root: URL, _ socket: URL) -> ControlServer.Respond)? = nil,
+    script: (URL) -> String, control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
     operation: (MountService, Connection) async throws -> Void
 ) async throws {
     let drives = try StubbedDrives("safety", rclone: script)
