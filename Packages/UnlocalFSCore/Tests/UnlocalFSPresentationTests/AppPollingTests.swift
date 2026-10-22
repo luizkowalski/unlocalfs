@@ -29,24 +29,6 @@ import UnlocalFSInfrastructure
         #expect(overlap.peak == 2)
     }
 
-    @Test func samplesInTheSameSecondLeaveTheHistoryUnchanged() {
-        let app = fixture.app()
-        let drive = UUID()
-        let start = Date(timeIntervalSinceReferenceDate: 1_000)
-        func record(_ offset: TimeInterval) {
-            var status = MountStatus()
-            status.uploadSpeed = 3_000
-            app.recordSpeed(SpeedSample(status, at: start + offset), for: drive)
-        }
-
-        record(0)
-        let first = app.speeds[drive]
-
-        record(0.25)
-        record(0.75)
-        #expect(app.speeds[drive] == first)
-    }
-
     @Test func loginItemStateIsNotReadOnEveryPoll() async throws {
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)

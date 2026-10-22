@@ -7,20 +7,16 @@ public struct SpeedSample: Equatable, Sendable {
     public let download: Double
 
     init(_ activity: [FileActivity], at date: Date) {
-        self.date = date.secondAligned
+        self.date = date
         upload = activity.bytesPerSecond(.uploading)
         download = activity.bytesPerSecond(.downloading)
     }
 
     init(_ status: MountStatus, at date: Date) {
-        self.date = date.secondAligned
+        self.date = date
         upload = status.uploadSpeed
         download = status.downloadSpeed
     }
-}
-
-private extension Date {
-    var secondAligned: Date { Date(timeIntervalSinceReferenceDate: timeIntervalSinceReferenceDate.rounded(.down)) }
 }
 
 public extension [SpeedSample] {

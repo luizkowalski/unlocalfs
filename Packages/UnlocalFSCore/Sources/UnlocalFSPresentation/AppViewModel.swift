@@ -327,7 +327,9 @@ extension AppViewModel {
     func recordSpeed(_ sample: SpeedSample, for id: UUID) {
         var samples = speeds[id, default: []]
         samples.removeAll { !(0..<Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
-        if samples.last?.date == sample.date { samples.removeLast() }
+        if let last = samples.last, floor(last.date.timeIntervalSinceReferenceDate) == floor(sample.date.timeIntervalSinceReferenceDate) {
+            samples.removeLast()
+        }
         samples.append(sample)
         speeds[id] = samples
     }

@@ -15,7 +15,7 @@ import UnlocalFSDomain
         self.recordSpeed = recordSpeed
     }
 
-    var refreshInterval: Duration { summary == nil ? .seconds(1) : .milliseconds(250) }
+    var refreshInterval: Duration { summary == nil ? .seconds(1) : .milliseconds(500) }
 
     public func observe(_ connection: Connection) async {
         show(nil)

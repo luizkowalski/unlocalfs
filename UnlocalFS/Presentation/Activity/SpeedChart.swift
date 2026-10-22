@@ -4,7 +4,6 @@ import UnlocalFSPresentation
 
 struct SpeedChart: View {
     let speeds: [SpeedSample]
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedDate: Date?
 
     var body: some View {
@@ -106,8 +105,6 @@ struct SpeedChart: View {
             speedText(speed)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(reduceMotion ? nil : .default, value: speed)
         }
         .accessibilityElement(children: .combine)
     }

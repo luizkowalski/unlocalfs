@@ -35,12 +35,11 @@ struct ActivityStatus: View {
                 ProgressView(value: fraction)
                     .controlSize(.small)
                     .accessibilityLabel(movingText)
+                    .animation(reduceMotion ? nil : .linear(duration: 0.5), value: fraction)
                 Text(fraction, format: .percent.precision(.fractionLength(0)))
                     .monospacedDigit()
-                    .contentTransition(.numericText())
                     .frame(width: 34, alignment: .leading)
             }
-            .animation(reduceMotion ? nil : .linear(duration: 0.25), value: fraction)
             .help(movingText)
         } else {
             movingText
