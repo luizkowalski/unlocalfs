@@ -6,7 +6,7 @@ Run every test in `Packages/UnlocalFSCore`:
 timeout 180 xcodebuild test -scheme UnlocalFSCore-Package -destination platform=macOS
 ```
 
-CI runs the same command on each supported macOS/Xcode version.
+CI runs the same command only with Xcode 27, the Xcode that builds releases.
 
 ## What to test
 
@@ -42,4 +42,8 @@ A failed storage test keeps its folder in `/tmp/uf-*`, with the server and drive
 
 - Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`.
 - Use ASCII file names with `rclone serve s3`. Accented names make the tests flaky.
+- `rclone serve s3` hashes every file (MD5 ETag) on each listing. Keep fixture files to tens of MB, or the connection test in `mount()` times out on CI.
+- `rclone serve s3` returns HTTP 500 for the folder marker rclone writes when it copies into a subfolder. Keep server-side copy tests at the drive root.
+- `rclone serve s3 --auth-key` rejects short keys; use `test-key,test-secret`.
+- `rclone serve sftp <dir>` roots at `<dir>`. Mount the client at `:sftp:`, not `:sftp:<dir>`.
 - A password-only SFTP server gets an empty `--authorized-keys`. rclone 1.75.1 loops when the authorized-keys file contains only a newline.
