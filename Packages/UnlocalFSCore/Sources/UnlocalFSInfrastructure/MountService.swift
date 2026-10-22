@@ -189,34 +189,33 @@ public actor MountService: DriveGateway {
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
 
-    public func unmount(_ connection: Connection) async throws { try await disconnect(connection, recovering: false) }
+    public func unmount(_ connection: Connection) async throws { try await disconnect(connection) }
 
     public func reconnect(_ connection: Connection, credentials: Credentials) async throws {
-        try await disconnect(connection, recovering: true)
+        try await disconnect(connection)
         try await mount(connection, credentials: credentials)
     }
 
-    private func disconnect(_ connection: Connection, recovering: Bool) async throws {
+    private func disconnect(_ connection: Connection) async throws {
         let current = await status(connection)
-        if let error = current.controlError, !recovering { throw AppError(error) }
         if current.needsReconnect, isRunning(connection) == nil {
             throw AppError(String(localized: .couldNotStopOldService))
         }
         try current.requireSafeDisconnect()
         try await requireNoCopies(connection, status: current)
         saveTraffic(connection)
-        if current.isMounted { try await eject(connection, force: !current.isRunning) }
+        if current.isMounted { try await eject(connection, force: !current.isRunning || current.needsReconnect) }
         if current.needsReconnect {
-            try await stop(connection)
+            try await stop(connection, askingToQuit: false)
         } else if current.isRunning {
             let remaining = await status(connection)
             try remaining.requireSafeDisconnect()
             try await requireNoCopies(connection, status: remaining)
             saveTraffic(connection)
             if let error = remaining.controlError {
-                try await waitForStop(connection, error: AppError(error))
+                guard try await waitForStop(connection) else { throw AppError(error) }
             } else if remaining.isRunning {
-                try await stop(connection)
+                try await stop(connection, askingToQuit: true)
             }
         }
         processes[connection.id] = nil

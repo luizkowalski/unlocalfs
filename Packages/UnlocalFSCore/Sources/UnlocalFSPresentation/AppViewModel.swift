@@ -249,7 +249,7 @@ import UnlocalFSDomain
         syncOpensAtLogin()
     }
 
-    private func syncOpensAtLogin() {
+    public func syncOpensAtLogin() {
         let enabled = desktop.opensAtLogin
         if opensAtLogin != enabled { opensAtLogin = enabled }
     }
@@ -272,10 +272,17 @@ import UnlocalFSDomain
         defer { refreshing = false }
         repeat {
             refreshRequested = false
-            syncOpensAtLogin()
-            for connection in connections where !busy.contains(connection.id) && !sleeping {
-                let status = await drives.status(connection)
-                if !sleeping, !busy.contains(connection.id) { update(status, for: connection) }
+            let checked = connections.filter { !busy.contains($0.id) }
+            let results = await withTaskGroup(of: (UUID, MountStatus).self) { group in
+                for connection in checked {
+                    group.addTask { [drives] in (connection.id, await drives.status(connection)) }
+                }
+                var results: [UUID: MountStatus] = [:]
+                for await (id, status) in group { results[id] = status }
+                return results
+            }
+            for connection in checked where !sleeping && !busy.contains(connection.id) {
+                if let status = results[connection.id] { update(status, for: connection) }
             }
         } while refreshRequested && !sleeping
     }
@@ -320,9 +327,7 @@ extension AppViewModel {
     func recordSpeed(_ sample: SpeedSample, for id: UUID) {
         var samples = speeds[id, default: []]
         samples.removeAll { !(0..<Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
-        if let last = samples.last, floor(last.date.timeIntervalSinceReferenceDate) == floor(sample.date.timeIntervalSinceReferenceDate) {
-            samples.removeLast()
-        }
+        if samples.last?.date == sample.date { samples.removeLast() }
         samples.append(sample)
         speeds[id] = samples
     }

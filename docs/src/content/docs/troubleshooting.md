@@ -35,7 +35,7 @@ Test Connection shows that UnlocalFS can list the folder. It does not check writ
 
 ## A drive needs reconnecting
 
-Click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects using the same cache. Recovery stops if the drive cannot eject or the old service cannot stop. Close files open on the drive before trying again.
+Click **Reconnect** in the app or menu bar. UnlocalFS tries a normal eject, waits for the old service to stop, and connects using the same cache. If the drive's service does not answer, UnlocalFS stops it with a forced eject and terminates the process, because a service that cannot answer cannot save its uploads either. Recovery stops only if the drive cannot eject. Close files open on the drive before trying again.
 
 Wake and network changes refresh drive health. Reconnecting stays manual.
 

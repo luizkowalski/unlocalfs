@@ -165,6 +165,25 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test func quitStopsAServiceThatCannotAnswerTheControlSocket() async throws {
+        let helper = try Process.run(URL(filePath: "/bin/sleep"), arguments: ["300"])
+        defer { helper.terminate() }
+
+        try await withControl { _, socket in
+            try? String(helper.processIdentifier).write(to: socket.appendingPathExtension("pid"), atomically: true, encoding: .utf8)
+            return { _ in throw ControlFailure("Control unavailable") }
+        } operation: { service, connection in
+            try await service.unmount(connection)
+
+            for _ in 0..<40 where helper.isRunning {
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            let status = await service.status(connection)
+            #expect(!helper.isRunning)
+            #expect(!status.isActive)
+        }
+    }
+
     @Test(arguments: [
         ("lsf", 1), ("lsf", 8192)
     ])

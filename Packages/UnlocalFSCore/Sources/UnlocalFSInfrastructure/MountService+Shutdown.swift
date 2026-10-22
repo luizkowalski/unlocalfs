@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import UnlocalFSDomain
 
@@ -23,29 +24,37 @@ extension MountService {
         throw DriveEjectError()
     }
 
-    func stop(_ connection: Connection) async throws {
+    func stop(_ connection: Connection, askingToQuit: Bool) async throws {
         var quitError: any Error = AppError(String(localized: .driveStillStopping))
-        do {
-            _ = try await control(connection, "core/quit")
-        } catch {
-            quitError = error
+        if askingToQuit {
+            do {
+                _ = try await control(connection, "core/quit")
+            } catch {
+                quitError = error
+            }
+            if try await waitForStop(connection) { return }
         }
-        try await waitForStop(connection, error: quitError)
+        if let pid = savedPID(connection) {
+            _ = kill(pid, SIGTERM)
+            if try await waitForStop(connection) { return }
+            _ = kill(pid, SIGKILL)
+        }
+        guard try await waitForStop(connection) else { throw quitError }
     }
 
-    func waitForStop(_ connection: Connection, error: any Error) async throws {
+    func waitForStop(_ connection: Connection) async throws -> Bool {
         for _ in 0..<20 {
             let running = isRunning(connection)
             let socket = paths.socket(connection)
             if running != true, !isMounted(paths.mount(connection)) {
-                if !FileManager.default.fileExists(atPath: socket.path) { return }
+                if !FileManager.default.fileExists(atPath: socket.path) { return true }
                 if running == false {
                     try FileManager.default.removeItem(at: socket)
-                    return
+                    return true
                 }
             }
             try await Task.sleep(for: .milliseconds(100))
         }
-        throw error
+        return false
     }
 }

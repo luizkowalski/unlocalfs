@@ -128,6 +128,21 @@ private final class ControlServers: Sendable {
     func stop() { servers.withLock { $0.forEach { $0.stop() } } }
 }
 
+final class Overlap: Sendable {
+    private let state = Mutex((inFlight: 0, peak: 0))
+
+    func hold() {
+        state.withLock {
+            $0.inFlight += 1
+            $0.peak = max($0.peak, $0.inFlight)
+        }
+    }
+
+    func release() { state.withLock { $0.inFlight -= 1 } }
+
+    var peak: Int { state.withLock { $0.peak } }
+}
+
 final class MemoryCredentialStorage: CredentialStorage {
     private let items = Mutex<[UUID: Credentials]>([:])
 

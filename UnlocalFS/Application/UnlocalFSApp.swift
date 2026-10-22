@@ -176,6 +176,7 @@ extension AppDelegate {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
         if app == .current {
             returnServiceFocus()
+            model.syncOpensAtLogin()
         } else {
             requester = app
         }
