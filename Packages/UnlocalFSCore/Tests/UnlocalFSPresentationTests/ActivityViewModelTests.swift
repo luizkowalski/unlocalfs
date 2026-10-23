@@ -44,17 +44,21 @@ import UnlocalFSTestSupport
         #expect(try #require(viewModel.activity).get().isEmpty)
     }
 
-    @Test func activityRefreshesTwiceASecondWhileFilesShow() async throws {
+    @Test func activityPollsFastOnlyWhileTransfersAreActive() async throws {
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let connection = Connection.s3()
         try fixture.serve(connection)
 
         await viewModel.refresh(connection)
-        #expect(viewModel.refreshInterval == .seconds(1))
+        #expect(viewModel.refreshInterval == .seconds(2))
 
         try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         await viewModel.refresh(connection)
         #expect(viewModel.refreshInterval == .milliseconds(500))
+
+        try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":1,"delay":5,"uploading":false}"#)
+        await viewModel.refresh(connection)
+        #expect(viewModel.refreshInterval == .seconds(2))
     }
 
     @Test func openDrivePageUpdatesTheSpeedHistoryLive() async throws {

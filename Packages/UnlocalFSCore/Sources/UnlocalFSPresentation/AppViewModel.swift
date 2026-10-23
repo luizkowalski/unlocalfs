@@ -266,9 +266,11 @@ import UnlocalFSDomain
     }
 
     private func connectAutomatically() async {
-        for connection in connections {
-            if let status = statuses[connection.id], connection.shouldConnectAutomatically(status: status) {
-                await connect(connection, opensFinder: false)
+        await withTaskGroup(of: Void.self) { group in
+            for connection in connections {
+                if let status = statuses[connection.id], connection.shouldConnectAutomatically(status: status) {
+                    group.addTask { await self.connect(connection, opensFinder: false) }
+                }
             }
         }
     }
@@ -337,6 +339,7 @@ extension AppViewModel {
         var samples = speeds[id, default: []]
         samples.removeAll { !(0..<Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
         if let last = samples.last, floor(last.date.timeIntervalSinceReferenceDate) == floor(sample.date.timeIntervalSinceReferenceDate) {
+            if last.upload == sample.upload, last.download == sample.download { return }
             samples.removeLast()
         }
         samples.append(sample)
