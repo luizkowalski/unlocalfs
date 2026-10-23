@@ -24,6 +24,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: swiftlint lint --strict
+
       - name: Cache rclone
         uses: actions/cache@v6
         with:
@@ -61,11 +67,8 @@ jobs:
           path: .build/rclone
           key: rclone-${{ github.job }}-${{ hashFiles('project.yml') }}
 
-      - name: Install tools
-        run: brew install xcodegen swiftlint
-
-      - name: Lint
-        run: swiftlint lint --strict
+      - name: Install XcodeGen
+        run: brew install xcodegen
 
       - name: Generate project
         run: xcodegen generate --quiet
