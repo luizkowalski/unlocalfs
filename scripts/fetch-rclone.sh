@@ -2,20 +2,15 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-arch="${1:-$(uname -m)}"
 
 setting() {
     sed -nE "s/^[[:space:]]*$1:[[:space:]]*([^[:space:]]+).*/\1/p" "$root/project.yml" | head -1
 }
 
 version="$(setting RCLONE_VERSION)"
-case "$arch" in
-    arm64) platform=arm64 checksum="$(setting RCLONE_SHA256_ARM64)" ;;
-    x86_64) platform=amd64 checksum="$(setting RCLONE_SHA256_AMD64)" ;;
-    *) echo "Unsupported architecture: $arch" >&2; exit 1 ;;
-esac
+checksum="$(setting RCLONE_SHA256_ARM64)"
 
-name="rclone-v$version-osx-$platform"
+name="rclone-v$version-osx-arm64"
 cache="$root/.build/rclone/$version"
 binary="$cache/$name/rclone"
 

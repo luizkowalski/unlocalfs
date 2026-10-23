@@ -5,7 +5,7 @@ description: Install UnlocalFS and connect your first drive.
 
 ## Install
 
-Download the latest `UnlocalFS-<version>.dmg` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), open it, and drag **UnlocalFS** to Applications. It needs macOS 15 or later and runs on Apple silicon and Intel Macs.
+Download the latest `UnlocalFS-<version>.dmg` from [Releases](https://github.com/luizkowalski/unlocalfs/releases), open it, and drag **UnlocalFS** to Applications. It requires macOS 15 or later and a Mac with Apple silicon (M1 or later).
 
 The app is not notarized yet, so macOS blocks it the first time. Remove the quarantine flag:
 

@@ -11,6 +11,7 @@ packages:
     path: Packages/UnlocalFSCore
 settings:
   base:
+    ARCHS: arm64
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: 0.1.0
     CURRENT_PROJECT_VERSION: 1
@@ -47,20 +48,16 @@ targets:
         ENABLE_USER_SCRIPT_SANDBOXING: NO
         RCLONE_VERSION: 1.75.2
         RCLONE_SHA256_ARM64: 610ab7d48615135dfc60b763858b11a426a0d3d1160c1bb76fb0ae6011b02edd
-        RCLONE_SHA256_AMD64: 574e1f31cf1c464e5fb0325cb66fcbdeaf1efa1802bd9b17f13c256fd74b6561
     postBuildScripts:
       - name: Embed rclone
         shell: /bin/bash
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          slices=()
-          for arch in $ARCHS; do
-              slices+=("$("$PROJECT_DIR/scripts/fetch-rclone.sh" "$arch")")
-          done
+          rclone="$("$PROJECT_DIR/scripts/fetch-rclone.sh")"
           helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/rclone"
           mkdir -p "$(dirname "$helper")"
-          lipo -create "${slices[@]}" -output "$helper"
+          cp "$rclone" "$helper"
           if [ "$EXPANDED_CODE_SIGN_IDENTITY" = "-" ]; then
               codesign --force --sign - --options runtime "$helper"
           else
