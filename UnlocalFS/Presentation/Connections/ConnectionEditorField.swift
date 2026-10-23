@@ -1,6 +1,5 @@
 import SwiftUI
 import UnlocalFSDomain
-import UnlocalFSPresentation
 
 struct ConnectionEditorField<Input: View>: View {
     let field: ConnectionField

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import UnlocalFSDomain
 import UnlocalFSPresentation
 
 @Suite struct TrafficPeriodTests {
