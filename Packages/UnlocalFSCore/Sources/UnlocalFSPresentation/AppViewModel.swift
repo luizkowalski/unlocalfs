@@ -31,6 +31,7 @@ import UnlocalFSDomain
 
     let drives: any DriveGateway
     private let deleteConnection: DeleteConnectionUseCase
+    private let setAutomaticConnect: SetAutomaticConnectUseCase
     private let connectDrive: ConnectDriveUseCase
     let shareFiles: ShareFilesUseCase
     let duplicateFiles: DuplicateFilesUseCase
@@ -47,6 +48,7 @@ import UnlocalFSDomain
         initialConnections: Result<[Connection], any Error>,
         drives: any DriveGateway,
         deleteConnection: DeleteConnectionUseCase,
+        setAutomaticConnect: SetAutomaticConnectUseCase,
         connectDrive: ConnectDriveUseCase,
         shareFiles: ShareFilesUseCase,
         duplicateFiles: DuplicateFilesUseCase,
@@ -56,6 +58,7 @@ import UnlocalFSDomain
     ) {
         self.drives = drives
         self.deleteConnection = deleteConnection
+        self.setAutomaticConnect = setAutomaticConnect
         self.connectDrive = connectDrive
         self.shareFiles = shareFiles
         self.duplicateFiles = duplicateFiles
@@ -122,6 +125,12 @@ import UnlocalFSDomain
         selection = .drive(connection.id)
         statuses[connection.id] = MountStatus()
         errors[connection.id] = nil
+    }
+
+    public func setConnectsAutomatically(_ connectsAutomatically: Bool, for connection: Connection) {
+        do {
+            connections = try setAutomaticConnect.execute(connection, connectsAutomatically: connectsAutomatically)
+        } catch { alert = error.localizedDescription }
     }
 
     public func delete(_ connection: Connection) async {

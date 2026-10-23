@@ -97,24 +97,26 @@ struct ConnectionDetail: View {
     }
 
     private var disconnected: some View {
-        ZStack {
-            DisconnectedActivityPlaceholder()
-                .blur(radius: 2)
-                .opacity(0.4)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            ContentUnavailableView {
-                Label {
-                    Text("\(connection.name) is disconnected")
-                } icon: {
-                    logo.frame(width: 48, height: 48)
+        ContentUnavailableView {
+            Label("“\(connection.name)” is not connected", systemImage: "externaldrive")
+        } description: {
+            Text("Opens in Finder at **\(tildePath(model.mountLocation(connection)))**.")
+        } actions: {
+            VStack(spacing: 14) {
+                Button("Connect", systemImage: "externaldrive.connected.to.line.below") {
+                    Task { await model.toggle(connection, opensFinder: true) }
                 }
-            } description: {
-                Text("Connect to open it in Finder and see its transfers.")
-            } actions: {
-                Button("Connect") { Task { await model.toggle(connection, opensFinder: true) } }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!model.canConnect(connection))
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(!model.canConnect(connection))
+                Toggle("Connect automatically when UnlocalFS opens", isOn: Binding(
+                    get: { connection.connectsAutomatically },
+                    set: { model.setConnectsAutomatically($0, for: connection) }
+                ))
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
+                .foregroundStyle(.secondary)
+                .disabled(!model.canEdit(connection))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
