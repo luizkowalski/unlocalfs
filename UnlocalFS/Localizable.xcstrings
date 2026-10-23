@@ -27,6 +27,17 @@
         }
       }
     },
+    "“%@” is not connected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@” não está conectada"
+          }
+        }
+      }
+    },
     "“%@” is still uploading files." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -40,16 +51,6 @@
     },
     "%@" : {
 
-    },
-    "%@ is disconnected" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ está desconectada"
-          }
-        }
-      }
     },
     "%@ of %@" : {
       "localizations" : {
@@ -489,6 +490,17 @@
         }
       }
     },
+    "Connect automatically when UnlocalFS opens" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar automaticamente quando o UnlocalFS abrir"
+          }
+        }
+      }
+    },
     "Connect on start up" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -496,16 +508,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Conectar ao iniciar"
-          }
-        }
-      }
-    },
-    "Connect to open it in Finder and see its transfers." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecte para abrir no Finder e ver as transferências."
           }
         }
       }
@@ -1416,6 +1418,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abrir UnlocalFS"
+          }
+        }
+      }
+    },
+    "Opens in Finder at **%@**." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre no Finder em **%@**."
           }
         }
       }

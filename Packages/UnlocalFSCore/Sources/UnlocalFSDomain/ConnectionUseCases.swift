@@ -31,6 +31,21 @@ public struct SaveConnectionUseCase: Sendable {
     }
 }
 
+public struct SetAutomaticConnectUseCase: Sendable {
+    private let repository: any ConnectionRepository
+
+    public init(repository: any ConnectionRepository) {
+        self.repository = repository
+    }
+
+    public func execute(_ connection: Connection, connectsAutomatically: Bool) throws -> [Connection] {
+        var connection = connection
+        connection.connectsAutomatically = connectsAutomatically
+        try repository.save(connection)
+        return try repository.all()
+    }
+}
+
 public struct DeleteConnectionUseCase: Sendable {
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway

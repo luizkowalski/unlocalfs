@@ -56,6 +56,7 @@ struct ViewModelFixture {
         AppViewModel(
             initialConnections: Result { try repository.all() }, drives: service,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
+            setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),

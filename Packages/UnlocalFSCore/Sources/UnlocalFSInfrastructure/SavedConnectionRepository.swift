@@ -42,6 +42,10 @@ public final class SavedConnectionRepository: ConnectionRepository {
         }
     }
 
+    public func save(_ connection: Connection) throws {
+        try store.withLock { try $0.save(connection) }
+    }
+
     public func delete(_ id: UUID) throws {
         try store.withLock { store in
             try store.delete(id)

@@ -98,17 +98,26 @@ struct ConnectionDetail: View {
 
     private var disconnected: some View {
         ContentUnavailableView {
-            Label {
-                Text("\(connection.name) is disconnected")
-            } icon: {
-                logo.frame(width: 48, height: 48)
-            }
+            Label("“\(connection.name)” is not connected", systemImage: "externaldrive")
         } description: {
-            Text("Connect to open it in Finder and see its transfers.")
+            Text("Opens in Finder at **\(tildePath(model.mountLocation(connection)))**.")
         } actions: {
-            Button("Connect") { Task { await model.toggle(connection, opensFinder: true) } }
+            VStack(spacing: 14) {
+                Button("Connect", systemImage: "externaldrive.connected.to.line.below") {
+                    Task { await model.toggle(connection, opensFinder: true) }
+                }
                 .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(!model.canConnect(connection))
+                Toggle("Connect automatically when UnlocalFS opens", isOn: Binding(
+                    get: { connection.connectsAutomatically },
+                    set: { model.setConnectsAutomatically($0, for: connection) }
+                ))
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
+                .foregroundStyle(.secondary)
+                .disabled(!model.canEdit(connection))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
