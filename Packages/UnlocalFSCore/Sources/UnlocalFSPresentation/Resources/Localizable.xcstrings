@@ -14,7 +14,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eles pararam há mais de um dia. As partes ficam ocultas no bucket e ainda ocupam espaço. Seus arquivos não mudam."
+            "value": "Eles pararam há mais de um dia. As partes deles ficam ocultas no bucket e ainda ocupam espaço. Seus arquivos não mudam."
           }
         }
       }
@@ -541,7 +541,7 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%lld envio iniciado no último dia fica porque ainda pode estar em andamento."
+                  "value": "%lld envio iniciado no último dia é mantido porque ainda pode estar em andamento."
                 }
               },
               "many": {

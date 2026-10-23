@@ -234,7 +234,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e precisa de um ssh-agent em execução. Copie o arquivo de hosts confiáveis para o outro Mac e ajuste o caminho."
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. Ele aponta para o seu arquivo de hosts confiáveis e precisa de um ssh-agent em execução. Copie esse arquivo para o outro Mac e ajuste o caminho."
           }
         }
       }
@@ -245,7 +245,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. O arquivo aponta para o seu arquivo de hosts confiáveis e para o arquivo de chave privada. Copie-os para o outro Mac e ajuste os caminhos."
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. As senhas são apenas ofuscadas, não criptografadas. Ele aponta para o seu arquivo de hosts confiáveis e para a sua chave privada. Copie os dois para o outro Mac e ajuste os caminhos."
           }
         }
       }
@@ -266,7 +266,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vale para novos envios. Classes de acesso infrequente cobram um tamanho e um tempo de armazenamento mínimos. A AWS consegue ler os arquivos que ela criptografa; Criptografar arquivos os mantém privados."
+            "value" : "Vale para novos envios. Classes de acesso infrequente cobram um tamanho e um tempo de armazenamento mínimos. A AWS consegue ler os arquivos que ela criptografa; criptografar arquivos os mantém privados."
           }
         }
       }
@@ -309,7 +309,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O limite de banda restringe envios e downloads. As transferências paralelas controlam quantos arquivos podem ser movidos de uma vez."
+            "value" : "O limite de banda restringe envios e downloads. Já as transferências paralelas definem quantos arquivos podem ser movidos de uma vez."
           }
         }
       }
@@ -507,7 +507,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conectar ao iniciar"
+            "value" : "Conectar ao abrir o app"
           }
         }
       }
@@ -594,7 +594,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Personalizado"
+            "value" : "Outro"
           }
         }
       }
@@ -971,7 +971,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As pastas abrem mais rápido, mas os arquivos mostram quando foram enviados, não quando foram alterados pela última vez. Sempre ativado em unidades somente leitura."
+            "value" : "As pastas abrem mais rápido, mas os arquivos mostram a data do envio, não a da última alteração. Em unidades somente leitura, fica sempre ativo."
           }
         }
       }
@@ -1448,7 +1448,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opcional, por exemplo /srv/files"
+            "value" : "Opcional, por exemplo /srv/arquivos"
           }
         }
       }
@@ -1860,7 +1860,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar log"
+            "value" : "Mostrar registro"
           }
         }
       }
@@ -1992,7 +1992,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A chave fica armazenada no chaveiro do seu Mac. Dê à conta de serviço dela o papel Storage Object User no bucket."
+            "value" : "A chave fica armazenada no chaveiro do seu Mac. Dê à conta de serviço associada o papel Storage Object User no bucket."
           }
         }
       }
@@ -2055,7 +2055,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hora"
+            "value" : "Horário"
           }
         }
       }
@@ -2175,7 +2175,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O UnlocalFS tenta novamente sozinho, no máximo a cada 5 minutos, enquanto a unidade estiver conectada."
+            "value" : "O UnlocalFS tenta novamente sozinho, até a cada 5 minutos, enquanto a unidade estiver conectada."
           }
         }
       }
@@ -2208,7 +2208,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Falha no envio, mostrar detalhes"
+            "value" : "Falha no envio. Mostrar detalhes."
           }
         }
       }

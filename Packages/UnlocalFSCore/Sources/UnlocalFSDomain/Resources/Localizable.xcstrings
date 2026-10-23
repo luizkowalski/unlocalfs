@@ -168,7 +168,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ — cópia"
+            "value": "%1$@ cópia"
           }
         }
       },
@@ -1088,7 +1088,7 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duplicar no Servidor não está disponível para unidades %1$@."
+            "value" : "Duplicar no servidor não está disponível para unidades %1$@."
           }
         }
       }
@@ -1242,7 +1242,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Há envios em andamento. Aguarde o término deles antes de desconectar."
+            "value": "Aguarde os envios terminarem antes de desconectar."
           }
         }
       }

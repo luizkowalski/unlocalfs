@@ -30,7 +30,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta unidade já está conectando."
+            "value": "Esta unidade já está se conectando."
           }
         }
       }
@@ -98,7 +98,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O comando expirou. Tente novamente."
+            "value": "O comando demorou demais. Tente novamente."
           }
         }
       }
@@ -200,7 +200,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "A unidade não pôde ser montada. Abra o log dela para detalhes."
+            "value": "A unidade não pôde ser montada. Abra o registro dela para detalhes."
           }
         }
       }
@@ -217,7 +217,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível abrir o log da unidade: %1$@"
+            "value": "Não foi possível abrir o registro da unidade: %1$@"
           }
         }
       }
@@ -234,7 +234,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível parar o serviço antigo da unidade porque o processo dele não pôde ser identificado. O cache foi mantido."
+            "value": "Não foi possível parar o serviço antigo da unidade porque não foi possível identificar o processo. O cache foi mantido."
           }
         }
       }
@@ -371,7 +371,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "A unidade demorou demais para montar. Abra o log dela para detalhes."
+            "value": "A unidade demorou demais para montar. Abra o registro dela para detalhes."
           }
         }
       }
@@ -399,13 +399,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reconnect the drive to create links. UnlocalFS could not check whether the file is still uploading.\n\n%1$@"
+            "value": "Reconnect the drive to check uploads. UnlocalFS could not tell whether the file is still uploading.\n\n%1$@"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reconecte a unidade para criar links. O UnlocalFS não conseguiu verificar se o arquivo ainda está sendo enviado.\n\n%1$@"
+            "value": "Reconecte a unidade para verificar os envios. O UnlocalFS não conseguiu saber se o arquivo ainda está sendo enviado.\n\n%1$@"
           }
         }
       }
