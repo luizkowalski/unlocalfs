@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "astro": "^7.4.2",
-    "@astrojs/starlight": "^0.42.6"
+    "@astrojs/starlight": "^0.42.7"
   },
   "overrides": {
     "postcss-selector-parser": "^7.1.6"

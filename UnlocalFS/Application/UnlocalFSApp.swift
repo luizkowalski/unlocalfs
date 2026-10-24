@@ -30,7 +30,7 @@ import UnlocalFSPresentation
                 Button("Edit Connection…") {
                     if let connection = delegate.model.selected { delegate.model.edit(connection) }
                 }
-                .keyboardShortcut("e")
+                .keyboardShortcut(",")
                 .disabled(delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true)
                 Button("Duplicate Connection…") {
                     if let connection = delegate.model.selected { delegate.model.duplicate(connection) }
