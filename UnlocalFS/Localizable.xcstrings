@@ -956,6 +956,7 @@
     },
     "Find Unlocal…" : {
       "comment" : "Edit menu item: shows the search field above the unlocal list",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1755,6 +1756,7 @@
     },
     "Search unlocals" : {
       "comment" : "Placeholder and VoiceOver label of the search field above the unlocal list",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

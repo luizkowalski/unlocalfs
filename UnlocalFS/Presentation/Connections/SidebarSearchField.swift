@@ -12,7 +12,11 @@ struct SidebarSearchField: View {
             .textFieldStyle(.roundedBorder)
             .focused($isFocused)
             .onSubmit(submit)
-            .onChange(of: isFocused) { if !isFocused { model.closeSearchIfEmpty() } }
+            .onChange(of: isFocused) {
+                model.isSearchFieldFocused = isFocused
+                if !isFocused { model.closeSearchIfEmpty() }
+            }
+            .onDisappear { model.isSearchFieldFocused = false }
             .task(id: model.searchFocusRequest) { isFocused = true }
             .padding([.horizontal, .top])
     }

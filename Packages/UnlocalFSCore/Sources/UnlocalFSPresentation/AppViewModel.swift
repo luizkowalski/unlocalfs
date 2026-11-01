@@ -11,6 +11,7 @@ import UnlocalFSDomain
     public var selection: SidebarItem?
     public var searchQuery = ""
     public var isSearching = false
+    public var isSearchFieldFocused = false
     public internal(set) var searchFocusRequest = 0
     public static let speedWindow: TimeInterval = 60
     public private(set) var statuses: [UUID: MountStatus] = [:]
