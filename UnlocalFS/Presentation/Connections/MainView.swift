@@ -79,7 +79,7 @@ struct MainView: View {
         }
         .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
         } primaryAction: { items in
-            if let connection = model.connections.first(where: { items.contains(.drive($0.id)) }) {
+            if let connection = model.visibleConnections.first(where: { items.contains(.drive($0.id)) }) {
                 Task { await model.activate(connection) }
             }
         }

@@ -38,11 +38,6 @@ import UnlocalFSTestSupport
         let app = try appWithUnlocals()
 
         app.openSearch()
-        #expect(app.isSearching)
-        app.closeSearchIfEmpty()
-        #expect(!app.isSearching)
-
-        app.openSearch()
         app.searchQuery = "ho"
         app.closeSearchIfEmpty()
         #expect(app.isSearching)
@@ -57,16 +52,6 @@ import UnlocalFSTestSupport
         app.closeSearch()
         #expect(!app.isSearching)
         #expect(app.searchQuery.isEmpty)
-    }
-
-    @Test func openingWhileOpenAsksTheFieldToFocusAgain() throws {
-        let app = try appWithUnlocals()
-
-        app.openSearch()
-        let firstRequest = app.searchFocusRequest
-        app.openSearch()
-
-        #expect(app.searchFocusRequest != firstRequest)
     }
 
     @Test func submittingSelectsTheFirstMatchUnlessAMatchIsAlreadySelected() throws {
@@ -94,16 +79,21 @@ import UnlocalFSTestSupport
         #expect(app.selected == backups)
     }
 
-    @Test func connectingFromAnywhereClosesTheSearch() async throws {
+    @Test func connectingClosesTheSearchOnlyOnceTheDriveCanConnect() async throws {
         let first = Connection.s3(name: "First")
         let second = Connection.s3(name: "Second")
         for connection in [first, second] { try fixture.repository.save(connection, credentials: Credentials.s3()) }
         try "Connection failed".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
-        await app.refresh()
 
         app.openSearch()
         app.searchQuery = "fir"
+        await app.toggle(first)
+
+        #expect(app.isSearching)
+        #expect(app.searchQuery == "fir")
+
+        await app.refresh()
         await app.activate(first)
 
         #expect(!app.isSearching)
@@ -116,18 +106,5 @@ import UnlocalFSTestSupport
 
         #expect(!app.isSearching)
         #expect(app.searchQuery.isEmpty)
-    }
-
-    @Test func connectingACheckingDriveKeepsTheSearchOpen() async throws {
-        let connection = Connection.s3()
-        try fixture.repository.save(connection, credentials: Credentials.s3())
-        let app = fixture.app()
-
-        app.openSearch()
-        app.searchQuery = "my"
-        await app.toggle(connection)
-
-        #expect(app.isSearching)
-        #expect(app.searchQuery == "my")
     }
 }

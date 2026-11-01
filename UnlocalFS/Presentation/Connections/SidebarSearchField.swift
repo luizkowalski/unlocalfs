@@ -12,11 +12,8 @@ struct SidebarSearchField: View {
             .textFieldStyle(.roundedBorder)
             .focused($isFocused)
             .onSubmit(submit)
-            .onChange(of: isFocused) {
-                model.isSearchFieldFocused = isFocused
-                if !isFocused { model.closeSearchIfEmpty() }
-            }
-            .onDisappear { model.isSearchFieldFocused = false }
+            .onChange(of: isFocused) { if !isFocused { model.closeSearchIfEmpty() } }
+            .focusedValue(\.isEditingSearch, true)
             .task(id: model.searchFocusRequest) { isFocused = true }
             .padding([.horizontal, .top])
     }
@@ -25,4 +22,8 @@ struct SidebarSearchField: View {
         model.submitSearch()
         if !model.visibleConnections.isEmpty { listFocused.wrappedValue = true }
     }
+}
+
+extension FocusedValues {
+    @Entry var isEditingSearch: Bool?
 }
