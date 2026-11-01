@@ -954,6 +954,17 @@
         }
       }
     },
+    "Find Unlocal…" : {
+      "comment" : "Edit menu item: shows the search field above the unlocal list",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar Unlocal…"
+          }
+        }
+      }
+    },
     "Folder" : {
       "comment" : "Field label: folder inside the bucket or on the server",
       "extractionState" : "manual",
@@ -1738,6 +1749,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salvar"
+          }
+        }
+      }
+    },
+    "Search unlocals" : {
+      "comment" : "Placeholder and VoiceOver label of the search field above the unlocal list",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar unlocals"
           }
         }
       }
