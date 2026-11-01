@@ -16,6 +16,7 @@ struct SidebarSearchField: View {
                     Button("Clear search", systemImage: "xmark.circle.fill", action: clear)
                         .labelStyle(.iconOnly)
                         .buttonStyle(.plain)
+                        .pointerStyle(.link)
                         .foregroundStyle(.secondary)
                         .padding(.trailing, 6)
                 }
