@@ -436,6 +436,17 @@
         }
       }
     },
+    "Clear search" : {
+      "comment" : "VoiceOver label of the button that clears the sidebar search field",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limpar busca"
+          }
+        }
+      }
+    },
     "Click the last day" : {
       "comment" : "Traffic date picker: shown after the first day of a range is clicked",
       "localizations" : {
