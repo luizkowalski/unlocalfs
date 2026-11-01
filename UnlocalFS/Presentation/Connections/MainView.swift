@@ -6,6 +6,7 @@ struct MainView: View {
     @Environment(AppViewModel.self) private var model
     @Environment(ViewModelFactory.self) private var viewModels
     @State private var traffic: TrafficViewModel?
+    @FocusState private var listFocused: Bool
 
     var body: some View {
         @Bindable var model = model
@@ -67,7 +68,13 @@ struct MainView: View {
         @Bindable var model = model
         return List(selection: $model.selection) {
             Section("Unlocals") {
-                ForEach(model.connections) { ConnectionRow(connection: $0) }
+                ForEach(model.visibleConnections) { ConnectionRow(connection: $0) }
+            }
+        }
+        .focused($listFocused)
+        .overlay {
+            if model.visibleConnections.isEmpty && !model.searchQuery.isEmpty {
+                ContentUnavailableView.search(text: model.searchQuery)
             }
         }
         .contextMenu(forSelectionType: AppViewModel.SidebarItem.self) { _ in
@@ -77,6 +84,10 @@ struct MainView: View {
             }
         }
         .navigationSplitViewColumnWidth(min: 200, ideal: 230)
+        .safeAreaInset(edge: .top) {
+            if model.isSearching { SidebarSearchField(listFocused: $listFocused) }
+        }
+        .onExitCommand(perform: model.isSearching ? { model.closeSearch() } : nil)
         .safeAreaInset(edge: .bottom) {
             VStack(alignment: .leading, spacing: 12) {
                 if let traffic {

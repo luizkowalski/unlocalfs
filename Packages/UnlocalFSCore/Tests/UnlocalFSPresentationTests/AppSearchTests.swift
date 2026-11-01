@@ -59,6 +59,16 @@ import UnlocalFSTestSupport
         #expect(app.searchQuery.isEmpty)
     }
 
+    @Test func openingWhileOpenAsksTheFieldToFocusAgain() throws {
+        let app = try appWithUnlocals()
+
+        app.openSearch()
+        let firstRequest = app.searchFocusRequest
+        app.openSearch()
+
+        #expect(app.searchFocusRequest != firstRequest)
+    }
+
     @Test func submittingSelectsTheFirstMatchUnlessAMatchIsAlreadySelected() throws {
         let app = try appWithUnlocals()
         let backups = try #require(app.connections.first { $0.name == "Backups" })

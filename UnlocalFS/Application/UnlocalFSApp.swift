@@ -43,6 +43,11 @@ import UnlocalFSPresentation
                 .keyboardShortcut(.delete)
                 .disabled(delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true)
             }
+            CommandGroup(after: .textEditing) {
+                Button("Find Unlocal…") { delegate.model.openSearch() }
+                    .keyboardShortcut("f")
+                    .disabled(!delegate.model.ready || delegate.model.editor != nil)
+            }
         }
         MenuBarExtra {
             MenuContent().environment(delegate.model)
