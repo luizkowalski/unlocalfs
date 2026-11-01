@@ -438,6 +438,7 @@
     },
     "Clear search" : {
       "comment" : "VoiceOver label of the button that clears the sidebar search field",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
