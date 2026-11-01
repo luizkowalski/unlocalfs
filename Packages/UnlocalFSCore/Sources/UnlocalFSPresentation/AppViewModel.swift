@@ -9,6 +9,9 @@ import UnlocalFSDomain
 
     public private(set) var connections: [Connection] = []
     public var selection: SidebarItem?
+    public var searchQuery = ""
+    public internal(set) var isSearching = false
+    public internal(set) var searchFocusRequest = 0
     public static let speedWindow: TimeInterval = 60
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var speeds: [UUID: [SpeedSample]] = [:]
@@ -161,6 +164,7 @@ import UnlocalFSDomain
 
     private func connect(_ connection: Connection, opensFinder: Bool) async {
         guard !checkingQuit, canToggle(connection) else { return }
+        closeSearch()
         busy.insert(connection.id)
         errors[connection.id] = nil
         defer { busy.remove(connection.id) }

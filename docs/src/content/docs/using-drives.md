@@ -39,6 +39,9 @@ Closing the window removes UnlocalFS from the Dock and keeps it in the menu bar,
 | Edit the selected connection | ⌘, |
 | Duplicate the selected connection | ⌘D |
 | Delete the selected connection | ⌘⌫ |
+| Search the sidebar by name | ⌘F |
+
+Press **Return** in the search field to move to the list, then **Return** again to connect the selected drive. Press **Esc** to close the search. Connecting a drive also closes it.
 
 Right-click a drive in the sidebar to open it in Finder, edit, duplicate, or delete it. You can only edit or delete a drive while it is disconnected.
 

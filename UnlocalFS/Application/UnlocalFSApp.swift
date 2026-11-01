@@ -6,6 +6,7 @@ import UnlocalFSPresentation
 
 @main struct UnlocalFSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
+    @FocusedValue(\.isEditingSearch) private var isEditingSearch
 
     var body: some Scene {
         Window("UnlocalFS", id: "main") {
@@ -41,7 +42,12 @@ import UnlocalFSPresentation
                     delegate.model.deleting = delegate.model.selected
                 }
                 .keyboardShortcut(.delete)
-                .disabled(delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true)
+                .disabled(isEditingSearch != nil || (delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true))
+            }
+            CommandGroup(after: .textEditing) {
+                Button("Find Unlocal…") { delegate.model.openSearch() }
+                    .keyboardShortcut("f")
+                    .disabled(!delegate.model.ready || delegate.model.editor != nil)
             }
         }
         MenuBarExtra {
