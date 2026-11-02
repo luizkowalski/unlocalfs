@@ -1,7 +1,7 @@
 import Foundation
 import UnlocalFSDomain
 
-public struct UploadCancellation: Equatable, Sendable {
+public struct UploadCancellation {
     public let connection: Connection
     public let path: String
     public let deletesServerCopy: Bool

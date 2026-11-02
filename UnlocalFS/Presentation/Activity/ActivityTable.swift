@@ -1,9 +1,9 @@
 import SwiftUI
 import UnlocalFSDomain
+import UnlocalFSPresentation
 
 struct ActivityTable<Empty: View>: View {
     let files: [FileActivity]
-    let canCancel: (FileActivity) -> Bool
     let cancel: (FileActivity) -> Void
     @ViewBuilder let empty: Empty
 
@@ -19,7 +19,7 @@ struct ActivityTable<Empty: View>: View {
             TableColumn("Status") { activity in
                 HStack(spacing: 6) {
                     ActivityStatus(activity: activity).font(.caption).foregroundStyle(.secondary)
-                    if canCancel(activity) {
+                    if activity.isCancellable {
                         Spacer(minLength: 0)
                         Button("Stop upload", systemImage: "xmark.circle.fill") { cancel(activity) }
                             .labelStyle(.iconOnly)

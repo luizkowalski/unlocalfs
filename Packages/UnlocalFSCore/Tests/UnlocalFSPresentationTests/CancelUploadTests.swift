@@ -14,7 +14,7 @@ import UnlocalFSTestSupport
 
     deinit { fixture.remove() }
 
-    @Test func cancellingANewFileDeletesItWithoutTouchingTheServer() async throws {
+    @Test func cancellingANewFileDeletesItAndClearsItsRow() async throws {
         let drive = try serve(pending: "photos/new.jpg")
         let viewModel = fixture.factory(fixture.app()).makeActivity()
         await viewModel.refresh(connection)
@@ -56,10 +56,9 @@ import UnlocalFSTestSupport
     }
 
     @Test func onlyUploadsCanBeCancelled() {
-        let viewModel = fixture.factory(fixture.app()).makeActivity()
         let states: [FileActivity.State] = [.queued, .uploading, .failed(nextAttempt: .now), .downloading, .uploaded(.now), .downloaded(.now)]
 
-        let cancellable = states.map { viewModel.canCancel(FileActivity(path: "file", size: 1, state: $0, bytesTransferred: nil)) }
+        let cancellable = states.map { FileActivity(path: "file", size: 1, state: $0, bytesTransferred: nil).isCancellable }
 
         #expect(cancellable == [true, true, true, false, false, false])
     }

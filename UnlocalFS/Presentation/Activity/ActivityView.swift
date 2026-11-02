@@ -36,8 +36,6 @@ struct ActivityView: View {
         }
     }
 
-    private func canCancel(_ activity: FileActivity) -> Bool { viewModel?.canCancel(activity) == true }
-
     private func reviewCancel(_ activity: FileActivity) {
         Task { await viewModel?.reviewCancel(activity, in: connection) }
     }
@@ -55,7 +53,7 @@ struct ActivityView: View {
             if case let .failure(error) = viewModel?.activity {
                 Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
-            ActivityTable(files: summary?.files ?? [], canCancel: canCancel, cancel: reviewCancel) {
+            ActivityTable(files: summary?.files ?? [], cancel: reviewCancel) {
                 switch viewModel?.activity {
                 case .success:
                     idle

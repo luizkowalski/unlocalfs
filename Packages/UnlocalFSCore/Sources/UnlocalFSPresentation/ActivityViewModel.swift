@@ -44,13 +44,6 @@ import UnlocalFSDomain
         } catch {}
     }
 
-    public func canCancel(_ activity: FileActivity) -> Bool {
-        switch activity.state {
-        case .queued, .uploading, .failed: true
-        case .downloading, .uploaded, .downloaded: false
-        }
-    }
-
     public func reviewCancel(_ activity: FileActivity, in connection: Connection) async {
         let deletesServerCopy = await (try? drives.hasServerCopy(of: activity.path, in: connection)) ?? true
         cancellation = UploadCancellation(connection: connection, path: activity.path, deletesServerCopy: deletesServerCopy)
@@ -70,6 +63,15 @@ import UnlocalFSDomain
         switch result {
         case let .success(files): summary = TransferSummary(files, now: .now)
         case .failure, nil: summary = nil
+        }
+    }
+}
+
+public extension FileActivity {
+    var isCancellable: Bool {
+        switch state {
+        case .queued, .uploading, .failed: true
+        case .downloading, .uploaded, .downloaded: false
         }
     }
 }
