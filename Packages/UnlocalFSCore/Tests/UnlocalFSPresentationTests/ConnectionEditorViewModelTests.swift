@@ -5,7 +5,7 @@ import Testing
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite final class ConnectionEditorViewModelTests {
+@MainActor final class ConnectionEditorViewModelTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }
@@ -37,7 +37,7 @@ import UnlocalFSTestSupport
         #expect(editor.credentials.serviceAccountKey == "previous-key")
     }
 
-    @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async throws {
+    @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async {
         let editor = fixture.editor(draft: .init(connection: Connection()))
 
         #expect(editor.fieldErrors.isEmpty)
@@ -58,7 +58,7 @@ import UnlocalFSTestSupport
         #expect(editor.firstInvalidField == .bucket)
     }
 
-    @Test func testRevealsErrorsWithoutRunningAProcess() async throws {
+    @Test func testRevealsErrorsWithoutRunningAProcess() async {
         let connection = Connection.s3(bucket: " ") { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
@@ -126,7 +126,7 @@ import UnlocalFSTestSupport
         let app = fixture.app()
 
         app.duplicate(connection)
-        let editor = fixture.editor(draft: try #require(app.editor), app: app)
+        let editor = try fixture.editor(draft: #require(app.editor), app: app)
         editor.loadCredentials()
 
         #expect(editor.title == String(localized: .duplicateConnection))
@@ -137,7 +137,7 @@ import UnlocalFSTestSupport
         #expect(!editor.isLocked)
     }
 
-    @Test func newEncryptedConnectionRequiresMatchingPasswords() async throws {
+    @Test func newEncryptedConnectionRequiresMatchingPasswords() async {
         let connection = Connection.s3 { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
@@ -150,7 +150,7 @@ import UnlocalFSTestSupport
         #expect(!editor.tested)
     }
 
-    @Test func changingTheEndpointOrCredentialsClearsTheSuccessfulTest() async throws {
+    @Test func changingTheEndpointOrCredentialsClearsTheSuccessfulTest() async {
         let editor = fixture.editor(draft: .init(connection: Connection.s3()))
         editor.credentials = Credentials.s3()
         await editor.test()
@@ -195,7 +195,7 @@ import UnlocalFSTestSupport
         #expect(app.connections.isEmpty)
     }
 
-    @Test func sftpDraftValidatesTheSelectedModeAndSwitchingBackRestoresS3() async throws {
+    @Test func sftpDraftValidatesTheSelectedModeAndSwitchingBackRestoresS3() async {
         let editor = fixture.editor(draft: .init(connection: Connection.sftp()))
         await editor.test()
         #expect(editor.firstInvalidField == .password)
@@ -211,7 +211,7 @@ import UnlocalFSTestSupport
         #expect(editor.fieldErrors[.accessKey] != nil)
     }
 
-    @Test func editingConnectionAffectingSFTPFieldsClearsTheSuccessfulTest() async throws {
+    @Test func editingConnectionAffectingSFTPFieldsClearsTheSuccessfulTest() async {
         let editor = fixture.editor(draft: .init(connection: Connection.sftp()))
         editor.credentials = Credentials(password: "secret")
         await editor.test()

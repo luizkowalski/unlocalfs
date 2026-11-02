@@ -9,7 +9,7 @@ struct ActivityStatus: View {
         switch activity.state {
         case .queued:
             Text("Waiting")
-        case .failed(let nextAttempt):
+        case let .failed(nextAttempt):
             FailedUploadButton(name: name, error: activity.uploadError, nextAttempt: nextAttempt)
         case .uploaded:
             finished(Text("Uploaded"))

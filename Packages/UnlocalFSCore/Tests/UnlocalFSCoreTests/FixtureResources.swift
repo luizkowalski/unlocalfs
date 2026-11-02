@@ -42,7 +42,7 @@ actor FixtureResources {
 
     func output(of process: Process) throws -> String {
         guard let launch = launches[process.processIdentifier] else { throw AppError("Process was not started by this fixture") }
-        return String(decoding: try Data(contentsOf: launch.log).dropFirst(Int(launch.offset)), as: UTF8.self)
+        return try String(decoding: Data(contentsOf: launch.log).dropFirst(Int(launch.offset)), as: UTF8.self)
     }
 
     func track(_ drive: Drive) { self.drive = drive }
@@ -87,7 +87,7 @@ func withFixture(_ body: (FixtureResources) async throws -> Void) async throws {
 
 @discardableResult
 func requireOutput(
-    of process: Process, in resources: FixtureResources, matching pattern: Regex<(Substring, Substring)>
+    of process: Process, in resources: FixtureResources, matching pattern: Regex<(Substring, Substring)>,
 ) async throws -> String {
     var captured: Substring?
     do {
@@ -99,7 +99,7 @@ func requireOutput(
     } catch is CancellationError {
         throw CancellationError()
     } catch {
-        throw AppError("Fixture readiness failed: \(error)\n\((try? await resources.output(of: process)) ?? "")")
+        throw await AppError("Fixture readiness failed: \(error)\n\((try? resources.output(of: process)) ?? "")")
     }
-    return String(try #require(captured))
+    return try String(#require(captured))
 }

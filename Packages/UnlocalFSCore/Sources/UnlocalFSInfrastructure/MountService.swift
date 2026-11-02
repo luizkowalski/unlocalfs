@@ -20,7 +20,7 @@ public actor MountService: DriveGateway {
 
     public init(
         executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore,
-        environment: [String: String] = ProcessInfo.processInfo.environment
+        environment: [String: String] = ProcessInfo.processInfo.environment,
     ) {
         self.executable = executable
         self.helperDirectory = helperDirectory
@@ -93,7 +93,7 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
-        let command = MountCommand(remote: try await remote(for: connection, credentials: credentials), paths: paths)
+        let command = try await MountCommand(remote: remote(for: connection, credentials: credentials), paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
         guard descriptor >= 0 else { throw AppError(String(localized: .couldNotOpenLog(String(cString: strerror(errno))))) }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
@@ -113,7 +113,7 @@ public actor MountService: DriveGateway {
             process.terminate()
             throw error
         }
-        for _ in 0..<60 {
+        for _ in 0 ..< 60 {
             if isMounted(mount) { return }
             guard process.isRunning else {
                 processes[connection.id] = nil
@@ -178,7 +178,7 @@ public actor MountService: DriveGateway {
             let transfer = item.uploading ? snapshot.transfers.first { $0.isUpload && $0.name == item.name } : nil
             return FileActivity(
                 path: item.name, size: item.size, state: state, bytesTransferred: transfer?.bytes, bytesPerSecond: transfer?.speedAvg,
-                uploadError: item.hasFailedAttempt ? uploadErrors[item.name] : nil
+                uploadError: item.hasFailedAttempt ? uploadErrors[item.name] : nil,
             )
         }
         let transferring = snapshot.transfers.filter { !$0.isUpload || !queuedPaths.contains($0.name) }.map {
@@ -234,7 +234,7 @@ public actor MountService: DriveGateway {
     }
 
     func control<Response: Decodable>(
-        _ response: Response.Type, _ connection: Connection, _ method: String, _ parameters: [String: String] = [:]
+        _ response: Response.Type, _ connection: Connection, _ method: String, _ parameters: [String: String] = [:],
     ) async throws -> Response {
         try await JSONDecoder().decode(response, from: control(connection, method, parameters))
     }
@@ -251,11 +251,12 @@ public actor MountService: DriveGateway {
         return process.startedAt <= saved
     }
 
-    var baseEnvironment: [String: String] {
-        ["HOME": URL.homeDirectory.path,
-         "PATH": "\(helperDirectory.path):/usr/bin:/bin:/usr/sbin:/sbin",
-         "TMPDIR": URL.temporaryDirectory.path,
-         "LANG": "en_US.UTF-8", ]
+    var baseEnvironment: [String: String] { [
+        "HOME": URL.homeDirectory.path,
+        "PATH": "\(helperDirectory.path):/usr/bin:/bin:/usr/sbin:/sbin",
+        "TMPDIR": URL.temporaryDirectory.path,
+        "LANG": "en_US.UTF-8",
+    ]
     }
 
     private func environment(_ variables: [String: String]) -> [String: String] {
@@ -314,7 +315,7 @@ public actor MountService: DriveGateway {
         let count = getmntinfo_r_np(&mounts, MNT_NOWAIT)
         guard let mounts else { return false }
         defer { free(mounts) }
-        return (0..<Int(count)).contains { index in
+        return (0 ..< Int(count)).contains { index in
             withUnsafePointer(to: mounts[index].f_mntonname) {
                 $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) == path }
             }
@@ -322,8 +323,8 @@ public actor MountService: DriveGateway {
     }
 }
 
-extension MountService {
-    public func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
+public extension MountService {
+    func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             throw AppError(String(localized: .reconnectForLinks))
         }

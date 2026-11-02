@@ -4,7 +4,7 @@ import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite final class MenuBarActivityTests {
+@MainActor final class MenuBarActivityTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }

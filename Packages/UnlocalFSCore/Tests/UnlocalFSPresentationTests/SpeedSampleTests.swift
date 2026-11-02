@@ -3,8 +3,8 @@ import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSPresentation
 
-@Suite struct SpeedSampleTests {
-    let start = Date(timeIntervalSinceReferenceDate: 1_000)
+struct SpeedSampleTests {
+    let start = Date(timeIntervalSinceReferenceDate: 1000)
 
     func sample(_ offset: TimeInterval, upload: Double = 0, download: Double = 0) -> SpeedSample {
         var status = MountStatus()

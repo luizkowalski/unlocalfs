@@ -1,13 +1,13 @@
 import Foundation
 import UnlocalFSDomain
 
-extension MountService {
-    public func unfinishedUploads(in connection: Connection) async throws -> [UnfinishedUpload] {
+public extension MountService {
+    func unfinishedUploads(in connection: Connection) async throws -> [UnfinishedUpload] {
         let reply = try await runBackendCommand("list-multipart-uploads", in: connection)
         return try JSONDecoder().decode(MultipartUploads.self, from: reply).uploads
     }
 
-    public func removeAbandonedUploads(in connection: Connection) async throws {
+    func removeAbandonedUploads(in connection: Connection) async throws {
         try await runBackendCommand("cleanup", in: connection, opt: #"{"max-age":"\#(Int(UnfinishedUpload.abandonedAge))s"}"#)
     }
 

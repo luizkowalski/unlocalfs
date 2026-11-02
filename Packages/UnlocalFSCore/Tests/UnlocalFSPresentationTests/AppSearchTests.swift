@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite final class AppSearchTests {
+@MainActor final class AppSearchTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }

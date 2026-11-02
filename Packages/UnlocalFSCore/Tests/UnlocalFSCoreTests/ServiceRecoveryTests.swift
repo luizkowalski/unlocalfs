@@ -4,7 +4,7 @@ import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct ServiceRecoveryTests {
+struct ServiceRecoveryTests {
     @Test func aStatusErrorBlocksDisconnectWhileUploadsWait() async throws {
         let helper = try Process.run(URL(filePath: "/bin/sleep"), arguments: ["300"])
         defer { helper.terminate() }
@@ -29,7 +29,7 @@ import UnlocalFSTestSupport
         } operation: { service, connection in
             try await service.unmount(connection)
 
-            for _ in 0..<40 where helper.isRunning {
+            for _ in 0 ..< 40 where helper.isRunning {
                 try await Task.sleep(for: .milliseconds(50))
             }
             #expect(!helper.isRunning)
@@ -46,7 +46,7 @@ import UnlocalFSTestSupport
 
             try await service.unmount(connection)
 
-            for _ in 0..<40 where helper.isRunning {
+            for _ in 0 ..< 40 where helper.isRunning {
                 try await Task.sleep(for: .milliseconds(50))
             }
             #expect(!helper.isRunning)

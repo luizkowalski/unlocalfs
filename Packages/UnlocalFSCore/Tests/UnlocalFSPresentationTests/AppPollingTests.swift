@@ -2,9 +2,9 @@ import Foundation
 import Synchronization
 import Testing
 @testable import UnlocalFSDomain
-import UnlocalFSTestSupport
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 @MainActor @Suite(.timeLimit(.minutes(1))) final class AppPollingTests {
     let fixture: ViewModelFixture
@@ -29,7 +29,7 @@ import UnlocalFSInfrastructure
         let polling = Task { await app.refresh() }
         for await _ in entered {}
 
-        for _ in 0..<100 where !app.isActive(fast) {
+        for _ in 0 ..< 100 where !app.isActive(fast) {
             try await Task.sleep(for: .milliseconds(10))
         }
         #expect(app.isActive(fast))
@@ -79,7 +79,7 @@ import UnlocalFSInfrastructure
 
     private nonisolated static let connected = #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
 
-    @Test func loginItemStateIsNotReadOnEveryPoll() async throws {
+    @Test func loginItemStateIsNotReadOnEveryPoll() async {
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         desktop.opensAtLogin = true

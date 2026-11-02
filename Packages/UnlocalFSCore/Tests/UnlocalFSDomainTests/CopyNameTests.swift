@@ -1,7 +1,7 @@
 import Testing
 import UnlocalFSDomain
 
-@Suite struct CopyNameTests {
+struct CopyNameTests {
     @Test(arguments: [
         ("report.pdf", 1, "report copy.pdf"),
         ("report.pdf", 2, "report copy 2.pdf"),

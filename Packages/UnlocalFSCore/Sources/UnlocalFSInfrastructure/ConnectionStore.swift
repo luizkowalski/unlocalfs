@@ -27,7 +27,7 @@ public struct ConnectionStore: Sendable {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(Config(connections: connections)).write(
-            to: url, options: .atomic
+            to: url, options: .atomic,
         )
     }
 }

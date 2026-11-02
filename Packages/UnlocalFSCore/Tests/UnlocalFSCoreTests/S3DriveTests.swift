@@ -30,7 +30,7 @@ import UnlocalFSTestSupport
     @Test func encryptedDriveStoresOnlyCiphertextThatItsExportedConfigCanRead() async throws {
         try await withS3Drive(encrypted: true) { drive, bucket in
             let credentials = try await drive.service.prepareCredentials(
-                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse ")
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: "-correct horse "),
             )
             try await drive.service.mount(drive.connection, credentials: credentials)
             try Data("top secret".utf8).write(to: drive.mounted.appending(path: "secret plan.txt"))
@@ -53,7 +53,7 @@ import UnlocalFSTestSupport
     func duplicateCopiesOnTheServerNextToTheOriginal(encrypted: Bool) async throws {
         try await withS3Drive(encrypted: encrypted) { drive, bucket in
             let credentials = try await drive.service.prepareCredentials(
-                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : "")
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : ""),
             )
             try await drive.service.mount(drive.connection, credentials: credentials)
             try Data("report".utf8).write(to: drive.mounted.appending(path: "report.txt"))
@@ -81,7 +81,7 @@ import UnlocalFSTestSupport
     func cleanupListsUnfinishedUploadsAndKeepsRecentOnes(encrypted: Bool) async throws {
         try await withS3Drive(encrypted: encrypted) { drive, _ in
             let credentials = try await drive.service.prepareCredentials(
-                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : "")
+                Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : ""),
             )
             try await drive.service.mount(drive.connection, credentials: credentials)
             _ = try await Command.run(URL(filePath: "/usr/bin/curl"), [
@@ -111,7 +111,7 @@ import UnlocalFSTestSupport
                     FileManager.default.createFile(atPath: entered.path, contents: Data())
                     try await Task.sleep(for: .seconds(2))
                 }
-                return String(decoding: try await ControlSocket.post(rclone, request.method, body: request.body, timeout: .seconds(10)), as: UTF8.self)
+                return try await String(decoding: ControlSocket.post(rclone, request.method, body: request.body, timeout: .seconds(10)), as: UTF8.self)
             }
             defer { slowCopies.stop() }
             let service = drive.service
@@ -152,7 +152,7 @@ import UnlocalFSTestSupport
                 return options.filter { ["storage_class", "server_side_encryption", "sse_kms_key_id"].contains($0.key) }
             }
             var exports: [[String: String]] = []
-            for connection in [amazon, leftoverKey, minio, defaults] { exports.append(try await exported(connection)) }
+            for connection in [amazon, leftoverKey, minio, defaults] { try await exports.append(exported(connection)) }
             #expect(exports == [
                 ["storage_class": "STANDARD_IA", "server_side_encryption": "aws:kms", "sse_kms_key_id": key],
                 ["storage_class": "STANDARD_IA", "server_side_encryption": "AES256"],

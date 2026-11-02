@@ -26,7 +26,7 @@ actor SFTPTrustStore {
     func challenge(_ sftp: SFTPSettings, keyChanged: Bool) async throws -> ServerTrustChallenge {
         let previous = try Data(contentsOf: file())
         let output = try await Command.run(URL(filePath: "/usr/bin/ssh-keyscan"), [
-            "-T", "5", "-p", "\(sftp.port)", "-t", "ed25519,ecdsa,rsa", "--", sftp.host
+            "-T", "5", "-p", "\(sftp.port)", "-t", "ed25519,ecdsa,rsa", "--", sftp.host,
         ], timeout: .seconds(20))
         let keys = String(decoding: output, as: UTF8.self).split(separator: "\n").filter {
             !$0.hasPrefix("#") && $0.split(separator: " ").count == 3
@@ -38,7 +38,7 @@ actor SFTPTrustStore {
         let fingerprints = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-lf", scanned.path, "-E", "sha256"])
         let challenge = ServerTrustChallenge(
             id: UUID(), host: sftp.host, port: sftp.port,
-            fingerprints: String(decoding: fingerprints, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines), keyChanged: keyChanged
+            fingerprints: String(decoding: fingerprints, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines), keyChanged: keyChanged,
         )
         pending[challenge.id] = Pending(server: Self.server(sftp), keys: keys, previous: previous)
         return challenge
@@ -47,7 +47,7 @@ actor SFTPTrustStore {
     func accept(_ challenge: ServerTrustChallenge) async throws {
         guard let request = pending.removeValue(forKey: challenge.id) else { throw AppError(String(localized: .serverTrustExpired)) }
         var keys = try await removing(request.server, from: request.previous)
-        if !keys.isEmpty && !keys.hasSuffix("\n") { keys += "\n" }
+        if !keys.isEmpty, !keys.hasSuffix("\n") { keys += "\n" }
         guard try Data(contentsOf: file()) == request.previous else { throw AppError(String(localized: .serverTrustExpired)) }
         try write(keys + request.keys)
     }

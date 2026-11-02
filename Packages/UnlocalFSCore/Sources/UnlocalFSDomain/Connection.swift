@@ -56,7 +56,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     }
 
     public func readAndWrite() -> Bool {
-       return !readOnly
+        !readOnly
     }
 
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
@@ -70,7 +70,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         result.check(!name.isBlank, field: .name, message: String(localized: .nameEmpty))
         result.check(
             name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
-            field: .name, message: String(localized: .nameHasForbiddenCharacters)
+            field: .name, message: String(localized: .nameHasForbiddenCharacters),
         )
         result.check(name.utf8.count <= 120, field: .name, message: String(localized: .nameTooLong))
         switch backend {
@@ -94,7 +94,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         } ?? false
         result.check(
             validEndpoint, field: .endpoint,
-            message: String(localized: .endpointNotDirect)
+            message: String(localized: .endpointNotDirect),
         )
         return result
     }
@@ -105,12 +105,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         result.check(
             bucket != "." && bucket != ".." &&
                 bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
-            field: .bucket, message: String(localized: .bucketHasPath)
+            field: .bucket, message: String(localized: .bucketHasPath),
         )
         result.check(
-            (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy({ !["", ".", ".."].contains($0) })) &&
+            (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy { !["", ".", ".."].contains($0) }) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .folder, message: String(localized: .folderPathInvalid)
+            field: .folder, message: String(localized: .folderPathInvalid),
         )
         return result
     }
@@ -119,7 +119,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         var result = validate()
         result.check(
             !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
-            field: .name, message: String(localized: .nameAlreadyExists)
+            field: .name, message: String(localized: .nameAlreadyExists),
         )
         return result
     }
@@ -209,25 +209,28 @@ public struct Credentials: Codable, Equatable, Sendable {
             if encryptionPassword != oldValue { obscuredEncryptionPassword = "" }
         }
     }
+
     public var obscuredEncryptionPassword = ""
     public var password: String {
         didSet {
             if password != oldValue { obscuredPassword = "" }
         }
     }
+
     public var obscuredPassword = ""
     public var keyPassphrase: String {
         didSet {
             if keyPassphrase != oldValue { obscuredKeyPassphrase = "" }
         }
     }
+
     public var obscuredKeyPassphrase = ""
     public var serviceAccountKey: String
     public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
-        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = ""
+        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "",
     ) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -285,7 +288,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         case .sftp:
             result.check(
                 connection.sftp.authentication != .password || !password.isEmpty,
-                field: .password, message: String(localized: .passwordEmpty)
+                field: .password, message: String(localized: .passwordEmpty),
             )
         case .gcs:
             result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))

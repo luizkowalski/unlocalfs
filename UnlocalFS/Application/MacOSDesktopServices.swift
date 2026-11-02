@@ -63,13 +63,13 @@ import UserNotifications
                     localized: """
                     Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your \
                     trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path.
-                    """
+                    """,
                 )
                 : String(
                     localized: """
                     Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your \
                     trusted-hosts file and private key file. Copy them to the other Mac and adjust the paths.
-                    """
+                    """,
                 )
         }
     }

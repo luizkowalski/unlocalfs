@@ -95,7 +95,7 @@ struct ConnectionEditor: View {
         }
         .onAppear {
             viewModel.loadCredentials()
-            if viewModel.credentialsLoaded && viewModel.isDuplicate { focus = .folder }
+            if viewModel.credentialsLoaded, viewModel.isDuplicate { focus = .folder }
         }
     }
 
@@ -117,11 +117,11 @@ struct ConnectionEditor: View {
                 Toggle(isOn: $viewModel.connection.encrypted) {
                     Text("Encrypt files")
                     Text(viewModel.isNew
-                         ? "Files and names are encrypted before they upload. Without the password, nobody can read them, including you."
-                         : "You cannot change this after you add a drive.")
+                        ? "Files and names are encrypted before they upload. Without the password, nobody can read them, including you."
+                        : "You cannot change this after you add a drive.")
                 }
                 .disabled(!viewModel.isNew)
-                if viewModel.isNew && viewModel.connection.encrypted {
+                if viewModel.isNew, viewModel.connection.encrypted {
                     ConnectionEditorField(field: .encryptionPassword, error: errors[.encryptionPassword], focus: $focus) {
                         SecureField("Encryption password", text: $viewModel.credentials.encryptionPassword)
                     }

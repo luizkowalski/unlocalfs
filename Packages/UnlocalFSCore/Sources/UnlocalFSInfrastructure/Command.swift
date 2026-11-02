@@ -1,11 +1,11 @@
 import Foundation
-import UnlocalFSDomain
 import Subprocess
 import System
+import UnlocalFSDomain
 
 public enum Command {
     public static func run(
-        _ executable: URL, _ arguments: [String], input: String = "", environment: [String: String]? = nil, timeout: Duration = .seconds(30)
+        _ executable: URL, _ arguments: [String], input: String = "", environment: [String: String]? = nil, timeout: Duration = .seconds(30),
     ) async throws -> Data {
         try await withThrowingTaskGroup { group in
             group.addTask { try await execute(executable, arguments, input: input, environment: environment) }
@@ -28,7 +28,7 @@ public enum Command {
             platformOptions: options,
             input: .string(input),
             output: .data(limit: 1 << 20),
-            error: .combinedWithOutput
+            error: .combinedWithOutput,
         )
         guard result.terminationStatus.isSuccess else {
             let message = String(decoding: result.standardOutput, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)

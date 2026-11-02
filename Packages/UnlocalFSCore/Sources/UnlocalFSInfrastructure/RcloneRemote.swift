@@ -14,6 +14,7 @@ struct RcloneRemote {
         case .gcs: "gcs"
         }
     }
+
     var exportName: String { "unlocalfs-\(type)" }
     var path: String {
         switch connection.backend {
@@ -21,6 +22,7 @@ struct RcloneRemote {
         case .sftp: connection.sftp.remotePath
         }
     }
+
     var storage: String { ":\(type):\(path)" }
     var target: String { connection.encrypted ? ":crypt:" : storage }
 

@@ -4,7 +4,7 @@ import UnlocalFSDomain
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite final class ActivityViewModelTests {
+@MainActor final class ActivityViewModelTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }
@@ -92,7 +92,7 @@ import UnlocalFSTestSupport
         #expect(try #require(viewModel.activity).get().isEmpty)
     }
 
-    @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
+    @Test func cancelledObservationStopsWithoutLoadingActivity() async {
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
         let task = Task { await viewModel.observe(Connection.s3()) }
         task.cancel()

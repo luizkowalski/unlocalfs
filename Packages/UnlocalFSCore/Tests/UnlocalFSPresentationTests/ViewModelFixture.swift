@@ -61,13 +61,13 @@ struct ViewModelFixture {
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
-            quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths)
+            quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths),
         )
     }
 
     @MainActor func factory(_ app: AppViewModel) -> ViewModelFactory {
         ViewModelFactory(
-            app: app, repository: repository, drives: service, saveConnection: SaveConnectionUseCase(repository: repository, drives: service), traffic: traffic
+            app: app, repository: repository, drives: service, saveConnection: SaveConnectionUseCase(repository: repository, drives: service), traffic: traffic,
         )
     }
 
@@ -77,7 +77,7 @@ struct ViewModelFixture {
 
     func serve(
         _ connection: Connection, queued: Int = 0, failed: Int = 0, lastError: String? = nil, cached: Int64 = 0, downloading: Bool = false,
-        downloaded: Int64 = 0
+        downloaded: Int64 = 0,
     ) throws {
         try serve(connection) { [root] request in
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
@@ -86,7 +86,7 @@ struct ViewModelFixture {
         }
         let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
-        if failed > 0 { try queue(contentsOf: (0..<failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
+        if failed > 0 { try queue(contentsOf: (0 ..< failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
         let transfers = downloading ? #"[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]"# : "[]"
         let error = lastError.map { #","lastError":"\#($0)""# } ?? ""
         let counters = #""bytes":\#(downloaded),"serverSideCopyBytes":0,"serverSideMoveBytes":0"#
@@ -108,7 +108,8 @@ struct ViewModelFixture {
     func saveEncryptedConnection() throws -> Connection {
         let connection = Connection.s3 { $0.encrypted = true }
         try repository.save(connection, credentials: Credentials(
-            accessKey: "saved-access", secretKey: "saved-secret", sessionToken: "saved-token", encryptionPassword: "saved-password"))
+            accessKey: "saved-access", secretKey: "saved-secret", sessionToken: "saved-token", encryptionPassword: "saved-password",
+        ))
         return connection
     }
 
@@ -163,6 +164,7 @@ final class MemoryCredentialStorage: CredentialStorage {
         let body: String
         let fallbackToAlert: Bool
     }
+
     var notifications: [Notification] = []
     var rcloneConfigDestination: RcloneConfigDestination?
 
@@ -175,9 +177,9 @@ final class MemoryCredentialStorage: CredentialStorage {
 
     func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
-    func openLog(_ connection: Connection) {}
+    func openLog(_: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }
-    func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination? { rcloneConfigDestination }
+    func chooseRcloneConfigDestination(for _: Connection) -> RcloneConfigDestination? { rcloneConfigDestination }
     func notify(title: String, body: String, fallbackToAlert: Bool) {
         notifications.append(Notification(title: title, body: body, fallbackToAlert: fallbackToAlert))
     }

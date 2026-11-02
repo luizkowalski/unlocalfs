@@ -37,7 +37,7 @@ public struct QuitUseCase: Sendable {
     }
 
     public func disconnectAll(connections: [Connection]) async -> (connection: Connection, error: any Error)? {
-        await withTaskGroup(of: (Int, (any Error)?).self) { group in
+        await withTaskGroup(of: (Int, any Error?).self) { group in
             for (index, connection) in connections.enumerated() {
                 group.addTask { [drives] in
                     guard await drives.status(connection).isActive else { return (index, nil) }

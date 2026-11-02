@@ -76,11 +76,11 @@ struct TrafficRangePicker: View {
 
     private func tap(_ day: Date) {
         if let start = pending {
-            draft = min(start, day)...max(start, day)
+            draft = min(start, day) ... max(start, day)
             pending = nil
         } else {
             pending = day
-            draft = day...day
+            draft = day ... day
         }
     }
 }
@@ -104,7 +104,7 @@ private struct MonthGrid: View {
                 }
             }
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(30), spacing: 0), count: 7), spacing: 2) {
-                ForEach(-lead..<count, id: \.self) { offset in
+                ForEach(-lead ..< count, id: \.self) { offset in
                     if offset < 0 {
                         Color.clear.frame(height: 26)
                     } else {

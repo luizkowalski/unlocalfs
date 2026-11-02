@@ -47,7 +47,7 @@ struct MainView: View {
             "Delete \(model.deleting?.name ?? "connection")?",
             isPresented: $model.isConfirmingDelete,
             titleVisibility: .visible,
-            presenting: model.deleting
+            presenting: model.deleting,
         ) { connection in
             Button("Delete Connection", role: .destructive) { Task { await model.delete(connection) } }
         } message: { _ in
@@ -56,7 +56,7 @@ struct MainView: View {
         .confirmationDialog(
             model.uploadCleanup?.title ?? "",
             item: $model.uploadCleanup,
-            titleVisibility: .visible
+            titleVisibility: .visible,
         ) { cleanup in
             Button("Remove Uploads", role: .destructive) { Task { await model.cleanUpUnfinishedUploads(cleanup) } }
         } message: { cleanup in
@@ -73,7 +73,7 @@ struct MainView: View {
         }
         .focused($listFocused)
         .overlay {
-            if model.visibleConnections.isEmpty && !model.searchQuery.isEmpty {
+            if model.visibleConnections.isEmpty, !model.searchQuery.isEmpty {
                 ContentUnavailableView.search(text: model.searchQuery)
             }
         }

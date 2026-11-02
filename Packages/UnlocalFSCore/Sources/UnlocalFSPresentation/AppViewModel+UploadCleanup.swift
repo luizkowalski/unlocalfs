@@ -1,12 +1,12 @@
 import Foundation
 import UnlocalFSDomain
 
-extension AppViewModel {
-    public func canCleanUpUploads(_ connection: Connection) -> Bool {
+public extension AppViewModel {
+    func canCleanUpUploads(_ connection: Connection) -> Bool {
         connection.backend.supportsUploadCleanup && connection.readAndWrite() && !busy.contains(connection.id) && servingStatus(connection) != nil
     }
 
-    public func reviewUnfinishedUploads(_ connection: Connection) async {
+    func reviewUnfinishedUploads(_ connection: Connection) async {
         guard canCleanUpUploads(connection) else { return }
         busy.insert(connection.id)
         defer { busy.remove(connection.id) }
@@ -24,7 +24,7 @@ extension AppViewModel {
         } catch { alert = error.localizedDescription }
     }
 
-    public func cleanUpUnfinishedUploads(_ cleanup: UploadCleanup) async {
+    func cleanUpUnfinishedUploads(_ cleanup: UploadCleanup) async {
         let connection = cleanup.connection
         guard canCleanUpUploads(connection) else { return }
         busy.insert(connection.id)
@@ -38,7 +38,7 @@ extension AppViewModel {
             } else {
                 desktop.notify(
                     title: String(localized: .unfinishedUploadsRemoved(cleanup.abandoned)),
-                    body: String(localized: .unfinishedUploadsRemovedBody(connection.name)), fallbackToAlert: false
+                    body: String(localized: .unfinishedUploadsRemovedBody(connection.name)), fallbackToAlert: false,
                 )
             }
         } catch { alert = error.localizedDescription }

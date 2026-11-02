@@ -1,14 +1,14 @@
 import Foundation
 import UnlocalFSDomain
 
-extension AppViewModel {
-    public func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
+public extension AppViewModel {
+    func copyShareLinks(for files: [URL], expiry: ShareLinkExpiry) async {
         do {
             let links = try await shareFiles.execute(files, expiry: expiry)
             desktop.copyShareLinks(links)
             desktop.notify(
                 title: String(localized: .linksCopied(links.count)),
-                body: String(localized: .anyoneCanDownload(expiry.title)), fallbackToAlert: false
+                body: String(localized: .anyoneCanDownload(expiry.title)), fallbackToAlert: false,
             )
         } catch let error as FileActionError {
             desktop.notify(title: String(localized: .couldNotCopyLink(error.file.lastPathComponent)), body: error.localizedDescription, fallbackToAlert: true)
@@ -17,12 +17,12 @@ extension AppViewModel {
         }
     }
 
-    public func duplicateOnServer(_ files: [URL]) async {
+    func duplicateOnServer(_ files: [URL]) async {
         do {
             let copies = try await duplicateFiles.execute(files)
             desktop.notify(
                 title: String(localized: .filesDuplicated(copies.count)),
-                body: ListFormatter.localizedString(byJoining: copies.map { ($0 as NSString).lastPathComponent }), fallbackToAlert: false
+                body: ListFormatter.localizedString(byJoining: copies.map { ($0 as NSString).lastPathComponent }), fallbackToAlert: false,
             )
         } catch let error as FileActionError {
             desktop.notify(title: String(localized: .couldNotDuplicate(error.file.lastPathComponent)), body: error.localizedDescription, fallbackToAlert: true)

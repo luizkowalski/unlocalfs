@@ -13,7 +13,7 @@ public struct DuplicateFilesUseCase: Sendable {
         let connections = try repository.all()
         var selection: [(connection: Connection, path: String)] = []
         for file in files {
-            selection.append(try await FileActionError.wrapping(file) {
+            try await selection.append(FileActionError.wrapping(file) {
                 guard let drive = drives.remoteFile(file, among: connections) else {
                     throw AppError(String(localized: .fileNotInDrive))
                 }
@@ -26,7 +26,7 @@ public struct DuplicateFilesUseCase: Sendable {
         }
         var copies: [String] = []
         for (file, drive) in zip(files, selection) {
-            copies.append(try await FileActionError.wrapping(file) { try await drives.duplicate(drive.path, in: drive.connection) })
+            try await copies.append(FileActionError.wrapping(file) { try await drives.duplicate(drive.path, in: drive.connection) })
         }
         return copies
     }

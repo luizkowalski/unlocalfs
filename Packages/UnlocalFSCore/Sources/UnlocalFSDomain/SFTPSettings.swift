@@ -32,21 +32,21 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
         let separators = CharacterSet.whitespacesAndNewlines.union(.controlCharacters)
         result.check(
             !host.isBlank && host.rangeOfCharacter(from: separators) == nil,
-            field: .host, message: String(localized: .hostMissing)
+            field: .host, message: String(localized: .hostMissing),
         )
-        result.check((1...65_535).contains(port), field: .port, message: String(localized: .portOutOfRange))
+        result.check((1 ... 65535).contains(port), field: .port, message: String(localized: .portOutOfRange))
         result.check(
             !username.isBlank && username.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .username, message: String(localized: .usernameMissing)
+            field: .username, message: String(localized: .usernameMissing),
         )
         result.check(
             remotePath.rangeOfCharacter(from: .controlCharacters) == nil,
-            field: .remotePath, message: String(localized: .remotePathInvalid)
+            field: .remotePath, message: String(localized: .remotePathInvalid),
         )
         if authentication == .privateKey {
             result.check(
                 Self.isFullPath(keyFile), field: .keyFile,
-                message: String(localized: .keyFileNotFullPath)
+                message: String(localized: .keyFileNotFullPath),
             )
         }
         return result

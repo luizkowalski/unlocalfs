@@ -24,7 +24,7 @@ import UnlocalFSDomain
         custom = TrafficPreset.thisMonth.days(now: .now, calendar: .current)
     }
 
-    public var unit: Calendar.Component { interval.duration > 92 * 86_400 ? .month : .day }
+    public var unit: Calendar.Component { interval.duration > 92 * 86400 ? .month : .day }
     public var total: Traffic? { error == nil ? rows.reduce(Traffic()) { $0 + $1.traffic } : nil }
     public var recentTotal: Traffic { recent.reduce(Traffic()) { $0 + $1.traffic } }
 
@@ -84,12 +84,12 @@ import UnlocalFSDomain
     }
 
     private func rows(in days: ClosedRange<TrafficDay>, now: Date, calendar: Calendar) throws -> [DriveTraffic] {
-        var traffic = Dictionary(uniqueKeysWithValues: try repository.traffic(in: days).map { ($0.id, $0) })
+        var traffic = try Dictionary(uniqueKeysWithValues: repository.traffic(in: days).map { ($0.id, $0) })
         let pending = days.contains(TrafficDay(now, calendar: calendar)) ? unsaved() : [:]
         for connection in connections() {
             let saved = traffic[connection.id]?.traffic ?? Traffic()
             traffic[connection.id] = DriveTraffic(
-                id: connection.id, name: connection.name, provider: connection.provider, traffic: saved + (pending[connection.id] ?? Traffic())
+                id: connection.id, name: connection.name, provider: connection.provider, traffic: saved + (pending[connection.id] ?? Traffic()),
             )
         }
         return traffic.values.sorted {

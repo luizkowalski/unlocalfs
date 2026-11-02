@@ -8,11 +8,13 @@ import UnlocalFSDomain
             if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp { tested = false }
         }
     }
+
     public var credentials = Credentials() {
         didSet {
             if credentials != oldValue { tested = false }
         }
     }
+
     public var confirmation = ""
     public private(set) var credentialsLoaded = false
     public private(set) var testing = false
@@ -37,7 +39,7 @@ import UnlocalFSDomain
         repository: any ConnectionRepository,
         drives: any DriveGateway,
         saveConnection: SaveConnectionUseCase,
-        onSave: @escaping (Connection, [Connection]) -> Void
+        onSave: @escaping (Connection, [Connection]) -> Void,
     ) {
         connection = draft.connection
         credentialsSource = draft.credentialsSource
