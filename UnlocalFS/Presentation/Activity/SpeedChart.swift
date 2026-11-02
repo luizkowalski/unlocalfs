@@ -55,8 +55,8 @@ struct SpeedChart: View {
         }
         .chartForegroundStyleScale { (direction: Direction) in direction.fill }
         .chartLegend(.hidden)
-        .chartXScale(domain: start...end)
-        .chartYScale(domain: -peak...peak)
+        .chartXScale(domain: start ... end)
+        .chartYScale(domain: -peak ... peak)
         .chartXSelection(value: $selectedDate)
         .chartXAxis {
             AxisMarks(values: stride(from: 0, through: AppViewModel.speedWindow, by: 15).map { start.addingTimeInterval($0) }) { value in
@@ -82,7 +82,7 @@ struct SpeedChart: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Speed in the last minute")
         .accessibilityValue(Text(
-            "Fastest upload \(byteCount(speeds.fastestUpload))/s, fastest download \(byteCount(speeds.fastestDownload))/s"
+            "Fastest upload \(byteCount(speeds.fastestUpload))/s, fastest download \(byteCount(speeds.fastestDownload))/s",
         ))
     }
 

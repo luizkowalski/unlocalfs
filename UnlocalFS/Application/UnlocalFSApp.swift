@@ -68,7 +68,7 @@ import UnlocalFSPresentation
     private let pathMonitor = NWPathMonitor()
     private var refreshTask: Task<Void, Never>?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         refreshTask = Task { await model.run() }
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
@@ -83,15 +83,15 @@ import UnlocalFSPresentation
         NSUpdateDynamicServices()
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    func applicationWillTerminate(_: Notification) {
         refreshTask?.cancel()
         pathMonitor.cancel()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
-    @objc private func willSleep(_ notification: Notification) { model.willSleep() }
+    @objc private func willSleep(_: Notification) { model.willSleep() }
 
-    @objc private func didWake(_ notification: Notification) {
+    @objc private func didWake(_: Notification) {
         Task { await model.didWake() }
     }
 
@@ -122,7 +122,7 @@ import UnlocalFSPresentation
                     alert.runModal()
                     allowed = false
                 }
-            case .wait(let message):
+            case let .wait(message):
                 sender.activate()
                 let alert = NSAlert()
                 alert.messageText = String(localized: "UnlocalFS is still running")
@@ -153,15 +153,16 @@ extension AppDelegate {
         runService(on: pasteboard, error: error) { await self.model.copyShareLinks(for: $0, expiry: expiry) }
     }
 
-    @objc func duplicateOnServer(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
+    @objc func duplicateOnServer(_ pasteboard: NSPasteboard, userData _: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
         runService(on: pasteboard, error: error) { await self.model.duplicateOnServer($0) }
     }
 
     private func runService(
-        on pasteboard: NSPasteboard, error: AutoreleasingUnsafeMutablePointer<NSString?>, _ action: @escaping @MainActor ([URL]) async -> Void
+        on pasteboard: NSPasteboard, error: AutoreleasingUnsafeMutablePointer<NSString?>, _ action: @escaping @MainActor ([URL]) async -> Void,
     ) {
         guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
-              !files.isEmpty else {
+              !files.isEmpty
+        else {
             refuseService(error)
             return
         }

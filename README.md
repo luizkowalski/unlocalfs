@@ -54,12 +54,13 @@ You need Xcode and [Mise](https://mise.jdx.dev/getting-started.html):
 mise install
 mise xcode               # opens the project in Xcode; build and run with Cmd+R
 mise test                # runs all tests
+swiftformat .            # formats the code
 swiftlint lint --strict  # runs SwiftLint
 ```
 
 `mise test` runs all tests, including drives mounted against local S3 and SFTP servers and Keychain, with `xcodebuild test -scheme UnlocalFSCore-Package` in `Packages/UnlocalFSCore`. The tests use `xcodebuild` and not `swift test`, because before Xcode 27 only `xcodebuild` generates the Swift symbols for the String Catalogs.
 
-CI does not use Mise. It runs the same `xcodebuild test` command on macOS 15, 26, and 27, then lints and builds the app with Xcode 27, for every pull request and every push to `main`. Publishing a GitHub release builds the app with Xcode 27 and attaches a DMG to the release. The release tag sets the app version.
+CI does not use Mise. It runs the same `xcodebuild test` command on macOS 15, 26, and 27, then checks the format with `swiftformat --lint .`, lints, and builds the app with Xcode 27, for every pull request and every push to `main`. Publishing a GitHub release builds the app with Xcode 27 and attaches a DMG to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 

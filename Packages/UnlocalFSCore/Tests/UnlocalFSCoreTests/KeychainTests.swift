@@ -3,9 +3,8 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-@Suite
 struct KeychainTests {
-    @Test func credentialsCanBeSavedUpdatedReadAndDeleted() throws {
+    @Test func `credentials can be saved updated read and deleted`() throws {
         let keychain = Keychain(service: "app.unlocalfs.tests.\(UUID().uuidString)")
         let id = UUID()
         defer { try? keychain.delete(id) }

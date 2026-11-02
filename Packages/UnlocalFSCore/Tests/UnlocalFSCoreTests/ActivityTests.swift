@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct ActivityTests {
+struct ActivityTests {
     @Test(arguments: [(0, false, FileActivity.State.queued), (1, true, .uploading)])
     func queuedUploadsShowTheirPathSizeAndState(tries: Int, uploading: Bool, state: FileActivity.State) async throws {
         let activity = try await fetchActivity(queue: """
@@ -44,7 +44,7 @@ import UnlocalFSTestSupport
             "denied.jpg": "AccessDenied: Access Denied", "unknown.jpg": nil, "read.jpg": nil,
             "twice.jpg": "second error", "again.mov": "AccessDenied: Access Denied",
         ])
-        guard case .failed(let nextAttempt) = byPath["denied.jpg"]?.state else {
+        guard case let .failed(nextAttempt) = byPath["denied.jpg"]?.state else {
             Issue.record("Expected a failed upload")
             return
         }
@@ -64,7 +64,7 @@ import UnlocalFSTestSupport
         #expect(activity.count == 2)
         let upload = try #require(activity.first { $0.state == .uploading })
         #expect(upload.bytesTransferred == 600)
-        #expect(upload.bytesPerSecond == 250000.5)
+        #expect(upload.bytesPerSecond == 250_000.5)
         let download = try #require(activity.first { $0.state == .downloading })
         #expect(download.bytesTransferred == 100)
         #expect(download.bytesPerSecond == nil)

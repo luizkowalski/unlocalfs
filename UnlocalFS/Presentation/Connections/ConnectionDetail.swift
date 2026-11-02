@@ -111,7 +111,7 @@ struct ConnectionDetail: View {
                 .disabled(!model.canConnect(connection))
                 Toggle("Connect automatically when UnlocalFS opens", isOn: Binding(
                     get: { connection.connectsAutomatically },
-                    set: { model.setConnectsAutomatically($0, for: connection) }
+                    set: { model.setConnectsAutomatically($0, for: connection) },
                 ))
                 .toggleStyle(.checkbox)
                 .controlSize(.small)
@@ -284,7 +284,7 @@ struct ConnectionDetail: View {
     }
 
     private func notice(
-        _ title: LocalizedStringKey, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View
+        _ title: LocalizedStringKey, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View,
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Divider()

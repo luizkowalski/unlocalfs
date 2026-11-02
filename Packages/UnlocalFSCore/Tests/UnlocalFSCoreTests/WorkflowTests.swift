@@ -4,7 +4,7 @@ import Testing
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct WorkflowTests {
+struct WorkflowTests {
     @Test func saveRejectsANameAddedAfterTheEditorOpened() async throws {
         try await withWorkflowFixture { repository, drives, connection in
             let original = Credentials.s3()
@@ -106,11 +106,14 @@ import UnlocalFSTestSupport
             _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service).execute(
                 connection, credentials: Credentials(
                     accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt",
-                    password: "ssh", keyPassphrase: "phrase"))
+                    password: "ssh", keyPassphrase: "phrase",
+                ),
+            )
             let saved = try repository.credentials(for: connection.id)
             #expect(saved == Credentials(
                 encryptionPassword: "crypt", password: authentication == .password ? "ssh" : "",
-                keyPassphrase: authentication == .privateKey ? "phrase" : ""))
+                keyPassphrase: authentication == .privateKey ? "phrase" : "",
+            ))
         }
     }
 
@@ -193,7 +196,8 @@ import UnlocalFSTestSupport
     func sharingIsUnsupportedBeforeCredentialsAreLoaded(connection: Connection) async throws {
         try await withWorkflowFixture { _, drives, _ in
             let repository = SavedConnectionRepository(
-                store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage(readError: AppError("Keychain unavailable")))
+                store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage(readError: AppError("Keychain unavailable")),
+            )
             try repository.save(connection, credentials: Credentials(password: "secret", serviceAccountKey: serviceAccountJSON))
             let file = drives.paths.mount(connection).appending(path: "plan.pdf")
             await #expect {
@@ -263,7 +267,7 @@ private let redirections: [Redirection] = [
 ]
 
 private func withWorkflowFixture(
-    operation: (SavedConnectionRepository, StubbedDrives, Connection) async throws -> Void
+    operation: (SavedConnectionRepository, StubbedDrives, Connection) async throws -> Void,
 ) async throws {
     let drives = try StubbedDrives("workflow")
     defer { drives.remove() }

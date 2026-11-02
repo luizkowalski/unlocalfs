@@ -47,10 +47,10 @@ struct TrafficView: View {
                 title.font(.title.weight(.semibold))
                 if viewModel.picked != nil {
                     Button("Show Whole Period", systemImage: "xmark.circle.fill", action: viewModel.showAll)
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                    .help("Show Whole Period")
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                        .help("Show Whole Period")
                 }
             }
             Text(viewModel.picked == nil ? "Drag across the chart to pick days" : "Picked on the chart").foregroundStyle(.secondary)
@@ -226,6 +226,6 @@ private struct ShareBar: View {
 
 extension DateInterval {
     var formattedDays: String {
-        (start..<max(start, end.addingTimeInterval(-1))).formatted(.interval.day().month(.abbreviated).year())
+        (start ..< max(start, end.addingTimeInterval(-1))).formatted(.interval.day().month(.abbreviated).year())
     }
 }

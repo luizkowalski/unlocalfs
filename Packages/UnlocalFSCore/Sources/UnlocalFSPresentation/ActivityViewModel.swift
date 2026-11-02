@@ -45,7 +45,7 @@ import UnlocalFSDomain
     private func show(_ result: Result<[FileActivity], any Error>?) {
         activity = result
         switch result {
-        case .success(let files): summary = TransferSummary(files, now: .now)
+        case let .success(files): summary = TransferSummary(files, now: .now)
         case .failure, nil: summary = nil
         }
     }

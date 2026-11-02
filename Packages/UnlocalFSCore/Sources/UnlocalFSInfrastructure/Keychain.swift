@@ -1,6 +1,6 @@
 import Foundation
-import UnlocalFSDomain
 import Security
+import UnlocalFSDomain
 
 public struct Keychain: CredentialStorage {
     private let service: String

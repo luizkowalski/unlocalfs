@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct AppPathsTests {
+struct AppPathsTests {
     @Test func removingCacheDeletesAllCachedFiles() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -43,6 +43,6 @@ private func paths(root: URL) -> AppPaths {
         config: root.appendingPathComponent("config.json"),
         support: root.appendingPathComponent("support"),
         mounts: root.appendingPathComponent("mounts"),
-        logs: root.appendingPathComponent("logs")
+        logs: root.appendingPathComponent("logs"),
     )
 }

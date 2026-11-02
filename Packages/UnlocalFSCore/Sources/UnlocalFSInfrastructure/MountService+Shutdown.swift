@@ -17,7 +17,7 @@ extension MountService {
                 throw DriveEjectError()
             }
         }
-        for _ in 0..<20 {
+        for _ in 0 ..< 20 {
             if !isMounted(paths.mount(connection)) { return }
             try await Task.sleep(for: .milliseconds(100))
         }
@@ -57,7 +57,7 @@ extension MountService {
     }
 
     func waitForStop(_ connection: Connection) async throws -> Bool {
-        for _ in 0..<20 {
+        for _ in 0 ..< 20 {
             let running = isRunning(connection)
             let socket = paths.socket(connection)
             if running != true, !isMounted(paths.mount(connection)) {

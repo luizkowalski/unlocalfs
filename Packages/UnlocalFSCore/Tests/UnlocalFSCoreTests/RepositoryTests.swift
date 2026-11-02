@@ -5,12 +5,12 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct RepositoryTests {
+struct RepositoryTests {
     @Test func concurrentSavesKeepEveryConnection() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "uf-repository-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
         let repository = SavedConnectionRepository(store: ConnectionStore(url: root.appending(path: "config.json")), credentials: MemoryCredentialStorage())
-        let connections = (0..<40).map { Connection.s3(name: "Drive \($0)") }
+        let connections = (0 ..< 40).map { Connection.s3(name: "Drive \($0)") }
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for connection in connections {
@@ -19,7 +19,7 @@ import UnlocalFSTestSupport
             try await group.waitForAll()
         }
 
-        #expect(Set(try repository.all().map(\.id)) == Set(connections.map(\.id)))
+        #expect(try Set(repository.all().map(\.id)) == Set(connections.map(\.id)))
     }
 
     @Test(arguments: [
@@ -101,12 +101,13 @@ final class MemoryCredentialStorage: CredentialStorage {
         if let readError { throw readError }
         return items.withLock { $0[id] }
     }
+
     func save(_ credentials: Credentials, for id: UUID) throws { items.withLock { $0[id] = credentials } }
     func delete(_ id: UUID) throws { items.withLock { $0[id] = nil } }
 }
 
 private struct UnavailableCredentialStorage: CredentialStorage {
-    func read(_ id: UUID) throws -> Credentials? { nil }
-    func save(_ credentials: Credentials, for id: UUID) throws { throw AppError("Keychain unavailable") }
-    func delete(_ id: UUID) throws { throw AppError("Keychain unavailable") }
+    func read(_: UUID) throws -> Credentials? { nil }
+    func save(_: Credentials, for _: UUID) throws { throw AppError("Keychain unavailable") }
+    func delete(_: UUID) throws { throw AppError("Keychain unavailable") }
 }

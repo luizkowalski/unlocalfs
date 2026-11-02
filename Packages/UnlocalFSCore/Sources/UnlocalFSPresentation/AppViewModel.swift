@@ -19,6 +19,7 @@ import UnlocalFSDomain
     public internal(set) var busy: Set<UUID> = [] {
         didSet { if refreshing { refreshRequested = true } }
     }
+
     public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
     private var trustOpensFinder: [UUID: Bool] = [:]
     public var alert: String?
@@ -57,7 +58,7 @@ import UnlocalFSDomain
         duplicateFiles: DuplicateFilesUseCase,
         exportConfig: ExportRcloneConfigUseCase,
         quit: QuitUseCase,
-        desktop: any DesktopServices
+        desktop: any DesktopServices,
     ) {
         self.drives = drives
         self.deleteConnection = deleteConnection
@@ -70,11 +71,11 @@ import UnlocalFSDomain
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
         switch initialConnections {
-        case .success(let connections):
+        case let .success(connections):
             self.connections = connections
             selection = connections.first.map { .drive($0.id) }
             ready = true
-        case .failure(let error):
+        case let .failure(error):
             alert = error.localizedDescription
         }
     }
@@ -91,7 +92,7 @@ import UnlocalFSDomain
     }
 
     public var selected: Connection? {
-        guard case .drive(let id) = selection else { return nil }
+        guard case let .drive(id) = selection else { return nil }
         return connections.first { $0.id == id }
     }
 
@@ -185,7 +186,7 @@ import UnlocalFSDomain
         } catch {
             errors[connection.id] = error.localizedDescription
         }
-        update(await drives.status(connection), for: connection)
+        await update(drives.status(connection), for: connection)
     }
 
     public func disconnect(_ connection: Connection) async {
@@ -206,7 +207,7 @@ import UnlocalFSDomain
         } catch {
             errors[connection.id] = error.localizedDescription
         }
-        update(await drives.status(connection), for: connection)
+        await update(drives.status(connection), for: connection)
     }
 
     public func trustServer(_ connection: Connection) async {
@@ -292,7 +293,7 @@ import UnlocalFSDomain
             let checked = connections.filter { !busy.contains($0.id) }
             await withTaskGroup(of: (Connection, MountStatus).self) { group in
                 for connection in checked {
-                    group.addTask { [drives] in (connection, await drives.status(connection)) }
+                    group.addTask { [drives] in await (connection, drives.status(connection)) }
                 }
                 for await (connection, status) in group {
                     guard !sleeping, !refreshRequested, !busy.contains(connection.id) else { continue }
@@ -332,16 +333,16 @@ import UnlocalFSDomain
     }
 }
 
-extension AppViewModel {
-    public func isOffline(_ connection: Connection) -> Bool {
+public extension AppViewModel {
+    func isOffline(_ connection: Connection) -> Bool {
         isActive(connection) && !networkAvailable
     }
 
-    public func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
+    func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
 
-    func recordSpeed(_ sample: SpeedSample, for id: UUID) {
+    internal func recordSpeed(_ sample: SpeedSample, for id: UUID) {
         var samples = speeds[id, default: []]
-        samples.removeAll { !(0..<Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
+        samples.removeAll { !(0 ..< Self.speedWindow).contains(sample.date.timeIntervalSince($0.date)) }
         if let last = samples.last, floor(last.date.timeIntervalSinceReferenceDate) == floor(sample.date.timeIntervalSinceReferenceDate) {
             if last.upload == sample.upload, last.download == sample.download { return }
             samples.removeLast()
@@ -350,8 +351,8 @@ extension AppViewModel {
         speeds[id] = samples
     }
 
-    public func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
-    public func openLog(_ connection: Connection) { desktop.openLog(connection) }
+    func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
+    func openLog(_ connection: Connection) { desktop.openLog(connection) }
 }
 
 private extension AppViewModel {

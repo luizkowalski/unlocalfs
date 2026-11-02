@@ -10,7 +10,7 @@ import UnlocalFSDomain
 
     public init(
         app: AppViewModel, repository: any ConnectionRepository, drives: any DriveGateway, saveConnection: SaveConnectionUseCase,
-        traffic: any TrafficRepository
+        traffic: any TrafficRepository,
     ) {
         self.app = app
         self.repository = repository
@@ -22,7 +22,7 @@ import UnlocalFSDomain
     public func makeEditor(_ draft: ConnectionDraft) -> ConnectionEditorViewModel {
         ConnectionEditorViewModel(
             draft: draft, connections: app.connections, repository: repository, drives: drives,
-            saveConnection: saveConnection, onSave: app.connectionSaved
+            saveConnection: saveConnection, onSave: app.connectionSaved,
         )
     }
 

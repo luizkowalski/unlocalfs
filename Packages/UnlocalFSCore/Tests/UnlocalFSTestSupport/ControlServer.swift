@@ -82,7 +82,7 @@ public final class ControlServer: Sendable {
     private static func response(to request: ControlRequest, _ respond: Respond) async -> [UInt8] {
         let status: String, body: String
         do {
-            (status, body) = ("200 OK", try await respond(request))
+            (status, body) = try await ("200 OK", respond(request))
         } catch {
             let message = (error as? ControlFailure)?.message ?? error.localizedDescription
             let json = try? JSONSerialization.data(withJSONObject: ["error": message, "status": 500])

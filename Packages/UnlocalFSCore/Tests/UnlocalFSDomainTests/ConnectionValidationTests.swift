@@ -12,7 +12,7 @@ private let emptyBucket = String(localized: .bucketEmpty)
 private let badBucket = String(localized: .bucketHasPath)
 private let badFolder = String(localized: .folderPathInvalid)
 
-@Suite struct ConnectionValidationTests {
+struct ConnectionValidationTests {
     @Test(arguments: [
         (false, Credentials(), [ConnectionField.accessKey, .secretKey]),
         (true, Credentials(accessKey: " \t", secretKey: "\n", encryptionPassword: " "), [.accessKey, .secretKey, .encryptionPassword]),
@@ -83,7 +83,7 @@ private let badFolder = String(localized: .folderPathInvalid)
     }
 }
 
-@Suite struct SFTPValidationTests {
+struct SFTPValidationTests {
     @Test(arguments: ["", "uploads", "/srv/files", "~/files", " spaced path /"])
     func validSFTPConnectionHasNoIssues(remotePath: String) {
         let connection = Connection.sftp { $0.sftp.remotePath = remotePath }
@@ -94,7 +94,7 @@ private let badFolder = String(localized: .folderPathInvalid)
         (ConnectionField.host, sftpSettings { $0.host = " " }),
         (.host, sftpSettings { $0.host = "bad host" }),
         (.port, sftpSettings { $0.port = 0 }),
-        (.port, sftpSettings { $0.port = 65_536 }),
+        (.port, sftpSettings { $0.port = 65536 }),
         (.username, sftpSettings { $0.username = "" }),
         (.remotePath, sftpSettings { $0.remotePath = "bad\nfolder" }),
         (.keyFile, sftpSettings { $0.authentication = .privateKey; $0.keyFile = "" }),
@@ -129,7 +129,7 @@ private let badFolder = String(localized: .folderPathInvalid)
     }
 }
 
-@Suite struct AWSValidationTests {
+struct AWSValidationTests {
     @Test(arguments: [
         "", "1234abcd-12ab-34cd-56ef-1234567890ab", "mrk-1234abcd12ab34cd56ef1234567890ab", "alias/compliance",
         "arn:aws:kms:us-east-1:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab",
@@ -154,7 +154,7 @@ private let badFolder = String(localized: .folderPathInvalid)
     }
 }
 
-@Suite struct GCSValidationTests {
+struct GCSValidationTests {
     @Test(arguments: [
         "", "not json", "[]",
         #"{"type":"authorized_user","client_email":"a@b.c","private_key":"k"}"#,

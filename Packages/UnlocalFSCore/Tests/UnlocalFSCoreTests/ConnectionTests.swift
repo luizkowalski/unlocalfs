@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct ConnectionTests {
+struct ConnectionTests {
     @Test func savedConnectionsSurviveReopenUpdateAndDelete() throws {
         let url = configURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
@@ -83,10 +83,12 @@ import UnlocalFSTestSupport
         try store.save(connection)
         #expect(try store.all() == [connection])
         let credentials = try JSONDecoder().decode(Credentials.self, from: Data(
-            #"{"accessKey":"a","secretKey":"b","sessionToken":"c","encryptionPassword":"d","obscuredEncryptionPassword":"e"}"#.utf8))
+            #"{"accessKey":"a","secretKey":"b","sessionToken":"c","encryptionPassword":"d","obscuredEncryptionPassword":"e"}"#.utf8,
+        ))
         #expect(credentials == { var expected = Credentials(accessKey: "a", secretKey: "b", sessionToken: "c", encryptionPassword: "d")
             expected.obscuredEncryptionPassword = "e"
-            return expected }())
+            return expected
+        }())
     }
 
     @Test(arguments: [

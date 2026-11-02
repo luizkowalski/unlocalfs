@@ -1,11 +1,11 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
-import UnlocalFSTestSupport
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
-@MainActor @Suite final class AppViewModelTests {
+@MainActor final class AppViewModelTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }
@@ -319,7 +319,7 @@ import UnlocalFSInfrastructure
         #expect(fixture.rcloneCalls.isEmpty)
     }
 
-    @Test func loginFailureKeepsTheSystemStateAndShowsAnError() throws {
+    @Test func loginFailureKeepsTheSystemStateAndShowsAnError() {
         let desktop = TestDesktopServices(paths: fixture.paths)
         desktop.loginError = AppError("Login registration failed")
         let app = fixture.app(desktop: desktop)

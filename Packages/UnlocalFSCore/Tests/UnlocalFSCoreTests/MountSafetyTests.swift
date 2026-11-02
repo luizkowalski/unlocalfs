@@ -4,7 +4,7 @@ import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct MountSafetyTests {
+struct MountSafetyTests {
     @Test func unavailableControlServiceKeepsRecoveryBlocked() async throws {
         try await withFixture(script: "echo 'Control unavailable' >&2\nexit 1\n") { service, connection in
             let before = await service.status(connection)
@@ -51,7 +51,7 @@ import UnlocalFSTestSupport
         let item = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#
         let batch = statusBatch(
             cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
-            queue: #"{"queue":[\#(item)]}"#, stats: #"{\#(rcloneCounters),"lastError":"AccessDenied: Access Denied"}"#
+            queue: #"{"queue":[\#(item)]}"#, stats: #"{\#(rcloneCounters),"lastError":"AccessDenied: Access Denied"}"#,
         )
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
@@ -157,7 +157,7 @@ import UnlocalFSTestSupport
     }
 
     @Test(arguments: [
-        ("lsf", 1), ("lsf", 8192)
+        ("lsf", 1), ("lsf", 8192),
     ])
     func connectionErrorsDoNotExposeCredentials(command: String, passwordRepetitions: Int) async throws {
         let password = String(repeating: "private-password", count: passwordRepetitions)
@@ -173,7 +173,7 @@ import UnlocalFSTestSupport
             var connection = connection
             connection.encrypted = command == "lsf"
             let credentials = Credentials(
-                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: password
+                accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: password,
             )
             await #expect {
                 try await service.test(connection, credentials: credentials)
@@ -310,14 +310,14 @@ func withFixture(script: String, operation: (MountService, Connection) async thr
 }
 
 func withControl(
-    _ control: @escaping (_ root: URL, _ socket: URL) throws -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void
+    _ control: @escaping (_ root: URL, _ socket: URL) throws -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void,
 ) async throws {
     try await withFixture(script: { _ in "" }, control: control, operation: operation)
 }
 
 private func withFixture(
     script: (URL) -> String, control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
-    operation: (MountService, Connection) async throws -> Void
+    operation: (MountService, Connection) async throws -> Void,
 ) async throws {
     let drives = try StubbedDrives("safety", rclone: script)
     defer { drives.remove() }

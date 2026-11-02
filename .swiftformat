@@ -1,0 +1,4 @@
+--swiftversion 6.4
+--maxwidth 180
+--trailing-commas always
+--disable wrapFunctionBodies,wrapPropertyBodies,wrapIfStatementBodies,wrapIfExpressionBodies,wrapLoopBodies,conditionalAssignment,swiftTestingTestCaseNames,wrapMultilineStatementBraces

@@ -5,7 +5,7 @@ import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
-@MainActor @Suite final class FinderServicesTests {
+@MainActor final class FinderServicesTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }
@@ -15,7 +15,7 @@ import UnlocalFSTestSupport
     @Test func failedSharesKeepTheClipboardAndExplainWhy() async throws {
         let encrypted = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
-        let previousLink = URL(string: "https://example.com/previous")!
+        let previousLink = try #require(URL(string: "https://example.com/previous"))
         desktop.copiedLinks = [previousLink]
         let app = fixture.app(desktop: desktop)
 

@@ -48,7 +48,7 @@ struct SFTPFixture {
         let server = try await SFTPServer(executable: executable, resources: resources, hostKey: keys.appending(path: "host"))
         self.server = server
         port = server.port
-        knownHostsEntry = "[127.0.0.1]:\(server.port) \(try Self.publicKey(keys.appending(path: "host")))\n"
+        knownHostsEntry = try "[127.0.0.1]:\(server.port) \(Self.publicKey(keys.appending(path: "host")))\n"
     }
 
     mutating func restartServer(hostKey name: String) async throws {
@@ -120,7 +120,7 @@ private func startAgent(resources: FixtureResources, socket: URL, key: URL) asyn
 }
 
 func withSFTPDrive(
-    _ login: SFTPLogin = .password, trusted: Bool = true, _ body: (Drive, inout SFTPFixture) async throws -> Void
+    _ login: SFTPLogin = .password, trusted: Bool = true, _ body: (Drive, inout SFTPFixture) async throws -> Void,
 ) async throws {
     let executable = try await rcloneExecutable.value
     try await withFixture { resources in

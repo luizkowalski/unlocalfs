@@ -3,11 +3,11 @@ import Observation
 import Synchronization
 import Testing
 @testable import UnlocalFSDomain
-import UnlocalFSTestSupport
 import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
-@MainActor @Suite final class SpeedRecordingTests {
+@MainActor final class SpeedRecordingTests {
     let fixture: ViewModelFixture
 
     init() throws { fixture = try ViewModelFixture() }
@@ -38,7 +38,7 @@ import UnlocalFSInfrastructure
     @Test func speedHistoryKeepsTheNewestSampleOfEachSecondForOneMinute() {
         let app = fixture.app()
         let drive = UUID()
-        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+        let start = Date(timeIntervalSinceReferenceDate: 1000)
         func record(_ offset: TimeInterval, _ speed: Double) {
             var status = MountStatus()
             status.uploadSpeed = speed
@@ -65,7 +65,7 @@ import UnlocalFSInfrastructure
     @Test func unchangedSpeedWithinTheSameSecondDoesNotNotifyObservers() {
         let app = fixture.app()
         let drive = UUID()
-        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+        let start = Date(timeIntervalSinceReferenceDate: 1000)
         var status = MountStatus()
         status.uploadSpeed = 5
         app.recordSpeed(SpeedSample(status, at: start), for: drive)

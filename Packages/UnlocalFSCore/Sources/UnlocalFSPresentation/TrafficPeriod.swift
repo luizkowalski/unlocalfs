@@ -22,12 +22,12 @@ public enum TrafficPreset: CaseIterable, Sendable {
         let today = calendar.startOfDay(for: now)
         let month = now.start(of: .month, calendar)
         return switch self {
-        case .today: today...today
-        case .yesterday: today.adding(.day, -1, calendar)...today.adding(.day, -1, calendar)
-        case .last7Days: today.adding(.day, -6, calendar)...today
-        case .thisMonth: month...today
-        case .lastMonth: month.adding(.month, -1, calendar)...month.adding(.day, -1, calendar)
-        case .thisYear: now.start(of: .year, calendar)...today
+        case .today: today ... today
+        case .yesterday: today.adding(.day, -1, calendar) ... today.adding(.day, -1, calendar)
+        case .last7Days: today.adding(.day, -6, calendar) ... today
+        case .thisMonth: month ... today
+        case .lastMonth: month.adding(.month, -1, calendar) ... month.adding(.day, -1, calendar)
+        case .thisYear: now.start(of: .year, calendar) ... today
         }
     }
 }
@@ -39,8 +39,8 @@ public struct TrafficBar: Identifiable, Equatable, Sendable {
     public var id: Date { interval.start }
 }
 
-extension ClosedRange where Bound == Date {
-    public func dayCount(calendar: Calendar) -> Int {
+public extension ClosedRange<Date> {
+    func dayCount(calendar: Calendar) -> Int {
         (calendar.dateComponents([.day], from: calendar.startOfDay(for: lowerBound), to: calendar.startOfDay(for: upperBound)).day ?? 0) + 1
     }
 }
@@ -57,6 +57,6 @@ extension Date {
 
 extension DateInterval {
     func days(_ calendar: Calendar) -> ClosedRange<TrafficDay> {
-        TrafficDay(start, calendar: calendar)...TrafficDay(end.addingTimeInterval(-1), calendar: calendar)
+        TrafficDay(start, calendar: calendar) ... TrafficDay(end.addingTimeInterval(-1), calendar: calendar)
     }
 }

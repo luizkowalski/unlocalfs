@@ -1,9 +1,9 @@
 import UnlocalFSDomain
 
-extension Connection {
-    public static func s3(
+public extension Connection {
+    static func s3(
         name: String = "My files", endpoint: String = "https://s3.example.com", bucket: String = "my-bucket", folder: String = "",
-        _ change: (inout Connection) -> Void = { _ in }
+        _ change: (inout Connection) -> Void = { _ in },
     ) -> Connection {
         var connection = Connection()
         connection.name = name
@@ -14,7 +14,7 @@ extension Connection {
         return connection
     }
 
-    public static func sftp(name: String = "Server", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
+    static func sftp(name: String = "Server", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
         var connection = Connection()
         connection.name = name
         connection.provider = .sftp
@@ -24,7 +24,7 @@ extension Connection {
         return connection
     }
 
-    public static func gcs(name: String = "Bucket", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
+    static func gcs(name: String = "Bucket", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
         var connection = Connection()
         connection.name = name
         connection.provider = .googleCloudStorage
@@ -34,6 +34,6 @@ extension Connection {
     }
 }
 
-extension Credentials {
-    public static func s3() -> Credentials { Credentials(accessKey: "key", secretKey: "secret") }
+public extension Credentials {
+    static func s3() -> Credentials { Credentials(accessKey: "key", secretKey: "secret") }
 }

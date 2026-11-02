@@ -3,7 +3,7 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSPresentation
 
-@Suite struct TransferSummaryTests {
+struct TransferSummaryTests {
     let now = Date()
 
     @Test func uploadsLeadWhenFilesMoveBothWays() throws {
@@ -20,7 +20,7 @@ import UnlocalFSPresentation
 
     @Test func downloadsLeadWhenNothingUploads() throws {
         let summary = try #require(TransferSummary([
-            FileActivity(path: "movie.mkv", size: 7_537_000_000, state: .downloading, bytesTransferred: 2_100_000, bytesPerSecond: 4096)
+            FileActivity(path: "movie.mkv", size: 7_537_000_000, state: .downloading, bytesTransferred: 2_100_000, bytesPerSecond: 4096),
         ], now: now))
 
         #expect(!summary.isUploading)
@@ -42,7 +42,7 @@ import UnlocalFSPresentation
     }
 
     @Test func everyFileShowsWhenMoreThanTenMove() throws {
-        let summary = try #require(TransferSummary((1...11).map {
+        let summary = try #require(TransferSummary((1 ... 11).map {
             FileActivity(path: "file\($0).txt", size: 1, state: .queued, bytesTransferred: nil)
         } + [FileActivity(path: "zebra.txt", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil)], now: now))
 
@@ -51,7 +51,7 @@ import UnlocalFSPresentation
     }
 
     @Test func failedUploadsDoNotCountAsUploading() throws {
-        let failed = (1...3).map { FileActivity(path: "scan\($0).pdf", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil) }
+        let failed = (1 ... 3).map { FileActivity(path: "scan\($0).pdf", size: 1, state: .failed(nextAttempt: now), bytesTransferred: nil) }
         let mixed = try #require(TransferSummary(failed + [
             FileActivity(path: "a.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),
             FileActivity(path: "b.mov", size: 10, state: .uploading, bytesTransferred: 1, bytesPerSecond: 100),

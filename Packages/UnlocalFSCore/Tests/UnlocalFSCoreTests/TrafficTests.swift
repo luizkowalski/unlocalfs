@@ -5,18 +5,18 @@ import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct TrafficTests {
+struct TrafficTests {
     @Test func networkTrafficStaysUnsavedUntilDisconnectSavesItForToday() async throws {
-        let start = reply(stats: busyStats(bytes: 12_000))
-        let later = reply(stats: busyStats(bytes: 14_000))
+        let start = reply(stats: busyStats(bytes: 12000))
+        let later = reply(stats: busyStats(bytes: 14000))
         try await withRclone(replying: start, start, later) { drives, connection, _ in
             let status = await drives.service.status(connection)
-            let beforeDisconnect = try drives.traffic.traffic(in: today...today)
-            #expect(status.unsavedTraffic == Traffic(upload: 4_000, download: 6_000))
+            let beforeDisconnect = try drives.traffic.traffic(in: today ... today)
+            #expect(status.unsavedTraffic == Traffic(upload: 4000, download: 6000))
             #expect(beforeDisconnect.isEmpty)
 
             try await drives.service.unmount(connection)
-            #expect(try drives.traffic.traffic(in: today...today).map(\.traffic) == [Traffic(upload: 4_000, download: 8_000)])
+            #expect(try drives.traffic.traffic(in: today ... today).map(\.traffic) == [Traffic(upload: 4000, download: 8000)])
         }
     }
 
@@ -32,32 +32,32 @@ import UnlocalFSTestSupport
     }
 
     @Test func relaunchCountsOnlyWhatMovedSinceTheLastSave() async throws {
-        try await withRclone(replying: reply(stats: counters(bytes: 12_000), transferred: finished("old.mov"))) { drives, connection, rclone in
-            let earlier = TrafficCheckpoint(process: rclone, network: 10_000, savedAt: .now - 60)
+        try await withRclone(replying: reply(stats: counters(bytes: 12000), transferred: finished("old.mov"))) { drives, connection, rclone in
+            let earlier = TrafficCheckpoint(process: rclone, network: 10000, savedAt: .now - 60)
             try drives.traffic.save(TrafficSave(day: today, traffic: Traffic(), checkpoint: earlier), for: connection)
-            #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 2_000))
+            #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 0, download: 2000))
         }
     }
 
     @Test func olderSnapshotDoesNotCountFinishedUploadsAgain() async throws {
-        let newer = reply(stats: counters(bytes: 5_000), transferred: finished("a.mov", "b.mov"))
-        let older = reply(stats: counters(bytes: 3_000), transferred: finished("a.mov"))
+        let newer = reply(stats: counters(bytes: 5000), transferred: finished("a.mov", "b.mov"))
+        let older = reply(stats: counters(bytes: 3000), transferred: finished("a.mov"))
         try await withRclone(replying: newer, older, newer) { drives, connection, _ in
-            for _ in 0..<3 {
-                #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 2_000, download: 3_000))
+            for _ in 0 ..< 3 {
+                #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 2000, download: 3000))
             }
         }
     }
 
     @Test func uploadFinishingDuringAReadCountsOnce() async throws {
         let transferring = #"{"name":"video.mov","size":1000,"bytes":1000,"srcFs":"/cache","dstFs":":s3:bucket"}"#
-        let finishing = reply(stats: counters(bytes: 10_000, transferring: transferring), transferred: finished("video.mov"))
+        let finishing = reply(stats: counters(bytes: 10000, transferring: transferring), transferred: finished("video.mov"))
         try await withRclone(replying: finishing) { drives, connection, _ in
-            #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 1_000, download: 9_000))
+            #expect(await drives.service.status(connection).unsavedTraffic == Traffic(upload: 1000, download: 9000))
         }
     }
 
-    private func busyStats(bytes: Int = 12_000) -> String {
+    private func busyStats(bytes: Int = 12000) -> String {
         """
         {"bytes":\(bytes),"serverSideCopyBytes":0,"serverSideMoveBytes":2000,"transferring":[
             {"name":"video.mov","size":9000,"bytes":4000,"srcFs":"/cache","dstFs":":s3:bucket"},
@@ -85,7 +85,7 @@ private func reply(stats: String, transferred: String = #"{"transferred":[]}"#) 
 }
 
 private func withRclone(
-    replying replies: String..., operation: (StubbedDrives, Connection, RcloneProcess) async throws -> Void
+    replying replies: String..., operation: (StubbedDrives, Connection, RcloneProcess) async throws -> Void,
 ) async throws {
     let drives = try StubbedDrives("traffic")
     defer { drives.remove() }

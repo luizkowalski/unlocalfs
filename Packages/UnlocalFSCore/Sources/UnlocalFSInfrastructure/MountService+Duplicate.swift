@@ -64,6 +64,6 @@ extension MountService {
     }
 
     @concurrent private nonisolated func names(in folder: URL) async throws -> Set<String> {
-        Set(try FileManager.default.contentsOfDirectory(atPath: folder.path))
+        try Set(FileManager.default.contentsOfDirectory(atPath: folder.path))
     }
 }

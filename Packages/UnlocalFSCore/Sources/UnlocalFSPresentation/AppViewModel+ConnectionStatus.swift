@@ -1,57 +1,57 @@
 import Foundation
 import UnlocalFSDomain
 
-extension AppViewModel {
-    public var activity: Activity {
+public extension AppViewModel {
+    var activity: Activity {
         if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .uploading }
         if statuses.values.contains(where: \.isDownloading) { return .downloading }
         return statuses.values.contains(where: \.isMounted) ? .connected : .idle
     }
 
-    public func isActive(_ connection: Connection) -> Bool {
+    func isActive(_ connection: Connection) -> Bool {
         statuses[connection.id]?.isActive == true
     }
 
-    public func isDisconnected(_ connection: Connection) -> Bool {
+    func isDisconnected(_ connection: Connection) -> Bool {
         statuses[connection.id].map { !$0.isActive } ?? false
     }
 
-    public func servingStatus(_ connection: Connection) -> MountStatus? {
+    func servingStatus(_ connection: Connection) -> MountStatus? {
         guard let status = statuses[connection.id], status.isRunning, !status.needsReconnect else { return nil }
         return status
     }
 
-    public func uploadFailure(_ connection: Connection) -> MountStatus? {
+    func uploadFailure(_ connection: Connection) -> MountStatus? {
         guard !busy.contains(connection.id), !isOffline(connection),
               let status = servingStatus(connection), status.failedUploads > 0 else { return nil }
         return status
     }
 
-    public func problem(_ connection: Connection) -> String? {
+    func problem(_ connection: Connection) -> String? {
         errors[connection.id] ?? statuses[connection.id]?.controlError
     }
 
-    public func canToggle(_ connection: Connection) -> Bool {
+    func canToggle(_ connection: Connection) -> Bool {
         !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
     }
 
-    public func canConnect(_ connection: Connection) -> Bool {
+    func canConnect(_ connection: Connection) -> Bool {
         canToggle(connection) && !isActive(connection)
     }
 
-    public func canDisconnect(_ connection: Connection) -> Bool {
+    func canDisconnect(_ connection: Connection) -> Bool {
         canToggle(connection) && isActive(connection) && !needsReconnect(connection)
     }
 
-    public func canOpen(_ connection: Connection) -> Bool {
+    func canOpen(_ connection: Connection) -> Bool {
         statuses[connection.id]?.isMounted == true && !needsReconnect(connection)
     }
 
-    public func canEdit(_ connection: Connection) -> Bool {
+    func canEdit(_ connection: Connection) -> Bool {
         canToggle(connection) && !isActive(connection)
     }
 
-    public func indicator(_ connection: Connection) -> Indicator {
+    func indicator(_ connection: Connection) -> Indicator {
         switch condition(connection) {
         case .working: .working
         case .needsReconnect, .needsAttention, .offline, .uploadFailed: .attention
@@ -59,7 +59,7 @@ extension AppViewModel {
         }
     }
 
-    public func statusText(_ connection: Connection) -> String {
+    func statusText(_ connection: Connection) -> String {
         switch condition(connection) {
         case .working: String(localized: .working)
         case .needsReconnect: String(localized: .needsReconnect)
@@ -67,27 +67,27 @@ extension AppViewModel {
         case .checking: String(localized: .checking)
         case .offline: String(localized: .networkUnavailable)
         case .uploadFailed: String(localized: .uploadNeedsAttention)
-        case .uploading(let count): String(localized: .uploadsPending(count))
+        case let .uploading(count): String(localized: .uploadsPending(count))
         case .connected: String(localized: .connected)
         case .ejected: String(localized: .ejected)
         case .disconnected: String(localized: .disconnected)
         }
     }
 
-    public func needsReconnect(_ connection: Connection) -> Bool {
+    func needsReconnect(_ connection: Connection) -> Bool {
         statuses[connection.id]?.needsReconnect == true
     }
 
-    public func toggleTitle(_ connection: Connection) -> String {
+    func toggleTitle(_ connection: Connection) -> String {
         if needsReconnect(connection) { return String(localized: .reconnect) }
         return isActive(connection) ? String(localized: .disconnect) : String(localized: .connect)
     }
 
-    public func uploadsBlockingMessage(_ connection: Connection) -> String {
+    func uploadsBlockingMessage(_ connection: Connection) -> String {
         canOpen(connection) ? String(localized: .uploadsPendingDriveStaysConnected) : String(localized: .uploadsPendingKeepAppRunning)
     }
 
-    public func needsMainWindow(_ connection: Connection) -> Bool {
+    func needsMainWindow(_ connection: Connection) -> Bool {
         serverTrust[connection.id] != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id
     }
 }

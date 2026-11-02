@@ -19,7 +19,7 @@ import UnlocalFSPresentation
         let drives = MountService(
             executable: contents.appending(path: "Helpers/rclone"),
             helperDirectory: contents.appending(path: "Resources/libexec"),
-            paths: paths, traffic: traffic
+            paths: paths, traffic: traffic,
         )
         let model = AppViewModel(
             initialConnections: initialConnections, drives: drives,
@@ -29,11 +29,11 @@ import UnlocalFSPresentation
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: drives),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),
-            quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths)
+            quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths),
         )
         return AppDependencies(model: model, viewModels: ViewModelFactory(
             app: model, repository: repository, drives: drives, saveConnection: SaveConnectionUseCase(repository: repository, drives: drives),
-            traffic: traffic
+            traffic: traffic,
         ))
     }
 }

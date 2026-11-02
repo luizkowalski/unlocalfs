@@ -4,7 +4,7 @@ import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
-@Suite struct GCSDriveTests {
+struct GCSDriveTests {
     @Test func keyReachesRcloneAndExportsOnOneLineOnlyWithSecrets() async throws {
         let storedKey = try ServiceAccountKey(importing: Data(serviceAccountJSON.utf8)).json
         let connection = Connection.gcs {

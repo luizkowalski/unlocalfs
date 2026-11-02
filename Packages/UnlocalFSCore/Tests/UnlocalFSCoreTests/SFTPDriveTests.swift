@@ -34,7 +34,7 @@ import UnlocalFSInfrastructure
             let credentials = sftp.credentials
             let first = try await #require(throws: ServerTrustChallenge.self) { try await drive.service.test(drive.connection, credentials: credentials) }
             let fingerprint = try await Command.run(URL(filePath: "/usr/bin/ssh-keygen"), ["-lf", sftp.keys.appending(path: "host.pub").path])
-            #expect(first.fingerprints.contains(try #require(String(decoding: fingerprint, as: UTF8.self).split(separator: " ").dropFirst().first)))
+            #expect(try first.fingerprints.contains(#require(String(decoding: fingerprint, as: UTF8.self).split(separator: " ").dropFirst().first)))
             #expect(!first.keyChanged)
             try await drive.service.trustServer(first)
             try await drive.service.test(drive.connection, credentials: credentials)

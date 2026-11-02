@@ -17,7 +17,7 @@ struct ActivityView: View {
             }
         }
         .task(id: connection.id) {
-            let viewModel = self.viewModel ?? viewModels.makeActivity()
+            let viewModel = viewModel ?? viewModels.makeActivity()
             self.viewModel = viewModel
             await viewModel.observe(connection)
         }
@@ -33,7 +33,7 @@ struct ActivityView: View {
                     transfers(summary).foregroundStyle(.secondary)
                 }
             }
-            if case .failure(let error) = viewModel?.activity {
+            if case let .failure(error) = viewModel?.activity {
                 Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
             ActivityTable(files: summary?.files ?? []) {

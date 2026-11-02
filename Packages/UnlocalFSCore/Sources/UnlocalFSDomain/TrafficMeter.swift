@@ -49,7 +49,7 @@ public struct TrafficSave: Equatable, Sendable {
 }
 
 public struct TrafficMeter: Sendable {
-    private static let saveInterval: TimeInterval = 3_600
+    private static let saveInterval: TimeInterval = 3600
 
     private var checkpoint: TrafficCheckpoint?
     private var latest: TrafficReading?
@@ -92,7 +92,7 @@ public struct TrafficMeter: Sendable {
         uploadedAtSave = reading.uploaded
         let save = TrafficSave(
             day: TrafficDay(reading.date, calendar: calendar), traffic: traffic,
-            checkpoint: TrafficCheckpoint(process: reading.process, network: reading.network, savedAt: reading.date)
+            checkpoint: TrafficCheckpoint(process: reading.process, network: reading.network, savedAt: reading.date),
         )
         checkpoint = save.checkpoint
         return save

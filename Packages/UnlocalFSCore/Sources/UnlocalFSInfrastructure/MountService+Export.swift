@@ -29,8 +29,9 @@ extension MountService {
     private func createRemote(_ name: String, type: String, options: [String: String], config: URL) async throws {
         let parameters = options.filter { !$0.value.isEmpty }.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }
         _ = try await Command.run(executable, [
-            "config", "create", name, type] + parameters + [
-            "--no-obscure", "--non-interactive", "--no-output", "--config", config.path
+            "config", "create", name, type,
+        ] + parameters + [
+            "--no-obscure", "--non-interactive", "--no-output", "--config", config.path,
         ], environment: baseEnvironment)
     }
 }

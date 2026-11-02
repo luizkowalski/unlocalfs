@@ -35,7 +35,7 @@ private extension FileActivity {
 
     var finishedAt: Date? {
         switch state {
-        case .uploaded(let date), .downloaded(let date): date
+        case let .uploaded(date), let .downloaded(date): date
         case .queued, .uploading, .failed, .downloading: nil
         }
     }

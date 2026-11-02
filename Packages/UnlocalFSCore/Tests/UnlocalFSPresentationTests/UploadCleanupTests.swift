@@ -98,7 +98,7 @@ private let day = 24 * hour
     @discardableResult
     private func serve(
         _ connection: Connection, uploadAges: [TimeInterval], cleanupRemoves: Bool = true,
-        onCommand: @escaping @Sendable (String) async -> Void = { _ in }
+        onCommand: @escaping @Sendable (String) async -> Void = { _ in },
     ) throws -> FakeStorage {
         let storage = FakeStorage(uploadAges: uploadAges)
         try fixture.serve(connection) { request in
