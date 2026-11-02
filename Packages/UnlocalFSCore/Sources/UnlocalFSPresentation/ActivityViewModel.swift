@@ -5,6 +5,8 @@ import UnlocalFSDomain
 @MainActor @Observable public final class ActivityViewModel {
     public private(set) var activity: Result<[FileActivity], any Error>?
     public private(set) var summary: TransferSummary?
+    public var cancellation: UploadCancellation?
+    public var alert: String?
     private let drives: any DriveGateway
     private let isBusy: (UUID) -> Bool
     private let recordSpeed: (SpeedSample, UUID) -> Void
@@ -40,6 +42,27 @@ import UnlocalFSDomain
         } catch where !Task.isCancelled {
             show(.failure(error))
         } catch {}
+    }
+
+    public func canCancel(_ activity: FileActivity) -> Bool {
+        switch activity.state {
+        case .queued, .uploading, .failed: true
+        case .downloading, .uploaded, .downloaded: false
+        }
+    }
+
+    public func reviewCancel(_ activity: FileActivity, in connection: Connection) async {
+        let deletesServerCopy = await (try? drives.hasServerCopy(of: activity.path, in: connection)) ?? true
+        cancellation = UploadCancellation(connection: connection, path: activity.path, deletesServerCopy: deletesServerCopy)
+    }
+
+    public func cancelUpload(_ cancellation: UploadCancellation) async {
+        do {
+            try await drives.cancelUpload(cancellation.path, in: cancellation.connection)
+        } catch {
+            alert = error.localizedDescription
+        }
+        await refresh(cancellation.connection)
     }
 
     private func show(_ result: Result<[FileActivity], any Error>?) {

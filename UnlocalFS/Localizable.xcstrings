@@ -667,6 +667,18 @@
         }
       }
     },
+    "Delete File" : {
+      "comment" : "Destructive button that stops an upload by deleting the file from the drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluir arquivo"
+          }
+        }
+      }
+    },
     "Delete…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1976,6 +1988,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Status"
+          }
+        }
+      }
+    },
+    "Stop upload" : {
+      "comment" : "Help and VoiceOver label of the button next to an upload in the activity table",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar envio"
           }
         }
       }

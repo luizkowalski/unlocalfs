@@ -627,6 +627,60 @@
         }
       }
     },
+    "stopUploadDeletesFile": {
+      "comment": "Confirmation message before stopping the upload of a file that the server does not have yet",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is deleted from this drive and never reaches the server."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O arquivo é excluído deste disco e nunca chega ao servidor."
+          }
+        }
+      }
+    },
+    "stopUploadDeletesServerCopy": {
+      "comment": "Confirmation message before stopping the upload of a changed file that the server has an older copy of",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is deleted from this drive, and its older copy on the server is deleted too."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O arquivo é excluído deste disco, e a cópia anterior no servidor também é excluída."
+          }
+        }
+      }
+    },
+    "stopUploading": {
+      "comment": "Title of the confirmation before stopping an upload; %1$@ is the file name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop uploading “%1$@”?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar o envio de “%1$@”?"
+          }
+        }
+      }
+    },
     "unfinishedUploadsRemoved": {
       "comment": "Notification title after cleanup; %lld is how many uploads were removed",
       "extractionState": "manual",

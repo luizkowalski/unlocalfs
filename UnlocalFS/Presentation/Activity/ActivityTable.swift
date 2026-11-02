@@ -3,6 +3,8 @@ import UnlocalFSDomain
 
 struct ActivityTable<Empty: View>: View {
     let files: [FileActivity]
+    let canCancel: (FileActivity) -> Bool
+    let cancel: (FileActivity) -> Void
     @ViewBuilder let empty: Empty
 
     var body: some View {
@@ -15,9 +17,19 @@ struct ActivityTable<Empty: View>: View {
                 Text(folder).truncationMode(.middle).foregroundStyle(.secondary).help(folder)
             }
             TableColumn("Status") { activity in
-                ActivityStatus(activity: activity).font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    ActivityStatus(activity: activity).font(.caption).foregroundStyle(.secondary)
+                    if canCancel(activity) {
+                        Spacer(minLength: 0)
+                        Button("Stop upload", systemImage: "xmark.circle.fill") { cancel(activity) }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .help("Stop upload")
+                    }
+                }
             }
-            .width(min: 150, ideal: 160)
+            .width(min: 170, ideal: 180)
             TableColumn("Size") { activity in
                 if activity.size >= 0 {
                     Text(activity.size, format: .byteCount(style: .file))

@@ -443,6 +443,24 @@
           }
         }
       }
+    },
+    "uploadAlreadyFinished" : {
+      "comment" : "Error when the user confirms stopping an upload that finished meanwhile; %1$@ is the file name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” has already been uploaded. Nothing was deleted."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” já foi enviado. Nada foi excluído."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
