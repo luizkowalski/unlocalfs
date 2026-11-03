@@ -50,7 +50,7 @@ import UnlocalFSTestSupport
     }
 
     @Test(arguments: [false, true])
-    func duplicateCopiesOnTheServerNextToTheOriginal(encrypted: Bool) async throws {
+    func duplicateCopiesFinishedUploadsAndStopDeletesQueuedOnes(encrypted: Bool) async throws {
         try await withS3Drive(encrypted: encrypted) { drive, bucket in
             let credentials = try await drive.service.prepareCredentials(
                 Credentials(accessKey: "test-key", secretKey: "test-secret", encryptionPassword: encrypted ? "pw" : ""),
@@ -63,6 +63,11 @@ import UnlocalFSTestSupport
             await #expect { _ = try await drive.service.duplicate("draft.txt", in: drive.connection) } throws: { error in
                 error.localizedDescription == String(localized: .duplicateFileStillUploading)
             }
+            await #expect { try await drive.service.deleteFileToStopUpload("report.txt", in: drive.connection) } throws: { error in
+                error.localizedDescription == String(localized: .uploadAlreadyFinished("report.txt"))
+            }
+            try await drive.service.deleteFileToStopUpload("draft.txt", in: drive.connection)
+            #expect(try !FileManager.default.contentsOfDirectory(atPath: drive.mounted.path).contains("draft.txt"))
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy.txt")
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy 2.txt")
 
@@ -73,7 +78,7 @@ import UnlocalFSTestSupport
             }
             #expect(try String(contentsOf: drive.mounted.appending(path: "report copy 2.txt"), encoding: .utf8) == "report")
             try await drive.waitForUploads()
-            #expect(try FileManager.default.contentsOfDirectory(atPath: bucket.path).count == 4)
+            #expect(try FileManager.default.contentsOfDirectory(atPath: bucket.path).count == 3)
         }
     }
 

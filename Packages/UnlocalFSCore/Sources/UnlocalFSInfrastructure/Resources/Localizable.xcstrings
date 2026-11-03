@@ -427,6 +427,24 @@
         }
       }
     },
+    "reconnectToStopUpload" : {
+      "comment" : "Error when the user stops an upload while the drive is disconnected",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect the drive to stop uploads. UnlocalFS can only stop uploads through a connected drive."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconecte a unidade para parar envios. O UnlocalFS só pode parar envios por uma unidade conectada."
+          }
+        }
+      }
+    },
     "serverTrustExpired" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -440,6 +458,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A confiança no servidor mudou enquanto você conferia esta chave. Conecte novamente para conferir a chave atual."
+          }
+        }
+      }
+    },
+    "uploadAlreadyFinished" : {
+      "comment" : "Error when the user confirms stopping an upload that finished meanwhile; %1$@ is the file name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” has already been uploaded. Nothing was deleted."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” já foi enviado. Nada foi excluído."
           }
         }
       }

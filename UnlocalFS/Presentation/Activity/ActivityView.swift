@@ -21,6 +21,23 @@ struct ActivityView: View {
             self.viewModel = viewModel
             await viewModel.observe(connection)
         }
+        .confirmationDialog(
+            viewModel?.cancellation?.title ?? "",
+            item: Binding(get: { viewModel?.cancellation }, set: { viewModel?.cancellation = $0 }),
+            titleVisibility: .visible,
+        ) { cancellation in
+            Button("Delete File", role: .destructive) { Task { await viewModel?.stopUpload(cancellation) } }
+        } message: { cancellation in
+            Text(cancellation.message)
+        }
+        .alert("UnlocalFS", item: Binding(get: { viewModel?.alert }, set: { viewModel?.alert = $0 })) { _ in
+        } message: {
+            Text($0)
+        }
+    }
+
+    private func askToStop(_ activity: FileActivity) {
+        viewModel?.prepareCancellation(of: activity, in: connection)
     }
 
     private var activity: some View {
@@ -36,7 +53,7 @@ struct ActivityView: View {
             if case let .failure(error) = viewModel?.activity {
                 Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
-            ActivityTable(files: summary?.files ?? []) {
+            ActivityTable(files: summary?.files ?? [], cancel: askToStop) {
                 switch viewModel?.activity {
                 case .success:
                     idle
