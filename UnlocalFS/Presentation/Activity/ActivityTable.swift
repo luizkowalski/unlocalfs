@@ -25,6 +25,8 @@ struct ActivityTable<Empty: View>: View {
                             .labelStyle(.iconOnly)
                             .buttonStyle(.plain)
                             .foregroundStyle(.secondary)
+                            .frame(width: 20, height: 20)
+                            .contentShape(.rect)
                             .help("Stop upload")
                     }
                 }

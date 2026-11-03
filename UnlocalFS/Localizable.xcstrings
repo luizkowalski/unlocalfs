@@ -669,7 +669,7 @@
     },
     "Delete File" : {
       "comment" : "Destructive button that stops an upload by deleting the file from the drive",
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1994,7 +1994,7 @@
     },
     "Stop upload" : {
       "comment" : "Help and VoiceOver label of the button next to an upload in the activity table",
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

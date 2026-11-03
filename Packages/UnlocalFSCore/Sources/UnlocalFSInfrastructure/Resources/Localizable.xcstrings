@@ -427,6 +427,24 @@
         }
       }
     },
+    "reconnectToStopUpload" : {
+      "comment" : "Error when the user stops an upload while the drive is disconnected",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnect the drive to stop uploads. UnlocalFS can only stop uploads through a connected drive."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconecte a unidade para parar envios. O UnlocalFS só pode parar envios por uma unidade conectada."
+          }
+        }
+      }
+    },
     "serverTrustExpired" : {
       "extractionState" : "manual",
       "localizations" : {

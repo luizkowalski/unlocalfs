@@ -44,14 +44,13 @@ import UnlocalFSDomain
         } catch {}
     }
 
-    public func reviewCancel(_ activity: FileActivity, in connection: Connection) async {
-        let deletesServerCopy = await (try? drives.hasServerCopy(of: activity.path, in: connection)) ?? true
-        cancellation = UploadCancellation(connection: connection, path: activity.path, deletesServerCopy: deletesServerCopy)
+    public func prepareCancellation(of activity: FileActivity, in connection: Connection) {
+        cancellation = UploadCancellation(connection: connection, path: activity.path)
     }
 
-    public func cancelUpload(_ cancellation: UploadCancellation) async {
+    public func stopUpload(_ cancellation: UploadCancellation) async {
         do {
-            try await drives.cancelUpload(cancellation.path, in: cancellation.connection)
+            try await drives.deleteFileToStopUpload(cancellation.path, in: cancellation.connection)
         } catch {
             alert = error.localizedDescription
         }

@@ -17,7 +17,7 @@ If a drive shows **Needs reconnect**, click **Reconnect** in the app or menu bar
 
 The activity table shows each file’s name, folder, transfer status, and size. When you switch drives, the table shows **Checking activity…** until it receives that drive’s activity. Drag the column headers’ dividers to adjust their widths. Click **Upload failed** to see the error and retry time.
 
-To stop an upload, click the ⓧ button next to a file that waits, uploads, or failed. UnlocalFS stops the upload by deleting the file from the drive, so you lose the changes you did not upload. A confirmation shows first. If the server has an older copy of the file, or UnlocalFS cannot reach the server to check, the confirmation says that the server copy is deleted too. If the upload finishes before you confirm, UnlocalFS deletes nothing and tells you. While an app keeps the file open, macOS hides it under a `.nfs` name until the app closes it. When you stop a large S3 upload that is in progress, its parts can stay in the bucket. **Clean Up Unfinished Uploads…** removes them after a day.
+To stop an upload, click the ⓧ button next to a file that waits, uploads, or failed. UnlocalFS stops the upload by deleting the file from the drive, so you lose the changes you did not upload. A confirmation says first that the file is deleted from this drive, and that an older copy on the server is deleted too. If the upload finishes before you confirm, UnlocalFS deletes nothing and tells you. While an app keeps the file open, macOS hides it under a `.nfs` name until the app closes it. When you stop a large S3 upload that is in progress, its parts can stay in the bucket. **Clean Up Unfinished Uploads…** removes them after a day.
 
 ## Clean up unfinished uploads
 

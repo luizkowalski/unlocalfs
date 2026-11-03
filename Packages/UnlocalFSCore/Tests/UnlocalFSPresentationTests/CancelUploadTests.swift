@@ -14,45 +14,44 @@ import UnlocalFSTestSupport
 
     deinit { fixture.remove() }
 
-    @Test func cancellingANewFileDeletesItAndClearsItsRow() async throws {
+    @Test func stoppingANewFileDeletesItAndClearsItsRow() async throws {
         let drive = try serve(pending: "photos/new.jpg")
         let viewModel = fixture.factory(fixture.app()).makeActivity()
         await viewModel.refresh(connection)
-        let upload = try #require(viewModel.summary?.files.first)
+        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
 
-        await viewModel.reviewCancel(upload, in: connection)
-        let cancellation = try #require(viewModel.cancellation)
-        #expect(cancellation.message == String(localized: .stopUploadDeletesFile))
-        await viewModel.cancelUpload(cancellation)
+        try await viewModel.stopUpload(#require(viewModel.cancellation))
 
         #expect(!drive.contains("photos/new.jpg"))
         #expect(viewModel.summary == nil)
         #expect(viewModel.alert == nil)
     }
 
-    @Test(arguments: [ServerCopy.present, .unreachable])
-    func cancellingWarnsWhenTheServerCopyMayBeDeleted(_ serverCopy: ServerCopy) async throws {
-        try serve(pending: "report.pdf", serverCopy: serverCopy)
-        let viewModel = fixture.factory(fixture.app()).makeActivity()
-        await viewModel.refresh(connection)
-
-        try await viewModel.reviewCancel(#require(viewModel.summary?.files.first), in: connection)
-
-        #expect(viewModel.cancellation?.message == String(localized: .stopUploadDeletesServerCopy))
-    }
-
     @Test func uploadThatFinishesBeforeTheConfirmationKeepsTheFile() async throws {
-        let drive = try serve(pending: "report.pdf", serverCopy: .present)
+        let drive = try serve(pending: "report.pdf")
         let viewModel = fixture.factory(fixture.app()).makeActivity()
         await viewModel.refresh(connection)
-        try await viewModel.reviewCancel(#require(viewModel.summary?.files.first), in: connection)
+        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
         let cancellation = try #require(viewModel.cancellation)
 
         drive.finishUploads()
-        await viewModel.cancelUpload(cancellation)
+        await viewModel.stopUpload(cancellation)
 
         #expect(drive.contains("report.pdf"))
         #expect(viewModel.alert == String(localized: .uploadAlreadyFinished("report.pdf")))
+    }
+
+    @Test func stoppingAnUploadOnADisconnectedDriveAsksToReconnect() async throws {
+        try serve(pending: "report.pdf")
+        let viewModel = fixture.factory(fixture.app()).makeActivity()
+        await viewModel.refresh(connection)
+        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
+        let cancellation = try #require(viewModel.cancellation)
+
+        try FileManager.default.removeItem(at: fixture.paths.socket(connection))
+        await viewModel.stopUpload(cancellation)
+
+        #expect(viewModel.alert == String(localized: .reconnectToStopUpload))
     }
 
     @Test func onlyUploadsCanBeCancelled() {
@@ -63,25 +62,15 @@ import UnlocalFSTestSupport
         #expect(cancellable == [true, true, true, false, false, false])
     }
 
-    enum ServerCopy {
-        case absent, present, unreachable
-    }
-
     @discardableResult
-    private func serve(pending path: String, serverCopy: ServerCopy = .absent) throws -> FakeDrive {
+    private func serve(pending path: String) throws -> FakeDrive {
         let drive = try FakeDrive(mount: fixture.paths.mount(connection), pending: path)
         try fixture.serve(connection) { request in
             switch request.method {
-            case "operations/stat":
-                switch serverCopy {
-                case .absent: return #"{"item":null}"#
-                case .present: return #"{"item":{"Path":"\#(path)"}}"#
-                case .unreachable: throw ControlFailure("connection refused")
-                }
             case "vfs/queue":
-                return drive.queue()
+                drive.queue()
             default:
-                return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},\#(drive.queue()),{\#(rcloneCounters)}]}"#
+                #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},\#(drive.queue()),{\#(rcloneCounters)}]}"#
             }
         }
         return drive
