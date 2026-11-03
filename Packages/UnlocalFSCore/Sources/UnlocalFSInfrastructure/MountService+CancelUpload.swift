@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 public extension MountService {
     func deleteFileToStopUpload(_ path: String, in connection: Connection) async throws {
-        guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
+        guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             throw AppError(String(localized: .reconnectToStopUpload))
         }
         guard try await control(UploadQueue.self, connection, "vfs/queue").queue.contains(where: { $0.name == path }) else {

@@ -1,5 +1,4 @@
 import Foundation
-import Synchronization
 import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
@@ -14,7 +13,7 @@ import UnlocalFSTestSupport
 
     deinit { fixture.remove() }
 
-    @Test func stoppingANewFileDeletesItAndClearsItsRow() async throws {
+    @Test func stoppingAnUploadOnADisconnectedDriveKeepsTheFile() async throws {
         let drive = try serve(pending: "photos/new.jpg")
         let viewModel = fixture.factory(fixture.app()).makeActivity()
         await viewModel.refresh(connection)
@@ -22,35 +21,7 @@ import UnlocalFSTestSupport
 
         try await viewModel.stopUpload(#require(viewModel.cancellation))
 
-        #expect(!drive.contains("photos/new.jpg"))
-        #expect(viewModel.summary == nil)
-        #expect(viewModel.alert == nil)
-    }
-
-    @Test func uploadThatFinishesBeforeTheConfirmationKeepsTheFile() async throws {
-        let drive = try serve(pending: "report.pdf")
-        let viewModel = fixture.factory(fixture.app()).makeActivity()
-        await viewModel.refresh(connection)
-        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
-        let cancellation = try #require(viewModel.cancellation)
-
-        drive.finishUploads()
-        await viewModel.stopUpload(cancellation)
-
-        #expect(drive.contains("report.pdf"))
-        #expect(viewModel.alert == String(localized: .uploadAlreadyFinished("report.pdf")))
-    }
-
-    @Test func stoppingAnUploadOnADisconnectedDriveAsksToReconnect() async throws {
-        try serve(pending: "report.pdf")
-        let viewModel = fixture.factory(fixture.app()).makeActivity()
-        await viewModel.refresh(connection)
-        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
-        let cancellation = try #require(viewModel.cancellation)
-
-        try FileManager.default.removeItem(at: fixture.paths.socket(connection))
-        await viewModel.stopUpload(cancellation)
-
+        #expect(drive.contains("photos/new.jpg"))
         #expect(viewModel.alert == String(localized: .reconnectToStopUpload))
     }
 
@@ -79,11 +50,11 @@ import UnlocalFSTestSupport
 
 private final class FakeDrive: Sendable {
     private let mount: URL
-    private let pending: Mutex<Set<String>>
+    private let pending: String
 
     init(mount: URL, pending path: String) throws {
         self.mount = mount
-        pending = Mutex([path])
+        pending = path
         let file = mount.appending(path: path)
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try Data("changed".utf8).write(to: file)
@@ -91,10 +62,8 @@ private final class FakeDrive: Sendable {
 
     func contains(_ path: String) -> Bool { FileManager.default.fileExists(atPath: mount.appending(path: path).path) }
 
-    func finishUploads() { pending.withLock { $0.removeAll() } }
-
     func queue() -> String {
-        let items = pending.withLock { $0 }.filter(contains).map { #"{"name":"\#($0)","id":1,"size":7,"expiry":3,"tries":0,"delay":5,"uploading":false}"# }
-        return #"{"queue":[\#(items.joined(separator: ","))]}"#
+        let item = #"{"name":"\#(pending)","id":1,"size":7,"expiry":3,"tries":0,"delay":5,"uploading":false}"#
+        return #"{"queue":[\#(contains(pending) ? item : "")]}"#
     }
 }

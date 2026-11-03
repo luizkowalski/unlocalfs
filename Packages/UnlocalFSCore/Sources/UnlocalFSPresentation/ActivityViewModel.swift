@@ -54,7 +54,6 @@ import UnlocalFSDomain
         } catch {
             alert = error.localizedDescription
         }
-        await refresh(cancellation.connection)
     }
 
     private func show(_ result: Result<[FileActivity], any Error>?) {

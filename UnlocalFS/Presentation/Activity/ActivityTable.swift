@@ -21,13 +21,15 @@ struct ActivityTable<Empty: View>: View {
                     ActivityStatus(activity: activity).font(.caption).foregroundStyle(.secondary)
                     if activity.isCancellable {
                         Spacer(minLength: 0)
-                        Button("Stop upload", systemImage: "xmark.circle.fill") { cancel(activity) }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20, height: 20)
-                            .contentShape(.rect)
-                            .help("Stop upload")
+                        Button { cancel(activity) } label: {
+                            Label("Stop upload", systemImage: "xmark.circle.fill")
+                                .labelStyle(.iconOnly)
+                                .frame(width: 20, height: 20)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .help("Stop upload")
                     }
                 }
             }
