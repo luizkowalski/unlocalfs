@@ -2,8 +2,6 @@ import Darwin
 import Foundation
 import UnlocalFSDomain
 
-enum RcloneState { case running, stopped, untracked }
-
 extension MountService {
     private static let ejectRetryTime: Duration = .seconds(10)
 

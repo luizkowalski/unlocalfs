@@ -2,6 +2,8 @@ import Darwin
 import Foundation
 import UnlocalFSDomain
 
+enum RcloneState { case running, stopped, untracked }
+
 public actor MountService: DriveGateway {
     let executable: URL
     private let helperDirectory: URL
@@ -36,7 +38,7 @@ public actor MountService: DriveGateway {
         let credentials = try await prepareCredentials(credentials)
         let remote = try await remote(for: connection, credentials: credentials)
         do {
-            _ = try await runOnce(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
+            _ = try await runRemoteCommand(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             let failure = redacted(error, credentials: credentials)
             let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
@@ -251,7 +253,7 @@ public actor MountService: DriveGateway {
         try await control(UploadQueue.self, connection, "vfs/queue").queue.contains { $0.name == path }
     }
 
-    func runOnce(_ arguments: [String], remote: RcloneRemote) async throws -> Data {
+    func runRemoteCommand(_ arguments: [String], remote: RcloneRemote) async throws -> Data {
         try await Command.run(executable, arguments + [
             "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s",
         ], environment: environment(remote.environment), timeout: .seconds(20))

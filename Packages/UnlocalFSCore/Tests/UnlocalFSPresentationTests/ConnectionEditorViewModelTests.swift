@@ -138,6 +138,22 @@ import UnlocalFSTestSupport
         #expect(!editor.isLocked)
     }
 
+    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.sftp(), .remotePath)])
+    func onlyADuplicateOpensOnItsFolder(connection: Connection, folder: ConnectionField) throws {
+        try fixture.repository.save(connection, credentials: Credentials())
+        let app = fixture.app()
+        let edit = fixture.editor(draft: .init(connection: connection), app: app)
+        app.duplicate(connection)
+        let duplicate = try fixture.editor(draft: #require(app.editor), app: app)
+        #expect(duplicate.initialFocus == nil)
+
+        edit.loadCredentials()
+        duplicate.loadCredentials()
+
+        #expect(edit.initialFocus == nil)
+        #expect(duplicate.initialFocus == folder)
+    }
+
     @Test func newEncryptedConnectionRequiresMatchingPasswords() async {
         let connection = Connection.s3 { $0.encrypted = true }
         let editor = fixture.editor(draft: .init(connection: connection))

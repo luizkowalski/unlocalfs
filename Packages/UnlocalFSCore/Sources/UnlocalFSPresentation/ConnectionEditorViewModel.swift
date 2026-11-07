@@ -16,14 +16,14 @@ import UnlocalFSDomain
     }
 
     public var confirmation = ""
-    public private(set) var credentialsLoaded = false
+    private var credentialsLoaded = false
     public private(set) var testing = false
     public private(set) var saving = false
     public private(set) var tested = false
     public private(set) var serverTrust: ServerTrustChallenge?
     public private(set) var error: String?
     private var showErrors = false
-    public let isDuplicate: Bool
+    private let isDuplicate: Bool
     private let credentialsSource: UUID
     public let isNew: Bool
     private let savedBackend: Backend?
@@ -64,6 +64,8 @@ import UnlocalFSDomain
         guard let savedBackend else { return Provider.allCases }
         return Provider.allCases.filter { $0.backend == savedBackend }
     }
+
+    public var initialFocus: ConnectionField? { isDuplicate && credentialsLoaded ? connection.folderField : nil }
 
     public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded }
 

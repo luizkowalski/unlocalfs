@@ -14,7 +14,7 @@ public extension MountService {
         let remote = try await remote(for: connection, credentials: credentials)
         let output: Data
         do {
-            output = try await runOnce(["link", "\(connection.rcloneStorage)/\(path)", "--expire", expiry.rawValue, "--quiet"], remote: remote)
+            output = try await runRemoteCommand(["link", "\(connection.rcloneStorage)/\(path)", "--expire", expiry.rawValue, "--quiet"], remote: remote)
         } catch {
             throw AppError(String(localized: .couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription)))
         }
