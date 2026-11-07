@@ -1,3 +1,5 @@
+import Foundation
+
 public struct ValidationResult<Field: Hashable & Sendable>: Equatable, Sendable {
     public struct Issue: Equatable, Sendable {
         public let field: Field
@@ -26,4 +28,8 @@ public struct ValidationResult<Field: Hashable & Sendable>: Equatable, Sendable 
     public func requireValid() throws {
         if !isValid { throw AppError(issues.map(\.message).joined(separator: "\n")) }
     }
+}
+
+extension String {
+    var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }

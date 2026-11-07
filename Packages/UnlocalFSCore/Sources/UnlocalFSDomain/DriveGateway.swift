@@ -21,3 +21,10 @@ public protocol DriveGateway: Sendable {
     func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)?
     func removeCache(_ connection: Connection)
 }
+
+extension DriveGateway {
+    func drive(containing file: URL, among connections: [Connection]) throws -> (connection: Connection, path: String) {
+        guard let drive = remoteFile(file, among: connections) else { throw AppError(String(localized: .fileNotInDrive)) }
+        return drive
+    }
+}

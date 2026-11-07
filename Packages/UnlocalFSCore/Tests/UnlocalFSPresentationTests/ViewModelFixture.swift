@@ -79,10 +79,15 @@ struct ViewModelFixture {
         _ connection: Connection, queued: Int = 0, failed: Int = 0, lastError: String? = nil, cached: Int64 = 0, downloading: Bool = false,
         downloaded: Int64 = 0,
     ) throws {
+        let socket = paths.socket(connection)
         try serve(connection) { [root] request in
+            if request.method == "core/quit" {
+                try FileManager.default.removeItem(at: socket)
+                return "{}"
+            }
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
             let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
-            return #"{"results":[\#(results.joined(separator: ","))]}"#
+            return #"{"results":[\#(results.joined(separator: ",")),{"transferred":[]}]}"#
         }
         let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"bytesUsed":\#(cached)}}"#
         try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))

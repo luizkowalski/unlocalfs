@@ -13,8 +13,7 @@ public extension MountService {
 
     @discardableResult
     private func runBackendCommand(_ command: String, in connection: Connection, opt: String = "{}") async throws -> Data {
-        let storage = RcloneRemote(connection: connection, credentials: nil, knownHosts: paths.knownHosts).storage
-        let job = try await control(StartedJob.self, connection, "backend/command", ["command": command, "fs": storage, "opt": opt, "_async": "true"])
+        let job = try await control(StartedJob.self, connection, "backend/command", ["command": command, "fs": connection.rcloneStorage, "opt": opt, "_async": "true"])
         return try await waitForJob(job, on: connection)
     }
 }

@@ -26,7 +26,7 @@ struct ConnectionDetail: View {
         }
         .toolbar { actions }
         .navigationTitle(connection.name)
-        .sheet(item: Binding(get: { model.serverTrust[connection.id] }, set: { _ in })) { challenge in
+        .sheet(item: Binding(get: { model.serverTrust(for: connection) }, set: { _ in })) { challenge in
             ServerTrustSheet(challenge: challenge,
                              onTrust: { Task { await model.trustServer(connection) } },
                              onCancel: { Task { await model.cancelServerTrust(connection) } })
@@ -51,24 +51,9 @@ struct ConnectionDetail: View {
             ToolbarSpacer(.fixed)
         }
         ToolbarItem {
-            Menu("More", systemImage: "ellipsis") {
-                Button("Edit Connection") { model.edit(connection) }
-                    .disabled(!model.canEdit(connection))
-                Button("Duplicate") { model.duplicate(connection) }
-                if connection.encrypted {
-                    Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
-                }
-                if connection.backend.supportsUploadCleanup {
-                    Button("Clean Up Unfinished Uploads…") { Task { await model.reviewUnfinishedUploads(connection) } }
-                        .disabled(!model.canCleanUpUploads(connection))
-                }
-                Button("Show Log") { model.openLog(connection) }
-                Divider()
-                Button("Delete…", role: .destructive) { model.deleting = connection }
-                    .disabled(!model.canEdit(connection))
-            }
-            .menuIndicator(.hidden)
-            .help("More")
+            Menu("More", systemImage: "ellipsis") { DriveManagementItems(connection: connection) }
+                .menuIndicator(.hidden)
+                .help("More")
         }
         ToolbarItem {
             Button(showsInfo ? "Hide Info" : "Show Info", systemImage: "sidebar.trailing") { showsInfo.toggle() }

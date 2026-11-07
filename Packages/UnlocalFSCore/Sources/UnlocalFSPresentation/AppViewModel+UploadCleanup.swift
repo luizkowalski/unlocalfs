@@ -2,8 +2,10 @@ import Foundation
 import UnlocalFSDomain
 
 public extension AppViewModel {
+    func offersUploadCleanup(_ connection: Connection) -> Bool { connection.backend.supportsUploadCleanup }
+
     func canCleanUpUploads(_ connection: Connection) -> Bool {
-        connection.backend.supportsUploadCleanup && connection.readAndWrite() && !busy.contains(connection.id) && servingStatus(connection) != nil
+        offersUploadCleanup(connection) && !connection.readOnly && !busy.contains(connection.id) && servingStatus(connection) != nil
     }
 
     func reviewUnfinishedUploads(_ connection: Connection) async {

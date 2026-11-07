@@ -23,10 +23,19 @@ public struct FileActivity: Identifiable, Equatable, Sendable {
         self.uploadError = uploadError
     }
 
-    public var id: String {
+    public var id: String { isUpload ? "upload:\(path)" : "download:\(path)" }
+
+    public var isUpload: Bool {
         switch state {
-        case .queued, .uploading, .failed, .uploaded: "upload:\(path)"
-        case .downloading, .downloaded: "download:\(path)"
+        case .queued, .uploading, .failed, .uploaded: true
+        case .downloading, .downloaded: false
+        }
+    }
+
+    public var finishedAt: Date? {
+        switch state {
+        case let .uploaded(date), let .downloaded(date): date
+        case .queued, .uploading, .failed, .downloading: nil
         }
     }
 }

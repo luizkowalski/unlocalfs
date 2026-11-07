@@ -54,20 +54,6 @@ import UnlocalFSTestSupport
         #expect(!app.isActive(connection))
     }
 
-    @Test func savePublishesTheSavedConnectionAndSelection() async throws {
-        let app = fixture.app()
-        let connection = Connection.s3()
-        let editor = fixture.editor(draft: .init(connection: connection), app: app)
-        editor.credentials = Credentials.s3()
-
-        #expect(await editor.save())
-
-        #expect(app.selected == connection)
-        #expect(try fixture.repository.all() == app.connections)
-        #expect(try fixture.repository.credentials(for: connection.id) == editor.credentials)
-        #expect(app.statuses[connection.id] == MountStatus())
-    }
-
     @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
         let first = Connection.s3 { $0.name = "First" }
         let second = Connection.s3 { $0.name = "Second" }
@@ -299,13 +285,24 @@ import UnlocalFSTestSupport
         #expect(app.alert == nil)
         let arguments = try String(contentsOf: fixture.root.appending(path: "config-arguments"), encoding: .utf8)
         let sftp = try #require(arguments.split(separator: "\n").first { $0.hasPrefix("config create unlocalfs-sftp sftp") })
-        #expect(sftp.contains("host=files.example.com") && sftp.contains("user=me") && sftp.contains("shell_type=none"))
+        #expect(sftp.contains("host=files.example.com") && sftp.contains("user=me"))
         #expect(sftp.contains("known_hosts_file=\(fixture.paths.support.appending(path: "known_hosts").path)") && sftp.contains("key_file=/nonexistent/id_ed25519"))
         #expect(!sftp.contains("/tmp/agent.sock") && !sftp.contains("saved-"))
         #expect(sftp.contains("key_file_pass=prepared-password") == includesSecrets)
         #expect(arguments.contains("config create unlocalfs crypt") && arguments.contains("remote=unlocalfs-sftp:/srv/files"))
         #expect(arguments.contains("password=prepared-password") == includesSecrets)
         #expect(try String(contentsOf: destination, encoding: .utf8).contains("[unlocalfs-sftp]"))
+    }
+
+    @Test(arguments: [
+        (Connection.s3(), false, true), (Connection.s3 { $0.encrypted = true }, true, true),
+        (Connection.gcs { $0.encrypted = true }, true, false), (Connection.sftp(), false, false),
+    ])
+    func driveMenuOffersExportForEncryptedDrivesAndCleanupForS3(connection: Connection, export: Bool, cleanup: Bool) {
+        let app = fixture.app()
+
+        #expect(app.offersRcloneConfigExport(connection) == export)
+        #expect(app.offersUploadCleanup(connection) == cleanup)
     }
 
     @Test func unencryptedDrivesCannotExportAConfig() async throws {

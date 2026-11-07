@@ -36,15 +36,15 @@ import UnlocalFSTestSupport
             try fixture.serve(connection) { request in
                 switch request.method {
                 case "job/list":
+                    return #"{"runningIds":[]}"#
+                case "core/quit":
                     overlap.hold()
                     defer { overlap.release() }
                     try await Task.sleep(for: .milliseconds(200))
-                    return #"{"runningIds":[]}"#
-                case "core/quit":
                     try FileManager.default.removeItem(at: socket)
                     return "{}"
                 default:
-                    return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
+                    return statusBatch()
                 }
             }
         }
@@ -68,7 +68,7 @@ import UnlocalFSTestSupport
                 try FileManager.default.removeItem(at: socket)
                 return "{}"
             }
-            return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
+            return statusBatch()
         }
         let app = fixture.app()
         await app.refresh()

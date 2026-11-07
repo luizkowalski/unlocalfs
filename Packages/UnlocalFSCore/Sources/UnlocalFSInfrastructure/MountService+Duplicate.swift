@@ -5,13 +5,11 @@ extension MountService {
     private static let copyGroup = "duplicate"
 
     public func duplicate(_ path: String, in connection: Connection) async throws -> String {
-        guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            throw AppError(String(localized: .reconnectToDuplicate))
-        }
-        if try await control(UploadQueue.self, connection, "vfs/queue").queue.contains(where: { $0.name == path }) {
+        try requireServing(connection, otherwise: .reconnectToDuplicate)
+        if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
-        let target = RcloneRemote(connection: connection, credentials: nil, knownHosts: paths.knownHosts).target
+        let target = connection.rcloneTarget
         let folder = (path as NSString).deletingLastPathComponent
         let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
         defer { reservedCopies[connection.id]?.remove(destination) }
@@ -39,7 +37,7 @@ extension MountService {
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
         guard reservedCopies[connection.id, default: []].isEmpty else { throw AppError(String(localized: .copyInProgress)) }
-        guard connection.backend.supportsServerCopy, status.isRunning, !status.needsReconnect else { return }
+        guard connection.backend.supportsServerCopy, status.isServing else { return }
         for id in try await control(JobList.self, connection, "job/list").runningIds {
             let job = try await control(JobStatus.self, connection, "job/status", ["jobid": "\(id)"])
             if job.group == Self.copyGroup, !job.finished { throw AppError(String(localized: .copyInProgress)) }

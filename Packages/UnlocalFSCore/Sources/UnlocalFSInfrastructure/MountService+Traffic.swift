@@ -48,7 +48,7 @@ extension MountService {
     }
 
     func recordTraffic(_ snapshot: ControlSnapshot, for connection: Connection) -> Traffic {
-        guard let pid = savedPID(connection), let process = Self.process(pid: pid) else { return Traffic() }
+        guard rcloneState(connection) == .running, let pid = savedPID(connection), let process = Self.process(pid: pid) else { return Traffic() }
         do {
             var tracker = try trackers[connection.id]
                 ?? TrafficTracker(meter: TrafficMeter(checkpoint: traffic.checkpoint(for: connection.id)), uploads: UploadTally(process: process))

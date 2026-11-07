@@ -25,7 +25,7 @@ private let day = 24 * hour
 
         #expect(app.uploadCleanup == UploadCleanup(connection: connection, abandoned: 1, inFlight: 1))
         #expect(app.alert == nil)
-        #expect(storage.commands == ["list-multipart-uploads"])
+        #expect(storage.uploadCount == 2)
     }
 
     @Test func reviewWithOnlyRecentUploadsRemovesNothing() async throws {
@@ -38,7 +38,7 @@ private let day = 24 * hour
 
         #expect(app.uploadCleanup == nil)
         #expect(app.alert == "\(String(localized: .noAbandonedUploads(connection.name))) \(String(localized: .recentUploadsKept(1)))")
-        #expect(storage.commands == ["list-multipart-uploads"])
+        #expect(storage.uploadCount == 1)
     }
 
     @Test func cleanupKeepsTheDriveBusyAndReportsRemovedUploads() async throws {
@@ -111,7 +111,7 @@ private let day = 24 * hour
             case "job/status":
                 return #"{"finished":true,"success":true,"error":"","output":{"result":{"my-bucket":\#(storage.listing())}}}"#
             default:
-                return #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
+                return statusBatch()
             }
         }
         return storage
@@ -120,14 +120,12 @@ private let day = 24 * hour
 
 private final class FakeStorage: Sendable {
     private let uploadAges: Mutex<[TimeInterval]>
-    private let received = Mutex<[String]>([])
 
     init(uploadAges: [TimeInterval]) { self.uploadAges = Mutex(uploadAges) }
 
-    var commands: [String] { received.withLock { $0 } }
+    var uploadCount: Int { uploadAges.withLock { $0.count } }
 
     func run(_ command: String, removing: Bool) {
-        received.withLock { $0.append(command) }
         if command == "cleanup", removing { uploadAges.withLock { $0.removeAll { $0 > day } } }
     }
 

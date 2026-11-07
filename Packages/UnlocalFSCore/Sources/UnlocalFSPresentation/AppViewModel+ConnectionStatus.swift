@@ -17,7 +17,7 @@ public extension AppViewModel {
     }
 
     func servingStatus(_ connection: Connection) -> MountStatus? {
-        guard let status = statuses[connection.id], status.isRunning, !status.needsReconnect else { return nil }
+        guard let status = statuses[connection.id], status.isServing else { return nil }
         return status
     }
 
@@ -88,7 +88,7 @@ public extension AppViewModel {
     }
 
     func needsMainWindow(_ connection: Connection) -> Bool {
-        serverTrust[connection.id] != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id
+        serverTrust(for: connection) != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id
     }
 }
 

@@ -55,10 +55,6 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
-    public func readAndWrite() -> Bool {
-        !readOnly
-    }
-
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
         connectsAutomatically && !status.isActive
     }

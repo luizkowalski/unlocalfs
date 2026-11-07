@@ -77,7 +77,7 @@ import UnlocalFSTestSupport
         #expect(!app.isActive(connection))
     }
 
-    private nonisolated static let connected = #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},{"queue":[]},{\#(rcloneCounters)}]}"#
+    private nonisolated static let connected = statusBatch()
 
     @Test func loginItemStateIsNotReadOnEveryPoll() async {
         let desktop = TestDesktopServices(paths: fixture.paths)

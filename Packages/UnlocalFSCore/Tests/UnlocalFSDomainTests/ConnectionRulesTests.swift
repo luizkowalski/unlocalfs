@@ -19,18 +19,6 @@ struct ConnectionRulesTests {
         #expect(duplicate.validate(against: [Connection.s3()]).issues.map(\.field) == [.name])
     }
 
-    @Test func newEncryptedDriveRequiresMatchingPasswords() {
-        var connection = Connection()
-        connection.name = "Photos"
-        connection.endpoint = "https://s3.example.com"
-        connection.bucket = "photos"
-        connection.encrypted = true
-        let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "password")
-        let errors = connection.validate(credentials: credentials, confirmation: "different", against: [])
-        #expect(errors.issues.map(\.field) == [.confirmation])
-        #expect(connection.validate(credentials: credentials, confirmation: "password", against: []).isValid)
-    }
-
     @Test func existingEncryptedDriveDoesNotRequirePasswordConfirmation() {
         var connection = Connection()
         connection.name = "Photos"

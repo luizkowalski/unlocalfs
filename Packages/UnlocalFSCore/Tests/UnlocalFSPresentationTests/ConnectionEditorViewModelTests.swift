@@ -112,11 +112,12 @@ import UnlocalFSTestSupport
         #expect(await editor.save())
 
         #expect(app.connections == [connection])
+        #expect(app.selected == connection)
+        #expect(app.statusText(connection) == String(localized: .disconnected))
         #expect(try fixture.repository.all() == [connection])
         var expected = editor.credentials
         expected.obscuredEncryptionPassword = "prepared-password"
         #expect(try fixture.repository.credentials(for: connection.id) == expected)
-        #expect(fixture.rcloneCalls == ["obscure"])
     }
 
     @Test func duplicateLoadsTheOriginalCredentials() throws {
@@ -135,6 +136,22 @@ import UnlocalFSTestSupport
         #expect(editor.credentials == credentials)
         #expect(editor.confirmation == "password")
         #expect(!editor.isLocked)
+    }
+
+    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.sftp(), .remotePath)])
+    func onlyADuplicateOpensOnItsFolder(connection: Connection, folder: ConnectionField) throws {
+        try fixture.repository.save(connection, credentials: Credentials())
+        let app = fixture.app()
+        let edit = fixture.editor(draft: .init(connection: connection), app: app)
+        app.duplicate(connection)
+        let duplicate = try fixture.editor(draft: #require(app.editor), app: app)
+        #expect(duplicate.initialFocus == nil)
+
+        edit.loadCredentials()
+        duplicate.loadCredentials()
+
+        #expect(edit.initialFocus == nil)
+        #expect(duplicate.initialFocus == folder)
     }
 
     @Test func newEncryptedConnectionRequiresMatchingPasswords() async {

@@ -66,10 +66,5 @@ import UnlocalFSDomain
 }
 
 public extension FileActivity {
-    var isCancellable: Bool {
-        switch state {
-        case .queued, .uploading, .failed: true
-        case .downloading, .uploaded, .downloaded: false
-        }
-    }
+    var isCancellable: Bool { isUpload && finishedAt == nil }
 }
