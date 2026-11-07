@@ -67,7 +67,17 @@ Open files and pending uploads stay in the cache. These limits are not hard caps
 | --- | --- | --- |
 | Bandwidth limit | Off | Off, 1 MB/s, 5 MB/s, 10 MB/s, 25 MB/s, 50 MB/s, 100 MB/s |
 | Parallel transfers | 4 | 1, 2, 4, 8, 16, 32 |
+| Multi-connection uploads | Off | On, Off. Shown only for SFTP drives. |
 
 **Bandwidth limit** limits uploads and downloads for this drive. Leave it off for no configured limit. Lower it when transfers compete with other work on your network. Values are in megabytes per second, not megabits per second.
 
 **Parallel transfers** controls how many files can transfer at once. Start with the default. Lower it to reduce concurrent transfers, or try a higher value for workloads with many files. More transfers do not guarantee higher throughput.
+
+**Multi-connection uploads** sends each file of 256 MiB or more over 4 connections at once. Each connection writes a different part of the file. On a distant server, this can make large uploads about twice as fast. On a nearby server or a slow link, it does not help. Smaller files always use one connection. The drive keeps its cache when you turn the option on or off.
+
+Some SFTP servers do not let several connections write to one file, for example some gateways to cloud storage. On these servers, small files upload, but each large upload fails with "the server may not support multi-thread uploads" and tries again. The drive cannot disconnect while an upload fails, and you can change settings only when the drive is disconnected. To turn the option off:
+
+1. Copy each file that cannot upload from the drive to a folder on your Mac.
+2. In **Activity**, click ⓧ next to each of these files to stop its upload. This deletes the file from the drive.
+3. Disconnect the drive, turn off **Multi-connection uploads**, and connect the drive again.
+4. Copy the files back to the drive.

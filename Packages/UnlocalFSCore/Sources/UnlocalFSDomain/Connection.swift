@@ -15,6 +15,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var connectsAutomatically = false
     public var readOnly = false
     public var prefersUploadTimes = false
+    public var multiThreadUploads = false
     public var encrypted = false
     public var sftp = SFTPSettings()
     public var aws = AWSSettings()
@@ -36,6 +37,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         transfers = try container.decodeIfPresent(Int.self, forKey: .transfers) ?? transfers
         readOnly = try container.decodeIfPresent(Bool.self, forKey: .readOnly) ?? readOnly
         prefersUploadTimes = try container.decodeIfPresent(Bool.self, forKey: .prefersUploadTimes) ?? prefersUploadTimes
+        multiThreadUploads = try container.decodeIfPresent(Bool.self, forKey: .multiThreadUploads) ?? multiThreadUploads
         encrypted = try container.decodeIfPresent(Bool.self, forKey: .encrypted) ?? encrypted
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
         sftp = try container.decodeIfPresent(SFTPSettings.self, forKey: .sftp) ?? sftp
@@ -44,7 +46,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var backend: Backend { provider.backend }
 
-    public var usesUploadTimes: Bool { backend == .s3Compatible && (readOnly || prefersUploadTimes) }
+    public var usesUploadTimes: Bool { backend.supportsUploadTimes && (readOnly || prefersUploadTimes) }
 
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 

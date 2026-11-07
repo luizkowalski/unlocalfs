@@ -1157,6 +1157,16 @@
         }
       }
     },
+    "Large files upload over several connections at once, which is faster on distant servers. Some servers reject this, and large uploads then keep failing." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arquivos grandes são enviados por várias conexões ao mesmo tempo, o que é mais rápido em servidores distantes. Alguns servidores recusam isso, e os envios grandes passam a falhar."
+          }
+        }
+      }
+    },
     "Last 7 Days" : {
       "comment" : "Traffic date picker preset: the last 7 days, today included",
       "localizations" : {
@@ -1242,6 +1252,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ponto de montagem"
+          }
+        }
+      }
+    },
+    "Multi-connection uploads" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envios por várias conexões"
           }
         }
       }

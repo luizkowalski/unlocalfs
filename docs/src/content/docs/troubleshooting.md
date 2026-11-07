@@ -45,6 +45,8 @@ Select the drive to see why uploads fail. The drive page shows the latest error,
 
 The app will not disconnect while uploads are pending or need a retry. If you tried to disconnect, it sends a notification when uploads finish. Do not delete the cache while uploads are pending.
 
+If large uploads to an SFTP drive fail with "the server may not support multi-thread uploads", the server does not support **Multi-connection uploads**. Follow the steps in [Drive settings](/drive-settings/#advanced) to turn the option off.
+
 Click **Log** in the drive toolbar to inspect the drive log. Logs are in `~/Library/Logs/UnlocalFS`. When a log reaches 5 MB, UnlocalFS starts a new one and keeps the two previous logs, with the date in their names. Older logs are deleted.
 
 ## A drive cannot eject
