@@ -161,6 +161,14 @@ struct ConnectionEditor: View {
                     Text("\(count)").tag(count)
                 }
             }
+            if viewModel.connection.backend == .sftp {
+                Toggle(isOn: $viewModel.connection.multiThreadUploads) {
+                    Text("Multi-connection uploads")
+                    Text(
+                        "Large files upload over several connections at once, which is faster on distant servers. Some servers reject this, and large uploads then keep failing.",
+                    )
+                }
+            }
         } header: {
             Text("Advanced")
         } footer: {

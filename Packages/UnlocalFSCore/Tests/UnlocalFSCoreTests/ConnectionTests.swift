@@ -15,6 +15,7 @@ struct ConnectionTests {
         connection.folder = "clients/acme"
         connection.readOnly = true
         connection.prefersUploadTimes = true
+        connection.multiThreadUploads = true
         connection.connectsAutomatically = true
         connection.encrypted = true
         connection.provider = .aws
