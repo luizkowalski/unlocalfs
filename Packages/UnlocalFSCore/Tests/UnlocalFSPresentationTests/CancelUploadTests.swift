@@ -41,7 +41,7 @@ import UnlocalFSTestSupport
             case "vfs/queue":
                 drive.queue()
             default:
-                #"{"results":[{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}},\#(drive.queue()),{\#(rcloneCounters)}]}"#
+                statusBatch(queue: drive.queue())
             }
         }
         return drive

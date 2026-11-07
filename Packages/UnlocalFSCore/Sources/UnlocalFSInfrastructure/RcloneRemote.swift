@@ -7,25 +7,6 @@ struct RcloneRemote {
     let knownHosts: URL
     var agentSocket: String?
 
-    var type: String {
-        switch connection.backend {
-        case .s3Compatible: "s3"
-        case .sftp: "sftp"
-        case .gcs: "gcs"
-        }
-    }
-
-    var exportName: String { "unlocalfs-\(type)" }
-    var path: String {
-        switch connection.backend {
-        case .s3Compatible, .gcs: connection.bucketPath
-        case .sftp: connection.sftp.remotePath
-        }
-    }
-
-    var storage: String { ":\(type):\(path)" }
-    var target: String { connection.encrypted ? ":crypt:" : storage }
-
     var options: [String: String] {
         switch connection.backend {
         case .s3Compatible: s3Options
@@ -35,13 +16,18 @@ struct RcloneRemote {
     }
 
     var environment: [String: String] {
-        var environment = Dictionary(uniqueKeysWithValues: options.map { ("RCLONE_\(type.uppercased())_\($0.key.uppercased())", $0.value) })
+        var environment = Dictionary(uniqueKeysWithValues: options.map { ("RCLONE_\(connection.rcloneType.uppercased())_\($0.key.uppercased())", $0.value) })
         if let agentSocket { environment["SSH_AUTH_SOCK"] = agentSocket }
         if connection.encrypted {
-            environment["RCLONE_CRYPT_REMOTE"] = storage
-            environment["RCLONE_CRYPT_PASSWORD"] = credentials?.obscuredEncryptionPassword
+            for (key, value) in cryptOptions(remote: connection.rcloneStorage) { environment["RCLONE_CRYPT_\(key.uppercased())"] = value }
         }
         return environment
+    }
+
+    func cryptOptions(remote: String) -> [String: String] {
+        var options = ["remote": remote, "filename_encryption": "standard", "directory_name_encryption": "true", "filename_encoding": "base32"]
+        options["password"] = credentials?.obscuredEncryptionPassword
+        return options
     }
 
     private var s3Options: [String: String] {
@@ -91,6 +77,26 @@ struct RcloneRemote {
         }
         return options
     }
+}
+
+extension Connection {
+    var rcloneType: String {
+        switch backend {
+        case .s3Compatible: "s3"
+        case .sftp: "sftp"
+        case .gcs: "gcs"
+        }
+    }
+
+    var rclonePath: String {
+        switch backend {
+        case .s3Compatible, .gcs: bucketPath
+        case .sftp: sftp.remotePath
+        }
+    }
+
+    var rcloneStorage: String { ":\(rcloneType):\(rclonePath)" }
+    var rcloneTarget: String { encrypted ? ":crypt:" : rcloneStorage }
 }
 
 extension SFTPSettings {

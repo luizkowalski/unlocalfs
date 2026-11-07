@@ -81,11 +81,13 @@ struct VFSStats: Decodable {
 }
 
 struct ControlSnapshot: Decodable {
-    static let statusRequest = #"""
-    {"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats","group":"global_stats"},
-    {"_path":"core/transferred","group":"global_stats"}]}
-    """#
-    static let activityRequest = #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"},{"_path":"core/transferred"}]}"#
+    static let statusRequest = request(group: "global_stats")
+    static let activityRequest = request(group: nil)
+
+    private static func request(group: String?) -> String {
+        let scope = group.map { #","group":"\#($0)""# } ?? ""
+        return #"{"inputs":[{"_path":"vfs/stats"},{"_path":"vfs/queue"},{"_path":"core/stats"\#(scope)},{"_path":"core/transferred"\#(scope)}]}"#
+    }
 
     let cache: VFSStats.DiskCache
     let queue: [UploadQueue.Item]
@@ -104,7 +106,7 @@ struct ControlSnapshot: Decodable {
         transfers = stats.transferring ?? []
         lastError = stats.lastError
         networkBytes = stats.networkBytes
-        finished = results.isAtEnd ? [] : try results.decode(BatchResult<FinishedTransfers>.self).value.transferred.sorted { $0.completedAt < $1.completedAt }
+        finished = try results.decode(BatchResult<FinishedTransfers>.self).value.transferred.sorted { $0.completedAt < $1.completedAt }
     }
 }
 

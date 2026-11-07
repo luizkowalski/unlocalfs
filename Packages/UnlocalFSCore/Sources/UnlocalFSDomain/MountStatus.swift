@@ -32,6 +32,7 @@ public struct MountStatus: Equatable, Sendable {
 
     public var isActive: Bool { isMounted || isRunning || needsReconnect }
     public var needsReconnect: Bool { controlError != nil }
+    public var isServing: Bool { isRunning && !needsReconnect }
 
     public func requireSafeDisconnect() throws {
         guard failedUploads == 0 else {

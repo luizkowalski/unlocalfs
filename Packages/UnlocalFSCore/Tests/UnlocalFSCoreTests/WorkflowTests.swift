@@ -55,6 +55,24 @@ struct WorkflowTests {
         }
     }
 
+    @Test(arguments: [false, true])
+    func savedS3DriveKeepsItsEncryption(encrypted: Bool) async throws {
+        try await withWorkflowFixture { repository, drives, connection in
+            var saved = connection
+            saved.encrypted = encrypted
+            let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: encrypted ? "pw" : "")
+            try repository.save(saved, credentials: credentials)
+            var edited = saved
+            edited.encrypted = true
+            await #expect(throws: AppError.self) {
+                _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service)
+                    .execute(edited, credentials: Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "new"), confirmation: "new")
+            }
+            #expect(try repository.all() == [saved])
+            #expect(try repository.credentials(for: saved.id) == credentials)
+        }
+    }
+
     @Test func savedEncryptedSFTPDriveKeepsItsEncryptionPassword() async throws {
         try await withWorkflowFixture { repository, drives, _ in
             let connection = Connection.sftp { $0.encrypted = true }

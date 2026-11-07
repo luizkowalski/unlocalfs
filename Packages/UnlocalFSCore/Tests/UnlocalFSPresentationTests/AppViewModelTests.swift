@@ -54,20 +54,6 @@ import UnlocalFSTestSupport
         #expect(!app.isActive(connection))
     }
 
-    @Test func savePublishesTheSavedConnectionAndSelection() async throws {
-        let app = fixture.app()
-        let connection = Connection.s3()
-        let editor = fixture.editor(draft: .init(connection: connection), app: app)
-        editor.credentials = Credentials.s3()
-
-        #expect(await editor.save())
-
-        #expect(app.selected == connection)
-        #expect(try fixture.repository.all() == app.connections)
-        #expect(try fixture.repository.credentials(for: connection.id) == editor.credentials)
-        #expect(app.statuses[connection.id] == MountStatus())
-    }
-
     @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
         let first = Connection.s3 { $0.name = "First" }
         let second = Connection.s3 { $0.name = "Second" }
@@ -299,7 +285,7 @@ import UnlocalFSTestSupport
         #expect(app.alert == nil)
         let arguments = try String(contentsOf: fixture.root.appending(path: "config-arguments"), encoding: .utf8)
         let sftp = try #require(arguments.split(separator: "\n").first { $0.hasPrefix("config create unlocalfs-sftp sftp") })
-        #expect(sftp.contains("host=files.example.com") && sftp.contains("user=me") && sftp.contains("shell_type=none"))
+        #expect(sftp.contains("host=files.example.com") && sftp.contains("user=me"))
         #expect(sftp.contains("known_hosts_file=\(fixture.paths.support.appending(path: "known_hosts").path)") && sftp.contains("key_file=/nonexistent/id_ed25519"))
         #expect(!sftp.contains("/tmp/agent.sock") && !sftp.contains("saved-"))
         #expect(sftp.contains("key_file_pass=prepared-password") == includesSecrets)

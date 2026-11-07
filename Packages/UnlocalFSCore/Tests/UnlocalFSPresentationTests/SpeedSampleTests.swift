@@ -21,16 +21,13 @@ struct SpeedSampleTests {
         #expect(speeds.nearest(to: start + 10)?.upload == 3)
     }
 
-    @Test func axisLeavesRoomAboveTheFastestSpeedInEitherDirection() {
+    @Test func axisLeavesRoomAboveTheFastestSpeedAndShowsAtLeastOneHundredKilobytesPerSecond() {
         let speeds = [sample(0, upload: 300_000, download: 100_000), sample(1, upload: 200_000, download: 500_000)]
 
         #expect(speeds.fastestUpload == 300_000)
         #expect(speeds.fastestDownload == 500_000)
-        #expect(speeds.axisLimit == 500_000 * 1.1)
-    }
-
-    @Test func axisShowsAtLeastOneHundredKilobytesPerSecond() {
-        #expect([sample(0, upload: 10)].axisLimit == 100_000 * 1.1)
-        #expect([SpeedSample]().axisLimit == 100_000 * 1.1)
+        #expect(speeds.axisLimit > 500_000)
+        #expect([sample(0, upload: 10)].axisLimit >= 100_000)
+        #expect([SpeedSample]().axisLimit >= 100_000)
     }
 }

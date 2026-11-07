@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 extension MountService {
     public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
-        guard RcloneRemote(connection: connection, credentials: nil, knownHosts: paths.knownHosts).path.last?.isWhitespace != true else {
+        guard connection.rclonePath.last?.isWhitespace != true else {
             throw AppError(String(localized: .folderEndsWithSpace))
         }
         var prepared: Credentials?
@@ -11,15 +11,11 @@ extension MountService {
         let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let config = scratch.appending(path: "rclone.conf")
-        let remote = RcloneRemote(connection: connection, credentials: prepared, knownHosts: paths.knownHosts)
-        var crypt = [
-            "remote": "\(remote.exportName):\(remote.path)", "filename_encryption": "standard",
-            "directory_name_encryption": "true", "filename_encoding": "base32",
-        ]
-        crypt["password"] = prepared?.obscuredEncryptionPassword
+        let remote = try await RcloneRemote(connection: connection, credentials: prepared, knownHosts: serverTrust.file())
+        let name = "unlocalfs-\(connection.rcloneType)"
         do {
-            try await createRemote(remote.exportName, type: remote.type, options: remote.options, config: config)
-            try await createRemote("unlocalfs", type: "crypt", options: crypt, config: config)
+            try await createRemote(name, type: connection.rcloneType, options: remote.options, config: config)
+            try await createRemote("unlocalfs", type: "crypt", options: remote.cryptOptions(remote: "\(name):\(connection.rclonePath)"), config: config)
         } catch {
             throw redacted(error, credentials: prepared ?? Credentials())
         }

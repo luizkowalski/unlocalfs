@@ -20,8 +20,7 @@ import UnlocalFSDomain
         didSet { if refreshing { refreshRequested = true } }
     }
 
-    public private(set) var serverTrust: [UUID: ServerTrustChallenge] = [:]
-    private var trustOpensFinder: [UUID: Bool] = [:]
+    private var pendingTrust: [UUID: (challenge: ServerTrustChallenge, opensFinder: Bool)] = [:]
     public var alert: String?
     public var disconnectFailure: Connection?
     public var uploadsBlockingDisconnect: Connection?
@@ -89,6 +88,10 @@ import UnlocalFSDomain
                 try await Task.sleep(for: .seconds(3))
             } catch { return }
         }
+    }
+
+    public func serverTrust(for connection: Connection) -> ServerTrustChallenge? {
+        pendingTrust[connection.id]?.challenge
     }
 
     public var selected: Connection? {
@@ -169,7 +172,7 @@ import UnlocalFSDomain
         busy.insert(connection.id)
         errors[connection.id] = nil
         defer { busy.remove(connection.id) }
-        if let pending = serverTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending) }
+        if let pending = pendingTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending.challenge) }
         do {
             let outcome = try await connectDrive.execute(connection)
             if opensFinder {
@@ -179,8 +182,7 @@ import UnlocalFSDomain
                 }
             }
         } catch let challenge as ServerTrustChallenge {
-            serverTrust[connection.id] = challenge
-            trustOpensFinder[connection.id] = opensFinder
+            pendingTrust[connection.id] = (challenge, opensFinder)
             errors[connection.id] = challenge.localizedDescription
             selection = .drive(connection.id)
         } catch {
@@ -211,13 +213,12 @@ import UnlocalFSDomain
     }
 
     public func trustServer(_ connection: Connection) async {
-        guard let challenge = serverTrust.removeValue(forKey: connection.id) else { return }
-        let opensFinder = trustOpensFinder.removeValue(forKey: connection.id) ?? false
+        guard let pending = pendingTrust.removeValue(forKey: connection.id) else { return }
         busy.insert(connection.id)
         do {
-            try await drives.trustServer(challenge)
+            try await drives.trustServer(pending.challenge)
             busy.remove(connection.id)
-            await connect(connection, opensFinder: opensFinder)
+            await connect(connection, opensFinder: pending.opensFinder)
         } catch {
             busy.remove(connection.id)
             errors[connection.id] = error.localizedDescription
@@ -225,9 +226,8 @@ import UnlocalFSDomain
     }
 
     public func cancelServerTrust(_ connection: Connection) async {
-        guard let challenge = serverTrust.removeValue(forKey: connection.id) else { return }
-        trustOpensFinder[connection.id] = nil
-        await drives.cancelServerTrust(challenge)
+        guard let pending = pendingTrust.removeValue(forKey: connection.id) else { return }
+        await drives.cancelServerTrust(pending.challenge)
     }
 
     public func disconnectAll() async {
@@ -359,23 +359,19 @@ private extension AppViewModel {
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
             let body = status.uploadError.map { String(localized: .uploadsFailedReason($0)) } ?? String(localized: .uploadsFailedBody)
-            notify(title: String(localized: .uploadsFailed(connection.name)), body: body)
+            desktop.notify(title: String(localized: .uploadsFailed(connection.name)), body: body, fallbackToAlert: false)
         }
-        if status.isRunning, !status.needsReconnect, status.pendingUploads == 0, status.failedUploads == 0 {
+        if status.isServing, status.pendingUploads == 0, status.failedUploads == 0 {
             notifiedFailures.remove(connection.id)
             if waitingToDisconnect.remove(connection.id) != nil {
-                notify(title: String(localized: .finishedUploading(connection.name)), body: String(localized: .canDisconnectNow))
+                desktop.notify(title: String(localized: .finishedUploading(connection.name)), body: String(localized: .canDisconnectNow), fallbackToAlert: false)
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }
-        if !status.isRunning {
-            if speeds[connection.id] != nil { speeds[connection.id] = nil }
-        } else if !status.needsReconnect {
+        if status.isServing {
             recordSpeed(SpeedSample(status, at: .now), for: connection.id)
+        } else if !status.isRunning, speeds[connection.id] != nil {
+            speeds[connection.id] = nil
         }
-    }
-
-    func notify(title: String, body: String) {
-        desktop.notify(title: title, body: body, fallbackToAlert: false)
     }
 }

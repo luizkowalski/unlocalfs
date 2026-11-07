@@ -14,9 +14,7 @@ public struct DuplicateFilesUseCase: Sendable {
         var selection: [(connection: Connection, path: String)] = []
         for file in files {
             try await selection.append(FileActionError.wrapping(file) {
-                guard let drive = drives.remoteFile(file, among: connections) else {
-                    throw AppError(String(localized: .fileNotInDrive))
-                }
+                let drive = try drives.drive(containing: file, among: connections)
                 guard drive.connection.backend.supportsServerCopy else {
                     throw AppError(String(localized: .serverCopyUnavailable(drive.connection.provider.title)))
                 }

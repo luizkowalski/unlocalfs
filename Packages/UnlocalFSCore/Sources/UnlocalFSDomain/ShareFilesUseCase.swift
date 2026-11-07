@@ -14,9 +14,7 @@ public struct ShareFilesUseCase: Sendable {
         var links: [URL] = []
         for file in files {
             try await links.append(FileActionError.wrapping(file) {
-                guard let drive = drives.remoteFile(file, among: connections) else {
-                    throw AppError(String(localized: .fileNotInDrive))
-                }
+                let drive = try drives.drive(containing: file, among: connections)
                 guard drive.connection.backend.supportsShareLinks else {
                     throw AppError(String(localized: .linksUnavailable(drive.connection.provider.title)))
                 }

@@ -56,7 +56,3 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
         (path.hasPrefix("/") || path.hasPrefix("~/")) && path.rangeOfCharacter(from: .controlCharacters) == nil
     }
 }
-
-extension String {
-    var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-}

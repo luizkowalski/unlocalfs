@@ -49,6 +49,17 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test func uploadedFileGetsAShareLink() async throws {
+        try await withS3Drive { drive, _ in
+            try await drive.service.mount(drive.connection, credentials: s3Credentials)
+            try Data("report".utf8).write(to: drive.mounted.appending(path: "report.txt"))
+            try await drive.waitForUploads()
+
+            let link = try await drive.service.shareLink(for: drive.connection, path: "report.txt", expiry: .hour, credentials: s3Credentials)
+            #expect(link.path().hasSuffix("/report.txt"))
+        }
+    }
+
     @Test(arguments: [false, true])
     func duplicateCopiesFinishedUploadsAndStopDeletesQueuedOnes(encrypted: Bool) async throws {
         try await withS3Drive(encrypted: encrypted) { drive, bucket in
@@ -68,10 +79,10 @@ import UnlocalFSTestSupport
             }
             try await drive.service.deleteFileToStopUpload("draft.txt", in: drive.connection)
             #expect(try !FileManager.default.contentsOfDirectory(atPath: drive.mounted.path).contains("draft.txt"))
+            let uploaded = await drive.service.status(drive.connection).unsavedTraffic.upload
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy.txt")
             #expect(try await drive.service.duplicate("report.txt", in: drive.connection) == "report copy 2.txt")
 
-            #expect(try await drive.control("core/stats")["serverSideCopies"] as? Int == 2)
             try await waitUntil(timeout: .seconds(5)) {
                 let listed = try FileManager.default.contentsOfDirectory(atPath: drive.mounted.path)
                 return listed.contains("report copy.txt") && listed.contains("report copy 2.txt")
@@ -79,6 +90,7 @@ import UnlocalFSTestSupport
             #expect(try String(contentsOf: drive.mounted.appending(path: "report copy 2.txt"), encoding: .utf8) == "report")
             try await drive.waitForUploads()
             #expect(try FileManager.default.contentsOfDirectory(atPath: bucket.path).count == 3)
+            #expect(await drive.service.status(drive.connection).unsavedTraffic.upload == uploaded)
         }
     }
 
@@ -108,6 +120,7 @@ import UnlocalFSTestSupport
             try await drive.service.mount(drive.connection, credentials: s3Credentials)
             let hold = drive.paths.support.appending(path: "hold")
             let entered = drive.paths.support.appending(path: "entered")
+            let reserved = drive.paths.support.appending(path: "reserved")
             let socket = drive.paths.socket(drive.connection)
             let rclone = socket.deletingLastPathComponent().appending(path: "rclone.sock")
             try FileManager.default.moveItem(at: socket, to: rclone)
@@ -115,6 +128,9 @@ import UnlocalFSTestSupport
                 if request.method == "operations/copyfile", FileManager.default.fileExists(atPath: hold.path) {
                     FileManager.default.createFile(atPath: entered.path, contents: Data())
                     try await Task.sleep(for: .seconds(2))
+                }
+                if request.method == "operations/stat", FileManager.default.fileExists(atPath: entered.path) {
+                    FileManager.default.createFile(atPath: reserved.path, contents: Data())
                 }
                 return try await String(decoding: ControlSocket.post(rclone, request.method, body: request.body, timeout: .seconds(10)), as: UTF8.self)
             }
@@ -129,7 +145,7 @@ import UnlocalFSTestSupport
                 error.localizedDescription == String(localized: .copyInProgress)
             }
             let second = Task { try await service.duplicate("report.txt", in: connection) }
-            try await Task.sleep(for: .milliseconds(500))
+            try await waitUntil { FileManager.default.fileExists(atPath: reserved.path) }
             try FileManager.default.removeItem(at: hold)
             #expect(try await [first.value, second.value] == ["report copy.txt", "report copy 2.txt"])
 

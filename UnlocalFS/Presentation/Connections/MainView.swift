@@ -169,15 +169,7 @@ private struct ConnectionRow: View {
             Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
                 .disabled(!model.canOpen(connection))
             Divider()
-            Button("Edit Connection") { model.edit(connection) }
-                .disabled(!model.canEdit(connection))
-            Button("Duplicate") { model.duplicate(connection) }
-            if connection.encrypted {
-                Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
-            }
-            Divider()
-            Button("Delete…", role: .destructive) { model.deleting = connection }
-                .disabled(!model.canEdit(connection))
+            DriveManagementItems(connection: connection)
         }
     }
 }

@@ -95,7 +95,7 @@ struct ConnectionEditor: View {
         }
         .onAppear {
             viewModel.loadCredentials()
-            if viewModel.credentialsLoaded, viewModel.isDuplicate { focus = .folder }
+            if viewModel.credentialsLoaded, viewModel.isDuplicate { focus = viewModel.connection.folderField }
         }
     }
 

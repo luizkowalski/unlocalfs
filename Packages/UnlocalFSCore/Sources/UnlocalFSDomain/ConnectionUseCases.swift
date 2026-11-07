@@ -22,12 +22,11 @@ public struct SaveConnectionUseCase: Sendable {
 
     private func requireSameStorage(_ previous: Connection, _ connection: Connection, credentials: Credentials) throws {
         let duplicate = AppError(String(localized: .duplicateChangesLockedAttributes))
-        guard previous.backend == connection.backend else { throw duplicate }
-        guard connection.backend.locksFolderAfterSave else { return }
-        guard previous.encrypted == connection.encrypted, previous.folderPath == connection.folderPath else { throw duplicate }
+        guard previous.backend == connection.backend, previous.encrypted == connection.encrypted else { throw duplicate }
         if previous.encrypted, try repository.credentials(for: previous.id).encryptionPassword != credentials.encryptionPassword {
             throw AppError(String(localized: .encryptionPasswordImmutable))
         }
+        if connection.backend.locksFolderAfterSave, previous.folderPath != connection.folderPath { throw duplicate }
     }
 }
 

@@ -28,12 +28,19 @@ struct MountSafetyTests {
     ])
     func unmountRefusesQueuedOrFailedUploads(cache: String, queue: String, pending: Bool) async throws {
         let batch = statusBatch(cache: cache + #","bytesUsed":42"#, queue: #"{"queue":[\#(queue)]}"#)
-        try await withControl { _, _ in { _ in batch } } operation: { service, connection in
+        try await withControl { _, socket in
+            { request in
+                guard request.method == "core/quit" else { return batch }
+                try FileManager.default.removeItem(at: socket)
+                return "{}"
+            }
+        } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.isRunning)
             await #expect { try await service.unmount(connection) } throws: { error in
                 pending ? error is UploadsPendingError : error is AppError
             }
+            #expect(await service.status(connection).isRunning)
         }
     }
 
@@ -119,22 +126,18 @@ struct MountSafetyTests {
         }
     }
 
-    @Test func controlCallsStopAtTheirDeadline() async throws {
-        let socket = URL(filePath: "/tmp/uf-deadline-\(UUID().uuidString.prefix(8)).sock")
-        let server = try ControlServer(at: socket) { _ in
-            try await Task.sleep(for: .seconds(2))
-            return "{}"
+    @Test func silentRcloneNeedsReconnectAfterTheControlDeadline() async throws {
+        try await withControl { _, _ in
+            { _ in
+                try await Task.sleep(for: .seconds(8))
+                return "{}"
+            }
+        } operation: { service, connection in
+            let started = ContinuousClock.now
+            let status = await service.status(connection)
+            #expect(status.controlError?.contains(String(localized: .commandTimedOut)) == true)
+            #expect(ContinuousClock.now - started < .seconds(6))
         }
-        defer {
-            server.stop()
-            try? FileManager.default.removeItem(at: socket)
-        }
-        let started = ContinuousClock.now
-
-        await #expect { _ = try await ControlSocket.post(socket, "core/stats", body: Data("{}".utf8), timeout: .milliseconds(300)) } throws: { error in
-            error is ControlUnreachable && error.localizedDescription == String(localized: .commandTimedOut)
-        }
-        #expect(ContinuousClock.now - started < .seconds(1))
     }
 
     @Test(arguments: ["before", "during", "after"])
@@ -156,22 +159,20 @@ struct MountSafetyTests {
         }
     }
 
-    @Test(arguments: [
-        ("lsf", 1), ("lsf", 8192),
-    ])
-    func connectionErrorsDoNotExposeCredentials(command: String, passwordRepetitions: Int) async throws {
+    @Test(arguments: [1, 8192])
+    func connectionErrorsDoNotExposeCredentials(passwordRepetitions: Int) async throws {
         let password = String(repeating: "private-password", count: passwordRepetitions)
         let script = """
         case "$1" in
             obscure) printf 'obscured-token' ;;
-            \(command))
+            lsf)
                 printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
                 exit 1 ;;
         esac
         """
         try await withFixture(script: script) { service, connection in
             var connection = connection
-            connection.encrypted = command == "lsf"
+            connection.encrypted = true
             let credentials = Credentials(
                 accessKey: "private-access", secretKey: "private-secret", sessionToken: "private-token", encryptionPassword: password,
             )
@@ -327,8 +328,4 @@ private func withFixture(
     defer { server?.stop() }
     if server == nil { FileManager.default.createFile(atPath: socket.path, contents: Data()) }
     try await operation(drives.service, connection)
-}
-
-func statusBatch(cache: String, queue: String = #"{"queue":[]}"#, stats: String = #"{\#(rcloneCounters)}"#, transferred: String? = nil) -> String {
-    #"{"results":[{"diskCache":{\#(cache)}},\#(queue),\#(stats)\#(transferred.map { ",\($0)" } ?? "")]}"#
 }

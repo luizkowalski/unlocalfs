@@ -112,11 +112,12 @@ import UnlocalFSTestSupport
         #expect(await editor.save())
 
         #expect(app.connections == [connection])
+        #expect(app.selected == connection)
+        #expect(app.statusText(connection) == String(localized: .disconnected))
         #expect(try fixture.repository.all() == [connection])
         var expected = editor.credentials
         expected.obscuredEncryptionPassword = "prepared-password"
         #expect(try fixture.repository.credentials(for: connection.id) == expected)
-        #expect(fixture.rcloneCalls == ["obscure"])
     }
 
     @Test func duplicateLoadsTheOriginalCredentials() throws {

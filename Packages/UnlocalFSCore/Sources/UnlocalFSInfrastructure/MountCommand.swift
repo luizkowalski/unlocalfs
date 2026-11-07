@@ -17,14 +17,13 @@ struct MountCommand {
     var arguments: [String] {
         let connection = remote.connection
         var arguments = [
-            "nfsmount", remote.target, paths.mount(connection).path,
+            "nfsmount", remote.connection.rcloneTarget, paths.mount(connection).path,
             "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B", "--vfs-cache-max-age", "off",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
             "--rc", "--rc-no-auth", "--rc-job-expire-duration", Self.jobExpiry, "--rc-job-expire-interval", Self.jobExpiryCheck,
-//            "--no-modtime",
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
             "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)",
         ]

@@ -3,14 +3,10 @@ import Foundation
 import UnlocalFSDomain
 
 public actor MountService: DriveGateway {
-    private static let timeout = "5s"
-    private static let lowLevelTimeout = "10s"
-    static let ejectRetryTime: Duration = .seconds(10)
-
     let executable: URL
     private let helperDirectory: URL
     let paths: AppPaths
-    private let serverTrust: SFTPTrustStore
+    let serverTrust: SFTPTrustStore
     private let hostEnvironment: [String: String]
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
@@ -40,11 +36,7 @@ public actor MountService: DriveGateway {
         let credentials = try await prepareCredentials(credentials)
         let remote = try await remote(for: connection, credentials: credentials)
         do {
-            _ = try await Command.run(executable, [
-                "lsf", remote.target, "--max-depth", "1", "--dirs-only", "--crypt-strict-names",
-                "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout,
-            ], environment: environment(remote.environment), timeout: .seconds(20))
+            _ = try await runOnce(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             let failure = redacted(error, credentials: credentials)
             let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
@@ -129,8 +121,8 @@ public actor MountService: DriveGateway {
     public func status(_ connection: Connection) async -> MountStatus {
         var status = MountStatus()
         status.isMounted = isMounted(paths.mount(connection))
-        let running = isRunning(connection)
-        status.isRunning = running == true
+        let running = rcloneState(connection)
+        status.isRunning = running == .running
         guard FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             if status.isActive {
                 status.controlError = String(localized: .controlServiceUnavailableReconnect)
@@ -150,7 +142,7 @@ public actor MountService: DriveGateway {
             status.downloadSpeed = files.bytesPerSecond(.downloading)
             status.unsavedTraffic = recordTraffic(snapshot, for: connection)
         } catch {
-            if status.isMounted || running != false {
+            if status.isMounted || running != .stopped {
                 status.controlError = String(localized: .controlServiceUnavailable(error.localizedDescription))
             }
         }
@@ -189,16 +181,14 @@ public actor MountService: DriveGateway {
 
     public func refresh(_ connection: Connection) async throws { _ = try await control(connection, "vfs/forget") }
 
-    public func unmount(_ connection: Connection) async throws { try await disconnect(connection) }
-
     public func reconnect(_ connection: Connection, credentials: Credentials) async throws {
-        try await disconnect(connection)
+        try await unmount(connection)
         try await mount(connection, credentials: credentials)
     }
 
-    private func disconnect(_ connection: Connection) async throws {
+    public func unmount(_ connection: Connection) async throws {
         var current = await status(connection)
-        if current.needsReconnect, isRunning(connection) == nil {
+        if current.needsReconnect, rcloneState(connection) == .untracked {
             throw AppError(String(localized: .couldNotStopOldService))
         }
         let reachable = try await reachesControl(connection, updating: &current)
@@ -243,12 +233,28 @@ public actor MountService: DriveGateway {
         try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
     }
 
-    func isRunning(_ connection: Connection) -> Bool? {
-        guard let pid = savedPID(connection) else { return processes[connection.id]?.isRunning }
-        if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning }
+    func rcloneState(_ connection: Connection) -> RcloneState {
+        guard let pid = savedPID(connection) else { return processes[connection.id].map { $0.isRunning ? .running : .stopped } ?? .untracked }
+        if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning ? .running : .stopped }
         let saved = try? paths.pidFile(connection).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
-        guard let process = Self.process(pid: pid), let saved else { return false }
-        return process.startedAt <= saved
+        guard let process = Self.process(pid: pid), let saved else { return .stopped }
+        return process.startedAt <= saved ? .running : .stopped
+    }
+
+    func requireServing(_ connection: Connection, otherwise message: LocalizedStringResource) throws {
+        guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
+            throw AppError(String(localized: message))
+        }
+    }
+
+    func isWaitingToUpload(_ path: String, in connection: Connection) async throws -> Bool {
+        try await control(UploadQueue.self, connection, "vfs/queue").queue.contains { $0.name == path }
+    }
+
+    func runOnce(_ arguments: [String], remote: RcloneRemote) async throws -> Data {
+        try await Command.run(executable, arguments + [
+            "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s",
+        ], environment: environment(remote.environment), timeout: .seconds(20))
     }
 
     var baseEnvironment: [String: String] { [
@@ -263,7 +269,7 @@ public actor MountService: DriveGateway {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
-    private func remote(for connection: Connection, credentials: Credentials?) async throws -> RcloneRemote {
+    func remote(for connection: Connection, credentials: Credentials?) async throws -> RcloneRemote {
         switch connection.backend {
         case .s3Compatible, .gcs:
             return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
@@ -320,38 +326,5 @@ public actor MountService: DriveGateway {
                 $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) == path }
             }
         }
-    }
-}
-
-public extension MountService {
-    func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
-        guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
-            throw AppError(String(localized: .reconnectForLinks))
-        }
-        let pending: [FileActivity]
-        do {
-            pending = try await activity(connection)
-        } catch {
-            throw AppError(String(localized: .reconnectToCheckUploads(error.localizedDescription)))
-        }
-        if pending.contains(where: { $0.path == path && $0.state != .downloading }) {
-            throw AppError(String(localized: .fileStillUploading))
-        }
-        let remote = RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
-        let output: Data
-        do {
-            output = try await Command.run(executable, [
-                "link", "\(remote.storage)/\(path)", "--expire", expiry.rawValue, "--quiet",
-                "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1",
-                "--contimeout", Self.timeout, "--timeout", Self.lowLevelTimeout,
-            ], environment: environment(remote.environment), timeout: .seconds(20))
-        } catch {
-            throw AppError(String(localized: .couldNotCreateLinkUploading(redacted(error, credentials: credentials).localizedDescription)))
-        }
-        guard let link = URL(string: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)),
-              ["http", "https"].contains(link.scheme) else {
-            throw AppError(String(localized: .couldNotCreateLink))
-        }
-        return link
     }
 }

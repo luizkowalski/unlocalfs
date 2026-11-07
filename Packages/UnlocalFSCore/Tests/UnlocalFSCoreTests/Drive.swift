@@ -32,7 +32,7 @@ struct Drive: Sendable {
 
     func waitForUploads() async throws {
         try await waitUntil(timeout: .seconds(20)) {
-            let queue = try? await control("vfs/queue")["queue"] as? [[String: Any]]
+            let queue = try await control("vfs/queue")["queue"] as? [[String: Any]]
             for item in (queue ?? []).compactMap({ $0["id"] as? Int }) {
                 _ = try? await control("vfs/queue-set-expiry", "id=\(item)", "expiry=-60", "relative=true")
             }

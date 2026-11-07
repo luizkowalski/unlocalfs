@@ -45,7 +45,7 @@ import UnlocalFSDomain
         credentialsSource = draft.credentialsSource
         isDuplicate = draft.isDuplicate
         isNew = !connections.contains { $0.id == draft.id }
-        savedBackend = isNew || draft.isDuplicate ? nil : draft.connection.backend
+        savedBackend = isNew ? nil : draft.connection.backend
         self.connections = connections
         self.repository = repository
         self.drives = drives

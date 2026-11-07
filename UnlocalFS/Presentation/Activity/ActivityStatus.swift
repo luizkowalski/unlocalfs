@@ -55,7 +55,7 @@ struct ActivityStatus: View {
     }
 
     private var movingText: Text {
-        activity.state == .downloading ? Text("Downloading") : Text("Uploading")
+        activity.isUpload ? Text("Uploading") : Text("Downloading")
     }
 
     private var name: String { (activity.path as NSString).lastPathComponent }

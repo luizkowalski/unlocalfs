@@ -32,36 +32,17 @@ struct ConnectionTests {
         let url = configURL()
         defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let id = UUID()
         try Data("""
-        {"connections":[{"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files","provider":"Other","region":"us-east-1"}]}
+        {"connections":[{"bucket":"my-bucket","endpoint":"https://s3.example.com","id":"\(id)","name":"My files","provider":"Other","region":"us-east-1"}]}
         """.utf8).write(to: url)
-        let connection = try #require(try ConnectionStore(url: url).all().first)
-        #expect(connection.cacheLimit == 1_000_000_000)
-        #expect(connection.minimumFreeSpace == 0)
-        #expect(connection.readAndWrite())
-        #expect(!connection.prefersUploadTimes)
-        #expect(!connection.connectsAutomatically)
-        #expect(!connection.encrypted)
-        #expect(connection.bandwidthLimit == 0)
-        #expect(connection.transfers == 4)
-        #expect(connection.aws == AWSSettings())
-    }
-
-    @Test func transferSettingsSurviveReopenAndUpdate() throws {
-        let url = configURL()
-        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data("""
-        {"connections":[{"bandwidthLimit":10000000,"bucket":"my-bucket",
-        "endpoint":"https://s3.example.com","id":"\(UUID())","name":"My files",
-        "provider":"Other","region":"auto","transfers":8}]}
-        """.utf8).write(to: url)
-        let store = ConnectionStore(url: url)
-        let connection = try #require(try store.all().first)
-        #expect(connection.bandwidthLimit == 10_000_000)
-        #expect(connection.transfers == 8)
-        try store.save(connection)
-        #expect(try ConnectionStore(url: url).all() == [connection])
+        var expected = Connection()
+        expected.id = id
+        expected.name = "My files"
+        expected.endpoint = "https://s3.example.com"
+        expected.region = "us-east-1"
+        expected.bucket = "my-bucket"
+        #expect(try ConnectionStore(url: url).all() == [expected])
     }
 
     @Test func currentReleaseConnectionAndCredentialsStayS3() throws {
@@ -70,7 +51,7 @@ struct ConnectionTests {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         let id = UUID()
         try Data("""
-        {"connections":[{"bandwidthLimit":0,"bucket":"my-bucket","cacheLimit":512000000,"connectsAutomatically":true,"encrypted":true,
+        {"connections":[{"bandwidthLimit":10000000,"bucket":"my-bucket","cacheLimit":512000000,"connectsAutomatically":true,"encrypted":true,
         "endpoint":"https://s3.example.com","folder":"clients","id":"\(id)","minimumFreeSpace":0,"name":"My files",
         "provider":"Cloudflare","readOnly":true,"region":"auto","transfers":8}]}
         """.utf8).write(to: url)
@@ -79,6 +60,7 @@ struct ConnectionTests {
         #expect(connection.provider == .cloudflare)
         #expect(connection.endpoint == "https://s3.example.com" && connection.bucket == "my-bucket" && connection.folder == "clients")
         #expect(connection.encrypted && connection.readOnly && connection.connectsAutomatically)
+        #expect(connection.bandwidthLimit == 10_000_000 && connection.transfers == 8)
         #expect(connection.sftp == SFTPSettings())
         try store.save(connection)
         #expect(try store.all() == [connection])

@@ -102,18 +102,18 @@ struct ActivityTests {
         """)
         let uploaded = try Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse("2026-10-11T14:10:36.750335Z")
         let downloaded = try Date.ISO8601FormatStyle().parse("2026-10-11T14:10:37Z")
-        #expect(Set(activity.map(\.id)) == ["upload:video.mov", "upload:photo.jpg", "download:movie.mkv"])
+        #expect(activity.map(\.path).sorted() == ["movie.mkv", "photo.jpg", "video.mov"])
         #expect(activity.first { $0.path == "video.mov" }?.state == .queued)
         #expect(activity.first { $0.path == "photo.jpg" } == FileActivity(path: "photo.jpg", size: 20, state: .uploaded(uploaded), bytesTransferred: 20))
         #expect(activity.first { $0.path == "movie.mkv" } == FileActivity(path: "movie.mkv", size: 5000, state: .downloaded(downloaded), bytesTransferred: 5000))
     }
 }
 
-private func fetchActivity(queue: String, stats: String = #"{\#(rcloneCounters)}"#, transferred: String? = nil) async throws -> [FileActivity] {
+private func fetchActivity(queue: String, stats: String = #"{\#(rcloneCounters)}"#, transferred: String = #"{"transferred":[]}"#) async throws -> [FileActivity] {
     let drives = try StubbedDrives("activity")
     defer { drives.remove() }
     let connection = Connection.s3()
-    let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#, queue: queue, stats: stats, transferred: transferred)
+    let batch = statusBatch(queue: queue, stats: stats, transferred: transferred)
     let server = try ControlServer(at: drives.paths.socket(connection)) { _ in batch }
     defer { server.stop() }
     return try await drives.service.activity(connection)
