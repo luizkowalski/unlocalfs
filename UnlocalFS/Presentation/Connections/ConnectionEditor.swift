@@ -104,7 +104,7 @@ struct ConnectionEditor: View {
         return Form {
             Section("General") {
                 Toggle("Read-only", isOn: $viewModel.connection.readOnly)
-                if viewModel.connection.backend == .s3Compatible {
+                if viewModel.connection.backend.supportsUploadTimes {
                     Toggle(isOn: Binding { viewModel.connection.usesUploadTimes } set: { viewModel.connection.prefersUploadTimes = $0 }) {
                         Text("Use upload time as file date")
                         Text("Folders open faster, but files show when they were uploaded, not when they were last changed. Always on for read-only drives.")
@@ -161,7 +161,7 @@ struct ConnectionEditor: View {
                     Text("\(count)").tag(count)
                 }
             }
-            if viewModel.connection.backend == .sftp {
+            if viewModel.connection.backend.supportsMultiThreadUploads {
                 Toggle(isOn: $viewModel.connection.multiThreadUploads) {
                     Text("Multi-connection uploads")
                     Text(

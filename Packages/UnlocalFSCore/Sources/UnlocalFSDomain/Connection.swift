@@ -46,7 +46,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var backend: Backend { provider.backend }
 
-    public var usesUploadTimes: Bool { backend == .s3Compatible && (readOnly || prefersUploadTimes) }
+    public var usesUploadTimes: Bool { backend.supportsUploadTimes && (readOnly || prefersUploadTimes) }
 
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
