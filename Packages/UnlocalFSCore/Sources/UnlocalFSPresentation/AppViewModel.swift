@@ -240,6 +240,8 @@ import UnlocalFSDomain
         }
     }
 
+    public func offersRcloneConfigExport(_ connection: Connection) -> Bool { connection.encrypted }
+
     public func exportRcloneConfig(_ connection: Connection) async {
         guard let destination = desktop.chooseRcloneConfigDestination(for: connection) else { return }
         do {

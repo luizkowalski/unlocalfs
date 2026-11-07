@@ -294,6 +294,17 @@ import UnlocalFSTestSupport
         #expect(try String(contentsOf: destination, encoding: .utf8).contains("[unlocalfs-sftp]"))
     }
 
+    @Test(arguments: [
+        (Connection.s3(), false, true), (Connection.s3 { $0.encrypted = true }, true, true),
+        (Connection.gcs { $0.encrypted = true }, true, false), (Connection.sftp(), false, false),
+    ])
+    func driveMenuOffersExportForEncryptedDrivesAndCleanupForS3(connection: Connection, export: Bool, cleanup: Bool) {
+        let app = fixture.app()
+
+        #expect(app.offersRcloneConfigExport(connection) == export)
+        #expect(app.offersUploadCleanup(connection) == cleanup)
+    }
+
     @Test func unencryptedDrivesCannotExportAConfig() async throws {
         let connection = Connection.s3()
         try fixture.repository.save(connection, credentials: Credentials(accessKey: "saved-access", secretKey: "saved-secret"))

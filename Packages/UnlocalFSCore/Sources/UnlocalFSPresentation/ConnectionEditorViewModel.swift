@@ -65,7 +65,13 @@ import UnlocalFSDomain
         return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
-    public var initialFocus: ConnectionField? { isDuplicate && credentialsLoaded ? connection.folderField : nil }
+    public var initialFocus: ConnectionField? {
+        guard isDuplicate, credentialsLoaded else { return nil }
+        return switch connection.backend {
+        case .s3Compatible, .gcs: .folder
+        case .sftp: .remotePath
+        }
+    }
 
     public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded }
 

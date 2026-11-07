@@ -55,13 +55,6 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
-    public var folderField: ConnectionField {
-        switch backend {
-        case .s3Compatible, .gcs: .folder
-        case .sftp: .remotePath
-        }
-    }
-
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
         connectsAutomatically && !status.isActive
     }
