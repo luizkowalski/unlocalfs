@@ -2,6 +2,13 @@ import Foundation
 import UnlocalFSDomain
 
 public extension AppViewModel {
+    func driveCondition(_ connection: Connection) -> DriveCondition {
+        DriveCondition(
+            statuses[connection.id], busy: busy.contains(connection.id), error: errors[connection.id],
+            networkAvailable: networkAvailable,
+        )
+    }
+
     var activity: Activity {
         if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .uploading }
         if statuses.values.contains(where: \.isDownloading) { return .downloading }
@@ -52,15 +59,11 @@ public extension AppViewModel {
     }
 
     func indicator(_ connection: Connection) -> Indicator {
-        switch condition(connection) {
-        case .working: .working
-        case .needsReconnect, .needsAttention, .offline, .uploadFailed: .attention
-        default: statuses[connection.id]?.isMounted == true ? .connected : .idle
-        }
+        Indicator(driveCondition(connection), isMounted: statuses[connection.id]?.isMounted == true)
     }
 
     func statusText(_ connection: Connection) -> String {
-        switch condition(connection) {
+        switch driveCondition(connection) {
         case .working: String(localized: .working)
         case .needsReconnect: String(localized: .needsReconnect)
         case .needsAttention: String(localized: .needsAttention)
@@ -92,21 +95,14 @@ public extension AppViewModel {
     }
 }
 
-private extension AppViewModel {
-    enum Condition {
-        case working, needsReconnect, needsAttention, checking, offline, uploadFailed, uploading(Int), connected, ejected, disconnected
-    }
-
-    func condition(_ connection: Connection) -> Condition {
-        if busy.contains(connection.id) { return .working }
-        if needsReconnect(connection) { return .needsReconnect }
-        if errors[connection.id] != nil { return .needsAttention }
-        guard let status = statuses[connection.id] else { return .checking }
-        if isOffline(connection) { return .offline }
-        if status.failedUploads > 0 { return .uploadFailed }
-        if status.pendingUploads > 0 { return .uploading(status.pendingUploads) }
-        if status.isMounted { return .connected }
-        if status.isRunning { return .ejected }
-        return .disconnected
+public extension AppViewModel.Indicator {
+    init(_ condition: DriveCondition, isMounted: Bool) {
+        switch condition {
+        case .working: self = .working
+        case .needsReconnect, .needsAttention, .offline, .uploadFailed: self = .attention
+        case .connected: self = .connected
+        case .uploading: self = isMounted ? .connected : .idle
+        case .checking, .ejected, .disconnected: self = .idle
+        }
     }
 }

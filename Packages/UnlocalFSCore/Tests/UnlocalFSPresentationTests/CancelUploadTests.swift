@@ -17,7 +17,7 @@ import UnlocalFSTestSupport
         let drive = try serve(pending: "photos/new.jpg")
         let viewModel = fixture.factory(fixture.app()).makeActivity()
         await viewModel.refresh(connection)
-        try viewModel.prepareCancellation(of: #require(viewModel.summary?.files.first), in: connection)
+        try viewModel.prepareCancellation(of: #require(viewModel.snapshot.files.first), in: connection)
 
         try await viewModel.stopUpload(#require(viewModel.cancellation))
 

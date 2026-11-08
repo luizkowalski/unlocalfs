@@ -29,7 +29,7 @@ import UnlocalFSDomain
     public var uploadCleanup: UploadCleanup?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
-    private var networkAvailable = true
+    private(set) var networkAvailable = true
     private var sleeping = false
 
     let drives: any DriveGateway

@@ -1,7 +1,7 @@
 import Foundation
 import UnlocalFSDomain
 
-public struct TransferSummary {
+public struct TransferSummary: Equatable, Sendable {
     private static let showForSeconds: TimeInterval = 30
 
     public let isUploading: Bool

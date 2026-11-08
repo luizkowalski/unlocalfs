@@ -3,8 +3,7 @@ import Observation
 import UnlocalFSDomain
 
 @MainActor @Observable public final class ActivityViewModel {
-    public private(set) var activity: Result<[FileActivity], any Error>?
-    public private(set) var summary: TransferSummary?
+    public private(set) var snapshot: ActivitySnapshot = .checking
     public var cancellation: UploadCancellation?
     public var alert: String?
     private let drives: any DriveGateway
@@ -18,12 +17,12 @@ import UnlocalFSDomain
     }
 
     var refreshInterval: Duration {
-        guard let summary, summary.fileCount > 0 else { return .seconds(2) }
+        guard case let .transfers(summary) = snapshot, summary.fileCount > 0 else { return .seconds(2) }
         return .milliseconds(500)
     }
 
     public func observe(_ connection: Connection) async {
-        show(nil)
+        snapshot = .checking
         while !Task.isCancelled {
             await refresh(connection)
             do {
@@ -37,10 +36,10 @@ import UnlocalFSDomain
         do {
             let files = try await drives.activity(connection)
             try Task.checkCancellation()
-            show(.success(files))
+            show(files)
             recordSpeed(SpeedSample(files, at: .now), connection.id)
         } catch where !Task.isCancelled {
-            show(.failure(error))
+            snapshot = .unavailable(error.localizedDescription)
         } catch {}
     }
 
@@ -56,11 +55,11 @@ import UnlocalFSDomain
         }
     }
 
-    private func show(_ result: Result<[FileActivity], any Error>?) {
-        activity = result
-        switch result {
-        case let .success(files): summary = TransferSummary(files, now: .now)
-        case .failure, nil: summary = nil
+    private func show(_ files: [FileActivity]) {
+        if let summary = TransferSummary(files, now: .now) {
+            snapshot = .transfers(summary)
+        } else {
+            snapshot = .idle
         }
     }
 }

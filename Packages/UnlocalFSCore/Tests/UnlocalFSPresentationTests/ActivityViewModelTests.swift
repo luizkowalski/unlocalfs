@@ -18,7 +18,7 @@ import UnlocalFSTestSupport
         try Data("unavailable".utf8).write(to: fixture.root.appending(path: "queue.json"))
 
         await viewModel.refresh(connection)
-        guard case .failure = viewModel.activity else {
+        guard case .unavailable = viewModel.snapshot else {
             Issue.record("Expected unavailable activity")
             return
         }
@@ -26,8 +26,7 @@ import UnlocalFSTestSupport
         try fixture.queue(#"{"name":"photo.jpg","id":1,"size":2048,"expiry":4,"tries":0,"delay":5,"uploading":false}"#)
         await viewModel.refresh(connection)
 
-        let activity = try #require(viewModel.activity).get()
-        #expect(activity.map(\.path) == ["photo.jpg"])
+        #expect(viewModel.snapshot.files.map(\.path) == ["photo.jpg"])
     }
 
     @Test func busyConnectionsWaitBeforeLoadingActivity() async throws {
@@ -37,11 +36,11 @@ import UnlocalFSTestSupport
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in busy }, recordSpeed: { _, _ in })
 
         await viewModel.refresh(connection)
-        #expect(viewModel.activity == nil)
+        #expect(viewModel.snapshot == .checking)
 
         busy = false
         await viewModel.refresh(connection)
-        #expect(try #require(viewModel.activity).get().isEmpty)
+        #expect(viewModel.snapshot == .idle)
     }
 
     @Test func openDrivePageUpdatesTheSpeedHistoryLive() async throws {
@@ -72,7 +71,7 @@ import UnlocalFSTestSupport
         await viewModel.refresh(current)
         await refreshingPrevious.value
 
-        #expect(try #require(viewModel.activity).get().isEmpty)
+        #expect(viewModel.snapshot == .idle)
     }
 
     @Test func cancelledObservationStopsWithoutLoadingActivity() async {
@@ -82,7 +81,7 @@ import UnlocalFSTestSupport
 
         await task.value
 
-        #expect(viewModel.activity == nil)
+        #expect(viewModel.snapshot == .checking)
     }
 
     private func transferring(speed: Int) throws {
