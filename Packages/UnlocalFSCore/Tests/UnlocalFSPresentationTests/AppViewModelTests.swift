@@ -36,6 +36,7 @@ import UnlocalFSTestSupport
 
         #expect(desktop.openedDrives.isEmpty)
         #expect(app.problem(connection) == nil)
+        #expect(app.statusText(connection) == String(localized: .ejected))
         #expect(await fixture.service.status(connection).isRunning)
     }
 
@@ -74,7 +75,7 @@ import UnlocalFSTestSupport
 
     @Test func failedUploadsNeedAttentionAndNotifyOnce() async throws {
         let connection = Connection.s3()
-        try fixture.serve(connection, failed: 1, lastError: "AccessDenied: Access Denied")
+        try fixture.serve(connection, queued: 1, failed: 1, lastError: "AccessDenied: Access Denied")
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 
@@ -160,7 +161,7 @@ import UnlocalFSTestSupport
         let connection = Connection.s3()
         let stopped = Connection.s3()
         try ConnectionStore(url: fixture.paths.config).save(stopped)
-        try fixture.serve(connection)
+        try fixture.serve(connection, queued: 1, failed: 1)
         let app = fixture.app()
 
         await app.networkChanged(available: false)

@@ -60,6 +60,7 @@ private let day = 24 * hour
         for await _ in entered { break }
         #expect(!app.canToggle(connection))
         #expect(app.statusText(connection) == String(localized: .working))
+        #expect(app.indicator(connection) == .working)
         resume.yield()
         await task.value
 
