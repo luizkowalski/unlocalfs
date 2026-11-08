@@ -16,6 +16,21 @@ settings:
     MARKETING_VERSION: 0.1.0
     CURRENT_PROJECT_VERSION: 1
 targets:
+  MountHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: libexec/main.swift
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    settings:
+      base:
+        PRODUCT_NAME: mount
+        PRODUCT_MODULE_NAME: MountHelper
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
   UnlocalFS:
     type: application
     platform: macOS
@@ -23,12 +38,14 @@ targets:
       - path: UnlocalFS
       - path: packaging/THIRD_PARTY_NOTICES.txt
         buildPhase: resources
-      - path: libexec/mount
-        buildPhase:
-          copyFiles:
-            destination: resources
-            subpath: libexec
     dependencies:
+      - target: MountHelper
+        codeSign: true
+        embed: true
+        link: false
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
       - package: UnlocalFSCore
         product: UnlocalFSDomain
       - package: UnlocalFSCore
@@ -50,19 +67,9 @@ targets:
         RCLONE_SHA256_ARM64: e72dc90b70f4947a7b72b61bde4a4fbba5777b2874fb448951ffdde67ebd0ab7
     postBuildScripts:
       - name: Embed rclone
-        shell: /bin/bash
+        shell: /usr/bin/swift
         basedOnDependencyAnalysis: false
-        script: |
-          set -euo pipefail
-          rclone="$("$PROJECT_DIR/scripts/fetch-rclone.swift")"
-          helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/rclone"
-          mkdir -p "$(dirname "$helper")"
-          cp "$rclone" "$helper"
-          if [ "$EXPANDED_CODE_SIGN_IDENTITY" = "-" ]; then
-              codesign --force --sign - --options runtime "$helper"
-          else
-              codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime --timestamp "$helper"
-          fi
+        path: scripts/embed-rclone.swift
 schemes:
   UnlocalFS:
     build:
