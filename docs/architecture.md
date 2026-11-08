@@ -12,7 +12,7 @@ flowchart LR
 
 ## Domain
 
-`Packages/UnlocalFSCore/Sources/UnlocalFSDomain` contains connection and credential validation, duplication, automatic-connect eligibility, upload safety rules, the order in which a drive's readings and errors decide what the UI shows, and workflows:
+`Packages/UnlocalFSCore/Sources/UnlocalFSDomain` contains connection and credential validation, duplication, automatic-connect eligibility, upload safety rules, and workflows:
 
 | Use case | Behavior |
 | --- | --- |
@@ -29,8 +29,6 @@ flowchart LR
 
 `TrafficMeter` turns rclone's running byte counter into upload and download bytes per day. It compares each reading with the last saved checkpoint, ignores a stale reading from the same process, counts a new rclone process from zero, and decides when a save is due: every hour, at a new day, or on disconnect. `TrafficRepository` is the read contract for per-drive sums and per-day sums over a range of days.
 
-`DriveCondition` is one value for what a drive is doing: `checking`, `working`, `needsReconnect`, `needsAttention`, `offline`, `uploadFailed`, `uploading(count:)`, `connected`, `ejected`, or `disconnected`. One initializer builds it from the status, the busy flag, the last operation error, and the network. It owns the order in which those inputs win, so a new reading cannot change the status text by being checked earlier. `statusText` and `Indicator` switch on it with no default case, so a new condition fails to compile in every view that shows one.
-
 ## Infrastructure
 
 `UnlocalFSInfrastructure` depends on Domain. `SavedConnectionRepository` combines `ConnectionStore` and `CredentialStorage`. The application shares one repository instance. A lock serializes complete repository transactions. A failed credential save restores the previous JSON connection or removes a new connection. A save without credentials writes only the JSON connection. Delete removes the JSON connection before its credentials, so a failed write keeps both. `Keychain` implements credential storage. `TrafficStore` keeps traffic in SQLite through GRDB: `traffic.sqlite` has an `unlocal` table with each drive's name, provider, and checkpoint, and a `traffic` table with bytes per drive per day. Deleting a drive leaves its rows.
@@ -42,6 +40,8 @@ JSON and Keychain encoding remain compatible with existing installations. Founda
 ## Presentation and Application
 
 `UnlocalFSPresentation` contains the view models and depends only on Domain. `AppViewModel` holds connection selection, observed statuses, errors, and busy state. Views cannot change connections, statuses, errors, or busy state; they call intent methods such as `toggle`, `delete`, and `checkAgain`. Views can set the selection and what is presented: the editor, the delete confirmation, and alerts. `AppViewModel` also derives the status text, indicator, and notices that views display. It runs domain use cases and translates their results into UI state and desktop feedback.
+
+`DriveCondition` is the one value behind a drive's status text and dot: `checking`, `working`, `needsReconnect`, `needsAttention`, `offline`, `uploadFailed`, `uploading(count:isMounted:)`, `connected`, `ejected`, or `disconnected`. One initializer builds it from the status, the busy flag, whether an operation failed, and whether the drive is offline. It owns the order in which those inputs win. Its `statusText` and `indicator` switch with no default case, so a new condition fails to compile in both. It is a label, not the full drive state: `working` and `offline` hide whether the drive is mounted, so the button rules (`canOpen`, `canDisconnect`, `toggleTitle`) and the notices read the status directly.
 
 `ViewModelFactory` creates `ConnectionEditorViewModel`, `ActivityViewModel`, and `TrafficViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers, so only the factory can create them. For service-account key imports, the view forwards the file picker result to the editor view model, which reads the file, validates it in Domain, and updates the credentials or the error.
 

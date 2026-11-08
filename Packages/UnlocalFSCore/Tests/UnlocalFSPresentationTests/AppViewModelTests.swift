@@ -156,8 +156,10 @@ import UnlocalFSTestSupport
         #expect(desktop.notifications.isEmpty)
     }
 
-    @Test func activeDriveShowsTheNetworkIsUnavailable() async throws {
+    @Test func onlyAnActiveDriveShowsTheNetworkIsUnavailable() async throws {
         let connection = Connection.s3()
+        let stopped = Connection.s3()
+        try ConnectionStore(url: fixture.paths.config).save(stopped)
         try fixture.serve(connection)
         let app = fixture.app()
 
@@ -166,6 +168,8 @@ import UnlocalFSTestSupport
         #expect(app.isOffline(connection))
         #expect(app.indicator(connection) == .attention)
         #expect(app.statusText(connection) == String(localized: .networkUnavailable))
+        #expect(!app.isOffline(stopped))
+        #expect(app.statusText(stopped) == String(localized: .disconnected))
     }
 
     @Test func connectAndDisconnectFollowTheConnectionState() async throws {

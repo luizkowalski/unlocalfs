@@ -1,5 +1,6 @@
 import Testing
-@testable import UnlocalFSDomain
+import UnlocalFSDomain
+@testable import UnlocalFSPresentation
 
 struct DriveConditionTests {
     @Test func aDriveWithoutAReadingIsChecking() {
@@ -9,21 +10,24 @@ struct DriveConditionTests {
     @Test func aRunningOperationOutranksEveryReadingAndError() {
         let unreachable = reading(mounted: true, running: true, failed: 2, controlError: "Unavailable")
 
-        #expect(condition(unreachable, busy: true, error: "Failed", online: false) == .working)
+        #expect(condition(unreachable, busy: true, hasError: true, offline: true) == .working)
     }
 
     @Test func anUnreachableServiceOutranksAReportedError() {
-        #expect(condition(reading(mounted: true, controlError: "Unavailable"), error: "Failed") == .needsReconnect)
+        #expect(condition(reading(mounted: true, controlError: "Unavailable"), hasError: true) == .needsReconnect)
     }
 
-    @Test func aReportedErrorOutranksTheReading() {
-        #expect(condition(reading(mounted: true, running: true), error: "Failed") == .needsAttention)
+    @Test func aReportedErrorOutranksTheReadingAndTheNetwork() {
+        #expect(condition(reading(mounted: true, running: true), hasError: true) == .needsAttention)
+        #expect(condition(reading(mounted: true), hasError: true, offline: true) == .needsAttention)
     }
 
-    @Test func anActiveDriveWithoutANetworkIsOffline() {
-        #expect(condition(reading(mounted: true), online: false) == .offline)
-        #expect(condition(reading(running: true), online: false) == .offline)
-        #expect(condition(reading(), online: false) == .disconnected)
+    @Test func aReportedErrorShowsBeforeTheFirstReading() {
+        #expect(condition(nil, hasError: true) == .needsAttention)
+    }
+
+    @Test func aMissingNetworkOutranksUploads() {
+        #expect(condition(reading(mounted: true, pending: 1, failed: 1), offline: true) == .offline)
     }
 
     @Test func failedUploadsOutrankPendingOnes() {
@@ -31,7 +35,12 @@ struct DriveConditionTests {
     }
 
     @Test func pendingUploadsOutrankTheMount() {
-        #expect(condition(reading(mounted: true, pending: 2)) == .uploading(count: 2))
+        #expect(condition(reading(mounted: true, pending: 2)) == .uploading(count: 2, isMounted: true))
+    }
+
+    @Test func aDotShowsAConnectedDriveWhileItUploads() {
+        #expect(condition(reading(mounted: true, pending: 2)).indicator == .connected)
+        #expect(condition(reading(running: true, pending: 2)).indicator == .idle)
     }
 
     @Test func aMountedDriveIsConnected() {
@@ -47,9 +56,9 @@ struct DriveConditionTests {
     }
 
     private func condition(
-        _ status: MountStatus?, busy: Bool = false, error: String? = nil, online: Bool = true,
+        _ status: MountStatus?, busy: Bool = false, hasError: Bool = false, offline: Bool = false,
     ) -> DriveCondition {
-        DriveCondition(status, busy: busy, error: error, networkAvailable: online)
+        DriveCondition(status, busy: busy, hasError: hasError, offline: offline)
     }
 
     private func reading(

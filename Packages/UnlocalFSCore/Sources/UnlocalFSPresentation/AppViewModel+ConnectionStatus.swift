@@ -2,13 +2,6 @@ import Foundation
 import UnlocalFSDomain
 
 public extension AppViewModel {
-    func driveCondition(_ connection: Connection) -> DriveCondition {
-        DriveCondition(
-            statuses[connection.id], busy: busy.contains(connection.id), error: errors[connection.id],
-            networkAvailable: networkAvailable,
-        )
-    }
-
     var activity: Activity {
         if statuses.values.contains(where: { $0.pendingUploads > 0 }) { return .uploading }
         if statuses.values.contains(where: \.isDownloading) { return .downloading }
@@ -59,22 +52,11 @@ public extension AppViewModel {
     }
 
     func indicator(_ connection: Connection) -> Indicator {
-        Indicator(driveCondition(connection), isMounted: statuses[connection.id]?.isMounted == true)
+        driveCondition(connection).indicator
     }
 
     func statusText(_ connection: Connection) -> String {
-        switch driveCondition(connection) {
-        case .working: String(localized: .working)
-        case .needsReconnect: String(localized: .needsReconnect)
-        case .needsAttention: String(localized: .needsAttention)
-        case .checking: String(localized: .checking)
-        case .offline: String(localized: .networkUnavailable)
-        case .uploadFailed: String(localized: .uploadNeedsAttention)
-        case let .uploading(count): String(localized: .uploadsPending(count))
-        case .connected: String(localized: .connected)
-        case .ejected: String(localized: .ejected)
-        case .disconnected: String(localized: .disconnected)
-        }
+        driveCondition(connection).statusText
     }
 
     func needsReconnect(_ connection: Connection) -> Bool {
@@ -95,14 +77,11 @@ public extension AppViewModel {
     }
 }
 
-public extension AppViewModel.Indicator {
-    init(_ condition: DriveCondition, isMounted: Bool) {
-        switch condition {
-        case .working: self = .working
-        case .needsReconnect, .needsAttention, .offline, .uploadFailed: self = .attention
-        case .connected: self = .connected
-        case .uploading: self = isMounted ? .connected : .idle
-        case .checking, .ejected, .disconnected: self = .idle
-        }
+private extension AppViewModel {
+    func driveCondition(_ connection: Connection) -> DriveCondition {
+        DriveCondition(
+            statuses[connection.id], busy: busy.contains(connection.id), hasError: errors[connection.id] != nil,
+            offline: isOffline(connection),
+        )
     }
 }
