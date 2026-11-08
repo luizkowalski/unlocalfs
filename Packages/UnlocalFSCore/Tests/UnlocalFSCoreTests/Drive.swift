@@ -9,7 +9,14 @@ let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 
 let rcloneExecutable = Task {
     let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.swift")
-    let output = try await Command.run(script, [])
+    let process = Process()
+    let pipe = Pipe()
+    process.executableURL = script
+    process.standardOutput = pipe
+    try process.run()
+    let output = try pipe.fileHandleForReading.readToEnd() ?? Data()
+    process.waitUntilExit()
+    try #require(process.terminationStatus == 0)
     return URL(fileURLWithPath: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
 }
 
