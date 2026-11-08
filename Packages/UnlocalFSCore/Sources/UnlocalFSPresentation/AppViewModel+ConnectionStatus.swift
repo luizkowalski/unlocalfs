@@ -52,26 +52,11 @@ public extension AppViewModel {
     }
 
     func indicator(_ connection: Connection) -> Indicator {
-        switch condition(connection) {
-        case .working: .working
-        case .needsReconnect, .needsAttention, .offline, .uploadFailed: .attention
-        default: statuses[connection.id]?.isMounted == true ? .connected : .idle
-        }
+        driveCondition(connection).indicator
     }
 
     func statusText(_ connection: Connection) -> String {
-        switch condition(connection) {
-        case .working: String(localized: .working)
-        case .needsReconnect: String(localized: .needsReconnect)
-        case .needsAttention: String(localized: .needsAttention)
-        case .checking: String(localized: .checking)
-        case .offline: String(localized: .networkUnavailable)
-        case .uploadFailed: String(localized: .uploadNeedsAttention)
-        case let .uploading(count): String(localized: .uploadsPending(count))
-        case .connected: String(localized: .connected)
-        case .ejected: String(localized: .ejected)
-        case .disconnected: String(localized: .disconnected)
-        }
+        driveCondition(connection).statusText
     }
 
     func needsReconnect(_ connection: Connection) -> Bool {
@@ -93,20 +78,10 @@ public extension AppViewModel {
 }
 
 private extension AppViewModel {
-    enum Condition {
-        case working, needsReconnect, needsAttention, checking, offline, uploadFailed, uploading(Int), connected, ejected, disconnected
-    }
-
-    func condition(_ connection: Connection) -> Condition {
-        if busy.contains(connection.id) { return .working }
-        if needsReconnect(connection) { return .needsReconnect }
-        if errors[connection.id] != nil { return .needsAttention }
-        guard let status = statuses[connection.id] else { return .checking }
-        if isOffline(connection) { return .offline }
-        if status.failedUploads > 0 { return .uploadFailed }
-        if status.pendingUploads > 0 { return .uploading(status.pendingUploads) }
-        if status.isMounted { return .connected }
-        if status.isRunning { return .ejected }
-        return .disconnected
+    func driveCondition(_ connection: Connection) -> DriveCondition {
+        DriveCondition(
+            statuses[connection.id], busy: busy.contains(connection.id), hasError: errors[connection.id] != nil,
+            offline: isOffline(connection),
+        )
     }
 }

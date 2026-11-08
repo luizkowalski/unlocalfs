@@ -41,25 +41,25 @@ struct ActivityView: View {
     }
 
     private var activity: some View {
-        let summary = viewModel?.summary
+        let snapshot = viewModel?.snapshot ?? .checking
         return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Activity").font(.headline)
                 Spacer()
-                if let summary, summary.fileCount > 0 {
+                if case let .transfers(summary) = snapshot, summary.fileCount > 0 {
                     transfers(summary).foregroundStyle(.secondary)
                 }
             }
-            if case let .failure(error) = viewModel?.activity {
-                Text(error.localizedDescription).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+            if case let .unavailable(message) = snapshot {
+                Text(message).font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
             }
-            ActivityTable(files: summary?.files ?? [], cancel: askToStop) {
-                switch viewModel?.activity {
-                case .success:
+            ActivityTable(files: snapshot.files, cancel: askToStop) {
+                switch snapshot {
+                case .idle, .transfers:
                     idle
-                case nil:
+                case .checking:
                     Text("Checking activity…").foregroundStyle(.secondary)
-                case .failure:
+                case .unavailable:
                     Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                 }
             }
