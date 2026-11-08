@@ -8,7 +8,7 @@ let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
 
 let rcloneExecutable = Task {
-    let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.sh")
+    let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.swift")
     let output = try await Command.run(script, [])
     return URL(fileURLWithPath: String(decoding: output, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
 }

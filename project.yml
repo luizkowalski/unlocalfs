@@ -54,7 +54,7 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          rclone="$("$PROJECT_DIR/scripts/fetch-rclone.sh")"
+          rclone="$("$PROJECT_DIR/scripts/fetch-rclone.swift")"
           helper="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers/rclone"
           mkdir -p "$(dirname "$helper")"
           cp "$rclone" "$helper"
