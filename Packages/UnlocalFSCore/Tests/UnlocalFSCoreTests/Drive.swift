@@ -4,11 +4,21 @@ import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 
-let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-    .appendingPathComponent("../../../../libexec").standardized
+let repositoryRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+    .appendingPathComponent("../../../..").standardized
+
+let helpers = Task {
+    let directory = repositoryRoot.appending(path: ".build/libexec")
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    _ = try await Command.run(URL(filePath: "/usr/bin/xcrun"), [
+        "swiftc", "-swift-version", "6", "-O", "-target", "arm64-apple-macosx15.0",
+        repositoryRoot.appending(path: "libexec/main.swift").path, "-o", directory.appending(path: "mount").path,
+    ])
+    return directory
+}
 
 let rcloneExecutable = Task {
-    let script = helpers.deletingLastPathComponent().appending(path: "scripts/fetch-rclone.swift")
+    let script = repositoryRoot.appending(path: "scripts/fetch-rclone.swift")
     let process = Process()
     let pipe = Pipe()
     process.executableURL = script
@@ -85,9 +95,9 @@ func makeDrive(executable: URL, resources: FixtureResources, connection: Connect
     )
     try paths.prepare()
     let traffic = TrafficStore(url: paths.traffic)
-    let drive = Drive(
+    let drive = try await Drive(
         executable: executable, paths: paths,
-        service: MountService(executable: executable, helperDirectory: helpers, paths: paths, traffic: traffic), traffic: traffic, connection: connection,
+        service: MountService(executable: executable, helperDirectory: helpers.value, paths: paths, traffic: traffic), traffic: traffic, connection: connection,
     )
     await resources.track(drive)
     return drive

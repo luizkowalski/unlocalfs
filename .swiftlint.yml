@@ -1,4 +1,6 @@
 included:
+  - libexec
+  - scripts
   - UnlocalFS
   - Packages/UnlocalFSCore/Sources
   - Packages/UnlocalFSCore/Tests

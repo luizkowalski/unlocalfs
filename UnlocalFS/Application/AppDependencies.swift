@@ -18,7 +18,7 @@ import UnlocalFSPresentation
         let traffic = TrafficStore(url: paths.traffic)
         let drives = MountService(
             executable: contents.appending(path: "Helpers/rclone"),
-            helperDirectory: contents.appending(path: "Resources/libexec"),
+            helperDirectory: contents.appending(path: "Helpers"),
             paths: paths, traffic: traffic,
         )
         let model = AppViewModel(

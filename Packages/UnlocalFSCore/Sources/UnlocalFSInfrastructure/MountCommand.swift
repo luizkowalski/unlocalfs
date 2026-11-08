@@ -11,6 +11,7 @@ struct MountCommand {
     private static let multiThreadWriteBufferSize = "4M"
     private static let jobExpiry = "5s"
     private static let jobExpiryCheck = "2s"
+    private static let nfsOptions = "acdirmin=1,acdirmax=3,rwsize=1048576,readahead=4"
 
     let remote: RcloneRemote
     let paths: AppPaths
@@ -19,7 +20,7 @@ struct MountCommand {
         let connection = remote.connection
         var arguments = [
             "nfsmount", remote.connection.rcloneTarget, paths.mount(connection).path,
-            "--config", "/dev/null", "--vfs-cache-mode", "full",
+            "--option", Self.nfsOptions, "--config", "/dev/null", "--vfs-cache-mode", "full",
             "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B", "--vfs-cache-max-age", "off",
             "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
