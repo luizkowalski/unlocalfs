@@ -9,23 +9,18 @@ public actor MountService: DriveGateway {
     private let helperDirectory: URL
     let paths: AppPaths
     let serverTrust: SFTPTrustStore
-    private let hostEnvironment: [String: String]
     private var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
     var reservedCopies: [UUID: Set<String>] = [:]
     let traffic: TrafficStore
     var trackers: [UUID: TrafficTracker] = [:]
 
-    public init(
-        executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore,
-        environment: [String: String] = ProcessInfo.processInfo.environment,
-    ) {
+    public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore) {
         self.executable = executable
         self.helperDirectory = helperDirectory
         self.paths = paths
         self.traffic = traffic
         serverTrust = SFTPTrustStore(paths: paths)
-        hostEnvironment = environment
     }
 
     public nonisolated func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
@@ -293,7 +288,7 @@ public actor MountService: DriveGateway {
     }
 
     private func agentSocket(_ sftp: SFTPSettings) throws -> String {
-        let path = sftp.agentSocket.isEmpty ? hostEnvironment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
+        let path = sftp.agentSocket.isEmpty ? ProcessInfo.processInfo.environment["SSH_AUTH_SOCK"] : sftp.agentSocketPath
         let type = path.flatMap { try? FileManager.default.attributesOfItem(atPath: $0)[.type] as? FileAttributeType }
         guard let path, type == .typeSocket else {
             throw AppError(String(localized: .agentUnavailable))

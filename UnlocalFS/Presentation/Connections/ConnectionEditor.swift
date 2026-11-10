@@ -8,8 +8,8 @@ struct ConnectionEditor: View {
     @FocusState private var focus: ConnectionField?
     @Environment(\.dismiss) private var dismiss
 
-    private enum Pane: String, CaseIterable {
-        case connection = "Connection", settings = "Settings"
+    private enum Pane: CaseIterable {
+        case connection, settings
 
         var displayName: String {
             switch self {

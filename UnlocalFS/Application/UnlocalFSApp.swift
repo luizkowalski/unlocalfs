@@ -66,10 +66,9 @@ import UnlocalFSPresentation
     private var serviceRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
-    private var refreshTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_: Notification) {
-        refreshTask = Task { await model.run() }
+        Task { await model.run() }
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
         center.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
@@ -81,12 +80,6 @@ import UnlocalFSPresentation
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
         NSApp.servicesProvider = self
         NSUpdateDynamicServices()
-    }
-
-    func applicationWillTerminate(_: Notification) {
-        refreshTask?.cancel()
-        pathMonitor.cancel()
-        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
     @objc private func willSleep(_: Notification) { model.willSleep() }

@@ -152,7 +152,6 @@ import UnlocalFSDomain
     }
 
     public func activate(_ connection: Connection) async {
-        guard !checkingQuit, canToggle(connection) else { return }
         if canOpen(connection) || !isActive(connection) || needsReconnect(connection) {
             await connect(connection, opensFinder: true)
         }
@@ -177,7 +176,7 @@ import UnlocalFSDomain
             let outcome = try await connectDrive.execute(connection)
             if opensFinder {
                 switch outcome {
-                case .connected, .reconnected: openDrive(connection)
+                case .connected: openDrive(connection)
                 case .ejected: break
                 }
             }

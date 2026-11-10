@@ -1,7 +1,7 @@
 import Foundation
 
 public struct ConnectDriveUseCase: Sendable {
-    public enum Outcome: Sendable { case connected, ejected, reconnected }
+    public enum Outcome: Sendable { case connected, ejected }
     private let repository: any ConnectionRepository
     private let drives: any DriveGateway
 
@@ -14,7 +14,7 @@ public struct ConnectDriveUseCase: Sendable {
         let current = await drives.status(connection)
         if current.needsReconnect {
             try await drives.reconnect(connection, credentials: repository.credentials(for: connection.id))
-            return .reconnected
+            return .connected
         }
         if current.isActive { return current.isMounted ? .connected : .ejected }
         try await drives.mount(connection, credentials: repository.credentials(for: connection.id))
