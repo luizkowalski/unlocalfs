@@ -24,6 +24,12 @@ struct RcloneRemote {
         return environment
     }
 
+    var namedRemotes: [NamedRemote] {
+        let storage = NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options)
+        guard connection.encrypted else { return [storage] }
+        return [storage, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions(remote: connection.driveStorage))]
+    }
+
     func cryptOptions(remote: String) -> [String: String] {
         var options = ["remote": remote, "filename_encryption": "standard", "directory_name_encryption": "true", "filename_encoding": "base32"]
         options["password"] = credentials?.obscuredEncryptionPassword
@@ -64,7 +70,7 @@ struct RcloneRemote {
         let sftp = connection.sftp
         var options = [
             "host": sftp.host, "port": "\(sftp.port)", "user": sftp.username,
-            "shell_type": "none", "known_hosts_file": knownHosts.path, "idle_timeout": "3m",
+            "shell_type": "none", "known_hosts_file": knownHosts.path, "idle_timeout": "3m", "multithread_upload": "true",
         ]
         switch sftp.authentication {
         case .password:
@@ -97,6 +103,41 @@ extension Connection {
 
     var rcloneStorage: String { ":\(rcloneType):\(rclonePath)" }
     var rcloneTarget: String { encrypted ? ":crypt:" : rcloneStorage }
+
+    static let cryptRemoteName = "unlocalfs"
+    var storageRemoteName: String { "unlocalfs-\(rcloneType)" }
+    var driveStorage: String { "\(storageRemoteName):\(rclonePath)" }
+    var driveTarget: String { encrypted ? "\(Self.cryptRemoteName):" : driveStorage }
+}
+
+struct NamedRemote {
+    let name: String
+    let type: String
+    let parameters: [String: String]
+
+    init(name: String, type: String, options: [String: String]) {
+        self.name = name
+        self.type = type
+        parameters = options.filter { !$0.value.isEmpty }
+    }
+}
+
+struct CreateRemote: Encodable {
+    struct Options: Encodable {
+        var nonInteractive = true
+        var noObscure = true
+    }
+
+    let name: String
+    let type: String
+    let parameters: [String: String]
+    var opt = Options()
+
+    init(_ remote: NamedRemote) {
+        name = remote.name
+        type = remote.type
+        parameters = remote.parameters
+    }
 }
 
 extension SFTPSettings {

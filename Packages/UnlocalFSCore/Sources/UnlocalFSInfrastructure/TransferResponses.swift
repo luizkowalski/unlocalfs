@@ -138,6 +138,11 @@ struct JobList: Decodable {
     let runningIds: [Int]
 }
 
+struct LiveMounts: Decodable {
+    struct Mount: Decodable {}
+    let mountPoints: [Mount]
+}
+
 struct RemoteItem: Decodable {
     struct Item: Decodable {}
 
