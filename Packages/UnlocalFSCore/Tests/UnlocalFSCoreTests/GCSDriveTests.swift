@@ -32,6 +32,25 @@ struct GCSDriveTests {
         }
     }
 
+    @Test func googleDriveExportsItsSignInOnlyWithSecrets() async throws {
+        try await withOfflineDrive(Connection.gcs { $0.gcs.authentication = .googleAccount }) { drive in
+            let credentials = Credentials(serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON)
+            let withSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "with.conf")
+            let withoutSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "without.conf")
+            try await drive.service.exportRcloneConfig(drive.connection, credentials: credentials, to: withSecrets)
+            try await drive.service.exportRcloneConfig(drive.connection, credentials: nil, to: withoutSecrets)
+
+            let remote = try #require(try await dump(drive, withSecrets)["unlocalfs-gcs"])
+            #expect(remote["token"] == googleTokenJSON)
+            #expect(remote["client_id"] == GoogleClient.test.id && remote["client_secret"] == GoogleClient.test.secret)
+            #expect(remote["env_auth"] == "false")
+            #expect(remote["service_account_credentials"] == nil && remote["config_refresh_token"] == nil)
+            let bare = try #require(try await dump(drive, withoutSecrets)["unlocalfs-gcs"])
+            #expect(bare["token"] == nil && bare["client_id"] == nil && bare["client_secret"] == nil && bare["service_account_credentials"] == nil)
+            #expect(bare["bucket_policy_only"] == "true")
+        }
+    }
+
     @Test func googleConnectionTestGivesRcloneOnlyTheTokenAndTheClient() async throws {
         let drives = try StubbedDrives("gcs-google") { root in
             """

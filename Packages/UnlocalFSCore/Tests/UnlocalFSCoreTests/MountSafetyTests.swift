@@ -283,6 +283,52 @@ struct MountSafetyTests {
     }
 }
 
+extension MountSafetyTests {
+    @Test(arguments: [
+        (Connection.s3 { $0.encrypted = true }, Credentials(accessKey: "s3-access", secretKey: "s3-secret", encryptionPassword: "crypt-password"),
+         ["secret_access_key": String?.some("s3-secret")]),
+        (Connection.gcs { $0.encrypted = true; $0.gcs.authentication = .googleAccount },
+         Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
+         ["token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "env_auth": "false", "service_account_credentials": nil]),
+        (Connection.gcs { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
+         ["service_account_credentials": serviceAccountJSON, "token": nil, "client_secret": nil]),
+    ])
+    func startedDriveGetsItsSecretsOnlyOverTheControlSocket(connection: Connection, credentials: Credentials, expected: [String: String?]) async throws {
+        let drives = try StubbedDrives("start") { root in
+            """
+            if [ "$1" = 'rcd' ]; then
+                env > '\(root.path)/rcd-environment'
+                printf '%s\\n' "$@" > '\(root.path)/rcd-arguments'
+                while [ ! -f '\(root.path)/stop' ]; do sleep 0.05; done
+            fi
+            """
+        }
+        defer { drives.remove() }
+        let mount = Task { try await drives.service.mount(connection, credentials: credentials) }
+        let arguments = drives.root.appending(path: "rcd-arguments")
+        try await waitUntil { FileManager.default.fileExists(atPath: arguments.path) }
+        let server = try ControlServer(at: drives.paths.socket(connection)) { [root = drives.root] request in
+            if request.method == "config/create" { try request.body.write(to: root.appending(path: "create-\(request.parameter("name") ?? "")")) }
+            if request.method == "mount/mount" { FileManager.default.createFile(atPath: root.appending(path: "stop").path, contents: Data()) }
+            return "{}"
+        }
+        defer { server.stop() }
+
+        await #expect(throws: AppError.self) { try await mount.value }
+
+        let started = try String(contentsOf: arguments, encoding: .utf8) + String(contentsOf: drives.root.appending(path: "rcd-environment"), encoding: .utf8)
+        for secret in ["s3-secret", "crypt-password", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
+            #expect(!started.contains(secret), "\(secret) reached the rcd process")
+        }
+        let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.rcloneType)"))
+        let parameters = try #require(try JSONSerialization.jsonObject(with: created) as? [String: Any])["parameters"] as? [String: String]
+        for (name, value) in expected {
+            #expect(parameters?[name] == value, "\(name)")
+        }
+        #expect(FileManager.default.fileExists(atPath: drives.root.appending(path: "create-unlocalfs").path))
+    }
+}
+
 private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Respond {
     { request in
         switch request.method {
