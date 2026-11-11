@@ -596,6 +596,23 @@
         }
       }
     },
+    "googleSignInRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google sign-in has expired or was revoked. Sign in again to use this drive."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O login com o Google expirou ou foi revogado. Faça login novamente para usar esta unidade."
+          }
+        }
+      }
+    },
     "hostMissing": {
       "extractionState": "manual",
       "localizations": {
@@ -1175,7 +1192,7 @@
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Entre com o Google"
+            "value": "Faça login com o Google"
           }
         }
       }

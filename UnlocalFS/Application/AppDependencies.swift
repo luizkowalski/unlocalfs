@@ -19,7 +19,10 @@ import UnlocalFSPresentation
         let drives = MountService(
             executable: contents.appending(path: "Helpers/rclone"),
             helperDirectory: contents.appending(path: "Resources/libexec"),
-            paths: paths, traffic: traffic,
+            paths: paths, traffic: traffic, googleClient: GoogleClient(
+                id: Bundle.main.object(forInfoDictionaryKey: "GoogleClientID") as? String ?? "",
+                secret: Bundle.main.object(forInfoDictionaryKey: "GoogleClientSecret") as? String ?? "",
+            ),
         )
         let model = AppViewModel(
             initialConnections: initialConnections, drives: drives,

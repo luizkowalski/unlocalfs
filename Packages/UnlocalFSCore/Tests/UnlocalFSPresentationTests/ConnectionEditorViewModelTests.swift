@@ -37,6 +37,100 @@ import UnlocalFSTestSupport
         #expect(editor.credentials.serviceAccountKey == "previous-key")
     }
 
+    @Test func googleSignInHoldsTheNewTokenInTheDraftAndClearsTheEarlierTest() async throws {
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        editor.loadCredentials()
+        editor.credentials = Credentials.google()
+        await editor.test()
+        #expect(editor.tested)
+        let newToken = #"{"access_token":"ya29.new","token_type":"Bearer","refresh_token":"1//new-refresh","expiry":"2026-11-12T02:00:00Z"}"#
+        try fixture.signInReturns(newToken)
+
+        await editor.signInWithGoogle()
+
+        #expect(editor.credentials.googleToken == newToken)
+        #expect(editor.credentials.isSignedInToGoogle)
+        #expect(!editor.tested)
+        #expect(!editor.signingIn)
+        #expect(editor.error == nil)
+        #expect(editor.fieldErrors.isEmpty)
+        #expect(fixture.signInEnvironment.contains("RCLONE_GCS_CLIENT_ID=\(GoogleClient.test.id)"))
+        #expect(fixture.signInEnvironment.contains("RCLONE_GCS_CLIENT_SECRET=\(GoogleClient.test.secret)"))
+    }
+
+    @Test func cancelledGoogleSignInStopsRcloneAndKeepsTheSavedAccount() async throws {
+        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        try fixture.repository.save(connection, credentials: Credentials.google())
+        let editor = fixture.editor(draft: .init(connection: connection))
+        editor.loadCredentials()
+
+        let signIn = Task { await editor.signInWithGoogle() }
+        let pid = try await fixture.signInHangs()
+        #expect(editor.signingIn)
+        #expect(editor.isLocked)
+        await editor.signInWithGoogle()
+        #expect(fixture.rcloneCalls.filter { $0 == "authorize" }.count == 1)
+        editor.cancelSignIn()
+        await signIn.value
+
+        #expect(!editor.signingIn)
+        #expect(kill(pid, 0) == -1)
+        #expect(editor.error == nil)
+        #expect(editor.credentials == Credentials.google())
+        #expect(await editor.save())
+        #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
+    }
+
+    @Test func switchingAwayFromGoogleCancelsTheSignInAndClearsTheTest() async throws {
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        editor.loadCredentials()
+        editor.credentials = Credentials.google()
+        await editor.test()
+        #expect(editor.tested)
+
+        let signIn = Task { await editor.signInWithGoogle() }
+        let pid = try await fixture.signInHangs()
+        editor.connection.gcs.authentication = .serviceAccount
+        await signIn.value
+
+        #expect(!editor.tested)
+        #expect(!editor.signingIn)
+        #expect(editor.error == nil)
+        #expect(kill(pid, 0) == -1)
+        #expect(editor.credentials == Credentials.google())
+        #expect(editor.firstInvalidField == .serviceAccountKey)
+    }
+
+    @Test func failedGoogleSignInShowsRclonesReasonAndKeepsTheEarlierToken() async throws {
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        editor.loadCredentials()
+        editor.credentials = Credentials.google()
+        try fixture.signInFails("""
+        Error: config failed to refresh token: failed to start auth webserver: listen tcp 127.0.0.1:53682: bind: address already in use
+        Usage:
+          rclone authorize <backendname> [base64_json_blob | client_id client_secret] [flags]
+
+        2026/11/12 00:05:39 NOTICE: Fatal error: config failed to refresh token: failed to start auth webserver: listen tcp 127.0.0.1:53682: bind: address already in use
+        """)
+
+        await editor.signInWithGoogle()
+
+        #expect(editor.error == "config failed to refresh token: failed to start auth webserver: listen tcp 127.0.0.1:53682: bind: address already in use")
+        #expect(editor.credentials == Credentials.google())
+    }
+
+    @Test func buildWithoutAGoogleClientCannotSignIn() async throws {
+        let fixture = try ViewModelFixture(googleClient: GoogleClient(id: "", secret: ""))
+        defer { fixture.remove() }
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        editor.loadCredentials()
+
+        await editor.signInWithGoogle()
+
+        #expect(editor.error == String(localized: .googleSignInUnavailable))
+        #expect(fixture.rcloneCalls.isEmpty)
+    }
+
     @Test func invalidConnectionShowsFieldErrorsWithoutSavingAndCorrectingThemMovesTheFocus() async {
         let editor = fixture.editor(draft: .init(connection: Connection()))
 

@@ -14,12 +14,14 @@ public actor MountService: DriveGateway {
     var reservedCopies: [UUID: Set<String>] = [:]
     let traffic: TrafficStore
     var trackers: [UUID: TrafficTracker] = [:]
+    let googleClient: GoogleClient
 
-    public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore) {
+    public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore, googleClient: GoogleClient) {
         self.executable = executable
         self.helperDirectory = helperDirectory
         self.paths = paths
         self.traffic = traffic
+        self.googleClient = googleClient
         serverTrust = SFTPTrustStore(paths: paths)
     }
 
@@ -30,6 +32,7 @@ public actor MountService: DriveGateway {
     public nonisolated func removeCache(_ connection: Connection) { paths.removeCache(connection) }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
+        try requireGoogleSignIn(connection, credentials: credentials)
         let credentials = try await prepareCredentials(credentials)
         let remote = try await remote(for: connection, credentials: credentials)
         do {
@@ -68,6 +71,7 @@ public actor MountService: DriveGateway {
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
         guard await !status(connection).isActive else { throw AppError(String(localized: .alreadyRunning)) }
+        try requireGoogleSignIn(connection, credentials: credentials)
         let credentials = try await prepareCredentials(credentials)
         try await test(connection, credentials: credentials)
         try paths.prepare()
@@ -258,20 +262,20 @@ public actor MountService: DriveGateway {
     ]
     }
 
-    private func environment(_ variables: [String: String]) -> [String: String] {
+    func environment(_ variables: [String: String]) -> [String: String] {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
     func remote(for connection: Connection, credentials: Credentials?) async throws -> RcloneRemote {
         switch connection.backend {
         case .s3Compatible, .gcs:
-            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
+            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts, googleClient: googleClient)
         case .sftp:
             let sftp = connection.sftp
             let knownHosts = try await serverTrust.file()
             if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
             let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
-            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, agentSocket: socket)
+            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, googleClient: googleClient, agentSocket: socket)
         }
     }
 
@@ -298,8 +302,8 @@ public actor MountService: DriveGateway {
             credentials.accessKey, credentials.secretKey, credentials.sessionToken,
             credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
             credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
-            credentials.serviceAccountKey,
-        ]
+            credentials.serviceAccountKey, credentials.googleToken,
+        ] + [GoogleToken(json: credentials.googleToken)].compactMap(\.self).flatMap { [$0.accessToken, $0.refreshToken] }
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }

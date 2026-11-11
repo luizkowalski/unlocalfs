@@ -6,12 +6,13 @@ extension MountService {
         guard connection.rclonePath.last?.isWhitespace != true else {
             throw AppError(String(localized: .folderEndsWithSpace))
         }
+        if let credentials { try requireGoogleSignIn(connection, credentials: credentials) }
         var prepared: Credentials?
         if let credentials { prepared = try await prepareCredentials(credentials) }
         let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let config = scratch.appending(path: "rclone.conf")
-        let remote = try await RcloneRemote(connection: connection, credentials: prepared, knownHosts: serverTrust.file())
+        let remote = try await RcloneRemote(connection: connection, credentials: prepared, knownHosts: serverTrust.file(), googleClient: googleClient)
         do {
             for named in remote.namedRemotes {
                 try await create(named, config: config)

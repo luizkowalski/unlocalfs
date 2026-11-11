@@ -69,7 +69,11 @@ struct ConnectionEditor: View {
                     if viewModel.testing { ProgressView().controlSize(.small) } else { Text("Test Connection") }
                 }
                 .disabled(viewModel.isLocked)
-                if let error = viewModel.error {
+                if viewModel.signingIn {
+                    ProgressView().controlSize(.small)
+                    Text("Waiting for Google…").font(.callout).foregroundStyle(.secondary)
+                    Button("Cancel Sign-In") { viewModel.cancelSignIn() }
+                } else if let error = viewModel.error {
                     Label(error, systemImage: "exclamationmark.circle.fill")
                         .foregroundStyle(.red).font(.callout).lineLimit(1).help(error).textSelection(.enabled)
                 } else if viewModel.tested {
@@ -97,6 +101,7 @@ struct ConnectionEditor: View {
             viewModel.loadCredentials()
             if let field = viewModel.initialFocus { focus = field }
         }
+        .onDisappear { viewModel.cancelSignIn() }
     }
 
     private func settingsForm(errors: [ConnectionField: String]) -> some View {

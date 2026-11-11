@@ -14,3 +14,9 @@ public struct GoogleToken: Equatable, Sendable {
         self.refreshToken = refreshToken
     }
 }
+
+public struct GoogleSignInRequired: LocalizedError, Sendable {
+    public init() {}
+
+    public var errorDescription: String? { String(localized: .googleSignInRequired) }
+}

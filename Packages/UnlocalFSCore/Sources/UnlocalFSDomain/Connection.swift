@@ -229,6 +229,7 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var serviceAccountKey: String
     public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
     public var googleToken: String
+    public var isSignedInToGoogle: Bool { GoogleToken(json: googleToken) != nil }
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
@@ -303,7 +304,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         case .gcs:
             switch connection.gcs.authentication {
             case .googleAccount:
-                result.check(GoogleToken(json: googleToken) != nil, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
+                result.check(isSignedInToGoogle, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
             case .serviceAccount:
                 result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
             }

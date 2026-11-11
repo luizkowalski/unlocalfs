@@ -5,6 +5,7 @@ struct RcloneRemote {
     let connection: Connection
     let credentials: Credentials?
     let knownHosts: URL
+    let googleClient: GoogleClient
     var agentSocket: String?
 
     var options: [String: String] {
@@ -62,7 +63,17 @@ struct RcloneRemote {
 
     private var gcsOptions: [String: String] {
         var options = ["bucket_policy_only": "true", "no_check_bucket": "true", "directory_markers": "true"]
-        options["service_account_credentials"] = credentials?.serviceAccountKey
+        guard let credentials else { return options }
+        switch connection.gcs.authentication {
+        case .serviceAccount:
+            options["service_account_credentials"] = credentials.serviceAccountKey
+        case .googleAccount:
+            options["token"] = credentials.googleToken
+            options["client_id"] = googleClient.id
+            options["client_secret"] = googleClient.secret
+            options["env_auth"] = "false"
+            options["config_refresh_token"] = "false"
+        }
         return options
     }
 

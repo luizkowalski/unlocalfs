@@ -307,6 +307,40 @@
         }
       }
     },
+    "googleSignInFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google sign-in did not return an account. Try again."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O login com o Google não retornou uma conta. Tente novamente."
+          }
+        }
+      }
+    },
+    "googleSignInUnavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google sign-in is not available in this build. Import a service-account key instead."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O login com o Google não está disponível nesta versão. Importe uma chave de conta de serviço."
+          }
+        }
+      }
+    },
     "keychainError": {
       "extractionState": "manual",
       "localizations": {
