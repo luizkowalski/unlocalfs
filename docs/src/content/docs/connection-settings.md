@@ -36,13 +36,27 @@ Credentials are stored in your Mac’s Keychain. Temporary credentials stop work
 | --- | --- |
 | Bucket | The bucket name, without a folder path. |
 | Folder | An optional path inside the bucket, such as `clients/acme`. Leave empty for the whole bucket. |
+| Sign in with | **Google account** to use your own Google account, or **Service account key** to use a key file. New connections start with **Google account**. |
+| Google account | Click **Sign in with Google**. Your browser opens. Choose the account, allow access, and go back to UnlocalFS. |
 | Service account key | Click **Import key…** and choose the JSON key file you downloaded from Google Cloud. |
+
+### Google account
+
+Sign-in lets UnlocalFS use Cloud Storage as your Google account. It does not give the account access to a bucket. The account still needs the **Storage Object User** role on the bucket, set in **IAM & Admin → IAM** in the Google Cloud console.
+
+UnlocalFS stores the sign-in in your Mac's Keychain. It does not show which account you chose and does not check that a new sign-in uses the same account. **Test Connection** is the check: test again after you sign in. To use a different account, click **Sign In Again…**. A change to the account or to **Sign in with** applies the next time you connect the drive.
+
+If Google ends the sign-in, for example because you removed access or your organization requires you to sign in again, uploads stop and the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page. The drive stays connected, and the uploads that wait go on. See [Troubleshooting](/troubleshooting/#a-google-cloud-storage-connection-fails).
+
+Removing the connection deletes the sign-in from your Mac. It does not remove the access UnlocalFS has in your Google account. To remove it, open [Third-party apps & services](https://myaccount.google.com/connections) in your Google account and remove UnlocalFS.
+
+### Service account key
 
 To create the key, open **IAM & Admin → Service Accounts** in the Google Cloud console, create a service account, and give it the **Storage Object User** role on the bucket. Then choose **Keys → Add key → Create new key → JSON**. That role is enough to list, read, write, rename, and delete files. UnlocalFS does not need access to the bucket's settings.
 
 UnlocalFS stores the key in your Mac's Keychain and shows only the service account's email. Delete the downloaded file after you import it. Anyone with the key can use the service account.
 
-**Test Connection** lists the folder. It shows that you can reach the bucket, not that you can write to it. Links are not available for Google Cloud Storage drives. Drives saved with Google Cloud Storage cannot be opened by older versions of UnlocalFS.
+**Test Connection** lists the folder. It shows that you can reach the bucket, not that you can write to it. Links are not available for Google Cloud Storage drives. Drives saved with Google Cloud Storage cannot be opened by older versions of UnlocalFS, and drives that sign in with a Google account do not connect in versions without Google sign-in.
 
 ## SFTP
 

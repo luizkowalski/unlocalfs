@@ -30,7 +30,7 @@ Each storage type has one suite. Each test starts its own local server and uses 
 
 - `S3DriveTests`: a drive downloads, uploads, and deletes files, shows each file in its activity, and does not disconnect while an upload is pending. The activity check reads rclone's real replies, so a changed rclone field fails here. Fakes cover only states that rclone cannot make on demand, such as retries and a drive that stops mid-call. An encrypted drive stores only ciphertext, and its exported rclone config can read it.
 - `SFTPDriveTests`: the same round trip for each login, approval of a new or changed server key, and reconnect after rclone exits, which force-ejects a drive whose server is gone.
-- `GCSDriveTests`: rclone has no GCS server, so this suite checks only the exported config. To add a mount test, start a GCS emulator in `withOfflineDrive` and call `verifyRoundTrip`.
+- `GCSDriveTests`: rclone has no GCS server, so this suite checks the exported config and, with the stub `rclone`, what the connection test passes for a Google sign-in. To add a mount test, start a GCS emulator in `withOfflineDrive` and call `verifyRoundTrip`.
 
 Add a storage test only for app behavior that a stub cannot show, such as what rclone writes to the server.
 
@@ -40,7 +40,7 @@ A failed storage test keeps its folder in `/tmp/uf-*`, with the server and drive
 
 ## Fixture notes
 
-- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`.
+- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`. `.gcs()` uses a service-account key; set `$0.gcs.authentication = .googleAccount` and use `Credentials.google()` for a Google sign-in. `StubbedDrives` passes `GoogleClient.test` unless a test gives another client.
 - Use ASCII file names with `rclone serve s3`. Accented names make the tests flaky.
 - `rclone serve s3` hashes every file (MD5 ETag) on each listing. Keep fixture files to tens of MB, or the connection test in `mount()` times out on CI.
 - `rclone serve s3` returns HTTP 500 for the folder marker rclone writes when it copies into a subfolder. Keep server-side copy tests at the drive root.

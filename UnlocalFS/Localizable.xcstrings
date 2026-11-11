@@ -261,6 +261,16 @@
         }
       }
     },
+    "Anyone with the file can read this drive with your Google account. The password is only obscured, not encrypted." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade com a sua conta Google. A senha é apenas ofuscada, não criptografada."
+          }
+        }
+      }
+    },
     "Applies to new uploads. Infrequent-access classes bill a minimum size and storage time. AWS can read files it encrypts; Encrypt files keeps them private." : {
       "localizations" : {
         "pt-BR" : {
@@ -366,6 +376,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Cancel Sign-In" : {
+      "comment" : "Button: stop a Google sign-in that waits for the browser",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar login"
           }
         }
       }
@@ -990,6 +1011,16 @@
         }
       }
     },
+    "Finish signing in in your browser." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termine o login no seu navegador."
+          }
+        }
+      }
+    },
     "Folder" : {
       "comment" : "Field label: folder inside the bucket or on the server",
       "extractionState" : "manual",
@@ -1019,6 +1050,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geral"
+          }
+        }
+      }
+    },
+    "Google account connected" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conta Google conectada"
           }
         }
       }
@@ -1075,6 +1116,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Importar chave…"
+          }
+        }
+      }
+    },
+    "Include Google sign-in" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incluir login do Google"
           }
         }
       }
@@ -1956,6 +2007,17 @@
         }
       }
     },
+    "Sign In Again…" : {
+      "comment" : "Button: sign in to Google again for this drive",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fazer login novamente…"
+          }
+        }
+      }
+    },
     "Sign in with" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1963,6 +2025,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Entrar com"
+          }
+        }
+      }
+    },
+    "Sign in with Google" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fazer login com o Google"
+          }
+        }
+      }
+    },
+    "Signing in to Google" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fazendo login no Google"
           }
         }
       }
@@ -2083,6 +2165,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O motivo não está disponível. O registro tem os detalhes."
+          }
+        }
+      }
+    },
+    "The sign-in is stored in your Mac’s Keychain. Your Google account needs the Storage Object User role on the bucket." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O login fica armazenado no chaveiro do seu Mac. Sua conta Google precisa do papel Storage Object User no bucket."
           }
         }
       }
@@ -2409,6 +2501,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aguardando"
+          }
+        }
+      }
+    },
+    "Waiting for Google…" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aguardando o Google…"
           }
         }
       }
