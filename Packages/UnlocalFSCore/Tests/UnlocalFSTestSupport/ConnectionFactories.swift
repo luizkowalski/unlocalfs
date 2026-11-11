@@ -29,6 +29,7 @@ public extension Connection {
         connection.name = name
         connection.provider = .googleCloudStorage
         connection.bucket = "my-bucket"
+        connection.gcs.authentication = .serviceAccount
         change(&connection)
         return connection
     }
@@ -36,4 +37,7 @@ public extension Connection {
 
 public extension Credentials {
     static func s3() -> Credentials { Credentials(accessKey: "key", secretKey: "secret") }
+    static func google(_ token: String = googleTokenJSON) -> Credentials { Credentials(googleToken: token) }
 }
+
+public let googleTokenJSON = #"{"access_token":"ya29.saved-access","token_type":"Bearer","refresh_token":"1//saved-refresh","expiry":"2026-11-12T01:00:00Z"}"#

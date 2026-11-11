@@ -401,6 +401,24 @@
       },
       "comment": "Label of this field in the connection editor"
     },
+    "fieldGoogleAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google account"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conta Google"
+          }
+        }
+      },
+      "comment": "Label of this field in the connection editor"
+    },
     "fieldHost": {
       "extractionState": "manual",
       "localizations": {
@@ -1141,6 +1159,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 dias"
+          }
+        }
+      }
+    },
+    "signInWithGoogleFirst": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Google"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre com o Google"
           }
         }
       }

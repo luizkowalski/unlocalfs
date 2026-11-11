@@ -19,6 +19,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
     public var encrypted = false
     public var sftp = SFTPSettings()
     public var aws = AWSSettings()
+    public var gcs = GCSSettings()
 
     public init() {}
 
@@ -42,6 +43,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         connectsAutomatically = try container.decodeIfPresent(Bool.self, forKey: .connectsAutomatically) ?? connectsAutomatically
         sftp = try container.decodeIfPresent(SFTPSettings.self, forKey: .sftp) ?? sftp
         aws = try container.decodeIfPresent(AWSSettings.self, forKey: .aws) ?? aws
+        gcs = try container.decodeIfPresent(GCSSettings.self, forKey: .gcs) ?? GCSSettings(authentication: .serviceAccount)
     }
 
     public var backend: Backend { provider.backend }
@@ -134,7 +136,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
 public enum ConnectionField: CaseIterable, Sendable {
     case name, endpoint, bucket, folder, accessKey, secretKey
-    case serviceAccountKey
+    case serviceAccountKey, googleAccount
     case host, port, username, remotePath
     case password, keyFile
     case encryptionPassword, confirmation
@@ -149,6 +151,7 @@ public enum ConnectionField: CaseIterable, Sendable {
         case .accessKey: String(localized: .fieldAccessKey)
         case .secretKey: String(localized: .fieldSecretKey)
         case .serviceAccountKey: String(localized: .fieldServiceAccountKey)
+        case .googleAccount: String(localized: .fieldGoogleAccount)
         case .host: String(localized: .fieldHost)
         case .port: String(localized: .fieldPort)
         case .username: String(localized: .fieldUsername)
@@ -225,10 +228,11 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var obscuredKeyPassphrase = ""
     public var serviceAccountKey: String
     public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
+    public var googleToken: String
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
-        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "",
+        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "", googleToken: String = "",
     ) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -237,6 +241,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         self.password = password
         self.keyPassphrase = keyPassphrase
         self.serviceAccountKey = serviceAccountKey
+        self.googleToken = googleToken
     }
 
     public init(from decoder: any Decoder) throws {
@@ -251,6 +256,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         keyPassphrase = try container.decodeIfPresent(String.self, forKey: .keyPassphrase) ?? ""
         obscuredKeyPassphrase = try container.decodeIfPresent(String.self, forKey: .obscuredKeyPassphrase) ?? ""
         serviceAccountKey = try container.decodeIfPresent(String.self, forKey: .serviceAccountKey) ?? ""
+        googleToken = try container.decodeIfPresent(String.self, forKey: .googleToken) ?? ""
     }
 
     public func pruned(for connection: Connection) -> Credentials {
@@ -260,11 +266,13 @@ public struct Credentials: Codable, Equatable, Sendable {
             credentials.password = ""
             credentials.keyPassphrase = ""
             credentials.serviceAccountKey = ""
+            credentials.googleToken = ""
         case .sftp:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
             credentials.serviceAccountKey = ""
+            credentials.googleToken = ""
             if connection.sftp.authentication != .password { credentials.password = "" }
             if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
         case .gcs:
@@ -273,6 +281,10 @@ public struct Credentials: Codable, Equatable, Sendable {
             credentials.sessionToken = ""
             credentials.password = ""
             credentials.keyPassphrase = ""
+            switch connection.gcs.authentication {
+            case .googleAccount: credentials.serviceAccountKey = ""
+            case .serviceAccount: credentials.googleToken = ""
+            }
         }
         return credentials
     }
@@ -289,7 +301,12 @@ public struct Credentials: Codable, Equatable, Sendable {
                 field: .password, message: String(localized: .passwordEmpty),
             )
         case .gcs:
-            result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
+            switch connection.gcs.authentication {
+            case .googleAccount:
+                result.check(GoogleToken(json: googleToken) != nil, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
+            case .serviceAccount:
+                result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
+            }
         }
         if connection.encrypted {
             result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty))
