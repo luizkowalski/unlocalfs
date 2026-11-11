@@ -39,7 +39,7 @@ public actor MountService: DriveGateway {
             _ = try await runRemoteCommand(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             let failure = redacted(error, credentials: credentials)
-            if signInError(connection, failure.localizedDescription) { throw GoogleSignInRequired() }
+            if isRevokedGrant(connection, failure.localizedDescription) { throw GoogleSignInRequired() }
             let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
             let changedKey = failure.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {
@@ -131,7 +131,7 @@ public actor MountService: DriveGateway {
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
             status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
-            if signInError(connection, status.uploadError) {
+            if isRevokedGrant(connection, status.uploadError) {
                 status.needsSignIn = true
                 status.uploadError = GoogleSignInRequired().localizedDescription
             }
@@ -308,7 +308,7 @@ public actor MountService: DriveGateway {
             credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
             credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
             credentials.serviceAccountKey, credentials.googleToken,
-        ] + [GoogleToken(json: credentials.googleToken)].compactMap(\.self).flatMap { [$0.accessToken, $0.refreshToken] }
+        ] + (GoogleToken(json: credentials.googleToken).map { [$0.accessToken, $0.refreshToken] } ?? [])
         for secret in secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }

@@ -152,17 +152,6 @@ struct CreateRemote: Encodable {
     }
 }
 
-struct UpdateRemote: Encodable {
-    let name: String
-    let parameters: [String: String]
-    var opt = CreateRemote.Options()
-
-    init(_ remote: NamedRemote) {
-        name = remote.name
-        parameters = remote.parameters
-    }
-}
-
 extension SFTPSettings {
     var keyPath: String { keyFile.expandingTilde }
     var agentSocketPath: String { agentSocket.expandingTilde }

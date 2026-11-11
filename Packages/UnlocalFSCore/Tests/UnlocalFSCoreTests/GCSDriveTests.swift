@@ -33,7 +33,7 @@ struct GCSDriveTests {
     }
 
     @Test func googleDriveExportsItsSignInOnlyWithSecrets() async throws {
-        try await withOfflineDrive(Connection.gcs { $0.gcs.authentication = .googleAccount }) { drive in
+        try await withOfflineDrive(Connection.gcs(authentication: .googleAccount)) { drive in
             let credentials = Credentials(serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON)
             let withSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "with.conf")
             let withoutSecrets = drive.paths.config.deletingLastPathComponent().appending(path: "without.conf")
@@ -65,7 +65,7 @@ struct GCSDriveTests {
             """
         }
         defer { drives.remove() }
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         let credentials = Credentials(serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON)
 
         try await drives.service.test(connection, credentials: credentials)
@@ -89,7 +89,7 @@ struct GCSDriveTests {
     func googleDriveWithoutASavedRefreshTokenNeverStartsRclone(token: String) async throws {
         let drives = try StubbedDrives("gcs-google")
         defer { drives.remove() }
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
 
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.test(connection, credentials: Credentials.google(token)) }
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.mount(connection, credentials: Credentials.google(token)) }

@@ -363,7 +363,7 @@ public extension AppViewModel {
 }
 
 extension AppViewModel {
-    func clearProblem(_ connection: Connection) {
+    private func clearProblem(_ connection: Connection) {
         errors[connection.id] = nil
         signInRequired.remove(connection.id)
     }

@@ -17,7 +17,7 @@ import UnlocalFSTestSupport
         ("dial tcp: lookup storage.googleapis.com: no such host", false),
     ])
     func onlyARevokedGrantAtConnectAsksToSignInAgain(failure: String, needsSignIn: Bool) async throws {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
         try failure.write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
@@ -31,7 +31,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func signingInAgainAfterARevokedGrantSavesTheNewToken() async throws {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
         try "invalid_grant".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
@@ -39,20 +39,19 @@ import UnlocalFSTestSupport
         await app.toggle(connection)
         #expect(app.needsSignIn(connection))
         try FileManager.default.removeItem(at: fixture.root.appending(path: "test-error"))
-        let newToken = #"{"access_token":"ya29.new","refresh_token":"1//new-refresh"}"#
-        try fixture.signInReturns(newToken)
+        try fixture.signInReturns(newTokenJSON)
 
         await app.signInAgain(connection)
 
         #expect(!app.needsSignIn(connection))
         #expect(app.problem(connection) == nil)
         #expect(!app.busy.contains(connection.id))
-        #expect(try fixture.repository.credentials(for: connection.id).googleToken == newToken)
+        #expect(try fixture.repository.credentials(for: connection.id).googleToken == newTokenJSON)
         #expect(app.statusText(connection) == String(localized: .disconnected))
     }
 
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
         let app = fixture.app()
         await app.refresh()

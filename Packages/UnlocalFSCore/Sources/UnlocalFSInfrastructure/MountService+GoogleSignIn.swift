@@ -11,11 +11,6 @@ public struct GoogleClient: Sendable {
     }
 }
 
-private struct QueueExpiry: Encodable {
-    let id: Int
-    var expiry = 0
-}
-
 extension MountService {
     private static let signInTimeout = Duration.seconds(300)
     private static let tokenStart = "Paste the following into your remote machine --->\n"
@@ -23,7 +18,7 @@ extension MountService {
 
     public func signInWithGoogle() async throws -> String {
         try requireGoogleClient()
-        let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")?.path ?? ""
+        let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
         let output: Data
         do {
             output = try await Command.run(
@@ -32,7 +27,7 @@ extension MountService {
                 timeout: Self.signInTimeout,
             )
         } catch let error as AppError {
-            let reason = error.localizedDescription.components(separatedBy: "Fatal error: ").last ?? ""
+            let reason = error.localizedDescription.components(separatedBy: "Fatal error: ").last!
             throw AppError(reason.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         let text = String(decoding: output, as: UTF8.self)
@@ -46,9 +41,9 @@ extension MountService {
         try requireGoogleSignIn(connection, credentials: credentials)
         let storage = try await remote(for: connection, credentials: credentials).storageRemote
         do {
-            _ = try await control(connection, "config/update", body: JSONEncoder().encode(UpdateRemote(storage)))
+            _ = try await control(connection, "config/update", body: JSONEncoder().encode(CreateRemote(storage)))
             for upload in try await control(UploadQueue.self, connection, "vfs/queue").queue where upload.hasFailedAttempt {
-                _ = try? await control(connection, "vfs/queue-set-expiry", body: JSONEncoder().encode(QueueExpiry(id: upload.id)))
+                _ = try? await control(connection, "vfs/queue-set-expiry", ["id": "\(upload.id)", "expiry": "0"])
             }
         } catch {
             throw redacted(error, credentials: credentials)
@@ -61,7 +56,7 @@ extension MountService {
         guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
     }
 
-    func signInError(_ connection: Connection, _ message: String?) -> Bool {
+    func isRevokedGrant(_ connection: Connection, _ message: String?) -> Bool {
         connection.usesGoogleSignIn && message?.contains("invalid_grant") == true
     }
 

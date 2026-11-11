@@ -188,12 +188,12 @@ struct GCSValidationTests {
 
     @Test(arguments: ["", "not json", #"{"access_token":"a","token_type":"Bearer"}"#, #"{"access_token":"a","refresh_token":""}"#])
     func googleAccountWithoutARefreshTokenNeedsSignIn(token: String) {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         #expect(Credentials(serviceAccountKey: serviceAccountJSON, googleToken: token).validate(for: connection).issues.map(\.field) == [.googleAccount])
     }
 
     @Test func googleAccountWithARefreshTokenNeedsNoServiceAccountKey() {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         #expect(Credentials.google().validate(for: connection).isValid)
         #expect(GoogleToken(json: googleTokenJSON)?.refreshToken == "1//saved-refresh")
     }

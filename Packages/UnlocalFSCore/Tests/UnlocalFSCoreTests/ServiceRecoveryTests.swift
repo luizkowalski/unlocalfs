@@ -98,13 +98,13 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             #expect(await drives.service.status(connection).needsSignIn)
 
-            try await useCase.execute(connection, token: newToken)
+            try await useCase.execute(connection, token: newTokenJSON)
 
-            #expect(try repository.credentials(for: connection.id).googleToken == newToken)
+            #expect(try repository.credentials(for: connection.id).googleToken == newTokenJSON)
             #expect(controlCalls(drives) == ["config/update", "vfs/queue", "vfs/queue-set-expiry"])
             let update = try JSONSerialization.jsonObject(with: Data(contentsOf: drives.root.appending(path: "updated"))) as? [String: Any]
             #expect(update?["name"] as? String == "unlocalfs-gcs")
-            #expect((update?["parameters"] as? [String: String])?["token"] == newToken)
+            #expect((update?["parameters"] as? [String: String])?["token"] == newTokenJSON)
             let status = await drives.service.status(connection)
             #expect(status.isServing && status.failedUploads == 0 && !status.needsSignIn)
             #expect(drives.rcloneCalls == ["lsf"])
@@ -115,7 +115,7 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             FileManager.default.createFile(atPath: drives.root.appending(path: "lsf-fails").path, contents: Data())
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newToken) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
 
             let saved = try repository.credentials(for: connection.id)
             #expect(saved == Credentials.google())
@@ -128,7 +128,7 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive(storage: storage) { useCase, repository, drives, connection in
             storage.lock()
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newToken) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
 
             let saved = try repository.credentials(for: connection.id)
             #expect(saved == Credentials.google())
@@ -140,10 +140,10 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             FileManager.default.createFile(atPath: drives.root.appending(path: "update-fails").path, contents: Data())
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newToken) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
 
             let saved = try repository.credentials(for: connection.id)
-            #expect(saved.googleToken == newToken)
+            #expect(saved.googleToken == newTokenJSON)
             await #expect(throws: AppError.self) { try await drives.service.unmount(connection) }
             #expect(await drives.service.status(connection).failedUploads == 1)
         }
@@ -151,16 +151,14 @@ extension ServiceRecoveryTests {
 
     @Test func signingInAgainForADisconnectedDriveOnlySavesTheToken() async throws {
         try await withRevokedDrive(serving: false) { useCase, repository, drives, connection in
-            try await useCase.execute(connection, token: newToken)
+            try await useCase.execute(connection, token: newTokenJSON)
 
-            #expect(try repository.credentials(for: connection.id).googleToken == newToken)
+            #expect(try repository.credentials(for: connection.id).googleToken == newTokenJSON)
             #expect(controlCalls(drives).isEmpty)
             #expect(drives.rcloneCalls == ["lsf"])
         }
     }
 }
-
-private let newToken = #"{"access_token":"ya29.new","token_type":"Bearer","refresh_token":"1//new-refresh","expiry":"2026-11-12T02:00:00Z"}"#
 
 private func withRevokedDrive(
     serving: Bool = true, storage: any CredentialStorage = MemoryCredentialStorage(),
@@ -175,7 +173,7 @@ private func withRevokedDrive(
         """
     }
     defer { drives.remove() }
-    let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+    let connection = Connection.gcs(authentication: .googleAccount)
     let repository = SavedConnectionRepository(store: ConnectionStore(url: drives.paths.config), credentials: storage)
     try repository.save(connection, credentials: Credentials.google())
     let server = serving ? try ControlServer(at: drives.paths.socket(connection), respond: revokedDrive(drives.root)) : nil
@@ -204,8 +202,8 @@ private func revokedDrive(_ root: URL) -> ControlServer.Respond {
         case "vfs/queue-set-expiry":
             let update = try? JSONSerialization.jsonObject(with: Data(contentsOf: root.appending(path: "updated"))) as? [String: Any]
             let token = (update?["parameters"] as? [String: String])?["token"] ?? ""
-            let expiry = try JSONSerialization.jsonObject(with: request.body) as? [String: Int]
-            if token.contains("1//new-refresh"), expiry == ["id": 7, "expiry": 0] {
+            let expiry = try JSONSerialization.jsonObject(with: request.body) as? [String: String]
+            if token.contains("1//new-refresh"), expiry == ["id": "7", "expiry": "0"] {
                 fileManager.createFile(atPath: root.appending(path: "retried").path, contents: Data())
             }
             return "{}"

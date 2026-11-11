@@ -24,12 +24,14 @@ public extension Connection {
         return connection
     }
 
-    static func gcs(name: String = "Bucket", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
+    static func gcs(
+        name: String = "Bucket", authentication: GCSAuthentication = .serviceAccount, _ change: (inout Connection) -> Void = { _ in },
+    ) -> Connection {
         var connection = Connection()
         connection.name = name
         connection.provider = .googleCloudStorage
         connection.bucket = "my-bucket"
-        connection.gcs.authentication = .serviceAccount
+        connection.gcs.authentication = authentication
         change(&connection)
         return connection
     }
@@ -39,5 +41,7 @@ public extension Credentials {
     static func s3() -> Credentials { Credentials(accessKey: "key", secretKey: "secret") }
     static func google(_ token: String = googleTokenJSON) -> Credentials { Credentials(googleToken: token) }
 }
+
+public let newTokenJSON = #"{"access_token":"ya29.new","token_type":"Bearer","refresh_token":"1//new-refresh","expiry":"2026-11-12T02:00:00Z"}"#
 
 public let googleTokenJSON = #"{"access_token":"ya29.saved-access","token_type":"Bearer","refresh_token":"1//saved-refresh","expiry":"2026-11-12T01:00:00Z"}"#

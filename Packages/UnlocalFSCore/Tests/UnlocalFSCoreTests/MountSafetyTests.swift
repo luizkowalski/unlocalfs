@@ -68,8 +68,8 @@ struct MountSafetyTests {
     }
 
     @Test(arguments: [
-        (Connection.gcs { $0.gcs.authentication = .googleAccount }, revokedGrant, true),
-        (Connection.gcs { $0.gcs.authentication = .googleAccount }, "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
+        (Connection.gcs(authentication: .googleAccount), revokedGrant, true),
+        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
         (Connection.gcs(), revokedGrant, false),
         (Connection.s3(), revokedGrant, false),
     ])
@@ -303,7 +303,7 @@ extension MountSafetyTests {
     @Test(arguments: [
         (Connection.s3 { $0.encrypted = true }, Credentials(accessKey: "s3-access", secretKey: "s3-secret", encryptionPassword: "crypt-password"),
          ["secret_access_key": String?.some("s3-secret")]),
-        (Connection.gcs { $0.encrypted = true; $0.gcs.authentication = .googleAccount },
+        (Connection.gcs(authentication: .googleAccount) { $0.encrypted = true },
          Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
          ["token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "env_auth": "false", "service_account_credentials": nil]),
         (Connection.gcs { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),

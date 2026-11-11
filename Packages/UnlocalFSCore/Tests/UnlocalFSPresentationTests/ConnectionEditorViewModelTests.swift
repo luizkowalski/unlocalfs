@@ -38,17 +38,16 @@ import UnlocalFSTestSupport
     }
 
     @Test func googleSignInHoldsTheNewTokenInTheDraftAndClearsTheEarlierTest() async throws {
-        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)))
         editor.loadCredentials()
         editor.credentials = Credentials.google()
         await editor.test()
         #expect(editor.tested)
-        let newToken = #"{"access_token":"ya29.new","token_type":"Bearer","refresh_token":"1//new-refresh","expiry":"2026-11-12T02:00:00Z"}"#
-        try fixture.signInReturns(newToken)
+        try fixture.signInReturns(newTokenJSON)
 
         await editor.signInWithGoogle()
 
-        #expect(editor.credentials.googleToken == newToken)
+        #expect(editor.credentials.googleToken == newTokenJSON)
         #expect(editor.credentials.isSignedInToGoogle)
         #expect(!editor.tested)
         #expect(!editor.signingIn)
@@ -59,7 +58,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func cancelledGoogleSignInStopsRcloneAndKeepsTheSavedAccount() async throws {
-        let connection = Connection.gcs { $0.gcs.authentication = .googleAccount }
+        let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
         let editor = fixture.editor(draft: .init(connection: connection))
         editor.loadCredentials()
@@ -82,7 +81,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func switchingAwayFromGoogleCancelsTheSignInAndClearsTheTest() async throws {
-        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)))
         editor.loadCredentials()
         editor.credentials = Credentials.google()
         await editor.test()
@@ -102,7 +101,7 @@ import UnlocalFSTestSupport
     }
 
     @Test func failedGoogleSignInShowsRclonesReasonAndKeepsTheEarlierToken() async throws {
-        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)))
         editor.loadCredentials()
         editor.credentials = Credentials.google()
         try fixture.signInFails("""
@@ -122,7 +121,7 @@ import UnlocalFSTestSupport
     @Test func buildWithoutAGoogleClientCannotSignIn() async throws {
         let fixture = try ViewModelFixture(googleClient: GoogleClient(id: "", secret: ""))
         defer { fixture.remove() }
-        let editor = fixture.editor(draft: .init(connection: Connection.gcs { $0.gcs.authentication = .googleAccount }))
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)))
         editor.loadCredentials()
 
         await editor.signInWithGoogle()
