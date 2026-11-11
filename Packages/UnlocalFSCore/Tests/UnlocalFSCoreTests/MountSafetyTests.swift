@@ -67,6 +67,22 @@ struct MountSafetyTests {
         }
     }
 
+    @Test(arguments: [
+        (Connection.gcs { $0.gcs.authentication = .googleAccount }, revokedGrant, true),
+        (Connection.gcs { $0.gcs.authentication = .googleAccount }, "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
+        (Connection.gcs(), revokedGrant, false),
+        (Connection.s3(), revokedGrant, false),
+    ])
+    func onlyARevokedGoogleSignInAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
+        let batch = statusBatch(queue: #"{"queue":[\#(failedItem)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(lastError)"}"#)
+        try await withControl(connection: connection) { _, _ in { _ in batch } } operation: { service, connection in
+            let status = await service.status(connection)
+            #expect(status.failedUploads == 1)
+            #expect(status.needsSignIn == needsSignIn)
+            #expect(status.uploadError == (needsSignIn ? GoogleSignInRequired().localizedDescription : lastError))
+        }
+    }
+
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withControl { root, _ in
             { request in
@@ -345,6 +361,8 @@ private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Re
     }
 }
 
+private let revokedGrant = "Post https://storage.googleapis.com/upload/storage/v1/b/my-bucket/o: couldn't fetch token: invalid_grant: maybe token expired?"
+
 private let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
 
 private func mark(_ file: URL) -> Bool {
@@ -357,18 +375,18 @@ func withFixture(script: String, operation: (MountService, Connection) async thr
 }
 
 func withControl(
+    connection: Connection = .s3(),
     _ control: @escaping (_ root: URL, _ socket: URL) throws -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void,
 ) async throws {
-    try await withFixture(script: { _ in "" }, control: control, operation: operation)
+    try await withFixture(script: { _ in "" }, connection: connection, control: control, operation: operation)
 }
 
 private func withFixture(
-    script: (URL) -> String, control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
+    script: (URL) -> String, connection: Connection = .s3(), control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
     operation: (MountService, Connection) async throws -> Void,
 ) async throws {
     let drives = try StubbedDrives("safety", rclone: script)
     defer { drives.remove() }
-    let connection = Connection.s3()
     let socket = drives.paths.socket(connection)
     let server = try control.map { try ControlServer(at: socket, respond: $0(drives.root, socket)) }
     defer { server?.stop() }

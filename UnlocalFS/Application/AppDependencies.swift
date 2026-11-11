@@ -29,6 +29,7 @@ import UnlocalFSPresentation
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),
             setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: drives),
+            signInAgain: SignInAgainUseCase(repository: repository, drives: drives),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: drives),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),

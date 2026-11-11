@@ -25,10 +25,11 @@ struct RcloneRemote {
         return environment
     }
 
+    var storageRemote: NamedRemote { NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options) }
+
     var namedRemotes: [NamedRemote] {
-        let storage = NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options)
-        guard connection.encrypted else { return [storage] }
-        return [storage, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions(remote: connection.driveStorage))]
+        guard connection.encrypted else { return [storageRemote] }
+        return [storageRemote, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions(remote: connection.driveStorage))]
     }
 
     func cryptOptions(remote: String) -> [String: String] {
@@ -147,6 +148,17 @@ struct CreateRemote: Encodable {
     init(_ remote: NamedRemote) {
         name = remote.name
         type = remote.type
+        parameters = remote.parameters
+    }
+}
+
+struct UpdateRemote: Encodable {
+    let name: String
+    let parameters: [String: String]
+    var opt = CreateRemote.Options()
+
+    init(_ remote: NamedRemote) {
+        name = remote.name
         parameters = remote.parameters
     }
 }

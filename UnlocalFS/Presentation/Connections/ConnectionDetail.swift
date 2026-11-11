@@ -229,8 +229,16 @@ struct ConnectionDetail: View {
         let problem = model.problem(connection)
         let failure = model.uploadFailure(connection)
         let isOffline = model.isOffline(connection)
-        if problem != nil || failure != nil || isOffline {
+        let signingIn = model.isSigningIn(connection)
+        if problem != nil || failure != nil || isOffline || signingIn {
             FittedScrollView {
+                if signingIn {
+                    notice("Signing in to Google") {
+                        Text("Finish signing in in your browser.")
+                    } actions: {
+                        Button("Cancel Sign-In") { model.cancelSignIn(connection) }
+                    }
+                }
                 if let problem {
                     problemNotice(problem)
                 }
@@ -249,6 +257,7 @@ struct ConnectionDetail: View {
         notice("Connection needs attention") {
             Text(problem).textSelection(.enabled)
         } actions: {
+            if model.needsSignIn(connection) { signInAgainButton }
             Button("Check Again") { Task { await model.checkAgain(connection) } }
         }
     }
@@ -262,8 +271,18 @@ struct ConnectionDetail: View {
             }
             Text("UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected.")
         } actions: {
+            if model.needsSignIn(connection) { signInAgainButton }
             if error == nil {
                 Button("Show Log") { model.openLog(connection) }
+            }
+        }
+    }
+
+    private var signInAgainButton: some View {
+        Button("Sign In Again…") {
+            Task {
+                await model.signInAgain(connection)
+                NSApp.activate()
             }
         }
     }

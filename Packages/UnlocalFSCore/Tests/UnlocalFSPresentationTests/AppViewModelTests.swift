@@ -147,7 +147,7 @@ import UnlocalFSTestSupport
     @Test func uploadsInProgressAreNotReportedAsFailed() async throws {
         let connection = Connection.s3()
         try fixture.serve(connection, queued: 1)
-        try fixture.queue(#"{"name":"a.dmg","size":4096,"expiry":-1,"tries":1,"uploading":true}"#)
+        try fixture.queue(#"{"name":"a.dmg","id":1,"size":4096,"expiry":-1,"tries":1,"uploading":true}"#)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
 

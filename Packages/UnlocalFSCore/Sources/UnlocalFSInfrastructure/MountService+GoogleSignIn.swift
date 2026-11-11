@@ -11,6 +11,11 @@ public struct GoogleClient: Sendable {
     }
 }
 
+private struct QueueExpiry: Encodable {
+    let id: Int
+    var expiry = 0
+}
+
 extension MountService {
     private static let signInTimeout = Duration.seconds(300)
     private static let tokenStart = "Paste the following into your remote machine --->\n"
@@ -37,10 +42,27 @@ extension MountService {
         return token.json
     }
 
+    public func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws {
+        try requireGoogleSignIn(connection, credentials: credentials)
+        let storage = try await remote(for: connection, credentials: credentials).storageRemote
+        do {
+            _ = try await control(connection, "config/update", body: JSONEncoder().encode(UpdateRemote(storage)))
+            for upload in try await control(UploadQueue.self, connection, "vfs/queue").queue where upload.hasFailedAttempt {
+                _ = try? await control(connection, "vfs/queue-set-expiry", body: JSONEncoder().encode(QueueExpiry(id: upload.id)))
+            }
+        } catch {
+            throw redacted(error, credentials: credentials)
+        }
+    }
+
     func requireGoogleSignIn(_ connection: Connection, credentials: Credentials) throws {
-        guard connection.backend == .gcs, connection.gcs.authentication == .googleAccount else { return }
+        guard connection.usesGoogleSignIn else { return }
         try requireGoogleClient()
         guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
+    }
+
+    func signInError(_ connection: Connection, _ message: String?) -> Bool {
+        connection.usesGoogleSignIn && message?.contains("invalid_grant") == true
     }
 
     private func requireGoogleClient() throws {

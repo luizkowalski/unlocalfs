@@ -15,12 +15,14 @@ import UnlocalFSDomain
     public static let speedWindow: TimeInterval = 60
     public private(set) var statuses: [UUID: MountStatus] = [:]
     public private(set) var speeds: [UUID: [SpeedSample]] = [:]
-    public private(set) var errors: [UUID: String] = [:]
+    public internal(set) var errors: [UUID: String] = [:]
     public internal(set) var busy: Set<UUID> = [] {
         didSet { if refreshing { refreshRequested = true } }
     }
 
     private var pendingTrust: [UUID: (challenge: ServerTrustChallenge, opensFinder: Bool)] = [:]
+    var signInRequired: Set<UUID> = []
+    var signIns: [UUID: Task<String, any Error>] = [:]
     public var alert: String?
     public var disconnectFailure: Connection?
     public var uploadsBlockingDisconnect: Connection?
@@ -36,6 +38,7 @@ import UnlocalFSDomain
     private let deleteConnection: DeleteConnectionUseCase
     private let setAutomaticConnect: SetAutomaticConnectUseCase
     private let connectDrive: ConnectDriveUseCase
+    let googleSignIn: SignInAgainUseCase
     let shareFiles: ShareFilesUseCase
     let duplicateFiles: DuplicateFilesUseCase
     private let exportConfig: ExportRcloneConfigUseCase
@@ -43,7 +46,7 @@ import UnlocalFSDomain
     let desktop: any DesktopServices
     private var refreshing = false
     private var refreshRequested = false
-    private var checkingQuit = false
+    var checkingQuit = false
     private var notifiedFailures: Set<UUID> = []
     private var waitingToDisconnect: Set<UUID> = []
 
@@ -53,6 +56,7 @@ import UnlocalFSDomain
         deleteConnection: DeleteConnectionUseCase,
         setAutomaticConnect: SetAutomaticConnectUseCase,
         connectDrive: ConnectDriveUseCase,
+        signInAgain: SignInAgainUseCase,
         shareFiles: ShareFilesUseCase,
         duplicateFiles: DuplicateFilesUseCase,
         exportConfig: ExportRcloneConfigUseCase,
@@ -63,6 +67,7 @@ import UnlocalFSDomain
         self.deleteConnection = deleteConnection
         self.setAutomaticConnect = setAutomaticConnect
         self.connectDrive = connectDrive
+        googleSignIn = signInAgain
         self.shareFiles = shareFiles
         self.duplicateFiles = duplicateFiles
         self.exportConfig = exportConfig
@@ -131,7 +136,7 @@ import UnlocalFSDomain
         self.connections = connections
         selection = .drive(connection.id)
         statuses[connection.id] = MountStatus()
-        errors[connection.id] = nil
+        clearProblem(connection)
     }
 
     public func setConnectsAutomatically(_ connectsAutomatically: Bool, for connection: Connection) {
@@ -146,7 +151,7 @@ import UnlocalFSDomain
         do {
             connections = try await deleteConnection.execute(connection)
             statuses[connection.id] = nil
-            errors[connection.id] = nil
+            clearProblem(connection)
             if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
         } catch { alert = error.localizedDescription }
     }
@@ -169,7 +174,7 @@ import UnlocalFSDomain
         guard !checkingQuit, canToggle(connection) else { return }
         closeSearch()
         busy.insert(connection.id)
-        errors[connection.id] = nil
+        clearProblem(connection)
         defer { busy.remove(connection.id) }
         if let pending = pendingTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending.challenge) }
         do {
@@ -185,6 +190,7 @@ import UnlocalFSDomain
             errors[connection.id] = challenge.localizedDescription
             selection = .drive(connection.id)
         } catch {
+            if error is GoogleSignInRequired { signInRequired.insert(connection.id) }
             errors[connection.id] = error.localizedDescription
         }
         await update(drives.status(connection), for: connection)
@@ -255,7 +261,7 @@ import UnlocalFSDomain
     }
 
     public func checkAgain(_ connection: Connection) async {
-        errors[connection.id] = nil
+        clearProblem(connection)
         await refresh()
     }
 
@@ -356,7 +362,12 @@ public extension AppViewModel {
     func openLog(_ connection: Connection) { desktop.openLog(connection) }
 }
 
-private extension AppViewModel {
+extension AppViewModel {
+    func clearProblem(_ connection: Connection) {
+        errors[connection.id] = nil
+        signInRequired.remove(connection.id)
+    }
+
     func update(_ status: MountStatus, for connection: Connection) {
         if status.failedUploads > 0, notifiedFailures.insert(connection.id).inserted {
             let body = status.uploadError.map { String(localized: .uploadsFailedReason($0)) } ?? String(localized: .uploadsFailedBody)

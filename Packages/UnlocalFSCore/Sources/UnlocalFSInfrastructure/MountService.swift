@@ -39,6 +39,7 @@ public actor MountService: DriveGateway {
             _ = try await runRemoteCommand(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             let failure = redacted(error, credentials: credentials)
+            if signInError(connection, failure.localizedDescription) { throw GoogleSignInRequired() }
             let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
             let changedKey = failure.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {
@@ -130,6 +131,10 @@ public actor MountService: DriveGateway {
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
             status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
+            if signInError(connection, status.uploadError) {
+                status.needsSignIn = true
+                status.uploadError = GoogleSignInRequired().localizedDescription
+            }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
             let files = activeFiles(snapshot)

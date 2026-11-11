@@ -71,6 +71,7 @@ struct ViewModelFixture {
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
             setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
+            signInAgain: SignInAgainUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),

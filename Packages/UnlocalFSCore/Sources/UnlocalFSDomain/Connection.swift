@@ -50,6 +50,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var usesUploadTimes: Bool { backend.supportsUploadTimes && (readOnly || prefersUploadTimes) }
 
+    public var usesGoogleSignIn: Bool { backend == .gcs && gcs.authentication == .googleAccount }
+
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
     public var folderPath: String {

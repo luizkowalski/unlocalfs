@@ -18,6 +18,15 @@ struct DriveConditionTests {
         #expect(condition(mounted).indicator == .connected)
     }
 
+    @Test func revokedGoogleSignInWinsOverTheUploadFailure() {
+        var revoked = reading(mounted: true, running: true, failed: 1)
+        #expect(condition(revoked) == .uploadFailed)
+        revoked.needsSignIn = true
+        #expect(condition(revoked) == .needsSignIn)
+        #expect(condition(revoked).indicator == .attention)
+        #expect(condition(revoked, busy: true) == .working)
+    }
+
     private func condition(
         _ status: MountStatus, busy: Bool = false, hasError: Bool = false, offline: Bool = false,
     ) -> DriveCondition {
