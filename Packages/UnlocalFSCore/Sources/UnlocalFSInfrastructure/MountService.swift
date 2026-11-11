@@ -98,21 +98,12 @@ public actor MountService: DriveGateway {
         processes[connection.id] = process
         do {
             try String(process.processIdentifier).write(to: paths.pidFile(connection), atomically: true, encoding: .utf8)
+            try await serve(command, in: process)
         } catch {
             process.terminate()
-            throw error
+            processes[connection.id] = nil
+            throw redacted(error, credentials: credentials)
         }
-        for _ in 0 ..< 60 {
-            if isMounted(mount) { return }
-            guard process.isRunning else {
-                processes[connection.id] = nil
-                throw AppError(String(localized: .couldNotMount))
-            }
-            try await Task.sleep(for: .milliseconds(250))
-        }
-        process.terminate()
-        processes[connection.id] = nil
-        throw AppError(String(localized: .mountTimedOut))
     }
 
     public func status(_ connection: Connection) async -> MountStatus {
@@ -125,6 +116,9 @@ public actor MountService: DriveGateway {
                 status.controlError = String(localized: .controlServiceUnavailableReconnect)
             }
             return status
+        }
+        if !status.isMounted, running == .running, !starting.contains(connection.id), await stopsAfterEject(connection) {
+            return MountStatus()
         }
         do {
             let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
@@ -212,12 +206,14 @@ public actor MountService: DriveGateway {
         if FileManager.default.fileExists(atPath: pidFile.path) { try FileManager.default.removeItem(at: pidFile) }
     }
 
-    func control(_ connection: Connection, _ method: String, _ parameters: [String: String] = [:]) async throws -> Data {
-        try await control(connection, method, body: JSONEncoder().encode(parameters))
+    func control(
+        _ connection: Connection, _ method: String, _ parameters: [String: String] = [:], timeout: Duration = .seconds(4),
+    ) async throws -> Data {
+        try await control(connection, method, body: JSONEncoder().encode(parameters), timeout: timeout)
     }
 
-    private func control(_ connection: Connection, _ method: String, body: Data) async throws -> Data {
-        try await ControlSocket.post(paths.socket(connection), method, body: body, timeout: .seconds(4))
+    func control(_ connection: Connection, _ method: String, body: Data, timeout: Duration = .seconds(4)) async throws -> Data {
+        try await ControlSocket.post(paths.socket(connection), method, body: body, timeout: timeout)
     }
 
     func control<Response: Decodable>(

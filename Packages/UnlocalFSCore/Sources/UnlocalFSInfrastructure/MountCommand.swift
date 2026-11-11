@@ -18,34 +18,43 @@ struct MountCommand {
     var arguments: [String] {
         let connection = remote.connection
         var arguments = [
-            "nfsmount", remote.connection.rcloneTarget, paths.mount(connection).path,
-            "--config", "/dev/null", "--vfs-cache-mode", "full",
-            "--cache-dir", paths.cache(connection).path, "--vfs-cache-max-size", "\(connection.cacheLimit)B", "--vfs-cache-max-age", "off",
-            "--vfs-cache-min-free-space", connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
-            "--vfs-fast-fingerprint", "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
+            "rcd", "--config", "/dev/null", "--cache-dir", paths.cache(connection).path,
+            "--buffer-size", Self.readBufferSize, "--max-buffer-memory", Self.maxBufferMemory,
             "--transfers", "\(connection.transfers)", "--default-time", Date.now.ISO8601Format(),
-            "--rc", "--rc-no-auth", "--rc-job-expire-duration", Self.jobExpiry, "--rc-job-expire-interval", Self.jobExpiryCheck,
+            "--rc-no-auth", "--rc-job-expire-duration", Self.jobExpiry, "--rc-job-expire-interval", Self.jobExpiryCheck,
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
             "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)",
         ]
         if connection.backend == .sftp {
-            arguments.append("--sftp-multithread-upload")
             arguments += connection.multiThreadUploads
                 ? ["--multi-thread-write-buffer-size", Self.multiThreadWriteBufferSize]
                 : ["--multi-thread-streams", "1"]
-        } else {
-            arguments += [
-                "--vfs-read-chunk-streams", "\(Self.readChunkStreams)", "--vfs-read-chunk-size", Self.readChunkSize,
-                "--vfs-read-chunk-size-limit", "\(Self.readChunkSizeLimit)",
-            ]
         }
         if connection.bandwidthLimit > 0 { arguments += ["--bwlimit", "\(connection.bandwidthLimit)B"] }
-        if connection.readOnly { arguments.append("--read-only") }
         if connection.usesUploadTimes { arguments.append("--use-server-modtime") }
         return arguments
     }
 
     var environment: [String: String] {
-        remote.environment.merging(["UNLOCALFS_VOLUME_NAME": remote.connection.name]) { _, new in new }
+        var environment = ["UNLOCALFS_VOLUME_NAME": remote.connection.name]
+        environment["SSH_AUTH_SOCK"] = remote.agentSocket
+        return environment
+    }
+
+    var mountParameters: [String: String] {
+        let connection = remote.connection
+        var parameters = [
+            "fs": connection.driveTarget, "mountPoint": paths.mount(connection).path, "mountType": "nfsmount",
+            "vfs_cache_mode": "full", "vfs_cache_max_size": "\(connection.cacheLimit)B", "vfs_cache_max_age": "off",
+            "vfs_cache_min_free_space": connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
+            "vfs_fast_fingerprint": "true",
+        ]
+        if connection.backend != .sftp {
+            parameters["vfs_read_chunk_streams"] = "\(Self.readChunkStreams)"
+            parameters["vfs_read_chunk_size"] = Self.readChunkSize
+            parameters["vfs_read_chunk_size_limit"] = Self.readChunkSizeLimit
+        }
+        if connection.readOnly { parameters["read_only"] = "true" }
+        return parameters
     }
 }

@@ -9,7 +9,7 @@ extension MountService {
         if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
-        let target = connection.rcloneTarget
+        let target = connection.driveTarget
         let folder = (path as NSString).deletingLastPathComponent
         let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
         defer { reservedCopies[connection.id]?.remove(destination) }

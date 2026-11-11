@@ -37,6 +37,29 @@ struct ServiceRecoveryTests {
         }
     }
 
+    @Test func aDriveEjectedInFinderStopsItsService() async throws {
+        let helper = try Process.run(URL(filePath: "/bin/sleep"), arguments: ["300"])
+        defer { helper.terminate() }
+        try await withControl { _, socket in
+            try String(helper.processIdentifier).write(to: socket.appendingPathExtension("pid"), atomically: true, encoding: .utf8)
+            return { request in
+                switch request.method {
+                case "mount/listmounts":
+                    return #"{"mountPoints":[]}"#
+                case "core/quit":
+                    helper.terminate()
+                    try FileManager.default.removeItem(at: socket)
+                    return "{}"
+                default:
+                    return statusBatch()
+                }
+            }
+        } operation: { service, connection in
+            #expect(await !service.status(connection).isActive)
+            #expect(!helper.isRunning)
+        }
+    }
+
     @Test func disconnectStopsAServiceThatCannotBeReached() async throws {
         let helper = try Process.run(URL(filePath: "/bin/sleep"), arguments: ["300"])
         defer { helper.terminate() }
