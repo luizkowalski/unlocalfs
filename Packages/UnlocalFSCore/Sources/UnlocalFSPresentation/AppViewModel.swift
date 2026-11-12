@@ -22,7 +22,7 @@ import UnlocalFSDomain
 
     private var pendingTrust: [UUID: (challenge: ServerTrustChallenge, opensFinder: Bool)] = [:]
     var signInRequired: Set<UUID> = []
-    var signIns: [UUID: Task<String, any Error>] = [:]
+    var signIns: [UUID: GoogleSignInRun] = [:]
     public var alert: String?
     public var disconnectFailure: Connection?
     public var uploadsBlockingDisconnect: Connection?
@@ -199,7 +199,7 @@ import UnlocalFSDomain
     public func disconnect(_ connection: Connection) async {
         guard !checkingQuit, canDisconnect(connection) else { return }
         busy.insert(connection.id)
-        errors[connection.id] = nil
+        clearProblem(connection)
         if disconnectFailure?.id == connection.id { disconnectFailure = nil }
         waitingToDisconnect.remove(connection.id)
         defer { busy.remove(connection.id) }

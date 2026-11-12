@@ -7,10 +7,11 @@ public extension AppViewModel {
         busy.insert(connection.id)
         let previousError = errors.removeValue(forKey: connection.id)
         defer { busy.remove(connection.id) }
-        let signIn = Task { [drives] in try await drives.signInWithGoogle() }
-        signIns[connection.id] = signIn
-        let token = await signIn.result
-        guard signIns.removeValue(forKey: connection.id) == signIn else {
+        let run = GoogleSignInRun(drives: drives)
+        signIns[connection.id] = run
+        let token = await run.token()
+        signIns[connection.id] = nil
+        guard let token else {
             errors[connection.id] = previousError
             return
         }

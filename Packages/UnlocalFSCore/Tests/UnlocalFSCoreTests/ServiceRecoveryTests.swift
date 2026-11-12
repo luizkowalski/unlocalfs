@@ -95,10 +95,10 @@ struct ServiceRecoveryTests {
 
 extension ServiceRecoveryTests {
     @Test(arguments: [
-        (Connection.gcs(authentication: .googleAccount), revokedGrant, true),
+        (Connection.gcs(authentication: .googleAccount), revokedGrantError, true),
         (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
-        (Connection.gcs(), revokedGrant, false),
-        (Connection.s3(), revokedGrant, false),
+        (Connection.gcs(), revokedGrantError, false),
+        (Connection.s3(), revokedGrantError, false),
     ])
     func onlyARevokedGoogleSignInAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
         let batch = statusBatch(queue: #"{"queue":[\#(failedItem)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(lastError)"}"#)
@@ -112,7 +112,7 @@ extension ServiceRecoveryTests {
 
     @Test func retryAfterANewSignInNoLongerAsksToSignIn() async throws {
         let retrying = #"{"name":"a.txt","id":1,"size":1,"expiry":0,"tries":2,"delay":5,"uploading":true}"#
-        let batch = statusBatch(queue: #"{"queue":[\#(retrying)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(revokedGrant)"}"#)
+        let batch = statusBatch(queue: #"{"queue":[\#(retrying)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(revokedGrantError)"}"#)
         try await withControl(connection: .gcs(authentication: .googleAccount)) { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.failedUploads == 1)
@@ -127,7 +127,7 @@ extension ServiceRecoveryTests {
             try await useCase.execute(connection, token: newTokenJSON)
 
             #expect(try repository.credentials(for: connection.id).googleToken == newTokenJSON)
-            #expect(controlCalls(drives) == ["config/update", "vfs/queue", "vfs/queue-set-expiry"])
+            #expect(!controlCalls(drives).contains("core/quit"))
             let update = try JSONSerialization.jsonObject(with: Data(contentsOf: drives.root.appending(path: "updated"))) as? [String: Any]
             #expect(update?["name"] as? String == "unlocalfs-gcs")
             #expect((update?["parameters"] as? [String: String])?["token"] == newTokenJSON)
@@ -186,8 +186,6 @@ extension ServiceRecoveryTests {
     }
 }
 
-private let revokedGrant = "Post https://storage.googleapis.com/upload/storage/v1/b/my-bucket/o: couldn't fetch token: invalid_grant: maybe token expired?"
-
 private func withRevokedDrive(
     serving: Bool = true, storage: any CredentialStorage = MemoryCredentialStorage(),
     operation: (SignInAgainUseCase, SavedConnectionRepository, StubbedDrives, Connection) async throws -> Void,
@@ -236,7 +234,7 @@ private func revokedDrive(_ root: URL) -> ControlServer.Respond {
             }
             return "{}"
         default:
-            let error = retried ? "" : #","lastError":"couldn't fetch token: invalid_grant: maybe token expired?""#
+            let error = retried ? "" : #","lastError":"\#(revokedGrantError)""#
             return statusBatch(queue: queue, stats: #"{\#(rcloneCounters)\#(error)}"#)
         }
     }

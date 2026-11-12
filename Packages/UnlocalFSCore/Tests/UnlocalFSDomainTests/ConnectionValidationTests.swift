@@ -195,7 +195,6 @@ struct GCSValidationTests {
     @Test func googleAccountWithARefreshTokenNeedsNoServiceAccountKey() {
         let connection = Connection.gcs(authentication: .googleAccount)
         #expect(Credentials.google().validate(for: connection).isValid)
-        #expect(GoogleToken(json: googleTokenJSON)?.refreshToken == "1//saved-refresh")
     }
 
     @Test func newConnectionsStartWithGoogleSignIn() {

@@ -8,6 +8,18 @@ struct RcloneRemote {
     let googleClient: GoogleClient
     var agentSocket: String?
 
+    init(connection: Connection, credentials: Credentials?, knownHosts: URL, googleClient: GoogleClient, agentSocket: String? = nil) throws {
+        if connection.usesGoogleSignIn, let credentials {
+            try googleClient.requireConfigured()
+            guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
+        }
+        self.connection = connection
+        self.credentials = credentials
+        self.knownHosts = knownHosts
+        self.googleClient = googleClient
+        self.agentSocket = agentSocket
+    }
+
     var options: [String: String] {
         switch connection.backend {
         case .s3Compatible: s3Options

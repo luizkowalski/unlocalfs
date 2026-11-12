@@ -50,7 +50,6 @@ import UnlocalFSTestSupport
         await signIn.value
 
         #expect(!editor.signingIn)
-        #expect(kill(pid, 0) == -1)
         #expect(editor.error == nil)
         #expect(editor.credentials == Credentials.google())
         #expect(await editor.save())

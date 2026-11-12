@@ -9,6 +9,10 @@ public struct GoogleClient: Sendable {
         self.id = id
         self.secret = secret
     }
+
+    func requireConfigured() throws {
+        guard !id.isEmpty, !secret.isEmpty else { throw AppError(String(localized: .googleSignInUnavailable)) }
+    }
 }
 
 extension MountService {
@@ -17,16 +21,15 @@ extension MountService {
     private static let tokenEnd = "\n<---End paste"
 
     public func signInWithGoogle() async throws -> String {
-        try requireGoogleClient()
+        try googleClient.requireConfigured()
         let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
         let run = Task { [executable, environment = environment(["RCLONE_GCS_CLIENT_ID": googleClient.id, "RCLONE_GCS_CLIENT_SECRET": googleClient.secret])] in
             try await Command.run(
                 executable, ["authorize", "gcs", "--template", page, "--config", "/dev/null"], environment: environment, timeout: Self.signInTimeout,
             )
         }
-        let id = UUID()
-        signIns[id] = run
-        defer { signIns[id] = nil }
+        signIns.insert(run)
+        defer { signIns.remove(run) }
         let output: Data
         do {
             output = try await withTaskCancellationHandler { try await run.value } onCancel: { run.cancel() }
@@ -42,7 +45,6 @@ extension MountService {
     }
 
     public func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws {
-        try requireGoogleSignIn(connection, credentials: credentials)
         let storage = try await remote(for: connection, credentials: credentials).storageRemote
         do {
             _ = try await control(connection, "config/update", body: JSONEncoder().encode(CreateRemote(storage)))
@@ -55,23 +57,13 @@ extension MountService {
     }
 
     public func stopSignIns() async {
-        for run in signIns.values {
+        for run in signIns {
             run.cancel()
             _ = await run.result
         }
     }
 
-    func requireGoogleSignIn(_ connection: Connection, credentials: Credentials) throws {
-        guard connection.usesGoogleSignIn else { return }
-        try requireGoogleClient()
-        guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
-    }
-
     func isRevokedGrant(_ connection: Connection, error message: String?) -> Bool {
         connection.usesGoogleSignIn && message?.contains("invalid_grant") == true
-    }
-
-    private func requireGoogleClient() throws {
-        guard !googleClient.id.isEmpty, !googleClient.secret.isEmpty else { throw AppError(String(localized: .googleSignInUnavailable)) }
     }
 }

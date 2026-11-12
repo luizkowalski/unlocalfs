@@ -21,7 +21,7 @@ import UnlocalFSDomain
     public private(set) var saving = false
     public private(set) var tested = false
     public private(set) var serverTrust: ServerTrustChallenge?
-    private var signIn: Task<String, any Error>?
+    private let signIn: GoogleSignInRun
     public private(set) var error: String?
     private var showErrors = false
     private let isDuplicate: Bool
@@ -50,6 +50,7 @@ import UnlocalFSDomain
         self.connections = connections
         self.repository = repository
         self.drives = drives
+        signIn = GoogleSignInRun(drives: drives)
         self.saveConnection = saveConnection
         self.onSave = onSave
     }
@@ -76,7 +77,7 @@ import UnlocalFSDomain
 
     public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded || signingIn }
 
-    public var signingIn: Bool { signIn != nil }
+    public var signingIn: Bool { signIn.isRunning }
 
     public var fieldErrors: [ConnectionField: String] {
         guard showErrors else { return [:] }
@@ -106,22 +107,14 @@ import UnlocalFSDomain
     }
 
     public func signInWithGoogle() async {
-        guard signIn == nil else { return }
         error = nil
-        let task = Task { [drives] in try await drives.signInWithGoogle() }
-        signIn = task
-        let result = await task.result
-        guard signIn == task else { return }
-        signIn = nil
+        guard let result = await signIn.token() else { return }
         do {
             credentials.googleToken = try result.get()
         } catch { self.error = error.localizedDescription }
     }
 
-    public func cancelSignIn() {
-        signIn?.cancel()
-        signIn = nil
-    }
+    public func cancelSignIn() { signIn.cancel() }
 
     public func test() async {
         guard validate() else { return }

@@ -233,6 +233,13 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var googleToken: String
     public var isSignedInToGoogle: Bool { GoogleToken(json: googleToken) != nil }
 
+    public var secrets: [String] {
+        [
+            accessKey, secretKey, sessionToken, encryptionPassword, obscuredEncryptionPassword,
+            password, obscuredPassword, keyPassphrase, obscuredKeyPassphrase, serviceAccountKey, googleToken,
+        ] + (GoogleToken(json: googleToken).map { [$0.accessToken, $0.refreshToken] } ?? [])
+    }
+
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
         password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "", googleToken: String = "",

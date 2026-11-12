@@ -44,4 +44,6 @@ public extension Credentials {
 
 public let newTokenJSON = #"{"access_token":"ya29.new","token_type":"Bearer","refresh_token":"1//new-refresh","expiry":"2026-11-12T02:00:00Z"}"#
 
+public let revokedGrantError = "Post https://storage.googleapis.com/upload/storage/v1/b/my-bucket/o: couldn't fetch token: invalid_grant: maybe token expired?"
+
 public let googleTokenJSON = #"{"access_token":"ya29.saved-access","token_type":"Bearer","refresh_token":"1//saved-refresh","expiry":"2026-11-12T01:00:00Z"}"#

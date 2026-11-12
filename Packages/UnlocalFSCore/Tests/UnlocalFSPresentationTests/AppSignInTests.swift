@@ -13,7 +13,7 @@ import UnlocalFSTestSupport
     deinit { fixture.remove() }
 
     @Test(arguments: [
-        ("couldn't fetch token: invalid_grant: maybe token expired?", true),
+        (revokedGrantError, true),
         ("dial tcp: lookup storage.googleapis.com: no such host", false),
     ])
     func onlyARevokedGrantAtConnectAsksToSignInAgain(failure: String, needsSignIn: Bool) async throws {
@@ -33,7 +33,7 @@ import UnlocalFSTestSupport
     @Test func signingInAgainAfterARevokedGrantSavesTheNewToken() async throws {
         let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
-        try "invalid_grant".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
+        try revokedGrantError.write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
         await app.refresh()
         await app.toggle(connection)
@@ -53,7 +53,7 @@ import UnlocalFSTestSupport
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
         let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
-        try "invalid_grant".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
+        try revokedGrantError.write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
         await app.refresh()
         await app.toggle(connection)
@@ -93,7 +93,7 @@ import UnlocalFSTestSupport
         #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
     }
 
-    @Test(arguments: [("couldn't fetch token: invalid_grant: maybe token expired?", true), ("googleapi: Error 403: denied", false)])
+    @Test(arguments: [(revokedGrantError, true), ("googleapi: Error 403: denied", false)])
     func connectedDriveWithARevokedGrantAsksToSignInAgain(lastError: String, needsSignIn: Bool) async throws {
         let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.serve(connection, failed: 1, lastError: lastError)
