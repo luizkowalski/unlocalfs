@@ -228,6 +228,17 @@
         }
       }
     },
+    "Anyone with the file can read this drive with your Google account. The password is only obscured, not encrypted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade com a sua conta Google. A senha é apenas ofuscada, não criptografada."
+          }
+        }
+      }
+    },
     "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -257,16 +268,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Qualquer pessoa com o arquivo pode ler esta unidade. A senha é apenas ofuscada, não criptografada."
-          }
-        }
-      }
-    },
-    "Anyone with the file can read this drive with your Google account. The password is only obscured, not encrypted." : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade com a sua conta Google. A senha é apenas ofuscada, não criptografada."
           }
         }
       }
@@ -382,6 +383,7 @@
     },
     "Cancel Sign-In" : {
       "comment" : "Button: stop a Google sign-in that waits for the browser",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1121,6 +1123,7 @@
       }
     },
     "Include Google sign-in" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -2009,6 +2012,7 @@
     },
     "Sign In Again…" : {
       "comment" : "Button: sign in to Google again for this drive",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -2030,6 +2034,7 @@
       }
     },
     "Sign in with Google" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -2040,6 +2045,7 @@
       }
     },
     "Signing in to Google" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

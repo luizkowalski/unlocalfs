@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
 struct GCSDriveTests {
@@ -58,7 +58,7 @@ struct GCSDriveTests {
                 printf '%s\\n' "$*" > '\(root.path)/lsf-arguments'
                 env | grep '^RCLONE_' | sort > '\(root.path)/lsf-environment'
                 if [ -f '\(root.path)/lsf-fails' ]; then
-                    printf 'failed with %s' "$RCLONE_GCS_TOKEN" >&2
+                    printf 'failed with ya29.saved-access and 1//saved-refresh' >&2
                     exit 1
                 fi
             fi
@@ -93,6 +93,26 @@ struct GCSDriveTests {
 
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.test(connection, credentials: Credentials.google(token)) }
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.mount(connection, credentials: Credentials.google(token)) }
+        await #expect(throws: GoogleSignInRequired.self) {
+            try await drives.service.exportRcloneConfig(connection, credentials: Credentials.google(token), to: drives.root.appending(path: "export.conf"))
+        }
+
+        #expect(drives.rcloneCalls.isEmpty)
+    }
+
+    @Test(arguments: [GoogleClient(id: "", secret: ""), GoogleClient(id: GoogleClient.test.id, secret: "")])
+    func buildWithoutAGoogleClientNeverStartsRcloneForAGoogleDrive(client: GoogleClient) async throws {
+        let drives = try StubbedDrives("gcs-google", googleClient: client)
+        defer { drives.remove() }
+        let connection = Connection.gcs(authentication: .googleAccount)
+        let unavailable = String(localized: .googleSignInUnavailable)
+
+        await #expect { try await drives.service.test(connection, credentials: Credentials.google()) } throws: { $0.localizedDescription == unavailable }
+        await #expect { try await drives.service.mount(connection, credentials: Credentials.google()) } throws: { $0.localizedDescription == unavailable }
+        await #expect {
+            try await drives.service.exportRcloneConfig(connection, credentials: Credentials.google(), to: drives.root.appending(path: "export.conf"))
+        } throws: { $0.localizedDescription == unavailable }
+        await #expect { _ = try await drives.service.signInWithGoogle() } throws: { $0.localizedDescription == unavailable }
 
         #expect(drives.rcloneCalls.isEmpty)
     }

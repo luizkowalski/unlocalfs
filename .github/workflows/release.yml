@@ -59,8 +59,10 @@ jobs:
 
       - name: Check Google client
         run: |
-          client="$(/usr/libexec/PlistBuddy -c 'Print :GoogleClientID' dist/UnlocalFS.app/Contents/Info.plist)"
-          [ -n "$client" ] || { echo "::error::Set the GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets"; exit 1; }
+          for key in GoogleClientID GoogleClientSecret; do
+            value="$(/usr/libexec/PlistBuddy -c "Print :$key" dist/UnlocalFS.app/Contents/Info.plist)"
+            [ -n "$value" ] || { echo "::error::Set the GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets"; exit 1; }
+          done
 
       - name: Make DMG
         run: |

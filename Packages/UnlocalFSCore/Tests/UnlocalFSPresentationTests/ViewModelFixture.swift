@@ -122,9 +122,16 @@ struct ViewModelFixture {
         try token.write(to: root.appending(path: "authorize-token"), atomically: true, encoding: .utf8)
     }
 
-    func signInHangs() async throws -> pid_t {
+    func signInWillHang() throws {
         try signInReturns(#"{"access_token":"late","refresh_token":"1//late-refresh"}"#)
         FileManager.default.createFile(atPath: root.appending(path: "authorize-hang").path, contents: Data())
+    }
+
+    func waitForSignInToStop(_ pid: pid_t) async throws {
+        try await waitUntil(timeout: .seconds(5)) { kill(pid, 0) != 0 }
+    }
+
+    func signInHangs() async throws -> pid_t {
         let pidFile = root.appending(path: "authorize-pid")
         try await waitUntil { FileManager.default.fileExists(atPath: pidFile.path) && !((try? String(contentsOf: pidFile, encoding: .utf8)) ?? "").isEmpty }
         return try #require(pid_t(String(contentsOf: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))

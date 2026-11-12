@@ -67,22 +67,6 @@ struct MountSafetyTests {
         }
     }
 
-    @Test(arguments: [
-        (Connection.gcs(authentication: .googleAccount), revokedGrant, true),
-        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
-        (Connection.gcs(), revokedGrant, false),
-        (Connection.s3(), revokedGrant, false),
-    ])
-    func onlyARevokedGoogleSignInAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
-        let batch = statusBatch(queue: #"{"queue":[\#(failedItem)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(lastError)"}"#)
-        try await withControl(connection: connection) { _, _ in { _ in batch } } operation: { service, connection in
-            let status = await service.status(connection)
-            #expect(status.failedUploads == 1)
-            #expect(status.needsSignIn == needsSignIn)
-            #expect(status.uploadError == (needsSignIn ? GoogleSignInRequired().localizedDescription : lastError))
-        }
-    }
-
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
         try await withControl { root, _ in
             { request in
@@ -305,9 +289,12 @@ extension MountSafetyTests {
          ["secret_access_key": String?.some("s3-secret")]),
         (Connection.gcs(authentication: .googleAccount) { $0.encrypted = true },
          Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
-         ["token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "env_auth": "false", "service_account_credentials": nil]),
+         [
+             "token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "env_auth": "false",
+             "config_refresh_token": "false", "service_account_credentials": nil,
+         ]),
         (Connection.gcs { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
-         ["service_account_credentials": serviceAccountJSON, "token": nil, "client_secret": nil]),
+         ["service_account_credentials": serviceAccountJSON, "token": nil, "client_secret": nil, "config_refresh_token": nil]),
     ])
     func startedDriveGetsItsSecretsOnlyOverTheControlSocket(connection: Connection, credentials: Credentials, expected: [String: String?]) async throws {
         let drives = try StubbedDrives("start") { root in
@@ -361,9 +348,7 @@ private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Re
     }
 }
 
-private let revokedGrant = "Post https://storage.googleapis.com/upload/storage/v1/b/my-bucket/o: couldn't fetch token: invalid_grant: maybe token expired?"
-
-private let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
+let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
 
 private func mark(_ file: URL) -> Bool {
     defer { FileManager.default.createFile(atPath: file.path, contents: Data()) }

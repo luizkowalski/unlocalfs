@@ -40,7 +40,7 @@ A failed storage test keeps its folder in `/tmp/uf-*`, with the server and drive
 
 ## Fixture notes
 
-- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`. `.gcs()` uses a service-account key; set `$0.gcs.authentication = .googleAccount` and use `Credentials.google()` for a Google sign-in. `StubbedDrives` passes `GoogleClient.test` unless a test gives another client.
+- Make connections with `Connection.s3()`, `.sftp()`, and `.gcs()` from `UnlocalFSTestSupport`. Set other fields in the trailing closure: `Connection.sftp { $0.encrypted = true }`. `.gcs()` uses a service-account key; use `.gcs(authentication: .googleAccount)` with `Credentials.google()` for a Google sign-in. `StubbedDrives` passes `GoogleClient.test` unless a test gives another client.
 - Use ASCII file names with `rclone serve s3`. Accented names make the tests flaky.
 - `rclone serve s3` hashes every file (MD5 ETag) on each listing. Keep fixture files to tens of MB, or the connection test in `mount()` times out on CI.
 - `rclone serve s3` returns HTTP 500 for the folder marker rclone writes when it copies into a subfolder. Keep server-side copy tests at the drive root.

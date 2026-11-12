@@ -329,6 +329,8 @@ import UnlocalFSDomain
 
     public func cancelQuit() { checkingQuit = false }
 
+    public func stopSignInsForQuit() async { await drives.stopSignIns() }
+
     public func disconnectForQuit() async -> (connection: Connection, error: any Error)? {
         checkingQuit = true
         let active = Set(connections.filter(isActive).map(\.id))

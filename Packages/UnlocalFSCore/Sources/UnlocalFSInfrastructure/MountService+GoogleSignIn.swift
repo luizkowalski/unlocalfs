@@ -9,6 +9,8 @@ public struct GoogleClient: Sendable {
         self.id = id
         self.secret = secret
     }
+
+    var environment: [String: String] { ["RCLONE_GCS_CLIENT_ID": id, "RCLONE_GCS_CLIENT_SECRET": secret] }
 }
 
 extension MountService {
@@ -19,13 +21,17 @@ extension MountService {
     public func signInWithGoogle() async throws -> String {
         try requireGoogleClient()
         let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
+        let run = Task { [executable, environment = environment(googleClient.environment)] in
+            try await Command.run(
+                executable, ["authorize", "gcs", "--template", page, "--config", "/dev/null"], environment: environment, timeout: Self.signInTimeout,
+            )
+        }
+        let id = UUID()
+        signIns[id] = run
+        defer { signIns[id] = nil }
         let output: Data
         do {
-            output = try await Command.run(
-                executable, ["authorize", "gcs", "--template", page, "--config", "/dev/null"],
-                environment: environment(["RCLONE_GCS_CLIENT_ID": googleClient.id, "RCLONE_GCS_CLIENT_SECRET": googleClient.secret]),
-                timeout: Self.signInTimeout,
-            )
+            output = try await withTaskCancellationHandler { try await run.value } onCancel: { run.cancel() }
         } catch let error as AppError {
             let reason = error.localizedDescription.components(separatedBy: "Fatal error: ").last!
             throw AppError(reason.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -50,6 +56,13 @@ extension MountService {
         }
     }
 
+    public func stopSignIns() async {
+        for run in signIns.values {
+            run.cancel()
+            _ = await run.result
+        }
+    }
+
     func requireGoogleSignIn(_ connection: Connection, credentials: Credentials) throws {
         guard connection.usesGoogleSignIn else { return }
         try requireGoogleClient()
@@ -61,6 +74,6 @@ extension MountService {
     }
 
     private func requireGoogleClient() throws {
-        guard !googleClient.id.isEmpty else { throw AppError(String(localized: .googleSignInUnavailable)) }
+        guard !googleClient.id.isEmpty, !googleClient.secret.isEmpty else { throw AppError(String(localized: .googleSignInUnavailable)) }
     }
 }

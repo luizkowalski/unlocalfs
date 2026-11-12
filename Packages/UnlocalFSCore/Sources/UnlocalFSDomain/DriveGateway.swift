@@ -7,6 +7,7 @@ public protocol DriveGateway: Sendable {
     func forgetServer(_ connection: Connection) async throws
     func prepareCredentials(_ credentials: Credentials) async throws -> Credentials
     func signInWithGoogle() async throws -> String
+    func stopSignIns() async
     func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws
     func mount(_ connection: Connection, credentials: Credentials) async throws
     func unmount(_ connection: Connection) async throws

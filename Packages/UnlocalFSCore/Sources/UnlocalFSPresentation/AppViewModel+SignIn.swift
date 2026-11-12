@@ -5,12 +5,15 @@ public extension AppViewModel {
     func signInAgain(_ connection: Connection) async {
         guard !checkingQuit, canToggle(connection) else { return }
         busy.insert(connection.id)
-        errors[connection.id] = nil
+        let previousError = errors.removeValue(forKey: connection.id)
         defer { busy.remove(connection.id) }
         let signIn = Task { [drives] in try await drives.signInWithGoogle() }
         signIns[connection.id] = signIn
         let token = await signIn.result
-        guard signIns.removeValue(forKey: connection.id) == signIn else { return }
+        guard signIns.removeValue(forKey: connection.id) == signIn else {
+            errors[connection.id] = previousError
+            return
+        }
         do {
             try await googleSignIn.execute(connection, token: token.get())
             signInRequired.remove(connection.id)

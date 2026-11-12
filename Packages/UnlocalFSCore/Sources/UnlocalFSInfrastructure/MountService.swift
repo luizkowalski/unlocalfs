@@ -15,6 +15,7 @@ public actor MountService: DriveGateway {
     let traffic: TrafficStore
     var trackers: [UUID: TrafficTracker] = [:]
     let googleClient: GoogleClient
+    var signIns: [UUID: Task<Data, any Error>] = [:]
 
     public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore, googleClient: GoogleClient) {
         self.executable = executable
@@ -131,7 +132,7 @@ public actor MountService: DriveGateway {
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
             status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
-            if isRevokedGrant(connection, status.uploadError) {
+            if isRevokedGrant(connection, status.uploadError), snapshot.queue.contains(where: { $0.hasFailedAttempt && !$0.uploading }) {
                 status.needsSignIn = true
                 status.uploadError = GoogleSignInRequired().localizedDescription
             }

@@ -53,21 +53,69 @@ import UnlocalFSTestSupport
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
         let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())
+        try "invalid_grant".write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
         let app = fixture.app()
         await app.refresh()
+        await app.toggle(connection)
+        let problem = app.problem(connection)
 
+        try fixture.signInWillHang()
         let signIn = Task { await app.signInAgain(connection) }
         let pid = try await fixture.signInHangs()
         #expect(app.isSigningIn(connection))
         #expect(!app.canConnect(connection))
         app.cancelSignIn(connection)
+        try await fixture.waitForSignInToStop(pid)
         await signIn.value
 
-        #expect(kill(pid, 0) == -1)
         #expect(!app.isSigningIn(connection))
         #expect(!app.busy.contains(connection.id))
-        #expect(app.problem(connection) == nil)
+        #expect(app.needsSignIn(connection))
+        #expect(app.problem(connection) == problem)
         #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
-        #expect(fixture.rcloneCalls == ["authorize"])
+        #expect(fixture.rcloneCalls == ["lsf", "authorize"])
+    }
+
+    @Test func failedSignInAgainKeepsTheSavedAccountAndShowsWhy() async throws {
+        let connection = Connection.gcs(authentication: .googleAccount)
+        try fixture.repository.save(connection, credentials: Credentials.google())
+        try "googleapi: Error 403: me@example.com does not have storage.objects.list access".write(
+            to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8,
+        )
+        try fixture.signInReturns(newTokenJSON)
+        let app = fixture.app()
+        await app.refresh()
+
+        await app.signInAgain(connection)
+
+        #expect(app.problem(connection)?.contains("Error 403") == true)
+        #expect(!app.busy.contains(connection.id))
+        #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
+    }
+
+    @Test(arguments: [("couldn't fetch token: invalid_grant: maybe token expired?", true), ("googleapi: Error 403: denied", false)])
+    func connectedDriveWithARevokedGrantAsksToSignInAgain(lastError: String, needsSignIn: Bool) async throws {
+        let connection = Connection.gcs(authentication: .googleAccount)
+        try fixture.serve(connection, failed: 1, lastError: lastError)
+        let app = fixture.app()
+        await app.refresh()
+
+        #expect(app.needsSignIn(connection) == needsSignIn)
+        #expect(app.statusText(connection) == (needsSignIn ? String(localized: .needsGoogleSignIn) : String(localized: .uploadNeedsAttention)))
+    }
+
+    @Test func quittingStopsAGoogleSignInThatWaitsInTheEditor() async throws {
+        let app = fixture.app()
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)), app: app)
+        editor.loadCredentials()
+        try fixture.signInWillHang()
+        let signIn = Task { await editor.signInWithGoogle() }
+        let pid = try await fixture.signInHangs()
+
+        await app.stopSignInsForQuit()
+
+        #expect(kill(pid, 0) == -1)
+        await signIn.value
+        #expect(editor.credentials.googleToken.isEmpty)
     }
 }

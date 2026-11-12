@@ -6,7 +6,6 @@ import UnlocalFSDomain
     public var connection: Connection {
         didSet {
             if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp || connection.gcs != oldValue.gcs { tested = false }
-            if connection.gcs != oldValue.gcs { cancelSignIn() }
         }
     }
 
