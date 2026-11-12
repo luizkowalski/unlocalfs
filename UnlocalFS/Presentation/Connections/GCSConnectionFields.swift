@@ -20,11 +20,11 @@ struct GCSConnectionFields: View {
             }
             switch viewModel.connection.gcs.authentication {
             case .googleAccount:
-                credentials("The sign-in is stored in your Mac’s Keychain. Your Google account needs the Storage Object User role on the bucket.") {
+                credentials(Text("The sign-in is stored in your Mac’s Keychain. Your Google account needs the Storage Object User role on the bucket.")) {
                     googleAccountField
                 }
             case .serviceAccount:
-                credentials("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.") {
+                credentials(Text("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.")) {
                     serviceAccountField
                 }
             }
@@ -36,7 +36,7 @@ struct GCSConnectionFields: View {
         }
     }
 
-    private func credentials(_ footer: LocalizedStringKey, @ViewBuilder field: () -> some View) -> some View {
+    private func credentials(_ footer: Text, @ViewBuilder field: () -> some View) -> some View {
         Section {
             Picker("Sign in with", selection: $viewModel.connection.gcs.authentication) {
                 ForEach(GCSAuthentication.allCases) { Text($0.title).tag($0) }
@@ -45,7 +45,7 @@ struct GCSConnectionFields: View {
         } header: {
             Text("Credentials")
         } footer: {
-            Text(footer).font(.caption).foregroundStyle(.secondary)
+            footer.font(.caption).foregroundStyle(.secondary)
         }
     }
 
