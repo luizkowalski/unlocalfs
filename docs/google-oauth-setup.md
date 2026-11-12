@@ -24,7 +24,7 @@ Google Cloud Storage drives sign in through `rclone authorize gcs` with the Unlo
 
 ## Give the client to the build
 
-The build reads `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` and puts them in `Info.plist`. `Signing.xcconfig` sets both empty. A build with an empty client ID shows that Google sign-in is not available and never starts rclone for it, because rclone would use its own client.
+The build reads `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` and puts them in `Info.plist`. Without them both are empty. A build with an empty client ID or secret shows that Google sign-in is not available and never starts rclone for it, because rclone would use its own client.
 
 - For a local build, add both lines to `Signing.local.xcconfig`, which Git ignores:
 

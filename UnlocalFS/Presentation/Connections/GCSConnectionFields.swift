@@ -18,32 +18,34 @@ struct GCSConnectionFields: View {
             } header: {
                 Text("Storage")
             }
-            Section {
-                Picker("Sign in with", selection: $viewModel.connection.gcs.authentication) {
-                    ForEach(GCSAuthentication.allCases) { Text($0.title).tag($0) }
+            switch viewModel.connection.gcs.authentication {
+            case .googleAccount:
+                credentials("The sign-in is stored in your Mac’s Keychain. Your Google account needs the Storage Object User role on the bucket.") {
+                    googleAccountField
                 }
-                switch viewModel.connection.gcs.authentication {
-                case .googleAccount: googleAccountField
-                case .serviceAccount: serviceAccountField
+            case .serviceAccount:
+                credentials("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.") {
+                    serviceAccountField
                 }
-            } header: {
-                Text("Credentials")
-            } footer: {
-                Group {
-                    switch viewModel.connection.gcs.authentication {
-                    case .googleAccount:
-                        Text("The sign-in is stored in your Mac’s Keychain. Your Google account needs the Storage Object User role on the bucket.")
-                    case .serviceAccount:
-                        Text("The key is stored in your Mac’s Keychain. Give its service account the Storage Object User role on the bucket.")
-                    }
-                }
-                .font(.caption).foregroundStyle(.secondary)
             }
         }
         .fileImporter(isPresented: $importingKey, allowedContentTypes: [.json]) { result in
             Task {
                 await viewModel.importServiceAccountKey(result)
             }
+        }
+    }
+
+    private func credentials(_ footer: LocalizedStringKey, @ViewBuilder field: () -> some View) -> some View {
+        Section {
+            Picker("Sign in with", selection: $viewModel.connection.gcs.authentication) {
+                ForEach(GCSAuthentication.allCases) { Text($0.title).tag($0) }
+            }
+            field()
+        } header: {
+            Text("Credentials")
+        } footer: {
+            Text(footer).font(.caption).foregroundStyle(.secondary)
         }
     }
 

@@ -40,7 +40,7 @@ public actor MountService: DriveGateway {
             _ = try await runRemoteCommand(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             let failure = redacted(error, credentials: credentials)
-            if isRevokedGrant(connection, failure.localizedDescription) { throw GoogleSignInRequired() }
+            if isRevokedGrant(connection, error: failure.localizedDescription) { throw GoogleSignInRequired() }
             let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
             let changedKey = failure.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {
@@ -132,7 +132,7 @@ public actor MountService: DriveGateway {
             status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
             status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
-            if isRevokedGrant(connection, status.uploadError), snapshot.queue.contains(where: { $0.hasFailedAttempt && !$0.uploading }) {
+            if isRevokedGrant(connection, error: status.uploadError), snapshot.queue.contains(where: { $0.hasFailedAttempt && !$0.uploading }) {
                 status.needsSignIn = true
                 status.uploadError = GoogleSignInRequired().localizedDescription
             }

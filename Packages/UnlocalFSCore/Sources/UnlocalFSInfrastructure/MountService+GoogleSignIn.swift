@@ -9,8 +9,6 @@ public struct GoogleClient: Sendable {
         self.id = id
         self.secret = secret
     }
-
-    var environment: [String: String] { ["RCLONE_GCS_CLIENT_ID": id, "RCLONE_GCS_CLIENT_SECRET": secret] }
 }
 
 extension MountService {
@@ -21,7 +19,7 @@ extension MountService {
     public func signInWithGoogle() async throws -> String {
         try requireGoogleClient()
         let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
-        let run = Task { [executable, environment = environment(googleClient.environment)] in
+        let run = Task { [executable, environment = environment(["RCLONE_GCS_CLIENT_ID": googleClient.id, "RCLONE_GCS_CLIENT_SECRET": googleClient.secret])] in
             try await Command.run(
                 executable, ["authorize", "gcs", "--template", page, "--config", "/dev/null"], environment: environment, timeout: Self.signInTimeout,
             )
@@ -69,7 +67,7 @@ extension MountService {
         guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
     }
 
-    func isRevokedGrant(_ connection: Connection, _ message: String?) -> Bool {
+    func isRevokedGrant(_ connection: Connection, error message: String?) -> Bool {
         connection.usesGoogleSignIn && message?.contains("invalid_grant") == true
     }
 
