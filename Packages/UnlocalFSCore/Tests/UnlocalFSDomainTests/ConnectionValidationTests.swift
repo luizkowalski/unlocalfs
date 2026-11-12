@@ -185,21 +185,6 @@ struct GCSValidationTests {
         connection.bucket = "a/b"
         #expect(connection.validate().issues.map(\.field) == [.bucket])
     }
-
-    @Test(arguments: ["", "not json", #"{"access_token":"a","token_type":"Bearer"}"#, #"{"access_token":"a","refresh_token":""}"#])
-    func googleAccountWithoutARefreshTokenNeedsSignIn(token: String) {
-        let connection = Connection.gcs(authentication: .googleAccount)
-        #expect(Credentials(serviceAccountKey: serviceAccountJSON, googleToken: token).validate(for: connection).issues.map(\.field) == [.googleAccount])
-    }
-
-    @Test func googleAccountWithARefreshTokenNeedsNoServiceAccountKey() {
-        let connection = Connection.gcs(authentication: .googleAccount)
-        #expect(Credentials.google().validate(for: connection).isValid)
-    }
-
-    @Test func newConnectionsStartWithGoogleSignIn() {
-        #expect(Connection().gcs.authentication == .googleAccount)
-    }
 }
 
 private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {

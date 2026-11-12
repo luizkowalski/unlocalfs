@@ -48,6 +48,7 @@ import UnlocalFSTestSupport
         #expect(!app.busy.contains(connection.id))
         #expect(try fixture.repository.credentials(for: connection.id).googleToken == newTokenJSON)
         #expect(app.statusText(connection) == String(localized: .disconnected))
+        #expect(fixture.rcloneCalls == ["lsf", "authorize", "lsf"])
     }
 
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
@@ -93,15 +94,31 @@ import UnlocalFSTestSupport
         #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
     }
 
-    @Test(arguments: [(revokedGrantError, true), ("googleapi: Error 403: denied", false)])
-    func connectedDriveWithARevokedGrantAsksToSignInAgain(lastError: String, needsSignIn: Bool) async throws {
-        let connection = Connection.gcs(authentication: .googleAccount)
+    @Test(arguments: [
+        (Connection.gcs(authentication: .googleAccount), revokedGrantError, true),
+        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: denied", false),
+        (Connection.gcs(), revokedGrantError, false),
+        (Connection.s3(), revokedGrantError, false),
+    ])
+    func onlyAGoogleDriveWithARevokedGrantAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
         try fixture.serve(connection, failed: 1, lastError: lastError)
         let app = fixture.app()
         await app.refresh()
 
         #expect(app.needsSignIn(connection) == needsSignIn)
         #expect(app.statusText(connection) == (needsSignIn ? String(localized: .needsGoogleSignIn) : String(localized: .uploadNeedsAttention)))
+        #expect(app.uploadFailure(connection)?.uploadError == (needsSignIn ? GoogleSignInRequired().localizedDescription : lastError))
+    }
+
+    @Test func uploadRetryingAfterANewSignInNoLongerAsksToSignIn() async throws {
+        let connection = Connection.gcs(authentication: .googleAccount)
+        try fixture.serve(connection, lastError: revokedGrantError)
+        try fixture.queue(#"{"name":"a.txt","id":1,"size":1,"expiry":0,"tries":2,"delay":5,"uploading":true}"#)
+        let app = fixture.app()
+        await app.refresh()
+
+        #expect(!app.needsSignIn(connection))
+        #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
     }
 
     @Test func quittingStopsAGoogleSignInThatWaitsInTheEditor() async throws {

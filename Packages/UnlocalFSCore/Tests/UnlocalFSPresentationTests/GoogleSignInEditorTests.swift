@@ -111,4 +111,21 @@ import UnlocalFSTestSupport
         #expect(editor.error == String(localized: .googleSignInUnavailable))
         #expect(fixture.rcloneCalls.isEmpty)
     }
+
+    @Test(arguments: ["", "not json", #"{"access_token":"ya29.only-access"}"#])
+    func newGCSConnectionAsksForGoogleSignInUntilItHasARefreshToken(token: String) async {
+        var connection = Connection()
+        connection.name = "Bucket"
+        connection.provider = .googleCloudStorage
+        connection.bucket = "my-bucket"
+        let editor = fixture.editor(draft: .init(connection: connection))
+        editor.loadCredentials()
+        editor.credentials.googleToken = token
+
+        await editor.test()
+
+        #expect(editor.firstInvalidField == .googleAccount)
+        #expect(editor.fieldErrors[.serviceAccountKey] == nil)
+        #expect(fixture.rcloneCalls.isEmpty)
+    }
 }

@@ -112,7 +112,6 @@ struct GCSDriveTests {
         await #expect {
             try await drives.service.exportRcloneConfig(connection, credentials: Credentials.google(), to: drives.root.appending(path: "export.conf"))
         } throws: { $0.localizedDescription == unavailable }
-        await #expect { _ = try await drives.service.signInWithGoogle() } throws: { $0.localizedDescription == unavailable }
 
         #expect(drives.rcloneCalls.isEmpty)
     }

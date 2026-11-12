@@ -94,32 +94,6 @@ struct ServiceRecoveryTests {
 }
 
 extension ServiceRecoveryTests {
-    @Test(arguments: [
-        (Connection.gcs(authentication: .googleAccount), revokedGrantError, true),
-        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: me@example.com does not have storage.objects.create access", false),
-        (Connection.gcs(), revokedGrantError, false),
-        (Connection.s3(), revokedGrantError, false),
-    ])
-    func onlyARevokedGoogleSignInAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
-        let batch = statusBatch(queue: #"{"queue":[\#(failedItem)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(lastError)"}"#)
-        try await withControl(connection: connection) { _, _ in { _ in batch } } operation: { service, connection in
-            let status = await service.status(connection)
-            #expect(status.failedUploads == 1)
-            #expect(status.needsSignIn == needsSignIn)
-            #expect(status.uploadError == (needsSignIn ? GoogleSignInRequired().localizedDescription : lastError))
-        }
-    }
-
-    @Test func retryAfterANewSignInNoLongerAsksToSignIn() async throws {
-        let retrying = #"{"name":"a.txt","id":1,"size":1,"expiry":0,"tries":2,"delay":5,"uploading":true}"#
-        let batch = statusBatch(queue: #"{"queue":[\#(retrying)]}"#, stats: #"{\#(rcloneCounters),"lastError":"\#(revokedGrantError)"}"#)
-        try await withControl(connection: .gcs(authentication: .googleAccount)) { _, _ in { _ in batch } } operation: { service, connection in
-            let status = await service.status(connection)
-            #expect(status.failedUploads == 1)
-            #expect(!status.needsSignIn)
-        }
-    }
-
     @Test func signingInAgainRestoresUploadsOnTheConnectedDrive() async throws {
         try await withRevokedDrive { useCase, repository, drives, connection in
             #expect(await drives.service.status(connection).needsSignIn)
@@ -172,16 +146,6 @@ extension ServiceRecoveryTests {
             #expect(saved.googleToken == newTokenJSON)
             await #expect(throws: AppError.self) { try await drives.service.unmount(connection) }
             #expect(await drives.service.status(connection).failedUploads == 1)
-        }
-    }
-
-    @Test func signingInAgainForADisconnectedDriveOnlySavesTheToken() async throws {
-        try await withRevokedDrive(serving: false) { useCase, repository, drives, connection in
-            try await useCase.execute(connection, token: newTokenJSON)
-
-            #expect(try repository.credentials(for: connection.id).googleToken == newTokenJSON)
-            #expect(controlCalls(drives).isEmpty)
-            #expect(drives.rcloneCalls == ["lsf"])
         }
     }
 }
