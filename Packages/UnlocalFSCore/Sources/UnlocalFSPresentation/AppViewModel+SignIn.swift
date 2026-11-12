@@ -16,7 +16,7 @@ public extension AppViewModel {
             return
         }
         do {
-            try await googleSignIn.execute(connection, token: token.get())
+            try await signInAgain.execute(connection, token: token.get())
             signInRequired.remove(connection.id)
         } catch {
             errors[connection.id] = error.localizedDescription

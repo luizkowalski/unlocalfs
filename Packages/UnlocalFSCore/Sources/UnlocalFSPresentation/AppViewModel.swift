@@ -38,7 +38,7 @@ import UnlocalFSDomain
     private let deleteConnection: DeleteConnectionUseCase
     private let setAutomaticConnect: SetAutomaticConnectUseCase
     private let connectDrive: ConnectDriveUseCase
-    let googleSignIn: SignInAgainUseCase
+    let signInAgain: SignInAgainUseCase
     let shareFiles: ShareFilesUseCase
     let duplicateFiles: DuplicateFilesUseCase
     private let exportConfig: ExportRcloneConfigUseCase
@@ -67,7 +67,7 @@ import UnlocalFSDomain
         self.deleteConnection = deleteConnection
         self.setAutomaticConnect = setAutomaticConnect
         self.connectDrive = connectDrive
-        googleSignIn = signInAgain
+        self.signInAgain = signInAgain
         self.shareFiles = shareFiles
         self.duplicateFiles = duplicateFiles
         self.exportConfig = exportConfig
