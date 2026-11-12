@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 @testable import UnlocalFSDomain
-import UnlocalFSInfrastructure
+@testable import UnlocalFSInfrastructure
 @testable import UnlocalFSPresentation
 import UnlocalFSTestSupport
 
@@ -134,5 +134,24 @@ import UnlocalFSTestSupport
         #expect(kill(pid, 0) == -1)
         await signIn.value
         #expect(editor.credentials.googleToken.isEmpty)
+    }
+
+    @Test func secondGoogleSignInWaitsForTheFirstToFinish() async throws {
+        let connection = Connection.gcs(authentication: .googleAccount)
+        try fixture.repository.save(connection, credentials: Credentials.google())
+        let app = fixture.app()
+        await app.refresh()
+        let editor = fixture.editor(draft: .init(connection: Connection.gcs(name: "Other", authentication: .googleAccount)), app: app)
+        editor.loadCredentials()
+        try fixture.signInWillHang()
+        let editorSignIn = Task { await editor.signInWithGoogle() }
+        _ = try await fixture.signInHangs()
+
+        await app.signInAgain(connection)
+
+        #expect(app.problem(connection) == String(localized: .googleSignInInProgress))
+        #expect(fixture.rcloneCalls.filter { $0 == "authorize" }.count == 1)
+        editor.cancelSignIn()
+        await editorSignIn.value
     }
 }

@@ -6,12 +6,29 @@ public struct GoogleToken: Equatable, Sendable {
     public let refreshToken: String
 
     public init?(json: String) {
-        guard let fields = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
-              let refreshToken = fields["refresh_token"] as? String, !refreshToken.isEmpty
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        guard let fields = try? decoder.decode(Fields.self, from: Data(json.utf8)),
+              let refreshToken = fields.refreshToken, !refreshToken.isEmpty,
+              fields.expiry.map(Self.isDate) ?? true
         else { return nil }
         self.json = json
-        accessToken = fields["access_token"] as? String ?? ""
+        accessToken = fields.accessToken ?? ""
         self.refreshToken = refreshToken
+    }
+
+    private struct Fields: Decodable {
+        let accessToken: String?
+        let tokenType: String?
+        let refreshToken: String?
+        let expiry: String?
+        let expiresIn: Int64?
+    }
+
+    private static func isDate(_ text: String) -> Bool {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return ISO8601DateFormatter().date(from: text) != nil || fractional.date(from: text) != nil
     }
 }
 

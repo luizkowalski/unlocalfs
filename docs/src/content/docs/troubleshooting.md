@@ -17,7 +17,7 @@ For encrypted drives, an incorrect password or unencrypted names in the top fold
 
 ## A Google Cloud Storage connection fails
 
-- **Google sign-in does not finish.** Sign-in waits for your browser for up to 5 minutes. Click **Cancel Sign-In** and try again. If another app uses port 53682 on your Mac, sign-in fails at once with that message. Quit the other app, then try again.
+- **Google sign-in does not finish.** Sign-in waits for your browser for up to 5 minutes. Click **Cancel Sign-In** and try again. Only one Google sign-in runs at a time, so finish or cancel the other one first. If another app uses port 53682 on your Mac, sign-in fails at once with that message. Quit the other app, then try again.
 - **The drive shows Needs Google sign-in.** Google ended the sign-in. Click **Sign In Again…** on the drive page. The drive stays connected and the uploads that wait go on. If your organization requires frequent sign-in, this can happen often.
 - **Files do not open, but no upload waits.** When Google ends the sign-in and nothing waits to upload, Finder shows read errors but the drive page shows no sign-in notice. Disconnect and connect the drive. UnlocalFS then asks you to sign in again.
 - **The key is not accepted.** Import the JSON key file you downloaded from Google Cloud. Check that the service account and its key still exist.

@@ -22,6 +22,7 @@ extension MountService {
 
     public func signInWithGoogle() async throws -> String {
         try googleClient.requireConfigured()
+        guard signIns.isEmpty else { throw AppError(String(localized: .googleSignInInProgress)) }
         let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
         let run = Task { [executable, environment = environment(["RCLONE_GCS_CLIENT_ID": googleClient.id, "RCLONE_GCS_CLIENT_SECRET": googleClient.secret])] in
             try await Command.run(
