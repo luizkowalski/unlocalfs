@@ -54,16 +54,9 @@ struct GCSConnectionFields: View {
             HStack {
                 if viewModel.credentials.isSignedInToGoogle {
                     Text("Google account connected")
-                    Button("Sign In Again…", action: signIn)
+                    Button(action: signIn) { GoogleSignInLabel(title: Text("Sign In Again…")) }
                 } else {
-                    Button(action: signIn) {
-                        Label {
-                            Text("Sign in with Google")
-                        } icon: {
-                            Image(.google).resizable().renderingMode(.original).frame(width: 16, height: 16)
-                        }
-                        .labelStyle(.titleAndIcon)
-                    }
+                    Button(action: signIn) { GoogleSignInLabel(title: Text("Sign in with Google")) }
                 }
             }
         }

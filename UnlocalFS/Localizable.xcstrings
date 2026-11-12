@@ -2034,7 +2034,6 @@
       }
     },
     "Sign in with Google" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
