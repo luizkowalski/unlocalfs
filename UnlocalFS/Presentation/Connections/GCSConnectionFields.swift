@@ -56,7 +56,14 @@ struct GCSConnectionFields: View {
                     Text("Google account connected")
                     Button("Sign In Again…", action: signIn)
                 } else {
-                    Button("Sign in with Google", action: signIn)
+                    Button(action: signIn) {
+                        Label {
+                            Text("Sign in with Google")
+                        } icon: {
+                            Image(.google).resizable().renderingMode(.original).frame(width: 16, height: 16)
+                        }
+                        .labelStyle(.titleAndIcon)
+                    }
                 }
             }
         }
