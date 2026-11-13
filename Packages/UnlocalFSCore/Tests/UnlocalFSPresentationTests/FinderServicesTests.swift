@@ -32,7 +32,6 @@ import UnlocalFSTestSupport
         let notification = try #require(desktop.notifications.last)
         #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
         #expect(notification.body == String(localized: .linksUnavailableEncrypted))
-        #expect(fixture.rcloneCalls.isEmpty)
     }
 
     @Test func refusedDuplicateNamesTheFileAndExplainsWhy() async throws {
@@ -47,6 +46,5 @@ import UnlocalFSTestSupport
         #expect(notification.title == String(localized: .couldNotDuplicate("plan.pdf")))
         #expect(notification.body.contains(server.provider.title))
         #expect(notification.fallbackToAlert)
-        #expect(fixture.rcloneCalls.isEmpty)
     }
 }

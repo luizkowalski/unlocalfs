@@ -13,7 +13,7 @@ extension MountService {
             }
         }
         for remote in command.remote.namedRemotes {
-            _ = try await control(connection, "config/create", body: JSONEncoder().encode(CreateRemote(remote)))
+            _ = try await control(connection, "config/create", body: JSONEncoder().encode(remote))
         }
         _ = try await control(connection, "mount/mount", command.mountParameters, timeout: .seconds(20))
         try await wait(for: process) { isMounted(paths.mount(connection)) }

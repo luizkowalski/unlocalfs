@@ -22,19 +22,6 @@ extension MountService {
         return destination
     }
 
-    @discardableResult
-    func waitForJob(_ job: StartedJob, on connection: Connection) async throws -> Data {
-        while true {
-            let reply = try await control(connection, "job/status", ["jobid": "\(job.jobid)"])
-            let status = try JSONDecoder().decode(JobStatus.self, from: reply)
-            if status.finished {
-                guard status.success else { throw AppError(status.error) }
-                return reply
-            }
-            try await Task.sleep(for: .milliseconds(500))
-        }
-    }
-
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
         guard reservedCopies[connection.id, default: []].isEmpty else { throw AppError(String(localized: .copyInProgress)) }
         guard connection.backend.supportsServerCopy, status.isServing else { return }

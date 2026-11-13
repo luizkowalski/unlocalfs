@@ -48,6 +48,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var usesUploadTimes: Bool { backend.supportsUploadTimes && (readOnly || prefersUploadTimes) }
 
+    public var exportsRcloneConfig: Bool { encrypted }
+
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
     public var folderPath: String {
@@ -225,6 +227,13 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var obscuredKeyPassphrase = ""
     public var serviceAccountKey: String
     public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
+
+    public var secrets: [String] {
+        [
+            accessKey, secretKey, sessionToken, encryptionPassword, obscuredEncryptionPassword,
+            password, obscuredPassword, keyPassphrase, obscuredKeyPassphrase, serviceAccountKey,
+        ]
+    }
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",

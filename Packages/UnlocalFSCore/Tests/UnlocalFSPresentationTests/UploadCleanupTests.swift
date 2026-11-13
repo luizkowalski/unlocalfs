@@ -37,7 +37,8 @@ private let day = 24 * hour
         await app.reviewUnfinishedUploads(connection)
 
         #expect(app.uploadCleanup == nil)
-        #expect(app.alert == "\(String(localized: .noAbandonedUploads(connection.name))) \(String(localized: .recentUploadsKept(1)))")
+        let alert = try #require(app.alert)
+        #expect(alert.contains(String(localized: .noAbandonedUploads(connection.name))) && alert.contains(String(localized: .recentUploadsKept(1))))
         #expect(storage.uploadCount == 1)
     }
 

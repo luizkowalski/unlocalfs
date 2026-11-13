@@ -2,14 +2,12 @@ import Darwin
 import Foundation
 import UnlocalFSDomain
 
-enum RcloneState { case running, stopped, untracked }
-
 public actor MountService: DriveGateway {
     let executable: URL
     private let helperDirectory: URL
     let paths: AppPaths
     let serverTrust: SFTPTrustStore
-    private var processes: [UUID: Process] = [:]
+    var processes: [UUID: Process] = [:]
     private var starting: Set<UUID> = []
     var reservedCopies: [UUID: Set<String>] = [:]
     let traffic: TrafficStore
@@ -30,18 +28,16 @@ public actor MountService: DriveGateway {
     public nonisolated func removeCache(_ connection: Connection) { paths.removeCache(connection) }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        let credentials = try await prepareCredentials(credentials)
         let remote = try await remote(for: connection, credentials: credentials)
         do {
-            _ = try await runRemoteCommand(["lsf", connection.rcloneTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
+            _ = try await runRemoteCommand(["lsf", connection.driveTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
-            let failure = redacted(error, credentials: credentials)
-            let unknownKey = failure.localizedDescription.contains("knownhosts: key is unknown")
-            let changedKey = failure.localizedDescription.contains("knownhosts: key mismatch")
+            let unknownKey = error.localizedDescription.contains("knownhosts: key is unknown")
+            let changedKey = error.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {
                 throw try await serverTrust.challenge(connection.sftp, keyChanged: changedKey)
             }
-            throw failure
+            throw error
         }
     }
 
@@ -123,8 +119,7 @@ public actor MountService: DriveGateway {
         do {
             let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
             status.isRunning = true
-            status.pendingUploads = snapshot.cache.uploadsQueued + snapshot.cache.uploadsInProgress
-            status.failedUploads = snapshot.queue.count(where: \.hasFailedAttempt)
+            status.countUploads(snapshot.queue)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
@@ -222,16 +217,21 @@ public actor MountService: DriveGateway {
         try await JSONDecoder().decode(response, from: control(connection, method, parameters))
     }
 
-    private func snapshot(_ connection: Connection, _ request: String) async throws -> ControlSnapshot {
-        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
+    @discardableResult
+    func waitForJob(_ job: StartedJob, on connection: Connection) async throws -> Data {
+        while true {
+            let reply = try await control(connection, "job/status", ["jobid": "\(job.jobid)"])
+            let status = try JSONDecoder().decode(JobStatus.self, from: reply)
+            if status.finished {
+                guard status.success else { throw AppError(status.error) }
+                return reply
+            }
+            try await Task.sleep(for: MountCommand.jobPollInterval)
+        }
     }
 
-    func rcloneState(_ connection: Connection) -> RcloneState {
-        guard let pid = savedPID(connection) else { return processes[connection.id].map { $0.isRunning ? .running : .stopped } ?? .untracked }
-        if let process = processes[connection.id], process.processIdentifier == pid { return process.isRunning ? .running : .stopped }
-        let saved = try? paths.pidFile(connection).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
-        guard let process = Self.process(pid: pid), let saved else { return .stopped }
-        return process.startedAt <= saved ? .running : .stopped
+    private func snapshot(_ connection: Connection, _ request: String) async throws -> ControlSnapshot {
+        try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
     }
 
     func requireServing(_ connection: Connection, otherwise message: LocalizedStringResource) throws {
@@ -245,9 +245,13 @@ public actor MountService: DriveGateway {
     }
 
     func runRemoteCommand(_ arguments: [String], remote: RcloneRemote) async throws -> Data {
-        try await Command.run(executable, arguments + [
-            "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s",
-        ], environment: environment(remote.environment), timeout: .seconds(20))
+        do {
+            return try await Command.run(executable, arguments + [
+                "--config", "/dev/null", "--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s",
+            ], environment: environment(remote.environment), timeout: .seconds(20))
+        } catch {
+            throw redacted(error, credentials: remote.credentials ?? Credentials())
+        }
     }
 
     var baseEnvironment: [String: String] { [
@@ -262,7 +266,8 @@ public actor MountService: DriveGateway {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
-    func remote(for connection: Connection, credentials: Credentials?) async throws -> RcloneRemote {
+    func remote(for connection: Connection, credentials: Credentials) async throws -> RcloneRemote {
+        let credentials = try await prepareCredentials(credentials)
         switch connection.backend {
         case .s3Compatible, .gcs:
             return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
@@ -294,13 +299,7 @@ public actor MountService: DriveGateway {
 
     func redacted(_ error: any Error, credentials: Credentials) -> AppError {
         var message = error.localizedDescription
-        let secrets = [
-            credentials.accessKey, credentials.secretKey, credentials.sessionToken,
-            credentials.encryptionPassword, credentials.obscuredEncryptionPassword,
-            credentials.password, credentials.obscuredPassword, credentials.keyPassphrase, credentials.obscuredKeyPassphrase,
-            credentials.serviceAccountKey,
-        ]
-        for secret in secrets where !secret.isEmpty {
+        for secret in credentials.secrets where !secret.isEmpty {
             message = message.replacingOccurrences(of: secret, with: "[redacted]")
         }
         return AppError(message)

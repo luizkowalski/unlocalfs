@@ -1,5 +1,6 @@
 import SwiftUI
 import UnlocalFSDomain
+import UnlocalFSPresentation
 
 struct ActivityStatus: View {
     let activity: FileActivity
@@ -10,7 +11,7 @@ struct ActivityStatus: View {
         case .queued:
             Text("Waiting")
         case let .failed(nextAttempt):
-            FailedUploadButton(name: name, error: activity.uploadError, nextAttempt: nextAttempt)
+            FailedUploadButton(name: activity.name, error: activity.uploadError, nextAttempt: nextAttempt)
         case .uploaded:
             finished(Text("Uploaded"))
         case .downloaded:
@@ -57,6 +58,4 @@ struct ActivityStatus: View {
     private var movingText: Text {
         activity.isUpload ? Text("Uploading") : Text("Downloading")
     }
-
-    private var name: String { (activity.path as NSString).lastPathComponent }
 }

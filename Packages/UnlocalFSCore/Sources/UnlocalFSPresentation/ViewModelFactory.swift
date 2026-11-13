@@ -31,6 +31,6 @@ import UnlocalFSDomain
     }
 
     public func makeTraffic() -> TrafficViewModel {
-        TrafficViewModel(repository: traffic, connections: { [app] in app.connections }, unsaved: { [app] in app.statuses.mapValues(\.unsavedTraffic) })
+        TrafficViewModel(repository: traffic, connections: { [app] in app.connections }, unsaved: { [app] in app.unsavedTraffic })
     }
 }

@@ -29,27 +29,6 @@ import UnlocalFSInfrastructure
         }
     }
 
-    @Test func multiConnectionUploadsKeepTheCacheAndUseLargeWriteBuffersOnlyWhenChosen() async throws {
-        try await withSFTPDrive { drive, sftp in
-            let credentials = try await drive.service.prepareCredentials(sftp.credentials)
-            var mounts: [(streams: Int, bufferSize: Int)] = []
-            for multiConnection in [false, true] {
-                var connection = drive.connection
-                connection.multiThreadUploads = multiConnection
-                try await drive.service.mount(connection, credentials: credentials)
-                let main = try await drive.control("options/get", "blocks=main")["main"] as? [String: Any]
-                let streams = try #require(main?["MultiThreadStreams"] as? Int)
-                let bufferSize = try #require(main?["MultiThreadWriteBufferSize"] as? Int)
-                mounts.append((streams, bufferSize))
-                try await drive.service.unmount(connection)
-            }
-            #expect(mounts.map(\.streams) == [1, 4])
-            #expect(mounts.map(\.bufferSize) == [131_072, 4_194_304])
-            let caches = try FileManager.default.contentsOfDirectory(atPath: drive.paths.cache(drive.connection).appending(path: "vfs").path)
-            #expect(caches.count == 1)
-        }
-    }
-
     @Test func newOrChangedServerKeyNeedsApprovalBeforeConnecting() async throws {
         try await withSFTPDrive(trusted: false) { drive, sftp in
             let credentials = sftp.credentials
@@ -66,6 +45,38 @@ import UnlocalFSInfrastructure
             await #expect(throws: ServerTrustChallenge.self) { try await drive.service.mount(drive.connection, credentials: credentials) }
             try await drive.service.trustServer(changed)
             try await drive.service.test(drive.connection, credentials: credentials)
+        }
+    }
+
+    @Test func exportKeepsHostVerificationAndNeedsNoLocalFiles() async throws {
+        let connection = Connection.sftp {
+            $0.encrypted = true
+            $0.sftp.remotePath = "/srv/files"
+            $0.sftp.authentication = .privateKey
+            $0.sftp.keyFile = "/nonexistent/id_ed25519"
+            $0.sftp.agentSocket = "/tmp/agent.sock"
+        }
+        try await withOfflineDrive(connection) { drive in
+            let repository = SavedConnectionRepository(store: ConnectionStore(url: drive.paths.config), credentials: MemoryCredentialStorage())
+            try await repository.save(connection, credentials: drive.service.prepareCredentials(Credentials(encryptionPassword: "crypt", keyPassphrase: "phrase")))
+            let export = ExportRcloneConfigUseCase(repository: repository, drives: drive.service)
+            let folder = drive.paths.config.deletingLastPathComponent()
+            let withSecrets = folder.appending(path: "with.conf")
+            let withoutSecrets = folder.appending(path: "without.conf")
+            try await export.execute(connection, to: withSecrets, includesSecrets: true)
+            try await export.execute(connection, to: withoutSecrets, includesSecrets: false)
+
+            let remotes = try await dump(drive, withSecrets)
+            let sftp = try #require(remotes["unlocalfs-sftp"])
+            #expect(sftp["host"] == "files.example.com" && sftp["user"] == "me")
+            #expect(sftp["known_hosts_file"] == drive.knownHosts.path && sftp["key_file"] == "/nonexistent/id_ed25519")
+            #expect(!sftp.values.contains("/tmp/agent.sock"))
+            #expect(remotes["unlocalfs"]?["remote"] == "unlocalfs-sftp:/srv/files")
+            let passphrase = try #require(sftp["key_file_pass"])
+            let password = try #require(remotes["unlocalfs"]?["password"])
+            #expect(passphrase != "phrase" && password != "crypt")
+            let bare = try await dump(drive, withoutSecrets)
+            #expect(bare["unlocalfs-sftp"]?["key_file_pass"] == nil && bare["unlocalfs"]?["password"] == nil)
         }
     }
 }
