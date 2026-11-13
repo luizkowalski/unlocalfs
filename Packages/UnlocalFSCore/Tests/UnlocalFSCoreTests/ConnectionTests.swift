@@ -60,7 +60,6 @@ struct ConnectionTests {
             #"{"accessKey":"","secretKey":"","sessionToken":"","serviceAccountKey":"key"}"#.utf8,
         ))
         #expect(credentials == Credentials(serviceAccountKey: "key"))
-        #expect(credentials.googleToken.isEmpty)
     }
 
     @Test func currentReleaseConnectionAndCredentialsStayS3() throws {

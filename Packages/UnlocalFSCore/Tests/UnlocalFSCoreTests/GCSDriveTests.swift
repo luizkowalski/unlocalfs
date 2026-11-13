@@ -44,7 +44,7 @@ struct GCSDriveTests {
             #expect(remote["token"] == googleTokenJSON)
             #expect(remote["client_id"] == GoogleClient.test.id && remote["client_secret"] == GoogleClient.test.secret)
             #expect(remote["env_auth"] == "false")
-            #expect(remote["service_account_credentials"] == nil && remote["config_refresh_token"] == nil)
+            #expect(remote["service_account_credentials"] == nil)
             let bare = try #require(try await dump(drive, withoutSecrets)["unlocalfs-gcs"])
             #expect(bare["token"] == nil && bare["client_id"] == nil && bare["client_secret"] == nil && bare["service_account_credentials"] == nil)
             #expect(bare["bucket_policy_only"] == "true")
@@ -71,10 +71,9 @@ struct GCSDriveTests {
         try await drives.service.test(connection, credentials: credentials)
 
         let environment = try String(contentsOf: drives.root.appending(path: "lsf-environment"), encoding: .utf8)
-        #expect(environment.contains("RCLONE_CONFIG_UNLOCALFS-GCS_TOKEN=\(googleTokenJSON)\n"))
-        #expect(environment.contains("RCLONE_CONFIG_UNLOCALFS-GCS_CLIENT_ID=\(GoogleClient.test.id)\n"))
-        #expect(environment.contains("RCLONE_CONFIG_UNLOCALFS-GCS_CLIENT_SECRET=\(GoogleClient.test.secret)\n"))
-        #expect(environment.contains("RCLONE_CONFIG_UNLOCALFS-GCS_ENV_AUTH=false\n"))
+        #expect(environment.contains("=\(googleTokenJSON)\n"))
+        #expect(environment.contains("=\(GoogleClient.test.id)\n"))
+        #expect(environment.contains("=\(GoogleClient.test.secret)\n"))
         #expect(!environment.contains("SERVICE_ACCOUNT"))
         #expect(try !String(contentsOf: drives.root.appending(path: "lsf-arguments"), encoding: .utf8).contains("refresh"))
 

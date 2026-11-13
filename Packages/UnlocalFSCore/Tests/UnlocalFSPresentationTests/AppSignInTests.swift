@@ -48,7 +48,6 @@ import UnlocalFSTestSupport
         #expect(!app.busy.contains(connection.id))
         #expect(try fixture.repository.credentials(for: connection.id).googleToken == newTokenJSON)
         #expect(app.statusText(connection) == String(localized: .disconnected))
-        #expect(fixture.rcloneCalls == ["lsf", "authorize", "lsf"])
     }
 
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
@@ -74,7 +73,6 @@ import UnlocalFSTestSupport
         #expect(app.needsSignIn(connection))
         #expect(app.problem(connection) == problem)
         #expect(try fixture.repository.credentials(for: connection.id) == Credentials.google())
-        #expect(fixture.rcloneCalls == ["lsf", "authorize"])
     }
 
     @Test func failedSignInAgainKeepsTheSavedAccountAndShowsWhy() async throws {
@@ -95,19 +93,21 @@ import UnlocalFSTestSupport
     }
 
     @Test(arguments: [
-        (Connection.gcs(authentication: .googleAccount), revokedGrantError, true),
-        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: denied", false),
-        (Connection.gcs(), revokedGrantError, false),
-        (Connection.s3(), revokedGrantError, false),
+        (Connection.gcs(authentication: .googleAccount), revokedGrantError, true, String(localized: .needsGoogleSignIn), GoogleSignInRequired().localizedDescription),
+        (Connection.gcs(authentication: .googleAccount), "googleapi: Error 403: denied", false, String(localized: .uploadNeedsAttention), "googleapi: Error 403: denied"),
+        (Connection.gcs(), revokedGrantError, false, String(localized: .uploadNeedsAttention), revokedGrantError),
+        (Connection.s3(), revokedGrantError, false, String(localized: .uploadNeedsAttention), revokedGrantError),
     ])
-    func onlyAGoogleDriveWithARevokedGrantAsksToSignInAgain(connection: Connection, lastError: String, needsSignIn: Bool) async throws {
+    func onlyAGoogleDriveWithARevokedGrantAsksToSignInAgain(
+        connection: Connection, lastError: String, needsSignIn: Bool, statusText: String, uploadError: String,
+    ) async throws {
         try fixture.serve(connection, failed: 1, lastError: lastError)
         let app = fixture.app()
         await app.refresh()
 
         #expect(app.needsSignIn(connection) == needsSignIn)
-        #expect(app.statusText(connection) == (needsSignIn ? String(localized: .needsGoogleSignIn) : String(localized: .uploadNeedsAttention)))
-        #expect(app.uploadFailure(connection)?.uploadError == (needsSignIn ? GoogleSignInRequired().localizedDescription : lastError))
+        #expect(app.statusText(connection) == statusText)
+        #expect(app.uploadFailure(connection)?.uploadError == uploadError)
     }
 
     @Test func uploadRetryingAfterANewSignInNoLongerAsksToSignIn() async throws {

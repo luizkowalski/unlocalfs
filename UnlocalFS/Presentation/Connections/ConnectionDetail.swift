@@ -279,14 +279,7 @@ struct ConnectionDetail: View {
     }
 
     private var signInAgainButton: some View {
-        Button {
-            Task {
-                await model.signInAgain(connection)
-                NSApp.activate()
-            }
-        } label: {
-            GoogleSignInLabel(title: Text("Sign In Again…"))
-        }
+        GoogleSignInButton(title: Text("Sign In Again…")) { await model.signInAgain(connection) }
     }
 
     private func notice(

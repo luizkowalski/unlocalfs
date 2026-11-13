@@ -2012,7 +2012,6 @@
     },
     "Sign In Again…" : {
       "comment" : "Button: sign in to Google again for this drive",
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

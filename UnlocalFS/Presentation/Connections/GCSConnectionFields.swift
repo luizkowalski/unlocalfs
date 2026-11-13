@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 import UnlocalFSDomain
@@ -54,9 +53,9 @@ struct GCSConnectionFields: View {
             HStack {
                 if viewModel.credentials.isSignedInToGoogle {
                     Text("Google account connected")
-                    Button(action: signIn) { GoogleSignInLabel(title: Text("Sign In Again…")) }
+                    GoogleSignInButton(title: Text("Sign In Again…"), signIn: viewModel.signInWithGoogle)
                 } else {
-                    Button(action: signIn) { GoogleSignInLabel(title: Text("Sign in with Google")) }
+                    GoogleSignInButton(title: Text("Sign in with Google"), signIn: viewModel.signInWithGoogle)
                 }
             }
         }
@@ -71,13 +70,6 @@ struct GCSConnectionFields: View {
                 }
                 Button(email == nil ? "Import key…" : "Replace…") { importingKey = true }
             }
-        }
-    }
-
-    private func signIn() {
-        Task {
-            await viewModel.signInWithGoogle()
-            NSApp.activate()
         }
     }
 }

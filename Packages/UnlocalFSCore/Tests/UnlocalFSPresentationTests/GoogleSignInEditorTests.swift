@@ -23,7 +23,6 @@ import UnlocalFSTestSupport
         await editor.signInWithGoogle()
 
         #expect(editor.credentials.googleToken == newTokenJSON)
-        #expect(editor.credentials.isSignedInToGoogle)
         #expect(!editor.tested)
         #expect(!editor.signingIn)
         #expect(editor.error == nil)

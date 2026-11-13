@@ -299,6 +299,7 @@ extension MountSafetyTests {
     func startedDriveGetsItsSecretsOnlyOverTheControlSocket(connection: Connection, credentials: Credentials, expected: [String: String?]) async throws {
         let drives = try StubbedDrives("start") { root in
             """
+            if [ "$1" = 'obscure' ]; then printf 'obscured-secret'; fi
             if [ "$1" = 'rcd' ]; then
                 env > '\(root.path)/rcd-environment'
                 printf '%s\\n' "$@" > '\(root.path)/rcd-arguments'
@@ -320,7 +321,7 @@ extension MountSafetyTests {
         await #expect(throws: AppError.self) { try await mount.value }
 
         let started = try String(contentsOf: arguments, encoding: .utf8) + String(contentsOf: drives.root.appending(path: "rcd-environment"), encoding: .utf8)
-        for secret in ["s3-secret", "crypt-password", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
+        for secret in ["s3-secret", "crypt-password", "obscured-secret", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
             #expect(!started.contains(secret), "\(secret) reached the rcd process")
         }
         let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.rcloneType)"))

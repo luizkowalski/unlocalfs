@@ -19,10 +19,8 @@ public struct GoogleToken: Equatable, Sendable {
 
     private struct Fields: Decodable {
         let accessToken: String?
-        let tokenType: String?
         let refreshToken: String?
         let expiry: String?
-        let expiresIn: Int64?
     }
 
     private static func isDate(_ text: String) -> Bool {
