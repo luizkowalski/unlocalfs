@@ -11,7 +11,7 @@ struct TrafficRangePicker: View {
     init(range: Binding<ClosedRange<Date>>) {
         _range = range
         _draft = State(initialValue: range.wrappedValue)
-        _month = State(initialValue: Calendar.current.dateInterval(of: .month, for: range.wrappedValue.upperBound)?.start ?? range.wrappedValue.upperBound)
+        _month = State(initialValue: range.wrappedValue.upperBound.start(of: .month, .current))
     }
 
     var body: some View {
@@ -35,15 +35,15 @@ struct TrafficRangePicker: View {
             Divider()
             VStack(spacing: 12) {
                 HStack(alignment: .top, spacing: 24) {
-                    MonthGrid(month: month.adding(months: -1), range: draft, tap: tap)
+                    MonthGrid(month: month.adding(.month, -1, .current), range: draft, tap: tap)
                     MonthGrid(month: month, range: draft, tap: tap)
                 }
                 .overlay(alignment: .top) {
                     HStack {
-                        Button("Previous Month", systemImage: "chevron.left") { month = month.adding(months: -1) }
+                        Button("Previous Month", systemImage: "chevron.left") { month = month.adding(.month, -1, .current) }
                         Spacer()
-                        Button("Next Month", systemImage: "chevron.right") { month = month.adding(months: 1) }
-                            .disabled(month.adding(months: 1) > .now)
+                        Button("Next Month", systemImage: "chevron.right") { month = month.adding(.month, 1, .current) }
+                            .disabled(month.adding(.month, 1, .current) > .now)
                     }
                     .labelStyle(.iconOnly)
                     .buttonStyle(.borderless)
@@ -51,7 +51,7 @@ struct TrafficRangePicker: View {
                 Divider()
                 HStack {
                     if pending == nil {
-                        Text(DateInterval(start: draft.lowerBound, end: draft.upperBound.addingTimeInterval(1)).formattedDays)
+                        Text(draft.formattedDays)
                         Text("· ^[\(draft.dayCount(calendar: .current)) day](inflect: true)")
                     } else {
                         Text("Click the last day")
@@ -158,11 +158,5 @@ private extension TrafficPreset {
         case .lastMonth: Text("Last Month")
         case .thisYear: Text("This Year")
         }
-    }
-}
-
-private extension Date {
-    func adding(months: Int) -> Date {
-        Calendar.current.date(byAdding: .month, value: months, to: self) ?? self
     }
 }

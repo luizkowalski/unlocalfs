@@ -10,10 +10,10 @@ struct DriveManagementItems: View {
         Button("Edit Connection") { model.edit(connection) }
             .disabled(!model.canEdit(connection))
         Button("Duplicate") { model.duplicate(connection) }
-        if model.offersRcloneConfigExport(connection) {
+        if connection.exportsRcloneConfig {
             Button("Export rclone Config…") { Task { await model.exportRcloneConfig(connection) } }
         }
-        if model.offersUploadCleanup(connection) {
+        if connection.backend.supportsUploadCleanup {
             Button("Clean Up Unfinished Uploads…") { Task { await model.reviewUnfinishedUploads(connection) } }
                 .disabled(!model.canCleanUpUploads(connection))
         }

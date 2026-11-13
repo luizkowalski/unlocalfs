@@ -21,13 +21,10 @@ struct MountSafetyTests {
     }
 
     @Test(arguments: [
-        (#""uploadsQueued":1,"uploadsInProgress":0"#, "", true),
-        (#""uploadsQueued":0,"uploadsInProgress":1"#, "", true),
-        (#""uploadsQueued":0,"uploadsInProgress":0"#, failedItem, false),
-        (#""uploadsQueued":1,"uploadsInProgress":0"#, failedItem, false),
+        (waitingItem, true), (uploadingItem, true), (failedItem, false), ("\(waitingItem),\(failedItem)", false),
     ])
-    func unmountRefusesQueuedOrFailedUploads(cache: String, queue: String, pending: Bool) async throws {
-        let batch = statusBatch(cache: cache + #","bytesUsed":42"#, queue: #"{"queue":[\#(queue)]}"#)
+    func unmountRefusesQueuedOrFailedUploads(queue: String, pending: Bool) async throws {
+        let batch = statusBatch(queue: #"{"queue":[\#(queue)]}"#)
         try await withControl { _, socket in
             { request in
                 guard request.method == "core/quit" else { return batch }
@@ -45,7 +42,7 @@ struct MountSafetyTests {
     }
 
     @Test func cacheItemsRcloneCouldNotClearAreNotFailedUploads() async throws {
-        let batch = statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"erroredFiles":1,"bytesUsed":42"#)
+        let batch = statusBatch(cache: #""erroredFiles":1,"bytesUsed":42"#)
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
             let status = await service.status(connection)
             #expect(status.failedUploads == 0)
@@ -57,7 +54,7 @@ struct MountSafetyTests {
     func uploadErrorShowsOnlyWhileAnUploadHasFailed(tries: Int, uploading: Bool, failed: Bool) async throws {
         let item = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":\#(tries),"delay":5,"uploading":\#(uploading)}"#
         let batch = statusBatch(
-            cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#,
+            cache: #""bytesUsed":42"#,
             queue: #"{"queue":[\#(item)]}"#, stats: #"{\#(rcloneCounters),"lastError":"AccessDenied: Access Denied"}"#,
         )
         try await withControl { _, _ in { _ in batch } } operation: { service, connection in
@@ -71,8 +68,8 @@ struct MountSafetyTests {
         try await withControl { root, _ in
             { request in
                 if request.method == "job/list" { return #"{"runningIds":[]}"# }
-                let pending = mark(root.appending(path: "checked")) ? 1 : 0
-                return statusBatch(cache: #""uploadsQueued":\#(pending),"uploadsInProgress":0,"bytesUsed":42"#)
+                let queue = mark(root.appending(path: "checked")) ? waitingItem : ""
+                return statusBatch(queue: #"{"queue":[\#(queue)]}"#)
             }
         } operation: { service, connection in
             await #expect { try await service.unmount(connection) } throws: { error in
@@ -88,8 +85,9 @@ struct MountSafetyTests {
                     try FileManager.default.removeItem(at: socket)
                     return "{}"
                 }
+                if request.method == "job/list" { return #"{"runningIds":[]}"# }
                 if mark(root.appending(path: "checked")) { throw ControlFailure("Control unavailable") }
-                return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#)
+                return statusBatch(cache: #""bytesUsed":42"#)
             }
         } operation: { service, connection in
             await #expect(throws: AppError.self) { try await service.unmount(connection) }
@@ -113,7 +111,7 @@ struct MountSafetyTests {
                     _ = mark(root.appending(path: "quit"))
                     return "{}"
                 default:
-                    return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#)
+                    return statusBatch(cache: #""bytesUsed":0"#)
                 }
             }
         } operation: { service, connection in
@@ -166,7 +164,8 @@ struct MountSafetyTests {
         case "$1" in
             obscure) printf 'obscured-token' ;;
             lsf)
-                printf '%s' "Denied $RCLONE_S3_ACCESS_KEY_ID $RCLONE_S3_SECRET_ACCESS_KEY $RCLONE_S3_SESSION_TOKEN $RCLONE_CRYPT_PASSWORD \(password)" >&2
+                env | grep '^RCLONE_CONFIG_' >&2
+                printf '%s' "Denied \(password)" >&2
                 exit 1 ;;
         esac
         """
@@ -195,7 +194,8 @@ struct MountSafetyTests {
             obscure) printf 'obscured-token' ;;
             lsf)
                 printf '%s' "$*" > '\(directory.path)/arguments'
-                printf '%s' "Denied $RCLONE_SFTP_PASS $RCLONE_SFTP_KEY_FILE_PASS $RCLONE_CRYPT_PASSWORD private-ssh private-phrase private-password" >&2
+                env | grep '^RCLONE_CONFIG_' >&2
+                printf '%s' "Denied private-ssh private-phrase private-password" >&2
                 exit 1 ;;
         esac
         """
@@ -294,12 +294,14 @@ private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Re
             if phase == "after" { try FileManager.default.removeItem(at: socket) }
             throw ControlFailure("Quit failed")
         default:
-            return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#)
+            return statusBatch(cache: #""bytesUsed":42"#)
         }
     }
 }
 
 private let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
+private let waitingItem = #"{"name":"b.txt","id":2,"size":1,"expiry":5,"tries":0,"delay":5,"uploading":false}"#
+private let uploadingItem = #"{"name":"c.txt","id":3,"size":1,"expiry":0,"tries":1,"delay":5,"uploading":true}"#
 
 private func mark(_ file: URL) -> Bool {
     defer { FileManager.default.createFile(atPath: file.path, contents: Data()) }

@@ -1,4 +1,3 @@
-import Darwin
 import Foundation
 import OSLog
 import UnlocalFSDomain
@@ -33,20 +32,6 @@ struct UploadTally {
 }
 
 extension MountService {
-    static func process(pid: pid_t) -> RcloneProcess? {
-        var info = kinfo_proc()
-        var size = MemoryLayout<kinfo_proc>.stride
-        var name = [CTL_KERN, KERN_PROC, KERN_PROC_PID, pid]
-        guard sysctl(&name, 4, &info, &size, nil, 0) == 0, size > 0 else { return nil }
-        let start = info.kp_proc.p_un.__p_starttime
-        return RcloneProcess(pid: pid, startedAt: Date(timeIntervalSince1970: Double(start.tv_sec) + Double(start.tv_usec) / 1_000_000))
-    }
-
-    func savedPID(_ connection: Connection) -> pid_t? {
-        guard let saved = try? String(contentsOf: paths.pidFile(connection), encoding: .utf8), let pid = pid_t(saved), pid > 0 else { return nil }
-        return pid
-    }
-
     func recordTraffic(_ snapshot: ControlSnapshot, for connection: Connection) -> Traffic {
         guard rcloneState(connection) == .running, let pid = savedPID(connection), let process = Self.process(pid: pid) else { return Traffic() }
         do {

@@ -13,8 +13,7 @@ struct ActivityTable<Empty: View>: View {
                 ActivityFileName(activity: activity)
             }
             TableColumn("Folder") { activity in
-                let folder = (activity.path as NSString).deletingLastPathComponent
-                Text(folder).truncationMode(.middle).foregroundStyle(.secondary).help(folder)
+                Text(activity.folder).truncationMode(.middle).foregroundStyle(.secondary).help(activity.folder)
             }
             TableColumn("Status") { activity in
                 HStack(spacing: 6) {

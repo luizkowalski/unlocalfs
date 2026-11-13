@@ -15,23 +15,25 @@ struct RcloneRemote {
         }
     }
 
-    var environment: [String: String] {
-        var environment = Dictionary(uniqueKeysWithValues: options.map { ("RCLONE_\(connection.rcloneType.uppercased())_\($0.key.uppercased())", $0.value) })
-        if let agentSocket { environment["SSH_AUTH_SOCK"] = agentSocket }
-        if connection.encrypted {
-            for (key, value) in cryptOptions(remote: connection.rcloneStorage) { environment["RCLONE_CRYPT_\(key.uppercased())"] = value }
-        }
-        return environment
-    }
-
     var namedRemotes: [NamedRemote] {
         let storage = NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options)
         guard connection.encrypted else { return [storage] }
-        return [storage, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions(remote: connection.driveStorage))]
+        return [storage, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions)]
     }
 
-    func cryptOptions(remote: String) -> [String: String] {
-        var options = ["remote": remote, "filename_encryption": "standard", "directory_name_encryption": "true", "filename_encoding": "base32"]
+    var environment: [String: String] {
+        var environment: [String: String] = [:]
+        for remote in namedRemotes {
+            let prefix = "RCLONE_CONFIG_\(remote.name.uppercased())_"
+            environment[prefix + "TYPE"] = remote.type
+            for (key, value) in remote.parameters { environment[prefix + key.uppercased()] = value }
+        }
+        environment["SSH_AUTH_SOCK"] = agentSocket
+        return environment
+    }
+
+    private var cryptOptions: [String: String] {
+        var options = ["remote": connection.driveStorage, "filename_encryption": "standard", "directory_name_encryption": "true", "filename_encoding": "base32"]
         options["password"] = credentials?.obscuredEncryptionPassword
         return options
     }
@@ -101,42 +103,27 @@ extension Connection {
         }
     }
 
-    var rcloneStorage: String { ":\(rcloneType):\(rclonePath)" }
-    var rcloneTarget: String { encrypted ? ":crypt:" : rcloneStorage }
-
     static let cryptRemoteName = "unlocalfs"
     var storageRemoteName: String { "unlocalfs-\(rcloneType)" }
     var driveStorage: String { "\(storageRemoteName):\(rclonePath)" }
     var driveTarget: String { encrypted ? "\(Self.cryptRemoteName):" : driveStorage }
 }
 
-struct NamedRemote {
+struct NamedRemote: Encodable {
+    private struct Options: Encodable {
+        let nonInteractive = true
+        let noObscure = true
+    }
+
     let name: String
     let type: String
     let parameters: [String: String]
+    private let opt = Options()
 
     init(name: String, type: String, options: [String: String]) {
         self.name = name
         self.type = type
         parameters = options.filter { !$0.value.isEmpty }
-    }
-}
-
-struct CreateRemote: Encodable {
-    struct Options: Encodable {
-        var nonInteractive = true
-        var noObscure = true
-    }
-
-    let name: String
-    let type: String
-    let parameters: [String: String]
-    var opt = Options()
-
-    init(_ remote: NamedRemote) {
-        name = remote.name
-        type = remote.type
-        parameters = remote.parameters
     }
 }
 

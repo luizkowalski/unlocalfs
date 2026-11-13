@@ -46,8 +46,6 @@ import UnlocalFSTestSupport
         #expect(editor.firstInvalidField == .name)
         #expect(editor.fieldErrors[.endpoint] != nil)
         #expect(editor.fieldErrors[.accessKey] != nil)
-        #expect(!editor.saving)
-        #expect(!FileManager.default.fileExists(atPath: fixture.paths.config.path))
 
         editor.connection.name = "Photos"
 

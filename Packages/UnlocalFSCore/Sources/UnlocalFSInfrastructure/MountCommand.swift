@@ -9,6 +9,7 @@ struct MountCommand {
     private static let maxBufferMemory = "256M"
     private static let readChunkSizeLimit = "1G"
     private static let multiThreadWriteBufferSize = "4M"
+    static let jobPollInterval: Duration = .milliseconds(500)
     private static let jobExpiry = "5s"
     private static let jobExpiryCheck = "2s"
 
@@ -25,7 +26,7 @@ struct MountCommand {
             "--rc-addr", "unix://\(paths.socket(connection).path)", "--log-level", "INFO",
             "--log-file", paths.log(connection).path, "--log-file-max-size", Self.logMaxSize, "--log-file-max-backups", "\(Self.logMaxBackups)",
         ]
-        if connection.backend == .sftp {
+        if connection.backend.supportsMultiThreadUploads {
             arguments += connection.multiThreadUploads
                 ? ["--multi-thread-write-buffer-size", Self.multiThreadWriteBufferSize]
                 : ["--multi-thread-streams", "1"]

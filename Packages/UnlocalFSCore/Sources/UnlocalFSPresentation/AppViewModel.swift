@@ -94,6 +94,8 @@ import UnlocalFSDomain
         pendingTrust[connection.id]?.challenge
     }
 
+    public var unsavedTraffic: [UUID: Traffic] { statuses.mapValues(\.unsavedTraffic) }
+
     public var selected: Connection? {
         guard case let .drive(id) = selection else { return nil }
         return connections.first { $0.id == id }
@@ -238,8 +240,6 @@ import UnlocalFSDomain
             }
         }
     }
-
-    public func offersRcloneConfigExport(_ connection: Connection) -> Bool { connection.encrypted }
 
     public func exportRcloneConfig(_ connection: Connection) async {
         guard let destination = desktop.chooseRcloneConfigDestination(for: connection) else { return }

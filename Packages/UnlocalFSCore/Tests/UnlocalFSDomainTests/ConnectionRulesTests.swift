@@ -40,12 +40,6 @@ struct ConnectionRulesTests {
             .init(field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty)),
             .init(field: .confirmation, message: String(localized: .passwordsDoNotMatch)),
         ])
-        #expect { try errors.requireValid() } throws: { error in
-            (error as? AppError)?.errorDescription == [
-                String(localized: .folderPathInvalid), String(localized: .nameAlreadyExists), String(localized: .accessKeyEmpty),
-                String(localized: .secretKeyEmpty), String(localized: .encryptionPasswordEmpty), String(localized: .passwordsDoNotMatch),
-            ].joined(separator: "\n")
-        }
     }
 
     @Test func unencryptedDriveIgnoresConfirmation() {

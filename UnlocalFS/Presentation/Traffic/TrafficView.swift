@@ -225,7 +225,9 @@ private struct ShareBar: View {
 }
 
 extension DateInterval {
-    var formattedDays: String {
-        (start ..< max(start, end.addingTimeInterval(-1))).formatted(.interval.day().month(.abbreviated).year())
-    }
+    var formattedDays: String { (start ... max(start, end.addingTimeInterval(-1))).formattedDays }
+}
+
+extension ClosedRange<Date> {
+    var formattedDays: String { (lowerBound ..< upperBound).formatted(.interval.day().month(.abbreviated).year()) }
 }

@@ -29,9 +29,7 @@ extension MountService {
     func reachesControl(_ connection: Connection, updating status: inout MountStatus) async throws -> Bool {
         guard let problem = status.controlError else { return true }
         do {
-            let queue = try await control(UploadQueue.self, connection, "vfs/queue").queue
-            status.pendingUploads = queue.count
-            status.failedUploads = queue.count(where: \.hasFailedAttempt)
+            try await status.countUploads(control(UploadQueue.self, connection, "vfs/queue").queue)
             return true
         } catch is ControlUnreachable {
             return false
