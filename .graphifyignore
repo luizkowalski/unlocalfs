@@ -1,0 +1,6 @@
+docs/
+scripts/
+.superpowers/
+.claude/
+.swift*
+Signing.*.xcconfig
