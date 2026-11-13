@@ -11,124 +11,124 @@
 - Token cost: 289,731 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `46b5fb00`
+- Built from commit: `dc0d80ab`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Traffic
-- View Model Fixtures
-- .sftp
-- ServerTrustChallenge
-- MountStatus
-- Foundation Module Imports
-- Documentation Deployment
+- withControl
+- Decodable
 - Connection
-- TestDesktopServices
-- GoogleSignInRequired
-- Mount Process Shutdown
-- Build Test Workflow
-- Test Module Dependencies
-- Connection Editor Tests
-- Date
-- AppViewModel
-- FileActivity
-- Connection Detail Views
-- Release Build Workflow
-- Finder Service Dispatch
-- Darwin
-- withControl
-- ViewModelFixture
-- withControl
-- Traffic Database Storage
-- Desktop File Dialogs
-- Connection Form Fields
-- CopyName
-- TrafficView
-- Remote File Actions
-- Traffic Counter Accounting
-- AppViewModel
-- Storage Smoke Fixtures
-- Rclone Remote Configuration
-- Connection Field Names
-- .status
-- AppSearchTests
+- Foundation
 - .validate
-- Process Test Resources
-- Presentation and Application
-- Keychain
-- TrafficStore
-- Storage Provider Selection
-- MountService
-- MountService
-- .sftp
-- .body
-- Fake Storage Server
-- AppError
-- Equatable
-- ValidationResult
-- SFTP Host Trust
-- S3 Drive Tests
-- AWS Encryption Settings
-- GCSConnectionFields
+- deploy
+- Sendable
+- Testing
+- .s3
+- steps
+- AppViewModel
 - UnlocalFSPresentation
-- ConnectionStore
-- ProviderIcon
-- DriveCondition
-- SFTP Authentication Options
-- ConnectionStore
-- .reading
-- Drive Status Polling
-- ServiceAccountKey
-- .refresh
-- ActivityView
-- SidebarSearchField
-- StubbedDrives
-- GCSAuthentication
-- Storage Backend Capabilities
-- Direction
-- ShareBar
-- GoogleToken
-- GoogleSignInRun
-- terms.md
-- Connection Editor Form
-- ViewModelFixture.swift
-- Activity
-- StatusIndicator
-- MainView
-- SFTP Authentication Fields
-- Dependency Update Schedule
-- ClosedRange<Date>
-- App Target Configuration
-- fetchActivity
-- Command Process Execution
-- ServerTrustSheet
 - Credentials
-- .sample
+- MountService
+- TrafficPreset
+- AppPaths
+- AppViewModel
+- .shareLink
+- .sftp
+- TrafficViewModel
+- .gcs
+- steps
+- MacOSDesktopServices
+- AppDelegate
+- ConnectionStore
+- TrafficStore
+- ConnectionDetail
+- Direction
+- Date
+- Traffic
+- ConnectionEditorViewModel
+- Drive
+- StubbedDrives
+- FixtureResources
+- S3StorageClass
+- withRclone
+- TrafficView
+- RcloneRemote
+- Equatable
+- ConnectionField
+- FileActivity
+- DriveCondition
+- .serve
+- ConnectionEditorField
+- CredentialStorage
+- SFTPFixture
+- .remove
+- Provider
+- ViewModelFixture
+- AppError
+- ActivityViewModel
+- TransferSummary
+- .update
+- View
+- State
+- SFTPTrustStore
+- ServerTrustChallenge
+- withS3Drive
+- MainView
+- GCSAuthentication
+- GoogleSignInRequired
+- MenuBarIcon
+- MountStatus
+- .write
+- .serve
+- base
+- SFTPAuthentication
+- Backend
+- GoogleSignInRun
+- SFTPLogin
+- StatusIndicator
+- ConnectionDraft
+- .refresh
+- GCSConnectionFields
+- fetchActivity
+- project.yml
+- ActivityStatus
+- updates
+- CopyName
+- UploadCleanup
+- TrafficViewModelTests
+- UnlocalFS
+- SFTPConnectionFields
 - .recordTraffic
-- Command.swift
-- ConnectionDraft
-- Quit Coordination
-- RcloneRemote.swift
-- Application Build Schemes
+- .run
+- .quitDisconnectsEveryDriveAtTheSameTime
+- AppSearchTests
 - Darwin
-- ConnectionDraft
+- GoogleToken
+- UnlocalFS
+- .body
+- SFTPSettings
 - ActivitySnapshot
+- SpeedSample
+- .reading
 - README.md
-- ControlServers
-- Sidebar Search Actions
+- AppViewModel
+- AppViewModel
 - AppPathsTests.swift
-- App Resource Copying
+- .sample
+- ControlServers
+- MemoryCredentialStorage
+- copyFiles
 - GoogleSignInButton
 - waitUntil
-- MemoryCredentialStorage
-- SFTPSettings
-- Helper Embedding Phase
+- postBuildScripts
 - ClosedRange<Date>
-- Package Test Configuration
+- test
+- Command.swift
+- RcloneRemote.swift
+- ByteCountFormatStyle+Size.swift
+- PackageDescription
 - sftpSettings
-- Byte Count Formatting
-- Swift Package Definition
 
 ## God Nodes (most connected - your core abstractions)
 1. `Connection` - 225 edges
@@ -159,339 +159,339 @@
 
 ## Communities (117 total, 33 thin omitted)
 
-### Community 0 - "Traffic"
-Cohesion: 0.08
-Nodes (37): BatchResult, CodingKeys, bytes, completedAt, dstFs, error, initiated, key (+29 more)
-
-### Community 2 - ".sftp"
-Cohesion: 0.20
-Nodes (3): SaveConnectionUseCase, withWorkflowFixture(), WorkflowTests
-
-### Community 3 - "ServerTrustChallenge"
-Cohesion: 0.17
-Nodes (5): ConnectionStore, SavedConnectionRepository, MemoryCredentialStorage, RepositoryTests, UnavailableCredentialStorage
-
-### Community 4 - "MountStatus"
-Cohesion: 0.19
-Nodes (4): MountStatus, .isActive, .isServing, .needsReconnect
-
-### Community 5 - "Foundation Module Imports"
-Cohesion: 0.08
-Nodes (5): Foundation, GRDB, Observation, Security, UnlocalFSDomain
-
-### Community 6 - "Documentation Deployment"
-Cohesion: 0.05
-Nodes (42): runs-on, steps, timeout-minutes, concurrency, cancel-in-progress, group, environment, if (+34 more)
-
-### Community 7 - "Connection"
-Cohesion: 0.06
-Nodes (12): Connection, .backend, .bucketPath, .exportsRcloneConfig, .folderPath, .usesGoogleSignIn, .usesUploadTimes, .driveStorage (+4 more)
-
-### Community 8 - "TestDesktopServices"
-Cohesion: 0.12
-Nodes (11): DriveTraffic, TrafficRepository, TrafficBar, .id, TrafficViewModel, .custom, .period, .recentTotal (+3 more)
-
-### Community 9 - "GoogleSignInRequired"
-Cohesion: 0.18
-Nodes (6): GoogleSignInRequired, .errorDescription, DriveEjectError, .errorDescription, UploadsPendingError, .errorDescription
-
-### Community 10 - "Mount Process Shutdown"
-Cohesion: 0.25
-Nodes (7): BatchReply, .current, counters(), finished(), reply(), TrafficTests, withRclone()
-
-### Community 11 - "Build Test Workflow"
-Cohesion: 0.06
-Nodes (35): env, runs-on, steps, timeout-minutes, concurrency, cancel-in-progress, group, DEVELOPER_DIR (+27 more)
-
-### Community 12 - "Test Module Dependencies"
-Cohesion: 0.13
-Nodes (4): Synchronization, Testing, UnlocalFSInfrastructure, UnlocalFSTestSupport
-
-### Community 13 - "Connection Editor Tests"
-Cohesion: 0.11
-Nodes (6): Credentials, .encryptionPassword, .keyPassphrase, .password, ConnectionRulesTests, ConnectionEditorViewModelTests
-
-### Community 14 - "Date"
-Cohesion: 0.09
-Nodes (17): ClosedRange<Date>, DateInterval, TrafficPeriod, custom, last12Months, last30Days, last90Days, TrafficPreset (+9 more)
-
-### Community 15 - "AppViewModel"
-Cohesion: 0.06
-Nodes (21): Activity, connected, downloading, idle, uploading, AppViewModel, .busy, .isConfirmingDelete (+13 more)
-
-### Community 16 - "FileActivity"
-Cohesion: 0.14
-Nodes (10): FileActivity, .finishedAt, .id, .isUpload, Sequence<FileActivity>, .folder, .isCancellable, .name (+2 more)
-
-### Community 17 - "Connection Detail Views"
-Cohesion: 0.17
-Nodes (11): ConnectionDetail, .awsDetails, .body, .bucketDetail, .disconnected, .logo, .notices, .sftpDetails (+3 more)
-
-### Community 18 - "Release Build Workflow"
-Cohesion: 0.07
-Nodes (29): env, runs-on, steps, timeout-minutes, APPLE_ID, DEVELOPER_DIR, GH_TOKEN, GOOGLE_CLIENT_ID (+21 more)
-
-### Community 19 - "Finder Service Dispatch"
-Cohesion: 0.13
-Nodes (3): AppDelegate, .model, .viewModels
-
-### Community 20 - "Darwin"
-Cohesion: 0.15
-Nodes (8): UnfinishedUpload, Date, DayCell, .body, MonthGrid, .body, TrafficRangePicker, .body
-
-### Community 21 - "withControl"
-Cohesion: 0.10
-Nodes (10): AppPaths, .knownHosts, .sockets, .traffic, MountCommand, .arguments, .environment, .mountParameters (+2 more)
-
-### Community 22 - "ViewModelFixture"
-Cohesion: 0.15
-Nodes (9): FinderServicesTests, Notification, ViewModelFixture, .paths, .rcloneCalls, .root, .service, .signInEnvironment (+1 more)
-
-### Community 23 - "withControl"
+### Community 0 - "withControl"
 Cohesion: 0.05
 Nodes (17): ControlSocket, ControlUnreachable, RcloneError, UnixConnection, .timedOut, mark(), MountSafetyTests, shutdown() (+9 more)
 
-### Community 24 - "Traffic Database Storage"
-Cohesion: 0.14
-Nodes (4): TrafficDay, TrafficStore, .migrator, TrafficStoreTests
+### Community 1 - "Decodable"
+Cohesion: 0.08
+Nodes (37): BatchResult, CodingKeys, bytes, completedAt, dstFs, error, initiated, key (+29 more)
 
-### Community 25 - "Desktop File Dialogs"
-Cohesion: 0.12
-Nodes (4): DesktopServices, RcloneConfigDestination, MacOSDesktopServices, .opensAtLogin
+### Community 2 - "Connection"
+Cohesion: 0.06
+Nodes (12): Connection, .backend, .bucketPath, .exportsRcloneConfig, .folderPath, .usesGoogleSignIn, .usesUploadTimes, .driveStorage (+4 more)
 
-### Community 26 - "Connection Form Fields"
-Cohesion: 0.13
-Nodes (10): ConnectionBucketFields, .body, ConnectionEditorField, .body, ConnectionIdentityFields, .body, .providerPicker, S3ConnectionFields (+2 more)
+### Community 3 - "Foundation"
+Cohesion: 0.08
+Nodes (5): Foundation, GRDB, Observation, Security, UnlocalFSDomain
 
-### Community 28 - "TrafficView"
-Cohesion: 0.12
-Nodes (15): .detail, ProviderIcon, .body, ShareBar, .body, TrafficChart, TrafficList, .body (+7 more)
-
-### Community 29 - "Remote File Actions"
-Cohesion: 0.09
-Nodes (7): FileActionError, ShareLinkExpiry, day, hour, .title, week, AppViewModel
-
-### Community 30 - "Traffic Counter Accounting"
-Cohesion: 0.28
-Nodes (4): Traffic, .total, TrafficMeter, TrafficMeterTests
-
-### Community 31 - "AppViewModel"
-Cohesion: 0.13
-Nodes (3): AppViewModel, .activity, AppViewModel
-
-### Community 32 - "Storage Smoke Fixtures"
-Cohesion: 0.20
-Nodes (7): Drive, dump(), makeDrive(), rclone(), verifyRoundTrip(), GCSDriveTests, withOfflineDrive()
-
-### Community 33 - "Rclone Remote Configuration"
-Cohesion: 0.18
-Nodes (11): NamedRemote, Options, RcloneRemote, .cryptOptions, .environment, .gcsOptions, .namedRemotes, .options (+3 more)
-
-### Community 34 - "Connection Field Names"
-Cohesion: 0.11
-Nodes (19): ConnectionField, accessKey, bucket, confirmation, .displayName, encryptionPassword, endpoint, folder (+11 more)
-
-### Community 35 - ".status"
-Cohesion: 0.14
-Nodes (11): ConnectionEditorViewModel, .connection, .credentials, .fieldErrors, .firstInvalidField, .initialFocus, .isLocked, .locksRemoteFolder (+3 more)
-
-### Community 37 - ".validate"
+### Community 4 - ".validate"
 Cohesion: 0.07
 Nodes (13): .serviceAccountEmail, ServiceAccountKey, Issue, String, .isBlank, ValidationResult, .fieldErrors, .isValid (+5 more)
 
-### Community 39 - "Process Test Resources"
-Cohesion: 0.17
-Nodes (4): FixtureResources, Launch, requireOutput(), withFixture()
+### Community 5 - "deploy"
+Cohesion: 0.05
+Nodes (42): runs-on, steps, timeout-minutes, concurrency, cancel-in-progress, group, environment, if (+34 more)
 
-### Community 40 - "Presentation and Application"
-Cohesion: 0.17
-Nodes (6): ActivityViewModel, .refreshInterval, UploadCancellation, .message, .title, .body
-
-### Community 41 - "Keychain"
-Cohesion: 0.24
-Nodes (3): Keychain, CredentialStorage, KeychainTests
-
-### Community 42 - "TrafficStore"
-Cohesion: 0.19
-Nodes (5): RcloneProcess, TrafficCheckpoint, .unsaved, TrafficReading, TrafficSave
-
-### Community 43 - "Storage Provider Selection"
-Cohesion: 0.12
-Nodes (15): Provider, aws, .backend, cloudflare, digitalOcean, googleCloudStorage, .id, .isGeneric (+7 more)
-
-### Community 45 - "MountService"
-Cohesion: 0.22
-Nodes (3): ServerTrustChallenge, .errorDescription, .server
-
-### Community 46 - ".sftp"
-Cohesion: 0.21
-Nodes (9): SFTPFixture, .agentSocket, .connection, .credentials, .key, .protectedKey, .served, SFTPServer (+1 more)
-
-### Community 47 - ".body"
-Cohesion: 0.33
-Nodes (4): UnlocalFSApp, .body, MenuContent, .body
-
-### Community 48 - "Fake Storage Server"
-Cohesion: 0.18
-Nodes (3): FakeStorage, .uploadCount, UploadCleanupTests
-
-### Community 50 - "Equatable"
-Cohesion: 0.11
-Nodes (3): AppPollingTests, MenuBarActivityTests, SpeedRecordingTests
-
-### Community 51 - "ValidationResult"
+### Community 6 - "Sendable"
 Cohesion: 0.11
 Nodes (19): ConnectionRepository, DeleteConnectionUseCase, SetAutomaticConnectUseCase, DriveGateway, ConnectDriveUseCase, Decision, disconnect, quit (+11 more)
 
-### Community 54 - "S3 Drive Tests"
-Cohesion: 0.22
-Nodes (3): S3DriveTests, S3Server, withS3Drive()
+### Community 7 - "Testing"
+Cohesion: 0.13
+Nodes (4): Synchronization, Testing, UnlocalFSInfrastructure, UnlocalFSTestSupport
 
-### Community 55 - "AWS Encryption Settings"
-Cohesion: 0.12
-Nodes (14): AWSSettings, S3StorageClass, glacierInstantRetrieval, .id, intelligentTiering, oneZoneInfrequentAccess, standard, standardInfrequentAccess (+6 more)
+### Community 9 - "steps"
+Cohesion: 0.06
+Nodes (35): env, runs-on, steps, timeout-minutes, concurrency, cancel-in-progress, group, DEVELOPER_DIR (+27 more)
 
-### Community 56 - "GCSConnectionFields"
-Cohesion: 0.20
-Nodes (3): GCSConnectionFields, .body, .serviceAccountField
+### Community 10 - "AppViewModel"
+Cohesion: 0.06
+Nodes (21): Activity, connected, downloading, idle, uploading, AppViewModel, .busy, .isConfirmingDelete (+13 more)
 
-### Community 57 - "UnlocalFSPresentation"
+### Community 11 - "UnlocalFSPresentation"
 Cohesion: 0.11
 Nodes (8): AppKit, Charts, Network, ServiceManagement, SwiftUI, UniformTypeIdentifiers, UnlocalFSPresentation, UserNotifications
 
-### Community 59 - "ProviderIcon"
-Cohesion: 0.21
-Nodes (5): MenuBarIcon, .accessibilityValue, .animatesUploads, .body, .image
-
-### Community 60 - "DriveCondition"
+### Community 12 - "Credentials"
 Cohesion: 0.11
-Nodes (14): DriveCondition, checking, connected, disconnected, ejected, .indicator, needsAttention, needsReconnect (+6 more)
+Nodes (6): Credentials, .encryptionPassword, .keyPassphrase, .password, ConnectionRulesTests, ConnectionEditorViewModelTests
 
-### Community 62 - "SFTP Authentication Options"
+### Community 14 - "TrafficPreset"
+Cohesion: 0.09
+Nodes (17): ClosedRange<Date>, DateInterval, TrafficPeriod, custom, last12Months, last30Days, last90Days, TrafficPreset (+9 more)
+
+### Community 15 - "AppPaths"
+Cohesion: 0.10
+Nodes (10): AppPaths, .knownHosts, .sockets, .traffic, MountCommand, .arguments, .environment, .mountParameters (+2 more)
+
+### Community 16 - "AppViewModel"
+Cohesion: 0.13
+Nodes (3): AppViewModel, .activity, AppViewModel
+
+### Community 17 - ".shareLink"
+Cohesion: 0.09
+Nodes (7): FileActionError, ShareLinkExpiry, day, hour, .title, week, AppViewModel
+
+### Community 18 - ".sftp"
+Cohesion: 0.20
+Nodes (3): SaveConnectionUseCase, withWorkflowFixture(), WorkflowTests
+
+### Community 19 - "TrafficViewModel"
+Cohesion: 0.12
+Nodes (11): DriveTraffic, TrafficRepository, TrafficBar, .id, TrafficViewModel, .custom, .period, .recentTotal (+3 more)
+
+### Community 21 - "steps"
+Cohesion: 0.07
+Nodes (29): env, runs-on, steps, timeout-minutes, APPLE_ID, DEVELOPER_DIR, GH_TOKEN, GOOGLE_CLIENT_ID (+21 more)
+
+### Community 22 - "MacOSDesktopServices"
+Cohesion: 0.12
+Nodes (4): DesktopServices, RcloneConfigDestination, MacOSDesktopServices, .opensAtLogin
+
+### Community 23 - "AppDelegate"
+Cohesion: 0.13
+Nodes (3): AppDelegate, .model, .viewModels
+
+### Community 24 - "ConnectionStore"
 Cohesion: 0.17
-Nodes (10): SFTPAuthentication, agent, .id, password, privateKey, .title, Pane, connection (+2 more)
+Nodes (5): ConnectionStore, SavedConnectionRepository, MemoryCredentialStorage, RepositoryTests, UnavailableCredentialStorage
 
-### Community 66 - "ServiceAccountKey"
-Cohesion: 0.15
-Nodes (5): controlCalls(), LockableCredentialStorage, withRevokedDrive(), StubbedDrives, .rcloneCalls
+### Community 25 - "TrafficStore"
+Cohesion: 0.14
+Nodes (4): TrafficDay, TrafficStore, .migrator, TrafficStoreTests
 
-### Community 69 - "SidebarSearchField"
-Cohesion: 0.15
-Nodes (13): ARCHS, ASSETCATALOG_COMPILER_APPICON_NAME, CODE_SIGN_STYLE, CURRENT_PROJECT_VERSION, ENABLE_HARDENED_RUNTIME, ENABLE_USER_SCRIPT_SANDBOXING, INFOPLIST_FILE, MARKETING_VERSION (+5 more)
-
-### Community 70 - "StubbedDrives"
-Cohesion: 0.22
-Nodes (7): ActivityStatus, .body, .movingText, .progress, FailedUploadButton, .body, .details
-
-### Community 71 - "GCSAuthentication"
-Cohesion: 0.19
-Nodes (7): GCSAuthentication, googleAccount, .id, serviceAccount, .title, GCSSettings, Config
-
-### Community 72 - "Storage Backend Capabilities"
+### Community 26 - "ConnectionDetail"
 Cohesion: 0.17
-Nodes (10): Backend, gcs, .locksFolderAfterSave, s3Compatible, sftp, .supportsMultiThreadUploads, .supportsServerCopy, .supportsShareLinks (+2 more)
+Nodes (11): ConnectionDetail, .awsDetails, .body, .bucketDetail, .disconnected, .logo, .notices, .sftpDetails (+3 more)
 
-### Community 73 - "Direction"
+### Community 27 - "Direction"
 Cohesion: 0.13
 Nodes (10): Direction, .color, download, .fill, .label, .symbol, upload, SpeedChart (+2 more)
 
-### Community 74 - "ShareBar"
-Cohesion: 0.21
-Nodes (7): SFTPDriveTests, SFTPLogin, agent, key, password, protectedKey, withSFTPDrive()
-
-### Community 75 - "GoogleToken"
-Cohesion: 0.36
-Nodes (4): .isSignedInToGoogle, .secrets, Fields, GoogleToken
-
-### Community 78 - "Connection Editor Form"
+### Community 28 - "Date"
 Cohesion: 0.15
-Nodes (9): State, downloaded, downloading, failed, queued, uploaded, uploading, ConnectionEditor (+1 more)
+Nodes (8): UnfinishedUpload, Date, DayCell, .body, MonthGrid, .body, TrafficRangePicker, .body
 
-### Community 80 - "Activity"
-Cohesion: 0.18
-Nodes (10): macOS, name, options, deploymentTarget, postGenCommand, packages, UnlocalFSCore, settings (+2 more)
+### Community 29 - "Traffic"
+Cohesion: 0.28
+Nodes (4): Traffic, .total, TrafficMeter, TrafficMeterTests
 
-### Community 81 - "StatusIndicator"
-Cohesion: 0.18
-Nodes (9): .actions, .header, DriveManagementItems, .body, ConnectionRow, .body, .icon, StatusIndicator (+1 more)
-
-### Community 82 - "MainView"
+### Community 30 - "ConnectionEditorViewModel"
 Cohesion: 0.14
-Nodes (7): MainView, .sidebar, FocusedValues, SidebarSearchField, .body, TrafficCard, .body
+Nodes (11): ConnectionEditorViewModel, .connection, .credentials, .fieldErrors, .firstInvalidField, .initialFocus, .isLocked, .locksRemoteFolder (+3 more)
 
-### Community 83 - "SFTP Authentication Fields"
-Cohesion: 0.29
-Nodes (4): SFTPConnectionFields, .authenticationHelp, .authenticationSection, .body
-
-### Community 84 - "Dependency Update Schedule"
+### Community 31 - "Drive"
 Cohesion: 0.20
-Nodes (9): interval, time, timezone, updates, directory, open-pull-requests-limit, package-ecosystem, schedule (+1 more)
+Nodes (7): Drive, dump(), makeDrive(), rclone(), verifyRoundTrip(), GCSDriveTests, withOfflineDrive()
 
-### Community 85 - "ClosedRange<Date>"
+### Community 32 - "StubbedDrives"
+Cohesion: 0.15
+Nodes (5): controlCalls(), LockableCredentialStorage, withRevokedDrive(), StubbedDrives, .rcloneCalls
+
+### Community 33 - "FixtureResources"
+Cohesion: 0.17
+Nodes (4): FixtureResources, Launch, requireOutput(), withFixture()
+
+### Community 34 - "S3StorageClass"
+Cohesion: 0.12
+Nodes (14): AWSSettings, S3StorageClass, glacierInstantRetrieval, .id, intelligentTiering, oneZoneInfrequentAccess, standard, standardInfrequentAccess (+6 more)
+
+### Community 35 - "withRclone"
+Cohesion: 0.25
+Nodes (7): BatchReply, .current, counters(), finished(), reply(), TrafficTests, withRclone()
+
+### Community 36 - "TrafficView"
+Cohesion: 0.12
+Nodes (15): .detail, ProviderIcon, .body, ShareBar, .body, TrafficChart, TrafficList, .body (+7 more)
+
+### Community 37 - "RcloneRemote"
+Cohesion: 0.18
+Nodes (11): NamedRemote, Options, RcloneRemote, .cryptOptions, .environment, .gcsOptions, .namedRemotes, .options (+3 more)
+
+### Community 38 - "Equatable"
+Cohesion: 0.19
+Nodes (5): RcloneProcess, TrafficCheckpoint, .unsaved, TrafficReading, TrafficSave
+
+### Community 39 - "ConnectionField"
+Cohesion: 0.11
+Nodes (19): ConnectionField, accessKey, bucket, confirmation, .displayName, encryptionPassword, endpoint, folder (+11 more)
+
+### Community 40 - "FileActivity"
+Cohesion: 0.14
+Nodes (10): FileActivity, .finishedAt, .id, .isUpload, Sequence<FileActivity>, .folder, .isCancellable, .name (+2 more)
+
+### Community 41 - "DriveCondition"
+Cohesion: 0.11
+Nodes (14): DriveCondition, checking, connected, disconnected, ejected, .indicator, needsAttention, needsReconnect (+6 more)
+
+### Community 42 - ".serve"
+Cohesion: 0.18
+Nodes (3): FakeStorage, .uploadCount, UploadCleanupTests
+
+### Community 43 - "ConnectionEditorField"
+Cohesion: 0.13
+Nodes (10): ConnectionBucketFields, .body, ConnectionEditorField, .body, ConnectionIdentityFields, .body, .providerPicker, S3ConnectionFields (+2 more)
+
+### Community 44 - "CredentialStorage"
 Cohesion: 0.24
-Nodes (4): AppViewModel, UploadCleanup, .message, .title
+Nodes (3): Keychain, CredentialStorage, KeychainTests
 
-### Community 86 - "App Target Configuration"
-Cohesion: 0.20
-Nodes (10): Debug, Release, package, product, UnlocalFS, configFiles, dependencies, platform (+2 more)
+### Community 45 - "SFTPFixture"
+Cohesion: 0.21
+Nodes (9): SFTPFixture, .agentSocket, .connection, .credentials, .key, .protectedKey, .served, SFTPServer (+1 more)
 
-### Community 89 - "ServerTrustSheet"
+### Community 46 - ".remove"
+Cohesion: 0.11
+Nodes (3): AppPollingTests, MenuBarActivityTests, SpeedRecordingTests
+
+### Community 47 - "Provider"
+Cohesion: 0.12
+Nodes (15): Provider, aws, .backend, cloudflare, digitalOcean, googleCloudStorage, .id, .isGeneric (+7 more)
+
+### Community 49 - "ViewModelFixture"
+Cohesion: 0.15
+Nodes (9): FinderServicesTests, Notification, ViewModelFixture, .paths, .rcloneCalls, .root, .service, .signInEnvironment (+1 more)
+
+### Community 51 - "ActivityViewModel"
+Cohesion: 0.17
+Nodes (6): ActivityViewModel, .refreshInterval, UploadCancellation, .message, .title, .body
+
+### Community 54 - "View"
 Cohesion: 0.16
 Nodes (11): ActivityFileName, .body, ActivityTable, .body, ActivityView, .activity, .idle, FittedScrollView (+3 more)
 
-### Community 90 - "Credentials"
-Cohesion: 0.28
-Nodes (3): AppQuitTests, Overlap, .peak
+### Community 55 - "State"
+Cohesion: 0.15
+Nodes (9): State, downloaded, downloading, failed, queued, uploaded, uploading, ConnectionEditor (+1 more)
 
-### Community 92 - ".recordTraffic"
-Cohesion: 0.33
-Nodes (3): OSLog, TrafficTracker, UploadTally
+### Community 57 - "ServerTrustChallenge"
+Cohesion: 0.22
+Nodes (3): ServerTrustChallenge, .errorDescription, .server
 
-### Community 94 - "ConnectionDraft"
-Cohesion: 0.29
-Nodes (4): SpeedSample, .axisLimit, .fastestDownload, .fastestUpload
+### Community 58 - "withS3Drive"
+Cohesion: 0.22
+Nodes (3): S3DriveTests, S3Server, withS3Drive()
 
-### Community 97 - "Application Build Schemes"
-Cohesion: 0.25
-Nodes (8): config, targets, config, schemes, UnlocalFS, archive, build, run
+### Community 59 - "MainView"
+Cohesion: 0.14
+Nodes (7): MainView, .sidebar, FocusedValues, SidebarSearchField, .body, TrafficCard, .body
 
-### Community 98 - "Darwin"
-Cohesion: 0.25
-Nodes (5): Darwin, RcloneState, running, stopped, untracked
+### Community 60 - "GCSAuthentication"
+Cohesion: 0.19
+Nodes (7): GCSAuthentication, googleAccount, .id, serviceAccount, .title, GCSSettings, Config
 
-### Community 99 - "ConnectionDraft"
+### Community 61 - "GoogleSignInRequired"
+Cohesion: 0.18
+Nodes (6): GoogleSignInRequired, .errorDescription, DriveEjectError, .errorDescription, UploadsPendingError, .errorDescription
+
+### Community 62 - "MenuBarIcon"
+Cohesion: 0.21
+Nodes (5): MenuBarIcon, .accessibilityValue, .animatesUploads, .body, .image
+
+### Community 63 - "MountStatus"
+Cohesion: 0.19
+Nodes (4): MountStatus, .isActive, .isServing, .needsReconnect
+
+### Community 67 - "base"
+Cohesion: 0.15
+Nodes (13): ARCHS, ASSETCATALOG_COMPILER_APPICON_NAME, CODE_SIGN_STYLE, CURRENT_PROJECT_VERSION, ENABLE_HARDENED_RUNTIME, ENABLE_USER_SCRIPT_SANDBOXING, INFOPLIST_FILE, MARKETING_VERSION (+5 more)
+
+### Community 68 - "SFTPAuthentication"
+Cohesion: 0.17
+Nodes (10): SFTPAuthentication, agent, .id, password, privateKey, .title, Pane, connection (+2 more)
+
+### Community 69 - "Backend"
+Cohesion: 0.17
+Nodes (10): Backend, gcs, .locksFolderAfterSave, s3Compatible, sftp, .supportsMultiThreadUploads, .supportsServerCopy, .supportsShareLinks (+2 more)
+
+### Community 72 - "SFTPLogin"
+Cohesion: 0.21
+Nodes (7): SFTPDriveTests, SFTPLogin, agent, key, password, protectedKey, withSFTPDrive()
+
+### Community 73 - "StatusIndicator"
+Cohesion: 0.18
+Nodes (9): .actions, .header, DriveManagementItems, .body, ConnectionRow, .body, .icon, StatusIndicator (+1 more)
+
+### Community 74 - "ConnectionDraft"
 Cohesion: 0.18
 Nodes (4): ConnectionDraft, .id, .isDuplicate, .body
 
-### Community 101 - "ActivitySnapshot"
+### Community 76 - "GCSConnectionFields"
+Cohesion: 0.20
+Nodes (3): GCSConnectionFields, .body, .serviceAccountField
+
+### Community 78 - "project.yml"
+Cohesion: 0.18
+Nodes (10): macOS, name, options, deploymentTarget, postGenCommand, packages, UnlocalFSCore, settings (+2 more)
+
+### Community 79 - "ActivityStatus"
+Cohesion: 0.22
+Nodes (7): ActivityStatus, .body, .movingText, .progress, FailedUploadButton, .body, .details
+
+### Community 80 - "updates"
+Cohesion: 0.20
+Nodes (9): interval, time, timezone, updates, directory, open-pull-requests-limit, package-ecosystem, schedule (+1 more)
+
+### Community 82 - "UploadCleanup"
+Cohesion: 0.24
+Nodes (4): AppViewModel, UploadCleanup, .message, .title
+
+### Community 84 - "UnlocalFS"
+Cohesion: 0.20
+Nodes (10): Debug, Release, package, product, UnlocalFS, configFiles, dependencies, platform (+2 more)
+
+### Community 85 - "SFTPConnectionFields"
 Cohesion: 0.29
-Nodes (6): ActivitySnapshot, checking, .files, idle, transfers, unavailable
+Nodes (4): SFTPConnectionFields, .authenticationHelp, .authenticationSection, .body
 
-### Community 103 - "README.md"
-Cohesion: 0.29
-Nodes (6): Build from source, Documentation, Documentation development, Features, Install, License
-
-### Community 107 - "App Resource Copying"
+### Community 86 - ".recordTraffic"
 Cohesion: 0.33
-Nodes (6): copyFiles, destination, subpath, buildPhase, path, sources
+Nodes (3): OSLog, TrafficTracker, UploadTally
 
-### Community 108 - "GoogleSignInButton"
+### Community 88 - ".quitDisconnectsEveryDriveAtTheSameTime"
+Cohesion: 0.28
+Nodes (3): AppQuitTests, Overlap, .peak
+
+### Community 90 - "Darwin"
+Cohesion: 0.25
+Nodes (5): Darwin, RcloneState, running, stopped, untracked
+
+### Community 91 - "GoogleToken"
+Cohesion: 0.36
+Nodes (4): .isSignedInToGoogle, .secrets, Fields, GoogleToken
+
+### Community 92 - "UnlocalFS"
+Cohesion: 0.25
+Nodes (8): config, targets, config, schemes, UnlocalFS, archive, build, run
+
+### Community 93 - ".body"
 Cohesion: 0.33
-Nodes (4): .signInAgainButton, .googleAccountField, GoogleSignInButton, .body
+Nodes (4): UnlocalFSApp, .body, MenuContent, .body
 
-### Community 114 - "SFTPSettings"
+### Community 94 - "SFTPSettings"
 Cohesion: 0.33
 Nodes (3): SFTPSettings, .agentSocketPath, .keyPath
 
-### Community 115 - "Helper Embedding Phase"
+### Community 95 - "ActivitySnapshot"
+Cohesion: 0.29
+Nodes (6): ActivitySnapshot, checking, .files, idle, transfers, unavailable
+
+### Community 96 - "SpeedSample"
+Cohesion: 0.29
+Nodes (4): SpeedSample, .axisLimit, .fastestDownload, .fastestUpload
+
+### Community 98 - "README.md"
+Cohesion: 0.29
+Nodes (6): Build from source, Documentation, Documentation development, Features, Install, License
+
+### Community 105 - "copyFiles"
+Cohesion: 0.33
+Nodes (6): copyFiles, destination, subpath, buildPhase, path, sources
+
+### Community 106 - "GoogleSignInButton"
+Cohesion: 0.33
+Nodes (4): .signInAgainButton, .googleAccountField, GoogleSignInButton, .body
+
+### Community 108 - "postBuildScripts"
 Cohesion: 0.40
 Nodes (5): basedOnDependencyAnalysis, name, script, shell, postBuildScripts
 
-### Community 116 - "ClosedRange<Date>"
+### Community 109 - "ClosedRange<Date>"
 Cohesion: 0.40
 Nodes (4): ClosedRange<Date>, .formattedDays, DateInterval, .formattedDays
 
-### Community 119 - "Package Test Configuration"
+### Community 110 - "test"
 Cohesion: 0.50
 Nodes (4): package, config, targets, test
 
@@ -503,17 +503,17 @@ Nodes (4): package, config, targets, test
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Connection` connect `Connection` to `View Model Fixtures`, `.sftp`, `ServerTrustChallenge`, `MountStatus`, `TestDesktopServices`, `Mount Process Shutdown`, `Connection Editor Tests`, `AppViewModel`, `FileActivity`, `Connection Detail Views`, `Darwin`, `withControl`, `withControl`, `Desktop File Dialogs`, `Remote File Actions`, `AppViewModel`, `Storage Smoke Fixtures`, `Rclone Remote Configuration`, `.status`, `.validate`, `.status`, `Presentation and Application`, `TrafficStore`, `Storage Provider Selection`, `MountService`, `.sftp`, `.body`, `Fake Storage Server`, `AppError`, `ValidationResult`, `Server Copy Operations`, `AWS Encryption Settings`, `ConnectionStore`, `.execute`, `Drive Status Polling`, `ServiceAccountKey`, `ActivityView`, `GCSAuthentication`, `Storage Backend Capabilities`, `terms.md`, `ViewModelFixture.swift`, `StatusIndicator`, `ClosedRange<Date>`, `ServerTrustSheet`, `.recordTraffic`, `Quit Coordination`, `RcloneRemote.swift`, `ConnectionDraft`, `ControlServers`, `Sidebar Search Actions`, `SFTPSettings`?**
+- **Why does `Connection` connect `Connection` to `withControl`, `.validate`, `Sendable`, `.s3`, `AppViewModel`, `Credentials`, `MountService`, `AppPaths`, `AppViewModel`, `.shareLink`, `.sftp`, `TrafficViewModel`, `.gcs`, `MacOSDesktopServices`, `ConnectionStore`, `ConnectionDetail`, `Date`, `ConnectionEditorViewModel`, `Drive`, `StubbedDrives`, `S3StorageClass`, `withRclone`, `RcloneRemote`, `Equatable`, `FileActivity`, `.serve`, `SFTPFixture`, `Provider`, `.status`, `AppError`, `ActivityViewModel`, `.update`, `View`, `GCSAuthentication`, `MountStatus`, `.write`, `.control`, `Backend`, `.execute`, `StatusIndicator`, `ConnectionDraft`, `.refresh`, `UploadCleanup`, `TrafficViewModelTests`, `.recordTraffic`, `.body`, `SFTPSettings`, `AppViewModel`, `AppViewModel`, `ControlServers`, `RcloneRemote.swift`?**
   _High betweenness centrality (0.265) - this node is a cross-community bridge._
 - **Are the 10 inferred relationships involving `Connection` (e.g. with `AWSSettings` and `GCSSettings`) actually correct?**
   _`Connection` has 10 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `PackageDescription`, `standard`, `intelligentTiering` to the rest of the system?**
   _266 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Traffic` be split into smaller, more focused modules?**
-  _Cohesion score 0.08235294117647059 - nodes in this community are weakly interconnected._
-- **Why does `UnlocalFSDomain` connect `Foundation Module Imports` to `RcloneRemote.swift`, `Traffic`, `Darwin`, `Storage Smoke Fixtures`, `Connection`, `AppPathsTests.swift`, `Mount Process Shutdown`, `Test Module Dependencies`, `Date`, `withControl`, `UnlocalFSPresentation`, `.recordTraffic`, `Command.swift`, `ConnectionStore`?**
+- **Should `withControl` be split into smaller, more focused modules?**
+  _Cohesion score 0.05493827160493827 - nodes in this community are weakly interconnected._
+- **Why does `UnlocalFSDomain` connect `Foundation` to `withControl`, `Decodable`, `Connection`, `withRclone`, `AppPathsTests.swift`, `Testing`, `UnlocalFSPresentation`, `TrafficPreset`, `Command.swift`, `RcloneRemote.swift`, `TransferSummary`, `.recordTraffic`, `Darwin`, `Drive`?**
   _High betweenness centrality (0.071) - this node is a cross-community bridge._
 - **Are the 29 inferred relationships involving `Credentials` (e.g. with `ConnectionEditorViewModel` and `.credentialsSavedBeforeEncryptionHaveNoPassword()`) actually correct?**
   _`Credentials` has 29 INFERRED edges - model-reasoned connections that need verification._
-- **Should `Foundation Module Imports` be split into smaller, more focused modules?**
-  _Cohesion score 0.0841813135985199 - nodes in this community are weakly interconnected._
+- **Should `Decodable` be split into smaller, more focused modules?**
+  _Cohesion score 0.08235294117647059 - nodes in this community are weakly interconnected._
