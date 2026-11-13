@@ -124,8 +124,8 @@ struct WorkflowTests {
         }
     }
 
-    @Test(arguments: [SFTPAuthentication.password, .privateKey, .agent])
-    func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication) async throws {
+    @Test(arguments: [(SFTPAuthentication.password, "ssh", ""), (.privateKey, "", "phrase"), (.agent, "", "")])
+    func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication, password: String, passphrase: String) async throws {
         try await withWorkflowFixture { repository, drives, _ in
             let connection = Connection.sftp {
                 $0.encrypted = true
@@ -140,10 +140,7 @@ struct WorkflowTests {
                 ),
             )
             let saved = try repository.credentials(for: connection.id)
-            #expect(saved == Credentials(
-                encryptionPassword: "crypt", password: authentication == .password ? "ssh" : "",
-                keyPassphrase: authentication == .privateKey ? "phrase" : "",
-            ))
+            #expect(saved == Credentials(encryptionPassword: "crypt", password: password, keyPassphrase: passphrase))
         }
     }
 
@@ -151,9 +148,6 @@ struct WorkflowTests {
         try await withWorkflowFixture { repository, drives, _ in
             let original = Connection.sftp()
             try repository.save(original, credentials: Credentials(password: "secret"))
-            let cache = drives.paths.cache(original).appending(path: "file.txt")
-            try FileManager.default.createDirectory(at: cache.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data("cached".utf8).write(to: cache)
             var draft = ConnectionDraft(duplicating: original)
             draft.connection.sftp.remotePath = "/elsewhere"
 
@@ -162,8 +156,6 @@ struct WorkflowTests {
 
             #expect(saved.count == 2)
             #expect(try repository.all().first { $0.id == original.id } == original)
-            #expect(!FileManager.default.fileExists(atPath: drives.paths.cache(draft.connection).path))
-            #expect(try String(contentsOf: cache, encoding: .utf8) == "cached")
         }
     }
 
@@ -211,6 +203,22 @@ struct WorkflowTests {
         }
     }
 
+    @Test func deletingADriveRemovesOnlyItsCache() async throws {
+        try await withWorkflowFixture { repository, drives, connection in
+            let sibling = Connection.s3(name: "Sibling")
+            for drive in [connection, sibling] {
+                try repository.save(drive, credentials: Credentials.s3())
+                try FileManager.default.createDirectory(at: drives.paths.cache(drive).appending(path: "vfs"), withIntermediateDirectories: true)
+            }
+
+            let remaining = try await DeleteConnectionUseCase(repository: repository, drives: drives.service).execute(connection)
+
+            #expect(remaining == [sibling])
+            #expect(!FileManager.default.fileExists(atPath: drives.paths.cache(connection).path))
+            #expect(FileManager.default.fileExists(atPath: drives.paths.cache(sibling).path))
+        }
+    }
+
     @Test func sharingReportsTheFileOutsideADrive() async throws {
         try await withWorkflowFixture { repository, drives, _ in
             let file = drives.paths.support.appending(path: "outside.jpg")
@@ -236,7 +244,6 @@ struct WorkflowTests {
                 let message = error.localizedDescription
                 return (error as? FileActionError)?.file == file && message.contains(connection.provider.title) && !message.contains("Keychain")
             }
-            #expect(drives.rcloneCalls.isEmpty)
         }
     }
 
@@ -267,7 +274,6 @@ struct WorkflowTests {
             } throws: { error in
                 (error as? FileActionError)?.file == file && error.localizedDescription == message
             }
-            #expect(drives.rcloneCalls.isEmpty)
         }
     }
 

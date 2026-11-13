@@ -52,6 +52,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var usesGoogleSignIn: Bool { backend == .gcs && gcs.authentication == .googleAccount }
 
+    public var exportsRcloneConfig: Bool { encrypted }
+
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
     public var folderPath: String {

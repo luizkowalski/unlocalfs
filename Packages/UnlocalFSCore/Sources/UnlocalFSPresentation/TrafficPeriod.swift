@@ -45,7 +45,7 @@ public extension ClosedRange<Date> {
     }
 }
 
-extension Date {
+public extension Date {
     func adding(_ component: Calendar.Component, _ value: Int, _ calendar: Calendar) -> Date {
         calendar.date(byAdding: component, value: value, to: self) ?? self
     }

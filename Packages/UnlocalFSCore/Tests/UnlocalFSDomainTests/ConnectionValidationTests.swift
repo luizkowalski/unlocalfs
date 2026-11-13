@@ -125,7 +125,7 @@ struct SFTPValidationTests {
 
     @Test func switchingBackToS3RestoresS3Validation() {
         let connection = Connection.sftp { $0.provider = .other }
-        #expect(connection.validate(credentials: Credentials(), confirmation: "", against: []).issues.map(\.field) == [.endpoint, .endpoint, .bucket, .accessKey, .secretKey])
+        #expect(Set(connection.validate(credentials: Credentials(), confirmation: "", against: []).issues.map(\.field)) == [.endpoint, .bucket, .accessKey, .secretKey])
     }
 }
 

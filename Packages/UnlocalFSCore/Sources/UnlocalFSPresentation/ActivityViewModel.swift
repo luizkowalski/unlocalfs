@@ -66,4 +66,6 @@ import UnlocalFSDomain
 
 public extension FileActivity {
     var isCancellable: Bool { isUpload && finishedAt == nil }
+    var name: String { (path as NSString).lastPathComponent }
+    var folder: String { (path as NSString).deletingLastPathComponent }
 }

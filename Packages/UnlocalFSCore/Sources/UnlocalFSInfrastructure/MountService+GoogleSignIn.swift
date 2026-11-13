@@ -48,7 +48,7 @@ extension MountService {
     public func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws {
         let storage = try await remote(for: connection, credentials: credentials).storageRemote
         do {
-            _ = try await control(connection, "config/update", body: JSONEncoder().encode(CreateRemote(storage)))
+            _ = try await control(connection, "config/update", body: JSONEncoder().encode(storage))
             for upload in try await control(UploadQueue.self, connection, "vfs/queue").queue where upload.hasFailedAttempt {
                 _ = try? await control(connection, "vfs/queue-set-expiry", ["id": "\(upload.id)", "expiry": "0"])
             }

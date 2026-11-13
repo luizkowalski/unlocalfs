@@ -16,6 +16,13 @@ struct UploadQueue: Decodable {
     }
 }
 
+extension MountStatus {
+    mutating func countUploads(_ queue: [UploadQueue.Item]) {
+        pendingUploads = queue.count
+        failedUploads = queue.count(where: \.hasFailedAttempt)
+    }
+}
+
 struct TransferStats: Decodable {
     let transferring: [Transfer]?
     let lastError: String?
@@ -25,16 +32,13 @@ struct TransferStats: Decodable {
 
     var networkBytes: Int64 { bytes - serverSideCopyBytes - serverSideMoveBytes }
 
-    struct Transfer: Decodable {
+    struct Transfer: RcloneTransfer, Decodable {
         let name: String
         let size: Int64
         let bytes: Int64?
         let speedAvg: Double?
         let srcFs: String?
         let dstFs: String?
-
-        var isUpload: Bool { dstFs != nil }
-        var isServerSide: Bool { srcFs == dstFs }
     }
 }
 
@@ -42,7 +46,17 @@ struct FinishedTransfers: Decodable {
     let transferred: [FinishedTransfer]
 }
 
-struct FinishedTransfer: Decodable, Hashable {
+protocol RcloneTransfer {
+    var srcFs: String? { get }
+    var dstFs: String? { get }
+}
+
+extension RcloneTransfer {
+    var isUpload: Bool { dstFs != nil }
+    var isServerSide: Bool { srcFs == dstFs }
+}
+
+struct FinishedTransfer: RcloneTransfer, Decodable, Hashable {
     let name: String
     let size: Int64
     let bytes: Int64
@@ -66,17 +80,12 @@ struct FinishedTransfer: Decodable, Hashable {
         dstFs = try container.decodeIfPresent(String.self, forKey: .dstFs)
         completedAt = try rcloneDate(container.decode(String.self, forKey: .completedAt))
     }
-
-    var isUpload: Bool { dstFs != nil }
-    var isServerSide: Bool { srcFs == dstFs }
 }
 
 struct VFSStats: Decodable {
     let diskCache: DiskCache
 
     struct DiskCache: Decodable {
-        let uploadsQueued: Int
-        let uploadsInProgress: Int
         let bytesUsed: Int64
     }
 }

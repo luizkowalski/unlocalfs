@@ -5,20 +5,6 @@ import UnlocalFSInfrastructure
 import UnlocalFSTestSupport
 
 struct AppPathsTests {
-    @Test func removingCacheDeletesAllCachedFiles() throws {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let paths = paths(root: root)
-        let connection = Connection.s3()
-        let cache = paths.cache(connection)
-        try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
-        try Data("cached".utf8).write(to: cache.appendingPathComponent("file"))
-
-        paths.removeCache(connection)
-
-        #expect(!FileManager.default.fileExists(atPath: cache.path))
-    }
-
     @Test(arguments: [
         ("mounts/My files/report.pdf", "My files/report.pdf"),
         ("mounts/My files/trips/2026/plan é.txt", "My files/trips/2026/plan é.txt"),

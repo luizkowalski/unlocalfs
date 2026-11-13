@@ -233,7 +233,7 @@ private func failingStatus(queue: String, helper: Process, socket: URL) -> Contr
             try FileManager.default.removeItem(at: socket)
             return "{}"
         default:
-            return statusBatch(cache: #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
+            return statusBatch(cache: #""bytesUsed":42"#, stats: #"{"error":"core/stats failed","status":500}"#)
         }
     }
 }

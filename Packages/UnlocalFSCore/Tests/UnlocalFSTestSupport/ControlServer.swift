@@ -103,7 +103,7 @@ public final class ControlServer: Sendable {
 }
 
 public let rcloneCounters = #""bytes":0,"serverSideCopyBytes":0,"serverSideMoveBytes":0"#
-public let idleCache = #""uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0"#
+public let idleCache = #""bytesUsed":0"#
 
 public func statusBatch(
     cache: String = idleCache, queue: String = #"{"queue":[]}"#, stats: String = #"{\#(rcloneCounters)}"#, transferred: String = #"{"transferred":[]}"#,

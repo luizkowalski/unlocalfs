@@ -21,7 +21,7 @@ struct MainView: View {
             traffic.reload()
             self.traffic = traffic
         }
-        .onChange(of: model.statuses.mapValues(\.unsavedTraffic)) { traffic?.reload() }
+        .onChange(of: model.unsavedTraffic) { traffic?.reload() }
         .onChange(of: model.connections) { traffic?.reload() }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in traffic?.reload() }
         .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }

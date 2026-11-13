@@ -48,7 +48,6 @@ struct ViewModelFixture {
                         shift
                     done
                     printf '%s' "$config" > '\(root.path)/export-config'
-                    printf '%s\\n' "$arguments" >> '\(root.path)/config-arguments'
                     if [ "$name" = "$(cat '\(root.path)/config-error')" ]; then
                         printf 'Failed to create %s: %s' "$name" "$arguments" >&2
                         exit 1
@@ -62,7 +61,7 @@ struct ViewModelFixture {
         repository = SavedConnectionRepository(store: ConnectionStore(url: drives.paths.config), credentials: MemoryCredentialStorage())
         try Data(#"{"queue":[]}"#.utf8).write(to: root.appending(path: "queue.json"))
         try Data(#"{\#(rcloneCounters)}"#.utf8).write(to: root.appending(path: "stats.json"))
-        try Data(#"{"diskCache":{"uploadsQueued":0,"uploadsInProgress":0,"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
+        try Data(#"{"diskCache":{"bytesUsed":0}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
     }
 
     @MainActor func app(desktop: TestDesktopServices? = nil) -> AppViewModel {
@@ -103,9 +102,10 @@ struct ViewModelFixture {
             let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
             return #"{"results":[\#(results.joined(separator: ",")),{"transferred":[]}]}"#
         }
-        let stats = #"{"diskCache":{"uploadsQueued":\#(queued),"uploadsInProgress":0,"bytesUsed":\#(cached)}}"#
-        try Data(stats.utf8).write(to: root.appending(path: "vfs-stats.json"))
-        if failed > 0 { try queue(contentsOf: (0 ..< failed).map { #"{"name":"failed-\#($0).txt","id":\#($0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }) }
+        try Data(#"{"diskCache":{"bytesUsed":\#(cached)}}"#.utf8).write(to: root.appending(path: "vfs-stats.json"))
+        let waiting = (0 ..< queued).map { #"{"name":"queued-\#($0).txt","id":\#($0),"size":1,"expiry":5,"tries":0,"delay":5,"uploading":false}"# }
+        let failing = (0 ..< failed).map { #"{"name":"failed-\#($0).txt","id":\#(queued + $0),"size":1,"expiry":30,"tries":2,"delay":10,"uploading":false}"# }
+        try queue(contentsOf: waiting + failing)
         let transfers = downloading ? #"[{"name":"photo.jpg","size":1000,"bytes":100,"srcFs":":s3:bucket"}]"# : "[]"
         let error = lastError.map { #","lastError":"\#($0)""# } ?? ""
         let counters = #""bytes":\#(downloaded),"serverSideCopyBytes":0,"serverSideMoveBytes":0"#
