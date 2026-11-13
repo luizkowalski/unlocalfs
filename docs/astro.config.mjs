@@ -35,6 +35,7 @@ export default defineConfig({
             { label: "Traffic", slug: "traffic" },
             { label: "Troubleshooting", slug: "troubleshooting" },
             { label: "Privacy", slug: "privacy" },
+            { label: "Terms", slug: "terms" },
           ],
         },
       ],
