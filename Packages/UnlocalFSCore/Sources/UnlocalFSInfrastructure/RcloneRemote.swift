@@ -5,7 +5,20 @@ struct RcloneRemote {
     let connection: Connection
     let credentials: Credentials?
     let knownHosts: URL
+    let googleClient: GoogleClient
     var agentSocket: String?
+
+    init(connection: Connection, credentials: Credentials?, knownHosts: URL, googleClient: GoogleClient, agentSocket: String? = nil) throws {
+        if connection.usesGoogleSignIn, let credentials {
+            try googleClient.requireConfigured()
+            guard credentials.isSignedInToGoogle else { throw GoogleSignInRequired() }
+        }
+        self.connection = connection
+        self.credentials = credentials
+        self.knownHosts = knownHosts
+        self.googleClient = googleClient
+        self.agentSocket = agentSocket
+    }
 
     var options: [String: String] {
         switch connection.backend {
@@ -15,10 +28,11 @@ struct RcloneRemote {
         }
     }
 
+    var storageRemote: NamedRemote { NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options) }
+
     var namedRemotes: [NamedRemote] {
-        let storage = NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options)
-        guard connection.encrypted else { return [storage] }
-        return [storage, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions)]
+        guard connection.encrypted else { return [storageRemote] }
+        return [storageRemote, NamedRemote(name: Connection.cryptRemoteName, type: "crypt", options: cryptOptions)]
     }
 
     var environment: [String: String] {
@@ -64,7 +78,17 @@ struct RcloneRemote {
 
     private var gcsOptions: [String: String] {
         var options = ["bucket_policy_only": "true", "no_check_bucket": "true", "directory_markers": "true"]
-        options["service_account_credentials"] = credentials?.serviceAccountKey
+        guard let credentials else { return options }
+        switch connection.gcs.authentication {
+        case .serviceAccount:
+            options["service_account_credentials"] = credentials.serviceAccountKey
+        case .googleAccount:
+            options["token"] = credentials.googleToken
+            options["client_id"] = googleClient.id
+            options["client_secret"] = googleClient.secret
+            options["env_auth"] = "false"
+            options["config_refresh_token"] = "false"
+        }
         return options
     }
 

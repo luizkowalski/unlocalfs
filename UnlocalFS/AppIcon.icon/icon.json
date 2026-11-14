@@ -10,53 +10,30 @@
   ],
   "groups": [
     {
+      "name": "led",
       "layers": [
         {
-          "fill-specializations": [
-            {
-              "value": {
-                "linear-gradient": [
-                  "extended-srgb:0.25882,0.75294,1.00000,1.00000",
-                  "extended-srgb:0.12157,0.37255,0.87843,1.00000"
-                ],
-                "orientation": {
-                  "start": {
-                    "x": 0.5,
-                    "y": 0
-                  },
-                  "stop": {
-                    "x": 0.5,
-                    "y": 1
-                  }
-                }
-              }
-            },
-            {
-              "appearance": "dark",
-              "value": {
-                "linear-gradient": [
-                  "extended-srgb:0.36863,0.78431,1.00000,1.00000",
-                  "extended-srgb:0.17647,0.42353,0.94118,1.00000"
-                ],
-                "orientation": {
-                  "start": {
-                    "x": 0.5,
-                    "y": 0
-                  },
-                  "stop": {
-                    "x": 0.5,
-                    "y": 1
-                  }
-                }
+          "name": "led",
+          "image-name": "led.svg",
+          "glass": true,
+          "fill": {
+            "linear-gradient": [
+              "extended-srgb:0.61569,1.00000,0.54118,1.00000",
+              "extended-srgb:0.18431,0.81569,0.41569,1.00000"
+            ],
+            "orientation": {
+              "start": {
+                "x": 0.5,
+                "y": 0
+              },
+              "stop": {
+                "x": 0.5,
+                "y": 1
               }
             }
-          ],
-          "glass": true,
-          "image-name": "cloud.svg",
-          "name": "cloud"
+          }
         }
       ],
-      "name": "cloud",
       "shadow": {
         "kind": "neutral",
         "opacity": 0.5
@@ -67,53 +44,64 @@
       }
     },
     {
+      "name": "drive",
       "layers": [
         {
-          "fill-specializations": [
-            {
-              "value": {
-                "linear-gradient": [
-                  "extended-srgb:0.25882,0.75294,1.00000,1.00000",
-                  "extended-srgb:0.12157,0.37255,0.87843,1.00000"
-                ],
-                "orientation": {
-                  "start": {
-                    "x": 0.5,
-                    "y": 0
-                  },
-                  "stop": {
-                    "x": 0.5,
-                    "y": 1
-                  }
-                }
-              }
-            },
-            {
-              "appearance": "dark",
-              "value": {
-                "linear-gradient": [
-                  "extended-srgb:0.36863,0.78431,1.00000,1.00000",
-                  "extended-srgb:0.17647,0.42353,0.94118,1.00000"
-                ],
-                "orientation": {
-                  "start": {
-                    "x": 0.5,
-                    "y": 0
-                  },
-                  "stop": {
-                    "x": 0.5,
-                    "y": 1
-                  }
-                }
+          "name": "drive",
+          "image-name": "drive.svg",
+          "glass": true,
+          "fill": {
+            "linear-gradient": [
+              "extended-srgb:0.35686,0.39216,0.45490,1.00000",
+              "extended-srgb:0.14902,0.16863,0.20784,1.00000"
+            ],
+            "orientation": {
+              "start": {
+                "x": 0.5,
+                "y": 0
+              },
+              "stop": {
+                "x": 0.5,
+                "y": 1
               }
             }
-          ],
-          "glass": true,
-          "image-name": "bar.svg",
-          "name": "bar"
+          }
         }
       ],
-      "name": "bar",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "name": "cloud",
+      "layers": [
+        {
+          "name": "cloud",
+          "image-name": "cloud.svg",
+          "glass": true,
+          "fill": {
+            "linear-gradient": [
+              "extended-srgb:0.66275,0.72157,1.00000,1.00000",
+              "extended-srgb:0.29412,0.30980,0.87843,1.00000"
+            ],
+            "orientation": {
+              "start": {
+                "x": 0.5,
+                "y": 0
+              },
+              "stop": {
+                "x": 0.5,
+                "y": 1
+              }
+            }
+          }
+        }
+      ],
       "shadow": {
         "kind": "neutral",
         "opacity": 0.5

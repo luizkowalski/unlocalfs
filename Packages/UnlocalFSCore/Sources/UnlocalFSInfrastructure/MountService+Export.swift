@@ -11,7 +11,7 @@ extension MountService {
         let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: destination, create: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let config = scratch.appending(path: "rclone.conf")
-        let remote = try await RcloneRemote(connection: connection, credentials: prepared, knownHosts: serverTrust.file())
+        let remote = try await RcloneRemote(connection: connection, credentials: prepared, knownHosts: serverTrust.file(), googleClient: googleClient)
         do {
             for named in remote.namedRemotes {
                 try await create(named, config: config)

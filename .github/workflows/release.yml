@@ -34,6 +34,12 @@ jobs:
           TEAM_ID: ${{ vars.TEAM_ID }}
         run: printf 'CODE_SIGN_IDENTITY = %s\nDEVELOPMENT_TEAM = %s\nOTHER_CODE_SIGN_FLAGS = --timestamp\n' "$SIGN_IDENTITY" "$TEAM_ID" > Signing.local.xcconfig
 
+      - name: Configure Google sign-in
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: printf 'GOOGLE_CLIENT_ID = %s\nGOOGLE_CLIENT_SECRET = %s\n' "$GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_SECRET" >> Signing.local.xcconfig
+
       - name: Generate project
         run: xcodegen generate --quiet
 
@@ -50,6 +56,13 @@ jobs:
             CONFIGURATION_BUILD_DIR="$PWD/dist" \
             MARKETING_VERSION="${TAG#v}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}"
+
+      - name: Check Google client
+        run: |
+          for key in GoogleClientID GoogleClientSecret; do
+            value="$(/usr/libexec/PlistBuddy -c "Print :$key" dist/UnlocalFS.app/Contents/Info.plist)"
+            [ -n "$value" ] || { echo "::error::Set the GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET secrets"; exit 1; }
+          done
 
       - name: Make DMG
         run: |

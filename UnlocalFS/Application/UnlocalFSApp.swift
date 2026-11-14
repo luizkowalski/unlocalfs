@@ -123,7 +123,7 @@ import UnlocalFSPresentation
                 alert.runModal()
                 allowed = false
             }
-            if !allowed { model.cancelQuit() }
+            if allowed { await model.stopSignInsForQuit() } else { model.cancelQuit() }
             sender.reply(toApplicationShouldTerminate: allowed)
             checkingQuit = false
         }

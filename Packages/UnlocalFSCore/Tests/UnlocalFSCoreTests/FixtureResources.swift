@@ -3,6 +3,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 actor FixtureResources {
     private struct Launch {

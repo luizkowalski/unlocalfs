@@ -47,6 +47,7 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible: String(localized: "Include keys and password")
         case .sftp: String(localized: "Include saved passwords")
+        case .gcs where connection.usesGoogleSignIn: String(localized: "Include Google sign-in")
         case .gcs: String(localized: "Include service-account key")
         }
     }
@@ -56,7 +57,9 @@ import UserNotifications
         case .s3Compatible:
             return String(localized: "Anyone with the file can read this drive. The password is only obscured, not encrypted.")
         case .gcs:
-            return String(localized: "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.")
+            return connection.usesGoogleSignIn
+                ? String(localized: "Anyone with the file can read this drive with your Google account. The password is only obscured, not encrypted.")
+                : String(localized: "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.")
         case .sftp:
             return connection.sftp.authentication == .agent
                 ? String(

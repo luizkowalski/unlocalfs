@@ -12,12 +12,15 @@ public actor MountService: DriveGateway {
     var reservedCopies: [UUID: Set<String>] = [:]
     let traffic: TrafficStore
     var trackers: [UUID: TrafficTracker] = [:]
+    let googleClient: GoogleClient
+    var signIns: Set<Task<Data, any Error>> = []
 
-    public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore) {
+    public init(executable: URL, helperDirectory: URL, paths: AppPaths, traffic: TrafficStore, googleClient: GoogleClient) {
         self.executable = executable
         self.helperDirectory = helperDirectory
         self.paths = paths
         self.traffic = traffic
+        self.googleClient = googleClient
         serverTrust = SFTPTrustStore(paths: paths)
     }
 
@@ -32,6 +35,7 @@ public actor MountService: DriveGateway {
         do {
             _ = try await runRemoteCommand(["lsf", connection.driveTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
+            if isRevokedGrant(connection, error: error.localizedDescription) { throw GoogleSignInRequired() }
             let unknownKey = error.localizedDescription.contains("knownhosts: key is unknown")
             let changedKey = error.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {
@@ -121,6 +125,10 @@ public actor MountService: DriveGateway {
             status.isRunning = true
             status.countUploads(snapshot.queue)
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
+            if isRevokedGrant(connection, error: status.uploadError), snapshot.queue.contains(where: { $0.hasFailedAttempt && !$0.uploading }) {
+                status.needsSignIn = true
+                status.uploadError = GoogleSignInRequired().localizedDescription
+            }
             status.bytesCached = snapshot.cache.bytesUsed
             status.isDownloading = snapshot.transfers.contains { !$0.isUpload }
             let files = activeFiles(snapshot)
@@ -262,7 +270,7 @@ public actor MountService: DriveGateway {
     ]
     }
 
-    private func environment(_ variables: [String: String]) -> [String: String] {
+    func environment(_ variables: [String: String]) -> [String: String] {
         baseEnvironment.merging(variables) { _, new in new }
     }
 
@@ -270,13 +278,13 @@ public actor MountService: DriveGateway {
         let credentials = try await prepareCredentials(credentials)
         switch connection.backend {
         case .s3Compatible, .gcs:
-            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts)
+            return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts, googleClient: googleClient)
         case .sftp:
             let sftp = connection.sftp
             let knownHosts = try await serverTrust.file()
             if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
             let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
-            return RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, agentSocket: socket)
+            return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, googleClient: googleClient, agentSocket: socket)
         }
     }
 

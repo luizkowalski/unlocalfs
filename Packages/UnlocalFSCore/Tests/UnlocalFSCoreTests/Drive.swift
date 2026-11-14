@@ -3,6 +3,7 @@ import Foundation
 import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
+import UnlocalFSTestSupport
 
 let helpers = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
     .appendingPathComponent("../../../../libexec").standardized
@@ -87,7 +88,8 @@ func makeDrive(executable: URL, resources: FixtureResources, connection: Connect
     let traffic = TrafficStore(url: paths.traffic)
     let drive = Drive(
         executable: executable, paths: paths,
-        service: MountService(executable: executable, helperDirectory: helpers, paths: paths, traffic: traffic), traffic: traffic, connection: connection,
+        service: MountService(executable: executable, helperDirectory: helpers, paths: paths, traffic: traffic, googleClient: .test),
+        traffic: traffic, connection: connection,
     )
     await resources.track(drive)
     return drive

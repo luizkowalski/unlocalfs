@@ -7,7 +7,7 @@ public struct StubbedDrives: Sendable {
     public let service: MountService
     public let traffic: TrafficStore
 
-    public init(_ name: String, rclone script: (URL) -> String = { _ in "" }) throws {
+    public init(_ name: String, googleClient: GoogleClient = .test, rclone script: (URL) -> String = { _ in "" }) throws {
         root = URL(filePath: "/tmp/uf-\(name)-\(UUID().uuidString.prefix(8))")
         paths = AppPaths(config: root.appending(path: "config.json"), support: root, mounts: root.appending(path: "drives"), logs: root.appending(path: "logs"))
         try paths.prepare()
@@ -20,7 +20,7 @@ public struct StubbedDrives: Sendable {
         """.write(to: executable, atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         traffic = TrafficStore(url: paths.traffic)
-        service = MountService(executable: executable, helperDirectory: root, paths: paths, traffic: traffic)
+        service = MountService(executable: executable, helperDirectory: root, paths: paths, traffic: traffic, googleClient: googleClient)
     }
 
     public var rcloneCalls: [String] {
@@ -29,4 +29,8 @@ public struct StubbedDrives: Sendable {
     }
 
     public func remove() { try? FileManager.default.removeItem(at: root) }
+}
+
+public extension GoogleClient {
+    static let test = GoogleClient(id: "test-client.apps.googleusercontent.com", secret: "test-client-secret")
 }
