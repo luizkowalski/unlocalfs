@@ -6,7 +6,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "UnlocalFS",
-      logo: { src: "../assets/logo.png" },
+      logo: { light: "../assets/logo.png", dark: "../assets/logo-dark.png" },
       favicon: "/favicon.png",
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/luizkowalski/unlocalfs" }],
       sidebar: [

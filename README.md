@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo.png">
-    <img src="assets/logo.png" alt="UnlocalFS app icon: an indigo cloud above a graphite drive with a green light" width="220">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png">
+    <img src="assets/logo.png" alt="UnlocalFS app icon: a glass cloud above a black drive on an indigo tile" width="220">
   </picture>
 </p>
 
