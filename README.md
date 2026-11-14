@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/logo.png">
-    <img src="assets/logo.png" alt="UnlocalFS app icon: a blue cloud above a bar, like the macOS eject symbol" width="220">
+    <img src="assets/logo.png" alt="UnlocalFS app icon: an indigo cloud above a graphite drive with a green light" width="220">
   </picture>
 </p>
 
