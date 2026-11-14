@@ -10,13 +10,17 @@ description: Where credentials and files are stored.
 
 ## Google Cloud Storage
 
-UnlocalFS uses your Google sign-in or the service-account key you import to authenticate with Google and access the bucket and folder you configure. It reads file names, metadata, and file contents to show your drive in Finder and open files. It uploads, renames, and deletes files when you request those actions in Finder or another app.
+UnlocalFS uses your Google sign-in or the service-account key you import to authenticate with Google and access the bucket and folder you configure. Google sign-in asks for one permission, `https://www.googleapis.com/auth/devstorage.read_write`: read and write access to Cloud Storage. UnlocalFS does not ask for your name, email address, or other Google Account data.
 
-Google sign-in happens in your browser. UnlocalFS never sees your Google password. It asks Google only for read and write access to Cloud Storage, and receives the sign-in on your Mac at `127.0.0.1`.
+**Data accessed.** File and folder names, metadata (size, dates, and content type), and file contents in the bucket and folder you configure, and the access and refresh tokens that Google gives at sign-in.
 
-Your Google sign-in tokens or service-account key are stored in your Mac's Keychain. Files you open are cached locally as described below. Google Cloud Storage data passes directly between your Mac and Google; it does not pass through an UnlocalFS server. Other apps on your Mac can access files you open from the mounted drive.
+**Data use.** UnlocalFS uses this data only to show your bucket as a drive in Finder. It lists folders and opens files. It uploads, renames, and deletes files only when you do those actions in Finder or another app. UnlocalFS does not make aggregated or anonymized data from Google user data. It does not use Google user data for advertising, for credit or lending decisions, or to develop, improve, or train AI or machine learning models.
 
-UnlocalFS does not sell Google user data or use it for advertising. To stop access, disconnect the drive and remove its saved connection. You can also revoke UnlocalFS access in your Google Account, or revoke the service-account key or its permissions in Google Cloud. Removing a connection does not delete your files in Google Cloud Storage.
+**Data sharing.** UnlocalFS does not sell, share, or transfer Google user data to any person or company. Data goes directly between your Mac and Google. There is no UnlocalFS server, and the developer never receives your files or tokens. Other apps on your Mac can read the files you open from the drive, as with any disk.
+
+**Data protection.** Google sign-in happens in your browser, so UnlocalFS never sees your Google password. Google sends the sign-in to your Mac at `127.0.0.1`. Tokens and service-account keys are stored in the macOS Keychain. All requests to Google use HTTPS.
+
+**Retention and deletion.** UnlocalFS keeps tokens in the Keychain and files you open in the local cache until you remove the connection. When you remove a connection, UnlocalFS deletes its tokens from the Keychain and deletes its local cache. Drive logs can contain file names; each drive keeps at most three log files of 3 MB, and older entries are deleted. To stop access at Google, revoke UnlocalFS in your [Google Account](https://myaccount.google.com/connections), or revoke the service-account key or its permissions in Google Cloud. Removing a connection does not delete your files in Google Cloud Storage.
 
 ## Limited Use Disclosure
 
