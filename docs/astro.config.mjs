@@ -8,6 +8,16 @@ export default defineConfig({
       title: "UnlocalFS",
       logo: { light: "../assets/logo.png", dark: "../assets/logo-dark.png" },
       favicon: "/favicon.png",
+      head: [
+        {
+          tag: "script",
+          attrs: {
+            defer: true,
+            src: "https://msg.sumiu.link/script.js",
+            "data-website-id": "5afa2d49-baad-4aff-b53a-3f572bc3039f",
+          },
+        },
+      ],
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/luizkowalski/unlocalfs" }],
       sidebar: [
         {
