@@ -60,7 +60,7 @@ swiftlint lint --strict  # runs SwiftLint
 
 `mise test` runs all tests, including drives mounted against local S3 and SFTP servers and Keychain, with `xcodebuild test -scheme UnlocalFSCore-Package` in `Packages/UnlocalFSCore`. The tests use `xcodebuild` and not `swift test`, because before Xcode 27 only `xcodebuild` generates the Swift symbols for the String Catalogs.
 
-CI does not use Mise. It runs the same `xcodebuild test` command on macOS 15, 26, and 27, then checks the format with `swiftformat --lint .`, lints, and builds the app with Xcode 27, for every pull request and every push to `main`. Publishing a GitHub release builds the app with Xcode 27 and attaches a DMG to the release. The release tag sets the app version.
+CI does not use Mise. It runs the same `xcodebuild test` command with Xcode 27, then checks the format with `swiftformat --lint .`, lints, and builds the app with Xcode 27, for every pull request and every push to `main`. Publishing a GitHub release builds the app with Xcode 27 and attaches a DMG to the release. The release tag sets the app version.
 
 Builds use ad-hoc signing by default. To use the same development certificate for local Debug and Release builds, including Xcode's Cmd+R, create `Signing.local.xcconfig` in the repository root:
 
@@ -71,7 +71,14 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 
 Find the certificate name with `security find-identity -v -p codesigning` and your Team ID in Xcode's account settings. This file is ignored by Git. Run `mise xcode` once to regenerate the project; later edits to the file apply on the next build.
 
-Releases use the signing certificate configured in GitHub.
+Google sign-in needs the UnlocalFS OAuth client. Without it, the app says that Google sign-in is not available. For a local build, add the client to `Signing.local.xcconfig`:
+
+```xcconfig
+GOOGLE_CLIENT_ID = CLIENT_ID.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET = CLIENT_SECRET
+```
+
+Releases use the signing certificate and the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` secrets configured in GitHub. A release stops when the client is missing.
 
 The app uses Clean Architecture with MVVM and Observation:
 

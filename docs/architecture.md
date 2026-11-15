@@ -1,6 +1,6 @@
-# Clean Architecture with MVVM
+# Architecture
 
-The domain defines what the app does. Infrastructure implements storage and drive operations. Presentation owns observable state and user interaction. Application constructs the objects and connects them to macOS. In MVVM terms, Domain and Infrastructure are the model, `UnlocalFSPresentation` holds the view models, and the SwiftUI views live in the app target with Application.
+UnlocalFS uses Clean Architecture with MVVM. Domain and Infrastructure are the model. `UnlocalFSPresentation` holds the view models. The app target holds the SwiftUI views and Application, which builds the objects and connects them to macOS.
 
 ```mermaid
 flowchart LR
@@ -10,54 +10,83 @@ flowchart LR
     Infrastructure --> Domain
 ```
 
+To add a workflow, put its rules in Domain and its integration in Infrastructure, and inject it from Application. Add a factory method for a new feature view model. Add an abstraction only at a real boundary. For tests, see [testing.md](testing.md).
+
 ## Domain
 
-`Packages/UnlocalFSCore/Sources/UnlocalFSDomain` contains connection and credential validation, duplication, automatic-connect eligibility, upload safety rules, and workflows:
+Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 
-| Use case | Behavior |
+- `ConnectionRepository` and `DriveGateway` are the integration contracts. View models call the gateway directly for status, test, refresh, and activity. A workflow with rules goes through a use case.
+- `ConnectionField` names the field of each validation issue, so the editor maps errors to inputs without string matching.
+- `TrafficMeter` turns rclone's byte counter into bytes per day. It ignores a stale reading from the same process and counts a new process from zero.
+
+| Use case | Rule |
 | --- | --- |
-| SaveConnectionUseCase | Validates current saved names and credentials, refuses to change a saved drive's protocol, encryption, or encryption password and a saved SFTP drive's folder, drops credentials the connection no longer uses, prepares credentials, then saves |
-| SetAutomaticConnectUseCase | Saves whether a drive connects when the app opens, without reading or writing its credentials |
-| DeleteConnectionUseCase | Refuses active drives, removes the saved connection and cache |
-| ConnectDriveUseCase | Uses current drive status to connect or reconnect; view models disconnect through the gateway |
-| SignInAgainUseCase | Takes a new Google token, tests the connection with it, saves it to the Keychain, then sends it to the drive if it serves; a failure at a step changes nothing after that step and never disconnects |
-| ShareFilesUseCase | Resolves selected files to drives and creates links, refusing SFTP, GCS, and encrypted drives before it loads credentials; identifies the failed file |
-| DuplicateFilesUseCase | Resolves selected files to drives and copies each one on the server, refusing SFTP and read-only drives; never loads credentials; identifies the failed file |
-| ExportRcloneConfigUseCase | Refuses unencrypted drives, reads credentials only when the export includes them, then writes the rclone config |
-| QuitUseCase | Offers disconnect for active drives, waits during an operation, and tries every drive at the same time before quit, then returns the first disconnect failure so the app stays open |
-
-`ValidationResult<Field>` collects ordered, typed issues for any domain model. Connection and credential validation own their rules; the editor owns focus order. `ConnectionField` names each reported field, so the editor maps errors to inputs without string matching. `ConnectionRepository` and `DriveGateway` are the domain's integration contracts. View models call the gateway directly for simple status, test, refresh, and activity operations; workflows with rules go through a use case. The domain imports Foundation and has no remote package, UI, Security, subprocess, or filesystem implementation dependencies.
-
-`TrafficMeter` turns rclone's running byte counter into upload and download bytes per day. It compares each reading with the last saved checkpoint, ignores a stale reading from the same process, counts a new rclone process from zero, and decides when a save is due: every hour, at a new day, or on disconnect. `TrafficRepository` is the read contract for per-drive sums and per-day sums over a range of days.
+| SaveConnectionUseCase | A saved drive keeps its protocol, encryption, and encryption password; an SFTP drive keeps its folder. Drops unused credentials. |
+| SetAutomaticConnectUseCase | Saves "connect on start up" without touching credentials. |
+| DeleteConnectionUseCase | Refuses an active drive. Removes the connection, its cache, and the host keys of the last SFTP drive for a server. |
+| ConnectDriveUseCase | Connects or reconnects from the current status. |
+| SignInAgainUseCase | Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |
+| ShareFilesUseCase | Refuses SFTP, GCS, and encrypted drives before it loads credentials. |
+| DuplicateFilesUseCase | Refuses SFTP and read-only drives. Never loads credentials. |
+| ExportRcloneConfigUseCase | Refuses unencrypted drives. Reads credentials only for an export with secrets. |
+| QuitUseCase | Waits during an operation. Offers to disconnect, then disconnects all drives at the same time and keeps the app open on a failure. |
 
 ## Infrastructure
 
-`UnlocalFSInfrastructure` depends on Domain. `SavedConnectionRepository` combines `ConnectionStore` and `CredentialStorage`. The application shares one repository instance. A lock serializes complete repository transactions. A failed credential save restores the previous JSON connection or removes a new connection. A save without credentials writes only the JSON connection. Delete removes the JSON connection before its credentials, so a failed write keeps both. `Keychain` implements credential storage. `TrafficStore` keeps traffic in SQLite through GRDB: `traffic.sqlite` has an `unlocal` table with each drive's name, provider, and checkpoint, and a `traffic` table with bytes per drive per day. Deleting a drive leaves its rows.
+### Storage
 
-`MountService` implements `DriveGateway`. On each status read it reads rclone's `global_stats` counters, subtracts server-side copy and move bytes, identifies the rclone process by its pid and kernel start time, and feeds the traffic meter. It saves traffic before it ejects a drive, because rclone quits once the drive unmounts. Each drive runs `rclone rcd` with no credentials in its arguments or environment. `MountService` creates the drive's named remotes (`unlocalfs-<type>`, and `unlocalfs` for crypt) with `config/create` on the drive's socket, then mounts them with `mount/mount` as `nfsmount`. rc calls on a running drive use these names. `rcd` does not exit when Finder ejects the drive, so a status read that finds the rclone running with no live mount asks it to quit. It owns rclone commands, response decoding, process lifetime, and mount paths. It sends remote-control calls through `ControlSocket`, a small HTTP client for the drive's Unix socket, instead of starting an `rclone rc` process for each call. A connection's rclone type, path, storage, and target come from the connection alone. `RcloneRemote` adds the credentials and builds the options and environment that rclone needs to reach the storage. The provider selects the S3, GCS, or SFTP branch; all share one mount lifecycle, and crypt wraps any of them. GCS switches on `GCSSettings.authentication`. A service-account drive passes the key from `Credentials` as an inline rclone option; `ServiceAccountKey` parses and compacts the imported file once, in Domain. A Google-account drive passes rclone's token JSON, the UnlocalFS client ID and secret from `GoogleClient`, and `env_auth=false`; `GoogleToken` requires a refresh token. The token travels only in rc bodies (`config/create`, and `config/update` for a new sign-in on a running drive), in the connection test's environment, and in an export with secrets. Environment values outrank rclone's config, so a running drive never gets the token through its environment, or `config/update` could not replace it. rclone falls back to application-default credentials when a GCS token is missing, so `MountService` refuses to test, mount, or export a Google drive without a token and a client before it starts rclone. Sign-in runs `rclone authorize gcs` with the client in its environment and a bundled result page, and reads the token between rclone's paste markers. `MountService` marks a Google drive's status `needsSignIn` when its upload error contains `invalid_grant`, and the connection test throws `GoogleSignInRequired` for the same text. SFTP checks host keys before authentication and passes only the ssh-agent socket it needs. `SFTPTrustStore` owns the only trusted-hosts file, `known_hosts` under Application Support. `RcloneRemote` requires its path, so no SFTP command runs without host verification. Unknown or changed keys produce a domain `ServerTrustChallenge`; `AppViewModel` selects the connection so its detail view shows the fingerprints, and both view models retry after approval. OpenSSH tools scan keys, calculate fingerprints, and remove replaced entries. Approval saves only the reviewed keys, so a later key change still fails verification. `DeleteConnectionUseCase` removes a server's keys when the last drive for that host and port is deleted. `MountCommand` builds the `rcd` arguments, its environment, and the `mount/mount` VFS options from a remote and `AppPaths`. The connection test and share links run one-off rclone commands that read the same named remotes from `RCLONE_CONFIG_<NAME>_<OPTION>` environment variables, so they use the drive's remote definition and pass no secret in an argument or a file. `MountService` checks upload safety before ejecting and again before stopping the service. When the status read fails but the control socket answers, `MountService` reads `vfs/queue` alone and disconnects normally only when no upload waits. When the socket cannot be reached (missing, refusing connections, or silent past its deadline), the service cannot report or save uploads, so `MountService` force-ejects the drive and terminates its rclone process, sending `SIGTERM` and then `SIGKILL`, instead of waiting for a service that cannot respond. A saved pid counts as the drive's rclone only when that process started before the pid file was written, so a process that reused the pid is never signaled and the drive counts as stopped. It lists and removes unfinished S3 multipart uploads with `backend/command` on the drive's rc socket, against the bucket rather than the crypt layer. Share links, server-side copies, and stopped uploads first check that the drive is mounted and its control socket exists, then read `vfs/queue`: a link or copy waits until the file is uploaded. It stops an upload by deleting the file through the mount, because rclone has no rc call that removes an item from its upload queue. It deletes nothing when the upload has finished. An upload can still finish between that read and the delete; the delete then removes the new server copy too. It duplicates files with `operations/copyfile` on the drive's rc socket, so the copy runs in the drive's rclone process with the credentials it already has. It picks a free copy name from a listing of the mounted folder, a remote check, and the names of copies still running, and it refuses to disconnect while a copy runs. These checks stay at the integration boundary because uploads can change between operations.
+- `SavedConnectionRepository` joins `ConnectionStore` (JSON) and `Keychain` under one lock. A failed save restores the old state. Delete removes the JSON first, so a failed write keeps both.
+- JSON and Keychain encoding must stay readable by existing installations.
+- `TrafficStore` keeps traffic per drive per day in `traffic.sqlite` (GRDB). A deleted drive keeps its rows.
 
-JSON and Keychain encoding remain compatible with existing installations. Foundation Codable conformance stays on the value types to avoid duplicating unchanged schemas.
+### Drives
 
-## Presentation and Application
+`MountService` implements `DriveGateway` and owns the rclone processes.
 
-`UnlocalFSPresentation` contains the view models and depends only on Domain. `AppViewModel` holds connection selection, observed statuses, errors, and busy state. Views cannot change connections, statuses, errors, or busy state; they call intent methods such as `toggle`, `delete`, and `checkAgain`. Views can set the selection and what is presented: the editor, the delete confirmation, and alerts. `AppViewModel` also derives the status text, indicator, and notices that views display. It runs domain use cases and translates their results into UI state and desktop feedback. Its focused extensions separate drive connection, disconnect, and server-trust actions (`AppViewModel+Lifecycle`), status polling, speed history, and upload notifications (`AppViewModel+Polling`), and quit coordination (`AppViewModel+Quit`). The main type owns the shared observable state, dependency construction, and saved-connection actions.
+- Each drive runs `rclone rcd` with no credentials in its arguments or environment. `MountService` creates the remotes (`unlocalfs-<type>`, and `unlocalfs` for crypt) with `config/create`, then mounts them with `mount/mount` as `nfsmount`.
+- One-off commands (connection test, share links) read the same remotes from `RCLONE_CONFIG_<NAME>_<OPTION>` variables, so no secret goes into an argument or a file.
+- `rcd` does not quit when Finder ejects the drive. A status read that finds no live mount tells rclone to quit.
+- Traffic counts rclone's bytes minus server-side copy and move bytes. `MountService` saves it before an eject, because rclone quits when the drive unmounts.
 
-`DriveCondition` is the one value behind a drive's status text and dot: `checking`, `working`, `needsReconnect`, `needsAttention`, `offline`, `needsSignIn`, `uploadFailed`, `uploading(count:isMounted:)`, `connected`, `ejected`, or `disconnected`. One initializer builds it from the status, the busy flag, whether an operation failed, and whether the drive is offline. It owns the order in which those inputs win. Its `statusText` and `indicator` switch with no default case, so a new condition fails to compile in both. It is a label, not the full drive state: `working` and `offline` hide whether the drive is mounted, so the button rules (`canOpen`, `canDisconnect`, `toggleTitle`) and the notices read the status directly.
+### Google Cloud Storage
 
-`ViewModelFactory` creates `ConnectionEditorViewModel`, `ActivityViewModel`, and `TrafficViewModel` with their dependencies. Views get the factory from the environment, so they do not know about repositories, gateways, or use cases. The feature view models have internal initializers, so only the factory can create them. For service-account key imports, the view forwards the file picker result to the editor view model, which reads the file, validates it in Domain, and updates the credentials or the error. For Google sign-in, the editor view model holds the sign-in task, applies its token only while it is still the current task, and cancels it when the person cancels, switches the method, or closes the editor. `AppViewModel` runs sign-in again for a saved drive under the drive's busy state; only the browser step can be cancelled.
+- The token goes only into rc bodies, the connection test environment, and an export with secrets. Environment values override the rclone config, so a running drive must not get the token from its environment, or `config/update` cannot replace it.
+- Without a token, rclone uses other Google credentials on the Mac. So `MountService` refuses to start rclone for a Google drive with no token or no client.
+- Only one sign-in runs at a time.
+- An upload error with `invalid_grant` sets `needsSignIn`.
 
-While the activity section is visible, `ActivityViewModel` polls the gateway every 500 ms while files move and every 2 seconds when idle. It publishes one `ActivitySnapshot`: `checking` before the first reply, `idle` when nothing moves, `transfers` with the `TransferSummary` the section shows, or `unavailable` with the reason. The summary says whether uploads or downloads lead (uploads win when both run), the file count in that direction, and every file the gateway returned that has not expired: failed uploads first, then the rest sorted by name. The table scrolls, so the summary sets no limit; the gateway bounds finished files to what rclone keeps. Failed uploads do not count as uploading. The gateway reads finished transfers from rclone's `core/transferred` and returns each file once: uploads, and downloads that got the whole file. A failed upload carries its own latest error from those transfers and its next attempt time. Drive status carries rclone's latest upload error from the `global_stats` group only while uploads fail, because rclone never clears it. The summary shows a finished file for 30 seconds. Before it stops an upload, `ActivityViewModel` keeps an `UploadCancellation` for the confirmation. After the stop, the next poll removes the row. The gateway returns activity in no set order; display order belongs to Presentation.
+### SFTP
 
-`TrafficViewModel` builds the chart bars of the chosen `TrafficPeriod` (one per day, or one per month for ranges longer than 92 days) and the last 30 days for the sidebar card. It sums the stored days of the period, or of the bars picked on the chart, adds a 0-byte row for each saved drive without traffic and the unsaved bytes of running drives when the range includes today, and sorts rows by total. `TrafficPeriod` maps a period to whole days in the Mac's time zone, and `TrafficPreset` gives the date picker's preset ranges. The sidebar selection is Traffic or a drive. `MainView` owns the one `TrafficViewModel` that the card and the page share.
+- `SFTPTrustStore` owns the only trusted-hosts file. `RcloneRemote` requires its path, so no SFTP command runs without host verification.
+- Approval saves only the reviewed keys, so a later key change fails again.
 
-`AppViewModel` keeps the last minute of upload and download speed for each running drive. The 3-second status poll adds a sample for every drive, and `ActivityViewModel` adds one on each refresh through a closure from the factory, so the graph keeps its history when the section is hidden. Both sources add up speeds with the same rule (`activeFiles` in `MountService`). The history keeps the newest sample of each clock second, because rclone recalculates `speedAvg` about once a second, and drops samples older than a minute or newer than the latest one, so a clock that moves back does not leave points in the future. A drive that needs reconnecting adds no samples; a drive that stops loses its history.
+### Upload safety
 
-`UnlocalFS/Presentation` contains the SwiftUI views. Views own focus, layout, sheet dismissal, and activity task lifetime. The app target has no tests, so view models decide what the UI shows: which items, in what order, and derived counts and totals. Views decide how it looks: icons, colors, animation, and the format of a single value.
+These checks stay in Infrastructure, because uploads can change between two operations.
 
-`UnlocalFS/Application` wires the app. `AppDependencies.live()` constructs live dependencies and loads initial connections. `MacOSDesktopServices` implements the presentation's desktop interface. `AppDelegate` owns app polling of drive status every 3 seconds, network monitoring, sleep/wake events, termination, and Finder services. A status pass asks every drive at the same time and publishes each reply as it arrives, so one slow drive delays only itself. A drive operation invalidates pending poll results and requests a new pass. The login-item state comes from the system when the menu shows it and when the app activates, not from the poll.
+- `MountService` checks for pending uploads before it ejects and again before it stops rclone.
+- If the status read fails but the socket answers, `MountService` reads only `vfs/queue` and disconnects normally when no upload waits.
+- If the socket does not answer, rclone cannot report or save uploads. `MountService` force-ejects the drive and kills rclone.
+- A saved pid counts only if its process started before `MountService` wrote the pid file. So `MountService` never signals a process that reused the pid.
+- A share link or a server-side copy waits until the file finishes its upload.
+- rclone cannot remove a queued upload, so a stop deletes the file through the mount. A stop deletes nothing when the upload has finished. If the upload finishes between that check and the delete, the delete also removes the new server copy.
+- A copy runs with `operations/copyfile` in the drive's rclone, which already has the credentials. A drive does not disconnect while a copy runs.
+- Multipart cleanup runs on the bucket, not on the crypt layer.
 
-## Verification
+## Presentation
 
-`xcodebuild test -scheme UnlocalFSCore-Package` runs all Domain, Infrastructure, and Presentation tests in one pass. Tests use real repositories and drive services with stubs at process, credential, or macOS boundaries. One storage suite per type (S3, SFTP, GCS) runs the pinned rclone against a local `rclone serve` server to check that a drive downloads, uploads, and deletes files, with isolated fixtures that run in parallel. GCS has no local server, so its suite checks only the rclone config. CI runs the same command only with Xcode 27, the Xcode that builds releases. CI does not run the older-macOS branch of an `if #available` check. `swiftlint lint --strict` checks all layers. See [tests](testing.md) for what to test and where.
+The app target has no tests. So view models decide what the UI shows: which items, their order, and counts. Views decide how it looks.
 
-For a new workflow, place its rules in Domain, implement required integration behavior in Infrastructure, and inject it from Application. Keep view models responsible for the state the UI displays, and add a factory method when a view needs a new feature view model. Add abstractions when a real boundary requires them.
+- Views change `AppViewModel` state only through intents such as `toggle`. They can set the selection and what the app presents.
+- `DriveCondition` is the one value behind the status text and dot. Its switches have no `default`, so a new case fails to compile. It hides whether the drive is mounted, so button rules read the status.
+- `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
+- `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
+- The gateway returns activity in no set order. `TransferSummary` sets the order.
+- The status shows rclone's last upload error only while uploads fail, because rclone never clears it.
+- The speed history keeps the newest sample of each second, because rclone updates `speedAvg` about once a second. It drops samples newer than the latest one, so a clock that moves back leaves no future points.
+
+## Application
+
+- `AppDependencies.live()` builds the live objects. `AppDelegate` starts the status poll and handles network, sleep and wake, termination, and Finder services.
+- A status pass asks all drives at the same time, so a slow drive delays only itself. A drive operation discards pending results.
