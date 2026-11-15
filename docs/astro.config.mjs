@@ -38,6 +38,7 @@ export default defineConfig({
           label: "Guides",
           items: [
             { label: "Using drives", slug: "using-drives" },
+            { label: "Google Cloud Storage", slug: "google-cloud-storage" },
             { label: "Folder drives", slug: "folder-drives" },
             { label: "Encryption", slug: "encryption" },
             { label: "Sharing links", slug: "sharing-links" },

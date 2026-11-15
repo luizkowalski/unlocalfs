@@ -42,6 +42,8 @@ Credentials are stored in your Mac’s Keychain. Temporary credentials stop work
 
 ### Google account
 
+The bucket must exist before you connect. UnlocalFS does not create buckets. For the steps, see [Google Cloud Storage](/google-cloud-storage/).
+
 Sign-in lets UnlocalFS use Cloud Storage as your Google account. It does not give the account access to a bucket. The account still needs the **Storage Object User** role on the bucket, set in **IAM & Admin → IAM** in the Google Cloud console.
 
 UnlocalFS stores the sign-in in your Mac's Keychain. It does not show which account you chose and does not check that a new sign-in uses the same account. **Test Connection** is the check: test again after you sign in. To use a different account, click **Sign In Again…**. A change to the account or to **Sign in with** applies the next time you connect the drive.
