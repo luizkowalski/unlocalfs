@@ -275,17 +275,17 @@ public actor MountService: DriveGateway {
     }
 
     func remote(for connection: Connection, credentials: Credentials) async throws -> RcloneRemote {
-        let credentials = try await prepareCredentials(credentials)
-        switch connection.backend {
-        case .s3Compatible, .gcs:
-            return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: paths.knownHosts, googleClient: googleClient)
-        case .sftp:
-            let sftp = connection.sftp
-            let knownHosts = try await serverTrust.file()
-            if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
-            let socket = sftp.authentication == .agent ? try agentSocket(sftp) : nil
-            return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, googleClient: googleClient, agentSocket: socket)
-        }
+        var remote = try await remote(for: connection, preparedCredentials: prepareCredentials(credentials))
+        guard connection.backend == .sftp else { return remote }
+        let sftp = connection.sftp
+        if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
+        if sftp.authentication == .agent { remote.agentSocket = try agentSocket(sftp) }
+        return remote
+    }
+
+    func remote(for connection: Connection, preparedCredentials credentials: Credentials?) async throws -> RcloneRemote {
+        let knownHosts = connection.backend == .sftp ? try await serverTrust.file() : paths.knownHosts
+        return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, googleClient: googleClient)
     }
 
     private func requireReadableFile(_ path: String, failure: (String) -> LocalizedStringResource) throws {
