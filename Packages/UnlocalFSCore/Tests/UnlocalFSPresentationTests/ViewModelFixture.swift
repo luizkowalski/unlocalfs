@@ -1,5 +1,6 @@
 import Foundation
 import Synchronization
+import Testing
 import UnlocalFSDomain
 import UnlocalFSInfrastructure
 import UnlocalFSPresentation
@@ -16,8 +17,8 @@ struct ViewModelFixture {
     var traffic: TrafficStore { drives.traffic }
     var rcloneCalls: [String] { drives.rcloneCalls }
 
-    init() throws {
-        drives = try StubbedDrives("view-model") { root in
+    init(googleClient: GoogleClient = .test) throws {
+        drives = try StubbedDrives("view-model", googleClient: googleClient) { root in
             """
             case "$1" in
                 lsf)
@@ -27,6 +28,18 @@ struct ViewModelFixture {
                     fi
                     ;;
                 obscure) printf 'prepared-password\\n' ;;
+                authorize)
+                    env | grep '^RCLONE_GCS_' | sort > '\(root.path)/authorize-env'
+                    if [ -f '\(root.path)/authorize-hang' ]; then
+                        echo $$ > '\(root.path)/authorize-pid'
+                        sleep 30
+                    fi
+                    if [ -f '\(root.path)/authorize-error' ]; then
+                        cat '\(root.path)/authorize-error'
+                        exit 2
+                    fi
+                    printf 'NOTICE: Got code\\nPaste the following into your remote machine --->\\n%s\\n<---End paste\\n' "$(cat '\(root.path)/authorize-token')"
+                    ;;
                 config)
                     name="$3"
                     arguments="$*"
@@ -57,6 +70,7 @@ struct ViewModelFixture {
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
             setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
+            signInAgain: SignInAgainUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
@@ -103,6 +117,31 @@ struct ViewModelFixture {
         try ConnectionStore(url: paths.config).save(connection)
         try servers.start(at: paths.socket(connection), respond: respond)
     }
+
+    func signInReturns(_ token: String) throws {
+        try token.write(to: root.appending(path: "authorize-token"), atomically: true, encoding: .utf8)
+    }
+
+    func signInWillHang() throws {
+        try signInReturns(#"{"access_token":"late","refresh_token":"1//late-refresh"}"#)
+        FileManager.default.createFile(atPath: root.appending(path: "authorize-hang").path, contents: Data())
+    }
+
+    func waitForSignInToStop(_ pid: pid_t) async throws {
+        try await waitUntil(timeout: .seconds(5)) { kill(pid, 0) != 0 }
+    }
+
+    func signInHangs() async throws -> pid_t {
+        let pidFile = root.appending(path: "authorize-pid")
+        try await waitUntil { FileManager.default.fileExists(atPath: pidFile.path) && !((try? String(contentsOf: pidFile, encoding: .utf8)) ?? "").isEmpty }
+        return try #require(pid_t(String(contentsOf: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
+    }
+
+    func signInFails(_ output: String) throws {
+        try output.write(to: root.appending(path: "authorize-error"), atomically: true, encoding: .utf8)
+    }
+
+    var signInEnvironment: String { (try? String(contentsOf: root.appending(path: "authorize-env"), encoding: .utf8)) ?? "" }
 
     func queue(_ items: String...) throws { try queue(contentsOf: items) }
 

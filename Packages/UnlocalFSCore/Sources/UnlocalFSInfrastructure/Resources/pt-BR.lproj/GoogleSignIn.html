@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>UnlocalFS</title>
+<style>body{font:15px -apple-system,sans-serif;max-width:32em;margin:15vh auto;padding:0 1em;color:#1d1d1f}@media(prefers-color-scheme:dark){body{background:#1e1e1e;color:#f5f5f7}}</style>
+</head>
+<body>
+{{ if .OK }}
+<h1>Login concluído</h1>
+<p>Feche esta aba e volte para o UnlocalFS.</p>
+{{ else }}
+<h1>O login não terminou</h1>
+<p>{{ if .Description }}{{ .Description }}{{ else }}{{ .Name }}{{ end }}</p>
+<p>Feche esta aba, volte para o UnlocalFS e tente novamente.</p>
+{{ end }}
+</body>
+</html>

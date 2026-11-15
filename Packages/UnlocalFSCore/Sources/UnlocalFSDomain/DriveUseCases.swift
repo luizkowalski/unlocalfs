@@ -22,6 +22,25 @@ public struct ConnectDriveUseCase: Sendable {
     }
 }
 
+public struct SignInAgainUseCase: Sendable {
+    private let repository: any ConnectionRepository
+    private let drives: any DriveGateway
+
+    public init(repository: any ConnectionRepository, drives: any DriveGateway) {
+        self.repository = repository
+        self.drives = drives
+    }
+
+    public func execute(_ connection: Connection, token: String) async throws {
+        var credentials = try repository.credentials(for: connection.id)
+        credentials.googleToken = token
+        try await drives.test(connection, credentials: credentials)
+        try repository.save(connection, credentials: credentials)
+        guard await drives.status(connection).isServing else { return }
+        try await drives.applyGoogleSignIn(connection, credentials: credentials)
+    }
+}
+
 public struct QuitUseCase: Sendable {
     public enum Decision: Equatable, Sendable { case quit, disconnect, wait(String) }
     private let drives: any DriveGateway

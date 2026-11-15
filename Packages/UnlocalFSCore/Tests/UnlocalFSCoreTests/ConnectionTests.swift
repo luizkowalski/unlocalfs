@@ -43,7 +43,23 @@ struct ConnectionTests {
         expected.endpoint = "https://s3.example.com"
         expected.region = "us-east-1"
         expected.bucket = "my-bucket"
+        expected.gcs.authentication = .serviceAccount
         #expect(try ConnectionStore(url: url).all() == [expected])
+    }
+
+    @Test func gcsConnectionsAndCredentialsSavedBeforeGoogleSignInKeepTheServiceAccountKey() throws {
+        let url = configURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("""
+        {"connections":[{"bucket":"my-bucket","endpoint":"","id":"\(UUID())","name":"Bucket","provider":"GCS","region":"auto"}]}
+        """.utf8).write(to: url)
+        let connection = try #require(try ConnectionStore(url: url).all().first)
+        #expect(connection.gcs.authentication == .serviceAccount)
+        let credentials = try JSONDecoder().decode(Credentials.self, from: Data(
+            #"{"accessKey":"","secretKey":"","sessionToken":"","serviceAccountKey":"key"}"#.utf8,
+        ))
+        #expect(credentials == Credentials(serviceAccountKey: "key"))
     }
 
     @Test func currentReleaseConnectionAndCredentialsStayS3() throws {

@@ -112,6 +112,18 @@ struct WorkflowTests {
         }
     }
 
+    @Test(arguments: [(GCSAuthentication.googleAccount, Credentials.google()), (.serviceAccount, Credentials(serviceAccountKey: serviceAccountJSON))])
+    func savingAGCSDriveKeepsOnlyTheSelectedAuthentication(authentication: GCSAuthentication, expected: Credentials) async throws {
+        try await withWorkflowFixture { repository, drives, _ in
+            let connection = Connection.gcs { $0.gcs.authentication = authentication }
+            _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service).execute(
+                connection, credentials: Credentials(accessKey: "key", password: "ssh", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
+            )
+            let saved = try repository.credentials(for: connection.id)
+            #expect(saved == expected)
+        }
+    }
+
     @Test(arguments: [(SFTPAuthentication.password, "ssh", ""), (.privateKey, "", "phrase"), (.agent, "", "")])
     func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication, password: String, passphrase: String) async throws {
         try await withWorkflowFixture { repository, drives, _ in

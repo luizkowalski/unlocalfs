@@ -283,6 +283,56 @@ struct MountSafetyTests {
     }
 }
 
+extension MountSafetyTests {
+    @Test(arguments: [
+        (Connection.s3 { $0.encrypted = true }, Credentials(accessKey: "s3-access", secretKey: "s3-secret", encryptionPassword: "crypt-password"),
+         ["secret_access_key": String?.some("s3-secret")]),
+        (Connection.gcs(authentication: .googleAccount) { $0.encrypted = true },
+         Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
+         [
+             "token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "env_auth": "false",
+             "config_refresh_token": "false", "service_account_credentials": nil,
+         ]),
+        (Connection.gcs { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
+         ["service_account_credentials": serviceAccountJSON, "token": nil, "client_secret": nil, "config_refresh_token": nil]),
+    ])
+    func startedDriveGetsItsSecretsOnlyOverTheControlSocket(connection: Connection, credentials: Credentials, expected: [String: String?]) async throws {
+        let drives = try StubbedDrives("start") { root in
+            """
+            if [ "$1" = 'obscure' ]; then printf 'obscured-secret'; fi
+            if [ "$1" = 'rcd' ]; then
+                env > '\(root.path)/rcd-environment'
+                printf '%s\\n' "$@" > '\(root.path)/rcd-arguments'
+                while [ ! -f '\(root.path)/stop' ]; do sleep 0.05; done
+            fi
+            """
+        }
+        defer { drives.remove() }
+        let mount = Task { try await drives.service.mount(connection, credentials: credentials) }
+        let arguments = drives.root.appending(path: "rcd-arguments")
+        try await waitUntil { FileManager.default.fileExists(atPath: arguments.path) }
+        let server = try ControlServer(at: drives.paths.socket(connection)) { [root = drives.root] request in
+            if request.method == "config/create" { try request.body.write(to: root.appending(path: "create-\(request.parameter("name") ?? "")")) }
+            if request.method == "mount/mount" { FileManager.default.createFile(atPath: root.appending(path: "stop").path, contents: Data()) }
+            return "{}"
+        }
+        defer { server.stop() }
+
+        await #expect(throws: AppError.self) { try await mount.value }
+
+        let started = try String(contentsOf: arguments, encoding: .utf8) + String(contentsOf: drives.root.appending(path: "rcd-environment"), encoding: .utf8)
+        for secret in ["s3-secret", "crypt-password", "obscured-secret", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
+            #expect(!started.contains(secret), "\(secret) reached the rcd process")
+        }
+        let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.rcloneType)"))
+        let parameters = try #require(try JSONSerialization.jsonObject(with: created) as? [String: Any])["parameters"] as? [String: String]
+        for (name, value) in expected {
+            #expect(parameters?[name] == value, "\(name)")
+        }
+        #expect(FileManager.default.fileExists(atPath: drives.root.appending(path: "create-unlocalfs").path))
+    }
+}
+
 private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Respond {
     { request in
         switch request.method {
@@ -299,7 +349,7 @@ private func shutdown(phase: String, root: URL, socket: URL) -> ControlServer.Re
     }
 }
 
-private let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
+let failedItem = #"{"name":"a.txt","id":1,"size":1,"expiry":1,"tries":2,"delay":5,"uploading":false}"#
 private let waitingItem = #"{"name":"b.txt","id":2,"size":1,"expiry":5,"tries":0,"delay":5,"uploading":false}"#
 private let uploadingItem = #"{"name":"c.txt","id":3,"size":1,"expiry":0,"tries":1,"delay":5,"uploading":true}"#
 
@@ -313,18 +363,18 @@ func withFixture(script: String, operation: (MountService, Connection) async thr
 }
 
 func withControl(
+    connection: Connection = .s3(),
     _ control: @escaping (_ root: URL, _ socket: URL) throws -> ControlServer.Respond, operation: (MountService, Connection) async throws -> Void,
 ) async throws {
-    try await withFixture(script: { _ in "" }, control: control, operation: operation)
+    try await withFixture(script: { _ in "" }, connection: connection, control: control, operation: operation)
 }
 
 private func withFixture(
-    script: (URL) -> String, control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
+    script: (URL) -> String, connection: Connection = .s3(), control: ((_ root: URL, _ socket: URL) throws -> ControlServer.Respond)? = nil,
     operation: (MountService, Connection) async throws -> Void,
 ) async throws {
     let drives = try StubbedDrives("safety", rclone: script)
     defer { drives.remove() }
-    let connection = Connection.s3()
     let socket = drives.paths.socket(connection)
     let server = try control.map { try ControlServer(at: socket, respond: $0(drives.root, socket)) }
     defer { server?.stop() }

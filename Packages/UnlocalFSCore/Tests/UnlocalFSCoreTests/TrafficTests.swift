@@ -22,7 +22,7 @@ struct TrafficTests {
     @Test func brokenTrafficDatabaseNeverBlocksStatusOrDisconnect() async throws {
         try await withRclone(replying: reply(stats: busyStats())) { drives, connection, _, _ in
             let broken = TrafficStore(url: URL(filePath: "/dev/null/traffic.sqlite"))
-            let service = MountService(executable: drives.root.appending(path: "rclone"), helperDirectory: drives.root, paths: drives.paths, traffic: broken)
+            let service = MountService(executable: drives.root.appending(path: "rclone"), helperDirectory: drives.root, paths: drives.paths, traffic: broken, googleClient: .test)
             let status = await service.status(connection)
             #expect(status.isRunning && status.controlError == nil)
             try await service.unmount(connection)

@@ -5,7 +5,7 @@ import UnlocalFSDomain
 @MainActor @Observable public final class ConnectionEditorViewModel {
     public var connection: Connection {
         didSet {
-            if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp { tested = false }
+            if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp || connection.gcs != oldValue.gcs { tested = false }
         }
     }
 
@@ -21,6 +21,7 @@ import UnlocalFSDomain
     public private(set) var saving = false
     public private(set) var tested = false
     public private(set) var serverTrust: ServerTrustChallenge?
+    private let signIn: GoogleSignInRun
     public private(set) var error: String?
     private var showErrors = false
     private let isDuplicate: Bool
@@ -49,6 +50,7 @@ import UnlocalFSDomain
         self.connections = connections
         self.repository = repository
         self.drives = drives
+        signIn = GoogleSignInRun(drives: drives)
         self.saveConnection = saveConnection
         self.onSave = onSave
     }
@@ -73,7 +75,9 @@ import UnlocalFSDomain
         }
     }
 
-    public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded }
+    public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded || signingIn }
+
+    public var signingIn: Bool { signIn.isRunning }
 
     public var fieldErrors: [ConnectionField: String] {
         guard showErrors else { return [:] }
@@ -101,6 +105,16 @@ import UnlocalFSDomain
             error = nil
         } catch { self.error = error.localizedDescription }
     }
+
+    public func signInWithGoogle() async {
+        error = nil
+        guard let result = await signIn.token() else { return }
+        do {
+            credentials.googleToken = try result.get()
+        } catch { self.error = error.localizedDescription }
+    }
+
+    public func cancelSignIn() { signIn.cancel() }
 
     public func test() async {
         guard validate() else { return }

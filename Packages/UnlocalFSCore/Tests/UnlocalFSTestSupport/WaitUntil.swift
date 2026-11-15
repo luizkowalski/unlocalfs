@@ -1,7 +1,7 @@
 import Foundation
 import UnlocalFSDomain
 
-func waitUntil(
+public func waitUntil(
     timeout: Duration = .seconds(10), file: String = #fileID, line: Int = #line,
     _ condition: () async throws -> Bool,
 ) async throws {

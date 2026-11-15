@@ -45,7 +45,17 @@ Replace `My files rclone.conf` with the path to your file. The `unlocalfs` remot
 
 ## Recover a Google Cloud Storage drive
 
-An exported config has two remotes: `unlocalfs-gcs` for the bucket and `unlocalfs` for the decrypted files. With **Include service-account key**, the key is in the file, so anyone with the file can use the service account. Without it, add the key from the JSON file you downloaded from Google Cloud, then the encryption password:
+An exported config has two remotes: `unlocalfs-gcs` for the bucket and `unlocalfs` for the decrypted files.
+
+For a drive that signs in with a Google account, **Include Google sign-in** puts the sign-in in the file. Anyone with the file can use your Google account's access to Cloud Storage until you remove UnlocalFS in [Third-party apps & services](https://myaccount.google.com/connections). Without it, sign in with rclone before you use the file. Until you do, rclone can use other Google credentials on that computer, such as gcloud application-default credentials:
+
+```sh
+rclone config reconnect unlocalfs-gcs: --config "My files rclone.conf"
+```
+
+rclone opens your browser and uses its own Google client. Then add the encryption password as below.
+
+For a drive with a service-account key, **Include service-account key** puts the key in the file, so anyone with the file can use the service account. Without it, add the key from the JSON file you downloaded from Google Cloud, then the encryption password:
 
 ```sh
 printf 'Encryption password: '; IFS= read -rs password; echo

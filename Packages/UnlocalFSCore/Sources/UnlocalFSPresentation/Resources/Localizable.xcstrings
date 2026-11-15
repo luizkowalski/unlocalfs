@@ -461,6 +461,23 @@
         }
       }
     },
+    "needsGoogleSignIn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Needs Google sign-in"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precisa de login com o Google"
+          }
+        }
+      }
+    },
     "needsReconnect": {
       "extractionState": "manual",
       "localizations": {

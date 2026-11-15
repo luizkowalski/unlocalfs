@@ -6,6 +6,7 @@ struct UploadQueue: Decodable {
 
     struct Item: Decodable {
         let name: String
+        let id: Int
         let size: Int64
         let expiry: Double
         let tries: Int

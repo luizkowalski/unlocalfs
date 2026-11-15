@@ -22,6 +22,7 @@ public struct MountStatus: Equatable, Sendable {
     public var pendingUploads = 0
     public var failedUploads = 0
     public var uploadError: String?
+    public var needsSignIn = false
     public var isDownloading = false
     public var uploadSpeed: Double = 0
     public var downloadSpeed: Double = 0

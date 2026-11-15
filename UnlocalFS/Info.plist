@@ -15,6 +15,8 @@
     <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
     <key>RcloneVersion</key><string>$(RCLONE_VERSION)</string>
+    <key>GoogleClientID</key><string>$(GOOGLE_CLIENT_ID)</string>
+    <key>GoogleClientSecret</key><string>$(GOOGLE_CLIENT_SECRET)</string>
     <key>LSMinimumSystemVersion</key><string>$(MACOSX_DEPLOYMENT_TARGET)</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>

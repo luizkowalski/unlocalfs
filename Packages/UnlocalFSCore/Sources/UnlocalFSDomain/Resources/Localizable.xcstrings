@@ -401,6 +401,24 @@
       },
       "comment": "Label of this field in the connection editor"
     },
+    "fieldGoogleAccount": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google account"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conta Google"
+          }
+        }
+      },
+      "comment": "Label of this field in the connection editor"
+    },
     "fieldHost": {
       "extractionState": "manual",
       "localizations": {
@@ -574,6 +592,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Informe um caminho de pasta como clientes/acme, ou deixe vazio para usar o bucket inteiro."
+          }
+        }
+      }
+    },
+    "googleSignInRequired": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google sign-in has expired or was revoked. Sign in again to use this drive."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O login com o Google expirou ou foi revogado. Faça login novamente para usar esta unidade."
           }
         }
       }
@@ -1141,6 +1176,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 dias"
+          }
+        }
+      }
+    },
+    "signInWithGoogleFirst": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Google"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login com o Google"
           }
         }
       }

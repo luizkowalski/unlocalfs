@@ -7,6 +7,7 @@ enum DriveCondition: Equatable, Sendable {
     case needsReconnect
     case needsAttention
     case offline
+    case needsSignIn
     case uploadFailed
     case uploading(count: Int, isMounted: Bool)
     case connected
@@ -32,6 +33,10 @@ enum DriveCondition: Equatable, Sendable {
         }
         if offline {
             self = .offline
+            return
+        }
+        if status.needsSignIn {
+            self = .needsSignIn
             return
         }
         if status.failedUploads > 0 {
@@ -60,6 +65,7 @@ enum DriveCondition: Equatable, Sendable {
         case .needsAttention: String(localized: .needsAttention)
         case .checking: String(localized: .checking)
         case .offline: String(localized: .networkUnavailable)
+        case .needsSignIn: String(localized: .needsGoogleSignIn)
         case .uploadFailed: String(localized: .uploadNeedsAttention)
         case let .uploading(count, _): String(localized: .uploadsPending(count))
         case .connected: String(localized: .connected)
@@ -71,7 +77,7 @@ enum DriveCondition: Equatable, Sendable {
     var indicator: AppViewModel.Indicator {
         switch self {
         case .working: .working
-        case .needsReconnect, .needsAttention, .offline, .uploadFailed: .attention
+        case .needsReconnect, .needsAttention, .offline, .needsSignIn, .uploadFailed: .attention
         case .connected: .connected
         case let .uploading(_, isMounted): isMounted ? .connected : .idle
         case .checking, .ejected, .disconnected: .idle
