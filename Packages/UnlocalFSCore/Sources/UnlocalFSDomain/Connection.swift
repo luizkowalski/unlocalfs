@@ -318,25 +318,18 @@ public struct Credentials: Codable, Equatable, Sendable {
             credentials.googleAccountID = ""
             if connection.sftp.authentication != .password { credentials.password = "" }
             if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
-        case .gcs:
+        case .gcs, .googleDrive:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
             credentials.password = ""
             credentials.keyPassphrase = ""
-            switch connection.gcs.authentication {
-            case .googleAccount: credentials.serviceAccountKey = ""
-            case .serviceAccount:
+            if connection.usesGoogleSignIn {
+                credentials.serviceAccountKey = ""
+            } else {
                 credentials.googleToken = ""
                 credentials.googleAccountID = ""
             }
-        case .googleDrive:
-            credentials.accessKey = ""
-            credentials.secretKey = ""
-            credentials.sessionToken = ""
-            credentials.password = ""
-            credentials.keyPassphrase = ""
-            credentials.serviceAccountKey = ""
         }
         return credentials
     }
@@ -352,15 +345,12 @@ public struct Credentials: Codable, Equatable, Sendable {
                 connection.sftp.authentication != .password || !password.isEmpty,
                 field: .password, message: String(localized: .passwordEmpty),
             )
-        case .gcs:
-            switch connection.gcs.authentication {
-            case .googleAccount:
+        case .gcs, .googleDrive:
+            if connection.usesGoogleSignIn {
                 result.check(isSignedInToGoogle, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
-            case .serviceAccount:
+            } else {
                 result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
             }
-        case .googleDrive:
-            result.check(isSignedInToGoogle, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
         }
         if connection.encrypted {
             result.check(!encryptionPassword.isBlank, field: .encryptionPassword, message: String(localized: .encryptionPasswordEmpty))

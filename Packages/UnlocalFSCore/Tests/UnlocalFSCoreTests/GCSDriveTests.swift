@@ -84,13 +84,12 @@ struct GCSDriveTests {
         #expect(failure?.localizedDescription.contains("ya29") == false)
     }
 
-    @Test(arguments: [
+    @Test(arguments: [Connection.gcs(authentication: .googleAccount), Connection.googleDrive()], [
         "", "not json", #"{"access_token":"ya29.only-access"}"#, #"{"access_token":"ya29.a","refresh_token":"1//r","expiry":"not-a-date"}"#,
     ])
-    func googleDriveWithATokenRcloneCannotReadNeverStartsRclone(token: String) async throws {
+    func googleSignInThatRcloneCannotReadNeverStartsRclone(connection: Connection, token: String) async throws {
         let drives = try StubbedDrives("gcs-google")
         defer { drives.remove() }
-        let connection = Connection.gcs(authentication: .googleAccount)
 
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.test(connection, credentials: Credentials.google(token)) }
         await #expect(throws: GoogleSignInRequired.self) { try await drives.service.mount(connection, credentials: Credentials.google(token)) }

@@ -41,54 +41,45 @@ struct GoogleDriveTests {
         #expect(environment.contains("RCLONE_GCS_CLIENT_ID=") && !environment.contains("SCOPE"))
     }
 
-    @Test func connectionTestGivesRcloneTheSignInAndTreatsAMissingFolderAsEmpty() async throws {
+    @Test func connectionTestGivesRcloneTheSignInButNotInItsArguments() async throws {
         let drives = try StubbedDrives("drive-test") { root in
             """
             if [ "$1" = 'lsf' ]; then
                 printf '%s\\n' "$*" > '\(root.path)/lsf-arguments'
                 env | grep '^RCLONE_' | sort > '\(root.path)/lsf-environment'
-                if [ -f '\(root.path)/lsf-error' ]; then cat '\(root.path)/lsf-error' >&2; exit 1; fi
             fi
             """
         }
         defer { drives.remove() }
-        let connection = Connection.googleDrive()
 
-        try "Failed to lsf with 2 errors: last error was: error listing: directory not found"
-            .write(to: drives.root.appending(path: "lsf-error"), atomically: true, encoding: .utf8)
-        try await drives.service.test(connection, credentials: Credentials.google())
+        try await drives.service.test(Connection.googleDrive(), credentials: Credentials.google())
 
         let environment = try String(contentsOf: drives.root.appending(path: "lsf-environment"), encoding: .utf8)
         #expect(environment.contains("_TOKEN=\(googleTokenJSON)\n"))
         #expect(environment.contains("_CLIENT_ID=\(GoogleClient.test.id)\n"))
         #expect(environment.contains("_SCOPE=drive.file\n"))
-        #expect(try String(contentsOf: drives.root.appending(path: "lsf-arguments"), encoding: .utf8).contains("unlocalfs-drive:UnlocalFS"))
-        #expect(try !String(contentsOf: drives.root.appending(path: "lsf-arguments"), encoding: .utf8).contains("refresh"))
-
-        try "googleapi: Error 403: Rate Limit Exceeded".write(to: drives.root.appending(path: "lsf-error"), atomically: true, encoding: .utf8)
-        await #expect(throws: (any Error).self) { try await drives.service.test(connection, credentials: Credentials.google()) }
+        let arguments = try String(contentsOf: drives.root.appending(path: "lsf-arguments"), encoding: .utf8)
+        #expect(arguments.contains("unlocalfs-drive:UnlocalFS") && !arguments.contains("refresh"))
     }
 
-    @Test(arguments: [(Connection.gcs(authentication: .googleAccount), Credentials.google()), (Connection.s3(), Credentials.s3())])
-    func otherStorageStillFailsTheTestWhenTheFolderIsMissing(connection: Connection, credentials: Credentials) async throws {
+    @Test(arguments: [
+        (Connection.googleDrive(), Credentials.google(), "error listing: directory not found", true),
+        (Connection.googleDrive(), Credentials.google(), "googleapi: Error 403: Rate Limit Exceeded", false),
+        (Connection.gcs(authentication: .googleAccount), Credentials.google(), "error listing: directory not found", false),
+        (Connection.s3(), Credentials.s3(), "error listing: directory not found", false),
+    ])
+    func onlyGoogleDriveTreatsAMissingFolderAsEmpty(connection: Connection, credentials: Credentials, failure: String, passes: Bool) async throws {
         let drives = try StubbedDrives("drive-test") { _ in
             """
-            if [ "$1" = 'lsf' ]; then echo 'error listing: directory not found' >&2; exit 1; fi
+            if [ "$1" = 'lsf' ]; then echo '\(failure)' >&2; exit 1; fi
             """
         }
         defer { drives.remove() }
 
-        await #expect(throws: (any Error).self) { try await drives.service.test(connection, credentials: credentials) }
-    }
+        var passed = true
+        do { try await drives.service.test(connection, credentials: credentials) } catch { passed = false }
 
-    @Test func driveWithoutASignInNeverStartsRclone() async throws {
-        let drives = try StubbedDrives("drive-test")
-        defer { drives.remove() }
-
-        await #expect(throws: GoogleSignInRequired.self) { try await drives.service.test(Connection.googleDrive(), credentials: Credentials()) }
-        await #expect(throws: GoogleSignInRequired.self) { try await drives.service.mount(Connection.googleDrive(), credentials: Credentials()) }
-
-        #expect(drives.rcloneCalls.isEmpty)
+        #expect(passed == passes)
     }
 
     @Test func exportAlwaysCarriesTheClientButTheTokenOnlyWithTheSignIn() async throws {
