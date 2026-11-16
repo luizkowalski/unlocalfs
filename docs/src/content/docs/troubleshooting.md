@@ -15,6 +15,12 @@ Check that your credentials have access to the bucket and that your storage endp
 
 For encrypted drives, an incorrect password or unencrypted names in the top folder can prevent connection. See [Encryption](/encryption/).
 
+## A Google Drive drive is empty or fails
+
+- **Files that you have in Google Drive do not show.** The drive shows only what UnlocalFS made. See [Google Drive](/google-drive/#what-the-drive-shows).
+- **Sign In Again shows a different-account error.** Sign in with the Google account that you used when you added the drive. Its files are in that account.
+- **Uploads fail after a large copy.** Google limits each account to about 750 GB of uploads a day. The uploads wait in the queue and go on the next day.
+
 ## A Google Cloud Storage connection fails
 
 - **Google sign-in does not finish.** Sign-in waits for your browser for up to 5 minutes. Click **Cancel Sign-In** and try again. Only one Google sign-in runs at a time, so finish or cancel the other one first. If another app uses port 53682 on your Mac, sign-in fails at once with that message. Quit the other app, then try again.

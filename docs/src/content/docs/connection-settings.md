@@ -3,7 +3,7 @@ title: Connection settings
 description: Understand the storage and credential fields for a drive.
 ---
 
-Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server or **Google Cloud Storage** to connect a GCS bucket; the S3 sections below do not apply to them.
+Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server, **Google Cloud Storage** to connect a GCS bucket, or **Google Drive** to connect a folder in your Google Drive; the S3 sections below do not apply to them.
 
 ## Storage
 
@@ -29,6 +29,15 @@ A folder changes what the drive shows. It does not restrict what your credential
 | Session token | Required when using temporary credentials that include a token. Otherwise leave empty. |
 
 Credentials are stored in your Mac’s Keychain. Temporary credentials stop working when they expire; update them in the connection before connecting again.
+
+## Google Drive
+
+| Field | What to enter |
+| --- | --- |
+| Folder | An optional folder in My Drive, such as `UnlocalFS`. Leave empty for the top of My Drive. UnlocalFS makes the folder when you copy the first file. |
+| Google account | Click **Sign in with Google**. Your browser opens. Choose the account, allow access, and go back to UnlocalFS. |
+
+The drive shows only the files and folders that UnlocalFS made. Files that you delete go to the Google Drive trash. **Sign In Again…** accepts only the account that you signed in with first. See [Google Drive](/google-drive/).
 
 ## Google Cloud Storage
 

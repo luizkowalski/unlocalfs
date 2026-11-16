@@ -63,6 +63,18 @@ rclone config update unlocalfs-gcs "service_account_file=/path/to/key.json" --co
 rclone config update unlocalfs "password=$password" --obscure --config "My files rclone.conf"
 ```
 
+## Recover a Google Drive drive
+
+An exported config has two remotes: `unlocalfs-drive` for Google Drive and `unlocalfs` for the decrypted files.
+
+Google lets an app see only the files that it made, so the file always holds the UnlocalFS Google client. **Include Google sign-in** also puts the sign-in in the file. Anyone with that file can use your Google account's access to those files until you remove UnlocalFS in [Third-party apps & services](https://myaccount.google.com/connections). Without it, sign in with rclone before you use the file. Choose the account that you used in UnlocalFS:
+
+```sh
+rclone config reconnect unlocalfs-drive: --config "My files rclone.conf"
+```
+
+Then add the encryption password as below.
+
 ## Recover an SFTP drive
 
 An exported SFTP config has two remotes: `unlocalfs-sftp` for the server and `unlocalfs` for the decrypted files. It keeps host verification on, so rclone only connects to servers in the trusted-hosts file named in the config.
