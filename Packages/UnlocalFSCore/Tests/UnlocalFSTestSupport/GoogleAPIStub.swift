@@ -17,7 +17,8 @@ private final class DriveAboutProtocol: URLProtocol {
 
     override func startLoading() {
         let token = request.value(forHTTPHeaderField: "Authorization")?.replacingOccurrences(of: "Bearer ", with: "") ?? ""
-        let account = driveAccounts[token]
+        let about = request.url?.path == "/drive/v3/about" && request.url?.query?.removingPercentEncoding == "fields=user(permissionId)"
+        let account = about ? driveAccounts[token] : nil
         let body = account.map { #"{"user":{"permissionId":"\#($0)"}}"# } ?? #"{"error":{"code":401}}"#
         let response = HTTPURLResponse(url: request.url!, statusCode: account == nil ? 401 : 200, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)

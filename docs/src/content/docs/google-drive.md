@@ -25,7 +25,7 @@ UnlocalFS makes the folder when you copy the first file into the drive. The file
 
 If Google ends the sign-in, for example because you removed access in your Google account, the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page and choose the same Google account. The drive stays connected, and the uploads that wait go on.
 
-UnlocalFS checks the account. If you choose a different account, it shows an error and keeps the old sign-in, because the drive's files are in the first account.
+UnlocalFS checks the account, on the drive page and in the connection editor. If you choose a different account, it shows an error and keeps the old sign-in, because the drive's files are in the first account.
 
 ## Remove access
 

@@ -525,12 +525,12 @@
         }
       }
     },
-    "Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac." : {
+    "Connect an S3 or Google Cloud Storage bucket, a Google Drive folder, or an SFTP server, and use its files from your Mac." : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecte um bucket do S3 ou do Google Cloud Storage, ou um servidor SFTP, e use os arquivos dele no seu Mac."
+            "value" : "Conecte um bucket do S3 ou do Google Cloud Storage, uma pasta do Google Drive ou um servidor SFTP, e use os arquivos dele no seu Mac."
           }
         }
       }

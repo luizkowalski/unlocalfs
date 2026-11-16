@@ -7,7 +7,7 @@ When you duplicate or copy a file inside a drive in Finder, Finder downloads the
 
 Right-click files in a connected drive, choose **Services**, then **Duplicate on Server**. Each copy goes in the same folder and gets the name that Finder uses: "report copy.pdf", then "report copy 2.pdf". UnlocalFS sends a notification when the copies are ready, and they show in Finder a few seconds later.
 
-- Duplicate on Server works on Amazon S3, other S3-compatible storage, and Google Cloud Storage, also when the drive is encrypted.
+- Duplicate on Server works on Amazon S3, other S3-compatible storage, Google Cloud Storage, and Google Drive, also when the drive is encrypted.
 - It is not available for SFTP drives, because the server cannot copy files for UnlocalFS. It is not available for read-only drives.
 - Wait until a file finishes uploading before you duplicate it.
 - Select files, not folders.

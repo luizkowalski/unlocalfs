@@ -69,6 +69,18 @@ struct GoogleDriveTests {
         await #expect(throws: (any Error).self) { try await drives.service.test(connection, credentials: Credentials.google()) }
     }
 
+    @Test(arguments: [(Connection.gcs(authentication: .googleAccount), Credentials.google()), (Connection.s3(), Credentials.s3())])
+    func otherStorageStillFailsTheTestWhenTheFolderIsMissing(connection: Connection, credentials: Credentials) async throws {
+        let drives = try StubbedDrives("drive-test") { _ in
+            """
+            if [ "$1" = 'lsf' ]; then echo 'error listing: directory not found' >&2; exit 1; fi
+            """
+        }
+        defer { drives.remove() }
+
+        await #expect(throws: (any Error).self) { try await drives.service.test(connection, credentials: credentials) }
+    }
+
     @Test func driveWithoutASignInNeverStartsRclone() async throws {
         let drives = try StubbedDrives("drive-test")
         defer { drives.remove() }

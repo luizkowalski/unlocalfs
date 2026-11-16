@@ -129,14 +129,13 @@ struct WorkflowTests {
             let connection = Connection.googleDrive { $0.encrypted = true }
             _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service).execute(
                 connection, credentials: Credentials(
-                    accessKey: "key", encryptionPassword: "crypt", password: "ssh", serviceAccountKey: serviceAccountJSON,
-                    googleToken: googleTokenJSON, googleAccountID: "account-1",
+                    accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt", password: "ssh",
+                    keyPassphrase: "phrase", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON, googleAccountID: "account-1",
                 ),
                 confirmation: "crypt",
             )
             let saved = try repository.credentials(for: connection.id)
-            #expect(saved.googleToken == googleTokenJSON && saved.googleAccountID == "account-1" && saved.encryptionPassword == "crypt")
-            #expect(saved.accessKey.isEmpty && saved.password.isEmpty && saved.serviceAccountKey.isEmpty)
+            #expect(saved == Credentials(encryptionPassword: "crypt", googleToken: googleTokenJSON, googleAccountID: "account-1"))
         }
     }
 
@@ -246,7 +245,7 @@ struct WorkflowTests {
         }
     }
 
-    @Test(arguments: [Connection.sftp(), Connection.gcs()])
+    @Test(arguments: [Connection.sftp(), Connection.gcs(), Connection.googleDrive()])
     func sharingIsUnsupportedBeforeCredentialsAreLoaded(connection: Connection) async throws {
         try await withWorkflowFixture { _, drives, _ in
             let repository = SavedConnectionRepository(

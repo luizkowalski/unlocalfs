@@ -27,7 +27,7 @@ Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 | DeleteConnectionUseCase | Refuses an active drive. Removes the connection, its cache, and the host keys of the last SFTP drive for a server. |
 | ConnectDriveUseCase | Connects or reconnects from the current status. |
 | SignInAgainUseCase | Refuses a different Google Drive account. Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |
-| ShareFilesUseCase | Refuses SFTP, GCS, and encrypted drives before it loads credentials. |
+| ShareFilesUseCase | Refuses SFTP, GCS, Google Drive, and encrypted drives before it loads credentials. |
 | DuplicateFilesUseCase | Refuses SFTP and read-only drives. Never loads credentials. |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives. Reads credentials only for an export with secrets. |
 | QuitUseCase | Waits during an operation. Offers to disconnect, then disconnects all drives at the same time and keeps the app open on a failure. |

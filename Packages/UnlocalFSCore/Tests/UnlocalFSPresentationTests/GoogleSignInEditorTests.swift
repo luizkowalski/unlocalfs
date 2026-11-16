@@ -69,6 +69,22 @@ import UnlocalFSTestSupport
         #expect(editor.tested && editor.fieldErrors.isEmpty)
     }
 
+    @Test func savedGoogleDriveCannotMoveToAnotherAccountFromTheEditor() async throws {
+        GoogleAPIStub.install()
+        let connection = Connection.googleDrive()
+        let saved = Credentials(googleToken: googleTokenJSON, googleAccountID: "account-1")
+        try fixture.repository.save(connection, credentials: saved)
+        let editor = fixture.editor(draft: .init(connection: connection))
+        editor.loadCredentials()
+        try fixture.signInReturns(otherAccountTokenJSON)
+
+        await editor.signInWithGoogle()
+
+        #expect(await !editor.save())
+        #expect(editor.error == GoogleAccountChanged().localizedDescription)
+        #expect(try fixture.repository.credentials(for: connection.id) == saved)
+    }
+
     @Test func changingTheProviderBetweenGoogleServicesAsksForANewSignIn() async {
         let editor = fixture.editor(draft: .init(connection: Connection.gcs(authentication: .googleAccount)))
         editor.loadCredentials()

@@ -23,7 +23,7 @@ To stop an upload, click the ⓧ button next to a file that waits, uploads, or f
 
 S3 uploads a large file in parts. If an upload stops before it finishes, for example because the Mac lost power or UnlocalFS was forced to quit, the parts stay in the bucket. Finder and the S3 console do not list them, but the storage provider still bills them until a lifecycle rule removes them.
 
-To remove them, connect the drive and choose **Clean Up Unfinished Uploads…** from the **More** menu on the drive page. UnlocalFS first counts the unfinished uploads in the drive's bucket and folder. Uploads that started more than a day ago are removed after you confirm. Newer uploads stay, because they can still be running on this or another Mac. Your files do not change. If the bucket has no uploads older than a day, UnlocalFS says so and removes nothing. The command is not available for read-only drives, SFTP, or Google Cloud Storage.
+To remove them, connect the drive and choose **Clean Up Unfinished Uploads…** from the **More** menu on the drive page. UnlocalFS first counts the unfinished uploads in the drive's bucket and folder. Uploads that started more than a day ago are removed after you confirm. Newer uploads stay, because they can still be running on this or another Mac. Your files do not change. If the bucket has no uploads older than a day, UnlocalFS says so and removes nothing. The command is not available for read-only drives, SFTP, Google Cloud Storage, or Google Drive.
 
 A drive with a folder also includes unfinished uploads in sibling folders whose names start with the same text, such as `photos2` for `photos`. Only uploads older than a day are removed there too.
 

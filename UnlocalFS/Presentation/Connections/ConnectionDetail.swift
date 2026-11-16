@@ -139,7 +139,7 @@ struct ConnectionDetail: View {
                 case .gcs:
                     bucketDetail
                 case .googleDrive:
-                    detail("Folder") { connection.folder.isEmpty ? Text("My Drive") : Text(verbatim: connection.folder) }
+                    detail("Folder") { Text(storageName) }
                 case .s3Compatible:
                     bucketDetail
                     Divider()

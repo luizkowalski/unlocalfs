@@ -5,7 +5,7 @@ description: Browse, open, and save files in S3-compatible storage from your Mac
 
 UnlocalFS connects your S3 bucket as a drive on your Mac. Browse, open, and save files in Finder, or connect one folder as its own drive.
 
-It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, Google Cloud Storage, and SFTP servers.
+It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, Google Cloud Storage, Google Drive, and SFTP servers.
 
 [Download UnlocalFS](https://github.com/luizkowalski/unlocalfs/releases) · [Connect your first drive](/getting-started/)
 
