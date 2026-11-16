@@ -9,7 +9,24 @@
 
 UnlocalFS puts your S3 or Google Cloud Storage bucket, a Google Drive folder, or your SFTP server, in Finder. Add a connection once, click **Connect**, and it shows up as a drive you can browse, open, and save to like any other folder on your Mac. You can connect the whole bucket, or just one folder of it as its own drive.
 
-It works with Amazon S3, Cloudflare R2, MinIO, Wasabi, DigitalOcean Spaces, any other S3-compatible storage, Google Cloud Storage, Google Drive, and SFTP servers.
+<h2 align="center">Works with</h2>
+
+<table align="center" role="presentation">
+  <tr>
+    <td align="center" width="180"><img src="docs/public/providers/amazon-s3.svg" alt="" width="36" height="36"><br>Amazon S3</td>
+    <td align="center" width="180"><img src="docs/public/providers/cloudflare.svg" alt="" width="36" height="36"><br>Cloudflare R2</td>
+    <td align="center" width="180"><img src="docs/public/providers/gcs.svg" alt="" width="36" height="36"><br>Google Cloud Storage</td>
+    <td align="center" width="180"><img src="docs/public/providers/google-drive.svg" alt="" width="36" height="36"><br>Google Drive</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/public/providers/minio.svg" alt="" width="36" height="36"><br>MinIO</td>
+    <td align="center"><img src="docs/public/providers/wasabi.svg" alt="" width="36" height="36"><br>Wasabi</td>
+    <td align="center"><img src="docs/public/providers/digital-ocean.svg" alt="" width="36" height="36"><br>DigitalOcean Spaces</td>
+    <td align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/public/providers/sftp-dark.svg"><img src="docs/public/providers/sftp.svg" alt="" width="36" height="36"></picture><br>SFTP</td>
+  </tr>
+</table>
+
+<p align="center">Plus any other S3-compatible storage.</p>
 
 ## Features
 
