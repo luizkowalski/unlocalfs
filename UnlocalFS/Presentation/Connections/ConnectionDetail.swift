@@ -138,6 +138,8 @@ struct ConnectionDetail: View {
                 switch connection.backend {
                 case .gcs:
                     bucketDetail
+                case .googleDrive:
+                    detail("Folder") { connection.folder.isEmpty ? Text("My Drive") : Text(verbatim: connection.folder) }
                 case .s3Compatible:
                     bucketDetail
                     Divider()
@@ -174,6 +176,7 @@ struct ConnectionDetail: View {
     private var storageName: String {
         switch connection.backend {
         case .s3Compatible, .gcs: connection.bucket
+        case .googleDrive: connection.folder.isEmpty ? String(localized: "My Drive") : connection.folder
         case .sftp: connection.sftp.host
         }
     }

@@ -47,7 +47,7 @@ import UserNotifications
         switch connection.backend {
         case .s3Compatible: String(localized: "Include keys and password")
         case .sftp: String(localized: "Include saved passwords")
-        case .gcs where connection.usesGoogleSignIn: String(localized: "Include Google sign-in")
+        case .gcs where connection.usesGoogleSignIn, .googleDrive: String(localized: "Include Google sign-in")
         case .gcs: String(localized: "Include service-account key")
         }
     }
@@ -60,6 +60,13 @@ import UserNotifications
             return connection.usesGoogleSignIn
                 ? String(localized: "Anyone with the file can read this drive with your Google account. The password is only obscured, not encrypted.")
                 : String(localized: "Anyone with the file can read this drive and use its service-account key. The password is only obscured, not encrypted.")
+        case .googleDrive:
+            return String(
+                localized: """
+                Anyone with the file can read this drive with your Google account. Without the sign-in, the file still holds the UnlocalFS \
+                Google client; run rclone config reconnect on the other Mac. The password is only obscured, not encrypted.
+                """,
+            )
         case .sftp:
             return connection.sftp.authentication == .agent
                 ? String(

@@ -136,7 +136,7 @@ import UnlocalFSTestSupport
         #expect(!editor.isLocked)
     }
 
-    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.sftp(), .remotePath)])
+    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.googleDrive(), .folder), (Connection.sftp(), .remotePath)])
     func onlyADuplicateOpensOnItsFolder(connection: Connection, folder: ConnectionField) throws {
         try fixture.repository.save(connection, credentials: Credentials())
         let app = fixture.app()

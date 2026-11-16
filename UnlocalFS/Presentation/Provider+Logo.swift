@@ -7,6 +7,7 @@ extension Provider {
         case .other: Image(systemName: "cylinder.split.1x2")
         case .sftp: Image(.sftp)
         case .googleCloudStorage: Image(.gcs)
+        case .googleDrive: Image(.googleDrive)
         case .aws: Image(.amazonS3)
         case .cloudflare: Image(.cloudflare)
         case .minio: Image(.minio)
