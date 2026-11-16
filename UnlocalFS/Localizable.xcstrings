@@ -1331,17 +1331,6 @@
         }
       }
     },
-    "My Drive" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meu Drive"
-          }
-        }
-      }
-    },
     "My storage" : {
       "localizations" : {
         "pt-BR" : {

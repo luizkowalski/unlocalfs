@@ -41,10 +41,14 @@ public struct AWSSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
+    public var customKMSKey: String? {
+        serverSideEncryption == .kms && !kmsKeyID.isEmpty ? kmsKeyID : nil
+    }
+
     public func validate() -> ValidationResult<ConnectionField> {
         var result = ValidationResult<ConnectionField>()
-        if serverSideEncryption == .kms, !kmsKeyID.isEmpty {
-            result.check(Self.isKMSKey(kmsKeyID), field: .kmsKey, message: String(localized: .kmsKeyInvalid))
+        if let customKMSKey {
+            result.check(Self.isKMSKey(customKMSKey), field: .kmsKey, message: String(localized: .kmsKeyInvalid))
         }
         return result
     }

@@ -732,6 +732,23 @@
         }
       }
     },
+    "myDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meu Drive"
+          }
+        }
+      }
+    },
     "nameAlreadyExists": {
       "extractionState": "manual",
       "localizations": {

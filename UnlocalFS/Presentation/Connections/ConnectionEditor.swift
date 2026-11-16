@@ -134,7 +134,7 @@ struct ConnectionEditor: View {
                     ConnectionEditorField(field: .confirmation, error: errors[.confirmation], focus: $focus) { SecureField("Confirm password", text: $viewModel.confirmation) }
                 }
             }
-            if viewModel.connection.provider == .aws { awsSection(errors: errors) }
+            if viewModel.connection.provider.hasAWSSettings { awsSection(errors: errors) }
             Section {
                 Picker("Cache limit", selection: $viewModel.connection.cacheLimit) {
                     ForEach(Self.cacheLimits, id: \.self) { Text($0, format: .byteCount(style: .file)).tag($0) }

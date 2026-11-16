@@ -69,6 +69,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
+    public var storageName: String {
+        switch backend {
+        case .s3Compatible, .gcs: bucket
+        case .googleDrive: folder.isEmpty ? String(localized: .myDrive) : folder
+        case .sftp: sftp.host
+        }
+    }
+
     public func shouldConnectAutomatically(status: MountStatus) -> Bool {
         connectsAutomatically && !status.isActive
     }
@@ -86,7 +94,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         switch backend {
         case .s3Compatible:
             result.issues += validateEndpoint().issues + validateBucket().issues
-            if provider == .aws { result.issues += aws.validate().issues }
+            if provider.hasAWSSettings { result.issues += aws.validate().issues }
         case .gcs: result.issues += validateBucket().issues
         case .googleDrive: result.issues += validateFolder().issues
         case .sftp: result.issues += sftp.validate().issues
@@ -211,6 +219,8 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .googleDrive: .googleDrive
         }
     }
+
+    public var hasAWSSettings: Bool { self == .aws }
 
     public var title: String {
         switch self {
