@@ -57,7 +57,7 @@ Sign-in lets UnlocalFS use Cloud Storage as your Google account. It does not giv
 
 UnlocalFS stores the sign-in in your Mac's Keychain. It does not show which account you chose and does not check that a new sign-in uses the same account. **Test Connection** is the check: test again after you sign in. To use a different account, click **Sign In Again…**. A change to the account or to **Sign in with** applies the next time you connect the drive.
 
-If Google ends the sign-in, for example because you removed access or your organization requires you to sign in again, uploads stop and the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page. The drive stays connected, and the uploads that wait go on. See [Troubleshooting](/troubleshooting/#a-google-cloud-storage-connection-fails).
+If Google ends the sign-in, for example because you removed access or your organization requires you to sign in again, uploads stop and the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page. The drive stays connected, and waiting uploads resume. See [Troubleshooting](/troubleshooting/#a-google-cloud-storage-connection-fails).
 
 Removing the connection deletes the sign-in from your Mac. It does not remove the access UnlocalFS has in your Google account. To remove it, open [Third-party apps & services](https://myaccount.google.com/connections) in your Google account and remove UnlocalFS.
 

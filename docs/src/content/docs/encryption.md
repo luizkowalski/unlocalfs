@@ -19,9 +19,9 @@ Amazon S3 drives also have a **Server-side encryption** setting. With it, AWS en
 You can read an encrypted drive with [rclone](https://rclone.org/) alone. This works on any computer, also when UnlocalFS or this Mac is no longer available. Make the recovery file now and keep it in a safe place.
 
 1. In UnlocalFS, right-click the drive and choose **Export rclone Config…**, or click **Export** in the drive toolbar.
-2. Choose where to save the file. Select **Include keys and password** only if you want a file that works without anything else. Anyone with that file can read the drive, so store it like a password. rclone only obscures the password in the file. It does not encrypt it.
+2. Choose where to save the file. To include the credentials and encryption password, select **Include keys and password**, or the option for your storage provider, such as **Include Google sign-in**. Anyone with that file can read the drive, so store it like a password. rclone only obscures the password in the file. It does not encrypt it.
 3. Install rclone on the computer you use for recovery. On a Mac, run `brew install rclone`, or follow the [rclone install guide](https://rclone.org/install/).
-4. If you did not include the keys and password, add them now. For an SFTP, Google Cloud Storage, or Google Drive drive, use the steps for that storage below. The `read -s` commands keep them off the screen and out of your shell history:
+4. If you did not include the credentials and encryption password, add them now. For SFTP, Google Cloud Storage, or Google Drive, use the recovery section for your storage below. For S3, use these commands to keep the keys and password off the screen and out of your shell history:
 
    ```sh
    printf 'Access key: '; IFS= read -rs key; echo
@@ -63,17 +63,28 @@ rclone config update unlocalfs-gcs "service_account_file=/path/to/key.json" --co
 rclone config update unlocalfs "password=$password" --obscure --config "My files rclone.conf"
 ```
 
-## Recover a Google Drive drive
+## Recover files from Google Drive
 
 An exported config has two remotes: `unlocalfs-drive` for Google Drive and `unlocalfs` for the decrypted files.
 
-Google lets an app see only the files that it made, so the file always holds the UnlocalFS Google client. **Include Google sign-in** also puts the sign-in in the file. Anyone with that file can use your Google account's access to those files until you remove UnlocalFS in [Third-party apps & services](https://myaccount.google.com/connections). Without it, sign in with rclone before you use the file. Choose the account that you used in UnlocalFS:
+The exported file always contains UnlocalFS's Google app ID and secret. rclone needs them to access files made through UnlocalFS with its limited Google permission.
+
+If you select **Include Google sign-in**, the file also contains your sign-in and encryption password. Anyone with that file can access your files until you remove UnlocalFS in [Third-party apps & services](https://myaccount.google.com/connections).
+
+If you did not include the sign-in, run this command. rclone opens your browser. Choose the same Google account that you used in UnlocalFS:
 
 ```sh
 rclone config reconnect unlocalfs-drive: --config "My files rclone.conf"
 ```
 
-Then add the encryption password as below.
+Then add the encryption password:
+
+```sh
+printf 'Encryption password: '; IFS= read -rs password; echo
+rclone config update unlocalfs "password=$password" --obscure --config "My files rclone.conf"
+```
+
+You can now list and copy the files with the commands in step 5 above.
 
 ## Recover an SFTP drive
 

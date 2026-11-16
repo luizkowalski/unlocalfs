@@ -18,11 +18,17 @@ You can also open the app once, then choose **System Settings → Privacy & Secu
 ## Connect a drive
 
 1. Click **Add Connection**.
-2. For an SFTP server, choose **SFTP** and follow [SFTP connection settings](/connection-settings/#sftp). For Google Cloud Storage, create the bucket first, then follow [Google Cloud Storage](/google-cloud-storage/). For Google Drive, follow [Google Drive](/google-drive/). For S3, enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`.
-3. Enter your access key and secret key, then click **Test Connection** and **Save**.
+2. Choose your storage provider:
+
+   - **SFTP:** follow [SFTP connection settings](/connection-settings/#sftp).
+   - **Google Cloud Storage:** create the bucket first, then follow [Google Cloud Storage](/google-cloud-storage/).
+   - **Google Drive:** follow [Google Drive](/google-drive/).
+   - **S3-compatible storage:** enter a name, your provider, the bucket, the endpoint, and the region. Use the service endpoint without the bucket name. For Cloudflare R2, use `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` and region `auto`. Enter your access key and secret key.
+
+3. Click **Test Connection**, then **Save**.
 4. Click **Connect**, then **Open in Finder**.
 
-Leave **Folder** empty to show the whole bucket. Start with files you have copies of. See [connection settings](/connection-settings/) for help with each field.
+For an S3 or Google Cloud Storage bucket, leave **Folder** empty to show the whole bucket. Start with files you have copies of. See [connection settings](/connection-settings/) for help with each field.
 
 ## Open at login
 
