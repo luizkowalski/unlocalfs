@@ -71,6 +71,11 @@ import UnlocalFSDomain
         return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
+    public var providerSections: [[Provider]] {
+        let providers = availableProviders
+        return ProviderGroup.allCases.map { group in providers.filter { $0.group == group } }.filter { !$0.isEmpty }
+    }
+
     public var initialFocus: ConnectionField? {
         guard isDuplicate, credentialsLoaded else { return nil }
         return switch connection.backend {

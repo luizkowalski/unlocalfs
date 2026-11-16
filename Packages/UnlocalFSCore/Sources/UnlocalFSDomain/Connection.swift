@@ -195,7 +195,13 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var id: Self { self }
 
-    public var isGeneric: Bool { self == .other || self == .sftp }
+    public var group: ProviderGroup {
+        switch self {
+        case .aws, .cloudflare, .digitalOcean, .minio, .wasabi: .s3Services
+        case .googleCloudStorage, .googleDrive: .google
+        case .other, .sftp: .generic
+        }
+    }
 
     public var backend: Backend {
         switch self {
@@ -219,6 +225,10 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .googleDrive: String(localized: .providerGoogleDrive)
         }
     }
+}
+
+public enum ProviderGroup: CaseIterable, Sendable {
+    case s3Services, google, generic
 }
 
 public struct Credentials: Codable, Equatable, Sendable {

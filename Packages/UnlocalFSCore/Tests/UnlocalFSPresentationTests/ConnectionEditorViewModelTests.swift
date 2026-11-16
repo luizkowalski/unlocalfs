@@ -251,6 +251,15 @@ import UnlocalFSTestSupport
         }
     }
 
+    @Test func providerMenuGroupsS3ProvidersThenGoogleThenGenericStorage() throws {
+        #expect(fixture.editor(draft: .init(connection: Connection())).providerSections == [
+            [.aws, .cloudflare, .digitalOcean, .minio, .wasabi], [.googleCloudStorage, .googleDrive], [.other, .sftp],
+        ])
+        let drive = Connection.googleDrive()
+        try fixture.repository.save(drive, credentials: Credentials.google())
+        #expect(fixture.editor(draft: .init(connection: drive)).providerSections == [[.googleDrive]])
+    }
+
     @Test func savedDrivesKeepTheirProtocolAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {
         let s3Connection = Connection.s3()
         let sftp = Connection.sftp()

@@ -240,6 +240,7 @@
       }
     },
     "Anyone with the file can read this drive with your Google account. Without the sign-in, the file still holds the UnlocalFS Google client; run rclone config reconnect on the other Mac. The password is only obscured, not encrypted." : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -1331,6 +1332,7 @@
       }
     },
     "My Drive" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
