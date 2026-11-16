@@ -98,7 +98,7 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             #expect(await drives.service.status(connection).needsSignIn)
 
-            try await useCase.execute(connection, token: newTokenJSON)
+            try await useCase.execute(connection, signIn: GoogleSignIn(token: newTokenJSON))
 
             #expect(try repository.credentials(for: connection.id).googleToken == newTokenJSON)
             #expect(!controlCalls(drives).contains("core/quit"))
@@ -112,7 +112,7 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             FileManager.default.createFile(atPath: drives.root.appending(path: "lsf-fails").path, contents: Data())
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, signIn: GoogleSignIn(token: newTokenJSON)) }
 
             let saved = try repository.credentials(for: connection.id)
             #expect(saved == Credentials.google())
@@ -125,9 +125,24 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive(storage: storage) { useCase, _, drives, connection in
             storage.lock()
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, signIn: GoogleSignIn(token: newTokenJSON)) }
 
             #expect(controlCalls(drives).isEmpty)
+        }
+    }
+
+    @Test func signInWithAnotherGoogleAccountChangesNothing() async throws {
+        try await withRevokedDrive { useCase, repository, drives, connection in
+            let saved = Credentials(googleToken: googleTokenJSON, googleAccountID: "account-1")
+            try repository.save(connection, credentials: saved)
+
+            await #expect(throws: GoogleAccountChanged.self) {
+                try await useCase.execute(connection, signIn: GoogleSignIn(token: otherAccountTokenJSON, accountID: "account-2"))
+            }
+
+            #expect(try repository.credentials(for: connection.id) == saved)
+            #expect(controlCalls(drives).isEmpty)
+            #expect(!drives.rcloneCalls.contains("lsf"))
         }
     }
 
@@ -135,7 +150,7 @@ extension ServiceRecoveryTests {
         try await withRevokedDrive { useCase, repository, drives, connection in
             FileManager.default.createFile(atPath: drives.root.appending(path: "update-fails").path, contents: Data())
 
-            await #expect(throws: AppError.self) { try await useCase.execute(connection, token: newTokenJSON) }
+            await #expect(throws: AppError.self) { try await useCase.execute(connection, signIn: GoogleSignIn(token: newTokenJSON)) }
 
             let saved = try repository.credentials(for: connection.id)
             #expect(saved.googleToken == newTokenJSON)

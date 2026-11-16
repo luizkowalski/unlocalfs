@@ -6,7 +6,7 @@ public protocol DriveGateway: Sendable {
     func cancelServerTrust(_ challenge: ServerTrustChallenge) async
     func forgetServer(_ connection: Connection) async throws
     func prepareCredentials(_ credentials: Credentials) async throws -> Credentials
-    func signInWithGoogle() async throws -> String
+    func signInWithGoogle(for backend: Backend) async throws -> GoogleSignIn
     func stopSignIns() async
     func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws
     func mount(_ connection: Connection, credentials: Credentials) async throws

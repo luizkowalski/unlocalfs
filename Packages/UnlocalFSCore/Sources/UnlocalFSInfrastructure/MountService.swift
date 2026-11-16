@@ -36,6 +36,7 @@ public actor MountService: DriveGateway {
             _ = try await runRemoteCommand(["lsf", connection.driveTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
             if isRevokedGrant(connection, error: error.localizedDescription) { throw GoogleSignInRequired() }
+            if connection.backend == .googleDrive, error.localizedDescription.contains("directory not found") { return }
             let unknownKey = error.localizedDescription.contains("knownhosts: key is unknown")
             let changedKey = error.localizedDescription.contains("knownhosts: key mismatch")
             if connection.backend == .sftp, unknownKey || changedKey {

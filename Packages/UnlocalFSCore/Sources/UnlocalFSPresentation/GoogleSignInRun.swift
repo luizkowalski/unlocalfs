@@ -2,7 +2,7 @@ import Observation
 import UnlocalFSDomain
 
 @MainActor @Observable final class GoogleSignInRun {
-    private var task: Task<String, any Error>?
+    private var task: Task<GoogleSignIn, any Error>?
     private let drives: any DriveGateway
 
     init(drives: any DriveGateway) {
@@ -11,9 +11,9 @@ import UnlocalFSDomain
 
     var isRunning: Bool { task != nil }
 
-    func token() async -> Result<String, any Error>? {
+    func signIn(for backend: Backend) async -> Result<GoogleSignIn, any Error>? {
         guard task == nil else { return nil }
-        let task = Task { [drives] in try await drives.signInWithGoogle() }
+        let task = Task { [drives] in try await drives.signInWithGoogle(for: backend) }
         self.task = task
         let result = await task.result
         guard self.task == task else { return nil }

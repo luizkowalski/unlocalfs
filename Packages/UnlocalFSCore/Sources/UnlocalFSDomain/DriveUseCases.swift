@@ -31,9 +31,11 @@ public struct SignInAgainUseCase: Sendable {
         self.drives = drives
     }
 
-    public func execute(_ connection: Connection, token: String) async throws {
+    public func execute(_ connection: Connection, signIn: GoogleSignIn) async throws {
         var credentials = try repository.credentials(for: connection.id)
-        credentials.googleToken = token
+        guard credentials.googleAccountID.isEmpty || credentials.googleAccountID == signIn.accountID else { throw GoogleAccountChanged() }
+        credentials.googleToken = signIn.token
+        credentials.googleAccountID = signIn.accountID
         try await drives.test(connection, credentials: credentials)
         try repository.save(connection, credentials: credentials)
         guard await drives.status(connection).isServing else { return }

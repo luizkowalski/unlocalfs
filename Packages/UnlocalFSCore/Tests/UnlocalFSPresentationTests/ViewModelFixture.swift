@@ -29,7 +29,7 @@ struct ViewModelFixture {
                     ;;
                 obscure) printf 'prepared-password\\n' ;;
                 authorize)
-                    env | grep '^RCLONE_GCS_' | sort > '\(root.path)/authorize-env'
+                    env | grep '^RCLONE_' | sort > '\(root.path)/authorize-env'
                     if [ -f '\(root.path)/authorize-hang' ]; then
                         echo $$ > '\(root.path)/authorize-pid'
                         sleep 30

@@ -108,9 +108,11 @@ import UnlocalFSDomain
 
     public func signInWithGoogle() async {
         error = nil
-        guard let result = await signIn.token() else { return }
+        guard let result = await signIn.signIn(for: connection.backend) else { return }
         do {
-            credentials.googleToken = try result.get()
+            let signedIn = try result.get()
+            credentials.googleToken = signedIn.token
+            credentials.googleAccountID = signedIn.accountID
         } catch { self.error = error.localizedDescription }
     }
 

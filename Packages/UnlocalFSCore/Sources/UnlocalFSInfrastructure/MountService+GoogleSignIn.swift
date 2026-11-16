@@ -19,14 +19,19 @@ extension MountService {
     private static let signInTimeout = Duration.seconds(300)
     private static let tokenStart = "Paste the following into your remote machine --->\n"
     private static let tokenEnd = "\n<---End paste"
+    private static let driveAbout = URL(string: "https://www.googleapis.com/drive/v3/about?fields=user(permissionId)")!
 
-    public func signInWithGoogle() async throws -> String {
+    public func signInWithGoogle(for backend: Backend) async throws -> GoogleSignIn {
         try googleClient.requireConfigured()
         guard signIns.isEmpty else { throw AppError(String(localized: .googleSignInInProgress)) }
         let page = Bundle.module.url(forResource: "GoogleSignIn", withExtension: "html")!.path
-        let run = Task { [executable, environment = environment(["RCLONE_GCS_CLIENT_ID": googleClient.id, "RCLONE_GCS_CLIENT_SECRET": googleClient.secret])] in
+        let prefix = "RCLONE_\(backend.rcloneType.uppercased())_"
+        var variables = [prefix + "CLIENT_ID": googleClient.id, prefix + "CLIENT_SECRET": googleClient.secret]
+        if backend == .googleDrive { variables[prefix + "SCOPE"] = RcloneRemote.driveScope }
+        let run = Task { [executable, environment = environment(variables)] in
             try await Command.run(
-                executable, ["authorize", "gcs", "--template", page, "--config", "/dev/null"], environment: environment, timeout: Self.signInTimeout,
+                executable, ["authorize", backend.rcloneType, "--template", page, "--config", "/dev/null"],
+                environment: environment, timeout: Self.signInTimeout,
             )
         }
         signIns.insert(run)
@@ -42,7 +47,18 @@ extension MountService {
         guard let start = text.range(of: Self.tokenStart), let end = text.range(of: Self.tokenEnd, range: start.upperBound ..< text.endIndex),
               let token = GoogleToken(json: String(text[start.upperBound ..< end.lowerBound]))
         else { throw AppError(String(localized: .googleSignInFailed)) }
-        return token.json
+        guard backend == .googleDrive else { return GoogleSignIn(token: token.json) }
+        return try await GoogleSignIn(token: token.json, accountID: driveAccountID(accessToken: token.accessToken))
+    }
+
+    private func driveAccountID(accessToken: String) async throws -> String {
+        var request = URLRequest(url: Self.driveAbout)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200, let about = try? JSONDecoder().decode(DriveAbout.self, from: data),
+              !about.user.permissionId.isEmpty
+        else { throw AppError(String(localized: .googleSignInFailed)) }
+        return about.user.permissionId
     }
 
     public func applyGoogleSignIn(_ connection: Connection, credentials: Credentials) async throws {
@@ -67,4 +83,9 @@ extension MountService {
     func isRevokedGrant(_ connection: Connection, error message: String?) -> Bool {
         connection.usesGoogleSignIn && message?.contains("invalid_grant") == true
     }
+}
+
+private struct DriveAbout: Decodable {
+    struct User: Decodable { let permissionId: String }
+    let user: User
 }

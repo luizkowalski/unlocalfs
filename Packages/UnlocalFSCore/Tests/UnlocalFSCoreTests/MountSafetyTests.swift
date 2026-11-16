@@ -295,6 +295,11 @@ extension MountSafetyTests {
          ]),
         (Connection.gcs { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON),
          ["service_account_credentials": serviceAccountJSON, "token": nil, "client_secret": nil, "config_refresh_token": nil]),
+        (Connection.googleDrive { $0.encrypted = true }, Credentials(encryptionPassword: "crypt-password", googleToken: googleTokenJSON, googleAccountID: "account-1"),
+         [
+             "token": googleTokenJSON, "client_id": GoogleClient.test.id, "client_secret": GoogleClient.test.secret, "scope": "drive.file",
+             "config_refresh_token": "false",
+         ]),
     ])
     func startedDriveGetsItsSecretsOnlyOverTheControlSocket(connection: Connection, credentials: Credentials, expected: [String: String?]) async throws {
         let drives = try StubbedDrives("start") { root in

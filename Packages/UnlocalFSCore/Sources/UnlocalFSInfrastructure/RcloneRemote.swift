@@ -121,15 +121,19 @@ struct RcloneRemote {
     }
 }
 
-extension Connection {
+extension Backend {
     var rcloneType: String {
-        switch backend {
+        switch self {
         case .s3Compatible: "s3"
         case .sftp: "sftp"
         case .gcs: "gcs"
         case .googleDrive: "drive"
         }
     }
+}
+
+extension Connection {
+    var rcloneType: String { backend.rcloneType }
 
     var rclonePath: String {
         switch backend {
