@@ -47,6 +47,14 @@ struct ConnectionRulesTests {
         #expect(Connection.s3().validate(credentials: credentials, confirmation: "different", against: []).isValid)
     }
 
+    @Test func storageNameIsTheBucketTheHostOrTheDriveFolder() {
+        #expect(Connection.s3(bucket: "photos", folder: "2026").storageName == "photos")
+        #expect(Connection.gcs().storageName == "my-bucket")
+        #expect(Connection.sftp().storageName == "files.example.com")
+        #expect(Connection.googleDrive().storageName == "UnlocalFS")
+        #expect(Connection.googleDrive(folder: "").storageName == String(localized: .myDrive))
+    }
+
     @Test func automaticConnectionRequiresAnEnabledInactiveDrive() {
         var connection = Connection()
         let disconnected = MountStatus()

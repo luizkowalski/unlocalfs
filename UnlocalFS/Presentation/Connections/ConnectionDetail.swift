@@ -71,7 +71,7 @@ struct ConnectionDetail: View {
                 .accessibilityLabel(connection.provider.title)
             VStack(alignment: .leading, spacing: 3) {
                 Text(connection.name).font(.title2.weight(.semibold))
-                Text(verbatim: "\(connection.provider.title) · \(storageName)").foregroundStyle(.secondary)
+                Text(verbatim: "\(connection.provider.title) · \(connection.storageName)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     StatusIndicator(indicator: model.indicator(connection))
                     Text(model.statusText(connection)).foregroundStyle(.secondary)
@@ -139,14 +139,14 @@ struct ConnectionDetail: View {
                 case .gcs:
                     bucketDetail
                 case .googleDrive:
-                    detail("Folder") { Text(storageName) }
+                    detail("Folder") { Text(connection.storageName) }
                 case .s3Compatible:
                     bucketDetail
                     Divider()
                     detail("Endpoint") { copyable(connection.endpoint) }
                     Divider()
                     detail("Region") { connection.region.isEmpty ? Text("Default") : Text(connection.region) }
-                    if connection.provider == .aws { awsDetails }
+                    if connection.provider.hasAWSSettings { awsDetails }
                 case .sftp:
                     sftpDetails
                 }
@@ -173,14 +173,6 @@ struct ConnectionDetail: View {
         .help("When the cache is full, the oldest copies are cleared.")
     }
 
-    private var storageName: String {
-        switch connection.backend {
-        case .s3Compatible, .gcs: connection.bucket
-        case .googleDrive: connection.folder.isEmpty ? String(localized: "My Drive") : connection.folder
-        case .sftp: connection.sftp.host
-        }
-    }
-
     private var bucketDetail: some View {
         detail("Bucket") { Text(connection.bucketPath) }
     }
@@ -201,8 +193,8 @@ struct ConnectionDetail: View {
         detail("Storage class") { Text(aws.storageClass.title) }
         Divider()
         detail("Server-side encryption") {
-            if aws.serverSideEncryption == .kms, !aws.kmsKeyID.isEmpty {
-                copyable(aws.kmsKeyID)
+            if let key = aws.customKMSKey {
+                copyable(key)
             } else {
                 aws.serverSideEncryption.map { Text($0.title) } ?? Text("Bucket default")
             }
