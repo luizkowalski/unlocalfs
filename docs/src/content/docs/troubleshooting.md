@@ -15,10 +15,17 @@ Check that your credentials have access to the bucket and that your storage endp
 
 For encrypted drives, an incorrect password or unencrypted names in the top folder can prevent connection. See [Encryption](/encryption/).
 
+## A Google Drive connection is empty or fails
+
+- **Files that you have in Google Drive do not show.** The drive shows only what UnlocalFS made. See [Google Drive](/google-drive/#what-the-drive-shows).
+- **Sign In Again shows a different-account error.** Sign in with the Google account that you used when you added the drive. Its files are in that account.
+- **Files do not open, but no uploads wait.** If Google ends the sign-in, Finder can show read errors without a sign-in notice. Disconnect and connect the drive, then sign in again with the same account.
+- **Uploads fail after a large copy.** [Google limits Workspace users to 750 GB of uploads and copies in 24 hours](https://developers.google.com/workspace/drive/api/guides/limits#additional_constraints). Uploads stay queued and retry automatically. Google may block more uploads for 24 hours.
+
 ## A Google Cloud Storage connection fails
 
 - **Google sign-in does not finish.** Sign-in waits for your browser for up to 5 minutes. Click **Cancel Sign-In** and try again. Only one Google sign-in runs at a time, so finish or cancel the other one first. If another app uses port 53682 on your Mac, sign-in fails at once with that message. Quit the other app, then try again.
-- **The drive shows Needs Google sign-in.** Google ended the sign-in. Click **Sign In Again…** on the drive page. The drive stays connected and the uploads that wait go on. If your organization requires frequent sign-in, this can happen often.
+- **The drive shows Needs Google sign-in.** Google ended the sign-in. Click **Sign In Again…** on the drive page. The drive stays connected and waiting uploads resume. If your organization requires frequent sign-in, this can happen often.
 - **Files do not open, but no upload waits.** When Google ends the sign-in and nothing waits to upload, Finder shows read errors but the drive page shows no sign-in notice. Disconnect and connect the drive. UnlocalFS then asks you to sign in again.
 - **The key is not accepted.** Import the JSON key file you downloaded from Google Cloud. Check that the service account and its key still exist.
 - **The bucket is not found.** UnlocalFS does not create buckets. Create the bucket in the Google Cloud console, or check the bucket name. See [Google Cloud Storage](/google-cloud-storage/).

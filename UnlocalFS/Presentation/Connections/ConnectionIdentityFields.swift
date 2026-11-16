@@ -15,10 +15,10 @@ struct ConnectionIdentityFields: View {
     }
 
     private var providerPicker: some View {
-        let providers = viewModel.availableProviders
-        return Picker("Provider", selection: $viewModel.connection.provider) {
-            Section { providerOptions(providers.filter { !$0.isGeneric }) }
-            Section { providerOptions(providers.filter(\.isGeneric)) }
+        Picker("Provider", selection: $viewModel.connection.provider) {
+            ForEach(viewModel.providerSections, id: \.self) { providers in
+                Section { providerOptions(providers) }
+            }
         }
     }
 

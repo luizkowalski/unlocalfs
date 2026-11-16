@@ -24,6 +24,7 @@ struct RcloneRemote {
         case .s3Compatible: s3Options
         case .sftp: sftpOptions
         case .gcs: gcsOptions
+        case .googleDrive: driveOptions
         }
     }
 
@@ -91,6 +92,16 @@ struct RcloneRemote {
         return options
     }
 
+    static let driveScope = "drive.file"
+
+    private var driveOptions: [String: String] {
+        var options = ["client_id": googleClient.id, "client_secret": googleClient.secret, "scope": Self.driveScope]
+        guard let credentials else { return options }
+        options["token"] = credentials.googleToken
+        options["config_refresh_token"] = "false"
+        return options
+    }
+
     private var sftpOptions: [String: String] {
         let sftp = connection.sftp
         var options = [
@@ -110,19 +121,25 @@ struct RcloneRemote {
     }
 }
 
-extension Connection {
+extension Backend {
     var rcloneType: String {
-        switch backend {
+        switch self {
         case .s3Compatible: "s3"
         case .sftp: "sftp"
         case .gcs: "gcs"
+        case .googleDrive: "drive"
         }
     }
+}
+
+extension Connection {
+    var rcloneType: String { backend.rcloneType }
 
     var rclonePath: String {
         switch backend {
         case .s3Compatible, .gcs: bucketPath
         case .sftp: sftp.remotePath
+        case .googleDrive: folder
         }
     }
 

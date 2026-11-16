@@ -8,3 +8,6 @@ UnlocalFS.xcodeproj/
 .vscode/
 /docs/node_modules/
 /docs/.astro
+
+# local AI
+.codex/

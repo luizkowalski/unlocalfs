@@ -9,14 +9,14 @@ public extension AppViewModel {
         defer { busy.remove(connection.id) }
         let run = GoogleSignInRun(drives: drives)
         signIns[connection.id] = run
-        let token = await run.token()
+        let result = await run.signIn(for: connection.backend)
         signIns[connection.id] = nil
-        guard let token else {
+        guard let result else {
             errors[connection.id] = previousError
             return
         }
         do {
-            try await signInAgain.execute(connection, token: token.get())
+            try await signInAgain.execute(connection, signIn: result.get())
             signInRequired.remove(connection.id)
         } catch {
             errors[connection.id] = error.localizedDescription

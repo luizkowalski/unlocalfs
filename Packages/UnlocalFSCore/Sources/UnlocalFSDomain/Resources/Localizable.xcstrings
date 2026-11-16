@@ -596,6 +596,23 @@
         }
       }
     },
+    "googleAccountChanged": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a different Google account. Sign in with the account that this drive uses."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta é outra conta do Google. Faça login com a conta que esta unidade usa."
+          }
+        }
+      }
+    },
     "googleSignInRequired": {
       "extractionState": "manual",
       "localizations": {
@@ -1004,6 +1021,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Google Cloud Storage"
+          }
+        }
+      }
+    },
+    "providerGoogleDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
           }
         }
       }

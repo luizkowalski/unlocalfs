@@ -26,8 +26,8 @@ Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 | SetAutomaticConnectUseCase | Saves "connect on start up" without touching credentials. |
 | DeleteConnectionUseCase | Refuses an active drive. Removes the connection, its cache, and the host keys of the last SFTP drive for a server. |
 | ConnectDriveUseCase | Connects or reconnects from the current status. |
-| SignInAgainUseCase | Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |
-| ShareFilesUseCase | Refuses SFTP, GCS, and encrypted drives before it loads credentials. |
+| SignInAgainUseCase | Refuses a different Google Drive account. Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |
+| ShareFilesUseCase | Refuses SFTP, GCS, Google Drive, and encrypted drives before it loads credentials. |
 | DuplicateFilesUseCase | Refuses SFTP and read-only drives. Never loads credentials. |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives. Reads credentials only for an export with secrets. |
 | QuitUseCase | Waits during an operation. Offers to disconnect, then disconnects all drives at the same time and keeps the app open on a failure. |
@@ -55,6 +55,13 @@ Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 - Without a token, rclone uses other Google credentials on the Mac. So `MountService` refuses to start rclone for a Google drive with no token or no client.
 - Only one sign-in runs at a time.
 - An upload error with `invalid_grant` sets `needsSignIn`.
+
+### Google Drive
+
+- Google Drive uses the same sign-in, token transport, and recovery as GCS, with the `drive.file` scope on the same client. `usesGoogleSignIn` covers both.
+- `drive.file` reaches only files made through the UnlocalFS client, so every export holds the client ID and secret. The token goes in only with secrets.
+- After a Drive sign-in, `MountService` reads the account's `permissionId` from Drive `about`. `SignInAgainUseCase` refuses a sign-in whose ID differs from the saved one, so waiting uploads never go to another account.
+- The connection test accepts `directory not found`: the VFS lists a missing folder as empty and makes it on the first write.
 
 ### SFTP
 

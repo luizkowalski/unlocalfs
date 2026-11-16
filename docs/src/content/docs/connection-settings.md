@@ -3,7 +3,7 @@ title: Connection settings
 description: Understand the storage and credential fields for a drive.
 ---
 
-Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server or **Google Cloud Storage** to connect a GCS bucket; the S3 sections below do not apply to them.
+Choose **Add Connection**, or select a disconnected drive and choose **Edit**. The **Connection** tab describes the storage to connect. Choose **SFTP** to connect a server, **Google Cloud Storage** to connect a GCS bucket, or **Google Drive** to connect a folder in your Google Drive; the S3 sections below do not apply to them.
 
 ## Storage
 
@@ -30,6 +30,15 @@ A folder changes what the drive shows. It does not restrict what your credential
 
 Credentials are stored in your Mac’s Keychain. Temporary credentials stop working when they expire; update them in the connection before connecting again.
 
+## Google Drive
+
+| Field | What to enter |
+| --- | --- |
+| Folder | An optional folder in My Drive, such as `UnlocalFS`. Leave empty for the top of My Drive. UnlocalFS makes the folder when you copy the first file. |
+| Google account | Click **Sign in with Google**. Your browser opens. Choose the account, allow access, and go back to UnlocalFS. |
+
+The drive shows only the files and folders that UnlocalFS made. Files that you delete go to the Google Drive trash. **Sign In Again…** accepts only the account that you signed in with first. See [Google Drive](/google-drive/).
+
 ## Google Cloud Storage
 
 | Field | What to enter |
@@ -48,7 +57,7 @@ Sign-in lets UnlocalFS use Cloud Storage as your Google account. It does not giv
 
 UnlocalFS stores the sign-in in your Mac's Keychain. It does not show which account you chose and does not check that a new sign-in uses the same account. **Test Connection** is the check: test again after you sign in. To use a different account, click **Sign In Again…**. A change to the account or to **Sign in with** applies the next time you connect the drive.
 
-If Google ends the sign-in, for example because you removed access or your organization requires you to sign in again, uploads stop and the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page. The drive stays connected, and the uploads that wait go on. See [Troubleshooting](/troubleshooting/#a-google-cloud-storage-connection-fails).
+If Google ends the sign-in, for example because you removed access or your organization requires you to sign in again, uploads stop and the drive shows **Needs Google sign-in**. Click **Sign In Again…** on the drive page. The drive stays connected, and waiting uploads resume. See [Troubleshooting](/troubleshooting/#a-google-cloud-storage-connection-fails).
 
 Removing the connection deletes the sign-in from your Mac. It does not remove the access UnlocalFS has in your Google account. To remove it, open [Third-party apps & services](https://myaccount.google.com/connections) in your Google account and remove UnlocalFS.
 

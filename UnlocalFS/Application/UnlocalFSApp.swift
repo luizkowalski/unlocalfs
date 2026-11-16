@@ -42,7 +42,7 @@ import UnlocalFSPresentation
                     delegate.model.deleting = delegate.model.selected
                 }
                 .keyboardShortcut(.delete)
-                .disabled(isEditingSearch != nil || (delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true))
+                .disabled(delegate.model.editor != nil || isEditingSearch != nil || (delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true))
             }
             CommandGroup(after: .textEditing) {
                 Button("Find Unlocal…") { delegate.model.openSearch() }

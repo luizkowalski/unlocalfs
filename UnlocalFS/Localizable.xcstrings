@@ -239,6 +239,17 @@
         }
       }
     },
+    "Anyone with the file can read this drive with your Google account. Without the sign-in, the file still holds the UnlocalFS Google client; run rclone config reconnect on the other Mac. The password is only obscured, not encrypted." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualquer pessoa com o arquivo pode ler esta unidade com a sua conta Google. Sem o login, o arquivo ainda contém o cliente Google do UnlocalFS; execute rclone config reconnect no outro Mac. A senha é apenas ofuscada, não criptografada."
+          }
+        }
+      }
+    },
     "Anyone with the file can read this drive. Passwords are only obscured, not encrypted. The file points to your trusted-hosts file and needs a running ssh-agent. Copy the trusted-hosts file to the other Mac and adjust the path." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -515,12 +526,12 @@
         }
       }
     },
-    "Connect an S3 or Google Cloud Storage bucket, or an SFTP server, and use its files from your Mac." : {
+    "Connect an S3 or Google Cloud Storage bucket, a Google Drive folder, or an SFTP server, and use its files from your Mac." : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecte um bucket do S3 ou do Google Cloud Storage, ou um servidor SFTP, e use os arquivos dele no seu Mac."
+            "value" : "Conecte um bucket do S3 ou do Google Cloud Storage, uma pasta do Google Drive ou um servidor SFTP, e use os arquivos dele no seu Mac."
           }
         }
       }
@@ -1320,6 +1331,17 @@
         }
       }
     },
+    "My Drive" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meu Drive"
+          }
+        }
+      }
+    },
     "My storage" : {
       "localizations" : {
         "pt-BR" : {
@@ -1569,6 +1591,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opcional, por exemplo clientes/acme"
+          }
+        }
+      }
+    },
+    "Optional, for example UnlocalFS" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opcional, por exemplo UnlocalFS"
           }
         }
       }
@@ -2142,6 +2174,16 @@
         }
       }
     },
+    "The drive shows only files and folders that UnlocalFS made. Files that you already have in Google Drive do not show." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A unidade mostra apenas arquivos e pastas que o UnlocalFS criou. Os arquivos que você já tem no Google Drive não aparecem."
+          }
+        }
+      }
+    },
     "The key file stays where it is. A passphrase is stored in your Mac’s Keychain." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2169,6 +2211,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O motivo não está disponível. O registro tem os detalhes."
+          }
+        }
+      }
+    },
+    "The sign-in is stored in your Mac’s Keychain. Deleted files go to the Google Drive trash." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O login fica armazenado no chaveiro do seu Mac. Os arquivos apagados vão para a lixeira do Google Drive."
           }
         }
       }

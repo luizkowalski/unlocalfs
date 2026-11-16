@@ -51,6 +51,7 @@ struct ConnectionEditor: View {
                     case .s3Compatible: S3ConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
                     case .sftp: SFTPConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
                     case .gcs: GCSConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
+                    case .googleDrive: GoogleDriveConnectionFields(viewModel: viewModel, errors: errors, focus: $focus)
                     }
                 case .settings: settingsForm(errors: errors)
                 }

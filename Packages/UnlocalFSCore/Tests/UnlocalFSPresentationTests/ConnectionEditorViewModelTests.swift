@@ -136,7 +136,7 @@ import UnlocalFSTestSupport
         #expect(!editor.isLocked)
     }
 
-    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.sftp(), .remotePath)])
+    @Test(arguments: [(Connection.s3(), ConnectionField.folder), (Connection.gcs(), .folder), (Connection.googleDrive(), .folder), (Connection.sftp(), .remotePath)])
     func onlyADuplicateOpensOnItsFolder(connection: Connection, folder: ConnectionField) throws {
         try fixture.repository.save(connection, credentials: Credentials())
         let app = fixture.app()
@@ -249,6 +249,15 @@ import UnlocalFSTestSupport
             change(&editor.connection.sftp)
             #expect(!editor.tested)
         }
+    }
+
+    @Test func providerMenuGroupsS3ProvidersThenGoogleThenGenericStorage() throws {
+        #expect(fixture.editor(draft: .init(connection: Connection())).providerSections == [
+            [.aws, .cloudflare, .digitalOcean, .minio, .wasabi], [.googleCloudStorage, .googleDrive], [.other, .sftp],
+        ])
+        let drive = Connection.googleDrive()
+        try fixture.repository.save(drive, credentials: Credentials.google())
+        #expect(fixture.editor(draft: .init(connection: drive)).providerSections == [[.googleDrive]])
     }
 
     @Test func savedDrivesKeepTheirProtocolAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {

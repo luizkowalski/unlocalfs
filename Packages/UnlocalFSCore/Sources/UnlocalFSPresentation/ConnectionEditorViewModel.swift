@@ -6,6 +6,7 @@ import UnlocalFSDomain
     public var connection: Connection {
         didSet {
             if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp || connection.gcs != oldValue.gcs { tested = false }
+            if connection.backend != oldValue.backend { credentials.googleSignIn = GoogleSignIn() }
         }
     }
 
@@ -67,10 +68,15 @@ import UnlocalFSDomain
         return Provider.allCases.filter { $0.backend == savedBackend }
     }
 
+    public var providerSections: [[Provider]] {
+        let providers = availableProviders
+        return ProviderGroup.allCases.map { group in providers.filter { $0.group == group } }.filter { !$0.isEmpty }
+    }
+
     public var initialFocus: ConnectionField? {
         guard isDuplicate, credentialsLoaded else { return nil }
         return switch connection.backend {
-        case .s3Compatible, .gcs: .folder
+        case .s3Compatible, .gcs, .googleDrive: .folder
         case .sftp: .remotePath
         }
     }
@@ -108,9 +114,9 @@ import UnlocalFSDomain
 
     public func signInWithGoogle() async {
         error = nil
-        guard let result = await signIn.token() else { return }
+        guard let result = await signIn.signIn(for: connection.backend) else { return }
         do {
-            credentials.googleToken = try result.get()
+            credentials.googleSignIn = try result.get()
         } catch { self.error = error.localizedDescription }
     }
 

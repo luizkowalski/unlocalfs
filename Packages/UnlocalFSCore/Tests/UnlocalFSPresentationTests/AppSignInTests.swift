@@ -50,6 +50,32 @@ import UnlocalFSTestSupport
         #expect(app.statusText(connection) == String(localized: .disconnected))
     }
 
+    @Test func googleDriveSignsInAgainOnlyWithTheSameAccount() async throws {
+        GoogleAPIStub.install()
+        let connection = Connection.googleDrive()
+        try fixture.repository.save(connection, credentials: Credentials(googleToken: googleTokenJSON, googleAccountID: "account-1"))
+        try revokedGrantError.write(to: fixture.root.appending(path: "test-error"), atomically: true, encoding: .utf8)
+        let app = fixture.app()
+        await app.refresh()
+        await app.toggle(connection)
+        #expect(app.needsSignIn(connection))
+        try FileManager.default.removeItem(at: fixture.root.appending(path: "test-error"))
+
+        try fixture.signInReturns(otherAccountTokenJSON)
+        await app.signInAgain(connection)
+
+        #expect(app.problem(connection) == GoogleAccountChanged().localizedDescription)
+        #expect(try fixture.repository.credentials(for: connection.id).googleToken == googleTokenJSON)
+        #expect(fixture.signInEnvironment.contains("RCLONE_DRIVE_SCOPE=drive.file"))
+
+        try fixture.signInReturns(newTokenJSON)
+        await app.signInAgain(connection)
+
+        #expect(!app.needsSignIn(connection))
+        #expect(app.problem(connection) == nil)
+        #expect(try fixture.repository.credentials(for: connection.id).googleToken == newTokenJSON)
+    }
+
     @Test func cancellingTheBrowserStepOfSignInAgainChangesNothing() async throws {
         let connection = Connection.gcs(authentication: .googleAccount)
         try fixture.repository.save(connection, credentials: Credentials.google())

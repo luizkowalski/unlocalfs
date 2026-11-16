@@ -50,7 +50,13 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var usesUploadTimes: Bool { backend.supportsUploadTimes && (readOnly || prefersUploadTimes) }
 
-    public var usesGoogleSignIn: Bool { backend == .gcs && gcs.authentication == .googleAccount }
+    public var usesGoogleSignIn: Bool {
+        switch backend {
+        case .googleDrive: true
+        case .gcs: gcs.authentication == .googleAccount
+        case .s3Compatible, .sftp: false
+        }
+    }
 
     public var exportsRcloneConfig: Bool { encrypted }
 
@@ -58,7 +64,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var folderPath: String {
         switch backend {
-        case .s3Compatible, .gcs: folder
+        case .s3Compatible, .gcs, .googleDrive: folder
         case .sftp: sftp.remotePath
         }
     }
@@ -82,6 +88,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
             result.issues += validateEndpoint().issues + validateBucket().issues
             if provider == .aws { result.issues += aws.validate().issues }
         case .gcs: result.issues += validateBucket().issues
+        case .googleDrive: result.issues += validateFolder().issues
         case .sftp: result.issues += sftp.validate().issues
         }
         return result
@@ -111,6 +118,12 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
                 bucket.rangeOfCharacter(from: Self.forbiddenNameCharacters.union(.whitespacesAndNewlines)) == nil,
             field: .bucket, message: String(localized: .bucketHasPath),
         )
+        result.issues += validateFolder().issues
+        return result
+    }
+
+    private func validateFolder() -> ValidationResult<ConnectionField> {
+        var result = ValidationResult<ConnectionField>()
         result.check(
             (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy { !["", ".", ".."].contains($0) }) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
@@ -174,6 +187,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
     case cloudflare = "Cloudflare"
     case digitalOcean = "DigitalOcean"
     case googleCloudStorage = "GCS"
+    case googleDrive = "GoogleDrive"
     case minio = "Minio"
     case wasabi = "Wasabi"
     case other = "Other"
@@ -181,13 +195,20 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     public var id: Self { self }
 
-    public var isGeneric: Bool { self == .other || self == .sftp }
+    public var group: ProviderGroup {
+        switch self {
+        case .aws, .cloudflare, .digitalOcean, .minio, .wasabi: .s3Services
+        case .googleCloudStorage, .googleDrive: .google
+        case .other, .sftp: .generic
+        }
+    }
 
     public var backend: Backend {
         switch self {
         case .other, .aws, .cloudflare, .minio, .wasabi, .digitalOcean: .s3Compatible
         case .sftp: .sftp
         case .googleCloudStorage: .gcs
+        case .googleDrive: .googleDrive
         }
     }
 
@@ -201,8 +222,13 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .digitalOcean: String(localized: .providerDigitalOceanSpaces)
         case .sftp: String(localized: .providerSFTP)
         case .googleCloudStorage: String(localized: .providerGoogleCloudStorage)
+        case .googleDrive: String(localized: .providerGoogleDrive)
         }
     }
+}
+
+public enum ProviderGroup: CaseIterable, Sendable {
+    case s3Services, google, generic
 }
 
 public struct Credentials: Codable, Equatable, Sendable {
@@ -233,7 +259,20 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var serviceAccountKey: String
     public var serviceAccountEmail: String? { ServiceAccountKey(json: serviceAccountKey)?.email }
     public var googleToken: String
+    public var googleAccountID: String
     public var isSignedInToGoogle: Bool { GoogleToken(json: googleToken) != nil }
+
+    public var googleSignIn: GoogleSignIn {
+        get { GoogleSignIn(token: googleToken, accountID: googleAccountID) }
+        set {
+            googleToken = newValue.token
+            googleAccountID = newValue.accountID
+        }
+    }
+
+    public func requireSameGoogleAccount(as signIn: GoogleSignIn) throws {
+        guard googleAccountID.isEmpty || googleAccountID == signIn.accountID else { throw GoogleAccountChanged() }
+    }
 
     public var secrets: [String] {
         [
@@ -244,7 +283,7 @@ public struct Credentials: Codable, Equatable, Sendable {
 
     public init(
         accessKey: String = "", secretKey: String = "", sessionToken: String = "", encryptionPassword: String = "",
-        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "", googleToken: String = "",
+        password: String = "", keyPassphrase: String = "", serviceAccountKey: String = "", googleToken: String = "", googleAccountID: String = "",
     ) {
         self.accessKey = accessKey
         self.secretKey = secretKey
@@ -254,6 +293,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         self.keyPassphrase = keyPassphrase
         self.serviceAccountKey = serviceAccountKey
         self.googleToken = googleToken
+        self.googleAccountID = googleAccountID
     }
 
     public init(from decoder: any Decoder) throws {
@@ -269,6 +309,7 @@ public struct Credentials: Codable, Equatable, Sendable {
         obscuredKeyPassphrase = try container.decodeIfPresent(String.self, forKey: .obscuredKeyPassphrase) ?? ""
         serviceAccountKey = try container.decodeIfPresent(String.self, forKey: .serviceAccountKey) ?? ""
         googleToken = try container.decodeIfPresent(String.self, forKey: .googleToken) ?? ""
+        googleAccountID = try container.decodeIfPresent(String.self, forKey: .googleAccountID) ?? ""
     }
 
     public func pruned(for connection: Connection) -> Credentials {
@@ -278,24 +319,25 @@ public struct Credentials: Codable, Equatable, Sendable {
             credentials.password = ""
             credentials.keyPassphrase = ""
             credentials.serviceAccountKey = ""
-            credentials.googleToken = ""
+            credentials.googleSignIn = GoogleSignIn()
         case .sftp:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
             credentials.serviceAccountKey = ""
-            credentials.googleToken = ""
+            credentials.googleSignIn = GoogleSignIn()
             if connection.sftp.authentication != .password { credentials.password = "" }
             if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
-        case .gcs:
+        case .gcs, .googleDrive:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
             credentials.password = ""
             credentials.keyPassphrase = ""
-            switch connection.gcs.authentication {
-            case .googleAccount: credentials.serviceAccountKey = ""
-            case .serviceAccount: credentials.googleToken = ""
+            if connection.usesGoogleSignIn {
+                credentials.serviceAccountKey = ""
+            } else {
+                credentials.googleSignIn = GoogleSignIn()
             }
         }
         return credentials
@@ -312,11 +354,10 @@ public struct Credentials: Codable, Equatable, Sendable {
                 connection.sftp.authentication != .password || !password.isEmpty,
                 field: .password, message: String(localized: .passwordEmpty),
             )
-        case .gcs:
-            switch connection.gcs.authentication {
-            case .googleAccount:
+        case .gcs, .googleDrive:
+            if connection.usesGoogleSignIn {
                 result.check(isSignedInToGoogle, field: .googleAccount, message: String(localized: .signInWithGoogleFirst))
-            case .serviceAccount:
+            } else {
                 result.check(!serviceAccountKey.isBlank, field: .serviceAccountKey, message: String(localized: .importServiceAccountKey))
             }
         }

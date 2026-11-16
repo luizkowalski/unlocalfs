@@ -35,3 +35,19 @@ public struct GoogleSignInRequired: LocalizedError, Sendable {
 
     public var errorDescription: String? { String(localized: .googleSignInRequired) }
 }
+
+public struct GoogleSignIn: Equatable, Sendable {
+    public let token: String
+    public let accountID: String
+
+    public init(token: String = "", accountID: String = "") {
+        self.token = token
+        self.accountID = accountID
+    }
+}
+
+public struct GoogleAccountChanged: LocalizedError, Sendable {
+    public init() {}
+
+    public var errorDescription: String? { String(localized: .googleAccountChanged) }
+}

@@ -124,6 +124,21 @@ struct WorkflowTests {
         }
     }
 
+    @Test func savingAGoogleDriveKeepsOnlyItsSignInAndEncryptionPassword() async throws {
+        try await withWorkflowFixture { repository, drives, _ in
+            let connection = Connection.googleDrive { $0.encrypted = true }
+            _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service).execute(
+                connection, credentials: Credentials(
+                    accessKey: "key", secretKey: "secret", sessionToken: "token", encryptionPassword: "crypt", password: "ssh",
+                    keyPassphrase: "phrase", serviceAccountKey: serviceAccountJSON, googleToken: googleTokenJSON, googleAccountID: "account-1",
+                ),
+                confirmation: "crypt",
+            )
+            let saved = try repository.credentials(for: connection.id)
+            #expect(saved == Credentials(encryptionPassword: "crypt", googleToken: googleTokenJSON, googleAccountID: "account-1"))
+        }
+    }
+
     @Test(arguments: [(SFTPAuthentication.password, "ssh", ""), (.privateKey, "", "phrase"), (.agent, "", "")])
     func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication, password: String, passphrase: String) async throws {
         try await withWorkflowFixture { repository, drives, _ in
@@ -230,7 +245,7 @@ struct WorkflowTests {
         }
     }
 
-    @Test(arguments: [Connection.sftp(), Connection.gcs()])
+    @Test(arguments: [Connection.sftp(), Connection.gcs(), Connection.googleDrive()])
     func sharingIsUnsupportedBeforeCredentialsAreLoaded(connection: Connection) async throws {
         try await withWorkflowFixture { _, drives, _ in
             let repository = SavedConnectionRepository(
