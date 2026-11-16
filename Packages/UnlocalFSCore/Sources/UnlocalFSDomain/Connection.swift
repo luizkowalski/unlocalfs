@@ -262,6 +262,18 @@ public struct Credentials: Codable, Equatable, Sendable {
     public var googleAccountID: String
     public var isSignedInToGoogle: Bool { GoogleToken(json: googleToken) != nil }
 
+    public var googleSignIn: GoogleSignIn {
+        get { GoogleSignIn(token: googleToken, accountID: googleAccountID) }
+        set {
+            googleToken = newValue.token
+            googleAccountID = newValue.accountID
+        }
+    }
+
+    public func requireSameGoogleAccount(as signIn: GoogleSignIn) throws {
+        guard googleAccountID.isEmpty || googleAccountID == signIn.accountID else { throw GoogleAccountChanged() }
+    }
+
     public var secrets: [String] {
         [
             accessKey, secretKey, sessionToken, encryptionPassword, obscuredEncryptionPassword,
@@ -307,15 +319,13 @@ public struct Credentials: Codable, Equatable, Sendable {
             credentials.password = ""
             credentials.keyPassphrase = ""
             credentials.serviceAccountKey = ""
-            credentials.googleToken = ""
-            credentials.googleAccountID = ""
+            credentials.googleSignIn = GoogleSignIn()
         case .sftp:
             credentials.accessKey = ""
             credentials.secretKey = ""
             credentials.sessionToken = ""
             credentials.serviceAccountKey = ""
-            credentials.googleToken = ""
-            credentials.googleAccountID = ""
+            credentials.googleSignIn = GoogleSignIn()
             if connection.sftp.authentication != .password { credentials.password = "" }
             if connection.sftp.authentication != .privateKey { credentials.keyPassphrase = "" }
         case .gcs, .googleDrive:
@@ -327,8 +337,7 @@ public struct Credentials: Codable, Equatable, Sendable {
             if connection.usesGoogleSignIn {
                 credentials.serviceAccountKey = ""
             } else {
-                credentials.googleToken = ""
-                credentials.googleAccountID = ""
+                credentials.googleSignIn = GoogleSignIn()
             }
         }
         return credentials

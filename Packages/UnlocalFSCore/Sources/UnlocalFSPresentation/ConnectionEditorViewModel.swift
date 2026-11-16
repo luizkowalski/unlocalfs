@@ -6,10 +6,7 @@ import UnlocalFSDomain
     public var connection: Connection {
         didSet {
             if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp || connection.gcs != oldValue.gcs { tested = false }
-            if connection.backend != oldValue.backend {
-                credentials.googleToken = ""
-                credentials.googleAccountID = ""
-            }
+            if connection.backend != oldValue.backend { credentials.googleSignIn = GoogleSignIn() }
         }
     }
 
@@ -119,9 +116,7 @@ import UnlocalFSDomain
         error = nil
         guard let result = await signIn.signIn(for: connection.backend) else { return }
         do {
-            let signedIn = try result.get()
-            credentials.googleToken = signedIn.token
-            credentials.googleAccountID = signedIn.accountID
+            credentials.googleSignIn = try result.get()
         } catch { self.error = error.localizedDescription }
     }
 

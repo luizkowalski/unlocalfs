@@ -40,7 +40,7 @@ public struct GoogleSignIn: Equatable, Sendable {
     public let token: String
     public let accountID: String
 
-    public init(token: String, accountID: String = "") {
+    public init(token: String = "", accountID: String = "") {
         self.token = token
         self.accountID = accountID
     }
