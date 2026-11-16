@@ -70,7 +70,7 @@ import UnlocalFSDomain
     public var initialFocus: ConnectionField? {
         guard isDuplicate, credentialsLoaded else { return nil }
         return switch connection.backend {
-        case .s3Compatible, .gcs: .folder
+        case .s3Compatible, .gcs, .googleDrive: .folder
         case .sftp: .remotePath
         }
     }

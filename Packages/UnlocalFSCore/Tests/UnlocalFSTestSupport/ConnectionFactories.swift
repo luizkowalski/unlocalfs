@@ -35,6 +35,15 @@ public extension Connection {
         change(&connection)
         return connection
     }
+
+    static func googleDrive(name: String = "Drive", folder: String = "UnlocalFS", _ change: (inout Connection) -> Void = { _ in }) -> Connection {
+        var connection = Connection()
+        connection.name = name
+        connection.provider = .googleDrive
+        connection.folder = folder
+        change(&connection)
+        return connection
+    }
 }
 
 public extension Credentials {

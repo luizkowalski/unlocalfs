@@ -124,6 +124,22 @@ struct WorkflowTests {
         }
     }
 
+    @Test func savingAGoogleDriveKeepsOnlyItsSignInAndEncryptionPassword() async throws {
+        try await withWorkflowFixture { repository, drives, _ in
+            let connection = Connection.googleDrive { $0.encrypted = true }
+            _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service).execute(
+                connection, credentials: Credentials(
+                    accessKey: "key", encryptionPassword: "crypt", password: "ssh", serviceAccountKey: serviceAccountJSON,
+                    googleToken: googleTokenJSON, googleAccountID: "account-1",
+                ),
+                confirmation: "crypt",
+            )
+            let saved = try repository.credentials(for: connection.id)
+            #expect(saved.googleToken == googleTokenJSON && saved.googleAccountID == "account-1" && saved.encryptionPassword == "crypt")
+            #expect(saved.accessKey.isEmpty && saved.password.isEmpty && saved.serviceAccountKey.isEmpty)
+        }
+    }
+
     @Test(arguments: [(SFTPAuthentication.password, "ssh", ""), (.privateKey, "", "phrase"), (.agent, "", "")])
     func savingKeepsOnlyTheSecretsOfTheSelectedAuthentication(authentication: SFTPAuthentication, password: String, passphrase: String) async throws {
         try await withWorkflowFixture { repository, drives, _ in

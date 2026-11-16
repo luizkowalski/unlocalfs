@@ -187,6 +187,21 @@ struct GCSValidationTests {
     }
 }
 
+struct GoogleDriveValidationTests {
+    @Test func connectionNeedsOnlyANameAndAGoogleAccount() {
+        var connection = Connection.googleDrive(folder: "")
+        #expect(connection.validate().isValid)
+        #expect(Credentials.google().validate(for: connection).isValid)
+        connection.folder = "Work/../Other"
+        #expect(connection.validate().issues.map(\.field) == [.folder])
+    }
+
+    @Test(arguments: ["", #"{"access_token":"ya29.only-access"}"#])
+    func connectionWithoutARefreshableSignInPointsAtTheGoogleAccount(token: String) {
+        #expect(Credentials.google(token).validate(for: Connection.googleDrive()).issues.map(\.field) == [.googleAccount])
+    }
+}
+
 private func sftpSettings(_ change: (inout SFTPSettings) -> Void) -> SFTPSettings {
     var settings = Connection.sftp().sftp
     change(&settings)

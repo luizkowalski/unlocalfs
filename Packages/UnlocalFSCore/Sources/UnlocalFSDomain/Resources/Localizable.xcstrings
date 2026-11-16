@@ -1008,6 +1008,23 @@
         }
       }
     },
+    "providerGoogleDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        }
+      }
+    },
     "providerMinIO": {
       "extractionState": "manual",
       "localizations": {

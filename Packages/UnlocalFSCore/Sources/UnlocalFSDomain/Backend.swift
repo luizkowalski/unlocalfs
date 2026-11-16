@@ -1,16 +1,16 @@
 public enum Backend: Sendable {
-    case s3Compatible, sftp, gcs
+    case s3Compatible, sftp, gcs, googleDrive
 
     public var supportsShareLinks: Bool {
         switch self {
         case .s3Compatible: true
-        case .sftp, .gcs: false
+        case .sftp, .gcs, .googleDrive: false
         }
     }
 
     public var supportsServerCopy: Bool {
         switch self {
-        case .s3Compatible, .gcs: true
+        case .s3Compatible, .gcs, .googleDrive: true
         case .sftp: false
         }
     }
@@ -23,7 +23,7 @@ public enum Backend: Sendable {
 
     public var locksFolderAfterSave: Bool {
         switch self {
-        case .s3Compatible, .gcs: false
+        case .s3Compatible, .gcs, .googleDrive: false
         case .sftp: true
         }
     }
