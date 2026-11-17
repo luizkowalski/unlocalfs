@@ -51,12 +51,12 @@ public extension AppViewModel {
         canToggle(connection) && !isActive(connection)
     }
 
-    func indicator(_ connection: Connection) -> Indicator {
-        driveCondition(connection).indicator
-    }
-
-    func statusText(_ connection: Connection) -> String {
-        driveCondition(connection).statusText
+    func driveStatus(_ connection: Connection) -> (text: String, indicator: Indicator) {
+        let condition = DriveCondition(
+            statuses[connection.id], busy: busy.contains(connection.id), hasError: errors[connection.id] != nil,
+            offline: isOffline(connection),
+        )
+        return (condition.statusText, condition.indicator)
     }
 
     func needsReconnect(_ connection: Connection) -> Bool {
@@ -74,14 +74,5 @@ public extension AppViewModel {
 
     func needsMainWindow(_ connection: Connection) -> Bool {
         serverTrust(for: connection) != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id
-    }
-}
-
-private extension AppViewModel {
-    func driveCondition(_ connection: Connection) -> DriveCondition {
-        DriveCondition(
-            statuses[connection.id], busy: busy.contains(connection.id), hasError: errors[connection.id] != nil,
-            offline: isOffline(connection),
-        )
     }
 }

@@ -12,7 +12,7 @@ struct MenuContent: View {
         if model.connections.isEmpty { Text("No connections yet") }
         ForEach(model.connections) { connection in
             Menu {
-                Text(model.statusText(connection))
+                Text(model.driveStatus(connection).text)
                 Button(model.toggleTitle(connection)) {
                     Task {
                         await model.toggle(connection, opensFinder: true)

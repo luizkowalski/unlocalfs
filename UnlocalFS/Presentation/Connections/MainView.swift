@@ -131,6 +131,7 @@ private struct ConnectionRow: View {
     }
 
     var body: some View {
+        let status = model.driveStatus(connection)
         HStack(spacing: 10) {
             icon.frame(width: 24)
             VStack(alignment: .leading, spacing: 3) {
@@ -144,11 +145,11 @@ private struct ConnectionRow: View {
                             .accessibilityLabel("Encrypted drive")
                     }
                 }
-                Text(model.statusText(connection)).font(.caption).foregroundStyle(.secondary)
+                Text(status.text).font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
             Spacer(minLength: 0)
-            StatusIndicator(indicator: model.indicator(connection), showsIdle: false)
+            StatusIndicator(indicator: status.indicator, showsIdle: false)
                 .frame(width: 12)
                 .accessibilityHidden(true)
         }

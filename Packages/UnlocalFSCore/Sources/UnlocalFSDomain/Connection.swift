@@ -62,13 +62,6 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
-    public var folderPath: String {
-        switch backend {
-        case .s3Compatible, .gcs, .googleDrive: folder
-        case .sftp: sftp.remotePath
-        }
-    }
-
     public var storageName: String {
         switch backend {
         case .s3Compatible, .gcs: bucket
@@ -83,8 +76,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     private static let forbiddenNameCharacters = CharacterSet(charactersIn: "/:").union(.controlCharacters)
 
-    public func validate() -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    public func validate() -> ValidationResult {
+        var result = ValidationResult()
         result.check(!name.isBlank, field: .name, message: String(localized: .nameEmpty))
         result.check(
             name != "." && name != ".." && name.rangeOfCharacter(from: Self.forbiddenNameCharacters) == nil,
@@ -102,8 +95,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return result
     }
 
-    private func validateEndpoint() -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    private func validateEndpoint() -> ValidationResult {
+        var result = ValidationResult()
         let url = URL(string: endpoint)
         result.check(url?.scheme?.isEmpty == false && url?.host != nil, field: .endpoint, message: String(localized: .endpointInvalidURL))
         let validEndpoint = URLComponents(string: endpoint).map { url in
@@ -118,8 +111,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return result
     }
 
-    private func validateBucket() -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    private func validateBucket() -> ValidationResult {
+        var result = ValidationResult()
         result.check(!bucket.isBlank, field: .bucket, message: String(localized: .bucketEmpty))
         result.check(
             bucket != "." && bucket != ".." &&
@@ -130,8 +123,8 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return result
     }
 
-    private func validateFolder() -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    private func validateFolder() -> ValidationResult {
+        var result = ValidationResult()
         result.check(
             (folder.isEmpty || folder.split(separator: "/", omittingEmptySubsequences: false).allSatisfy { !["", ".", ".."].contains($0) }) &&
                 folder.rangeOfCharacter(from: .controlCharacters) == nil,
@@ -140,7 +133,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return result
     }
 
-    public func validate(against connections: [Connection]) -> ValidationResult<ConnectionField> {
+    public func validate(against connections: [Connection]) -> ValidationResult {
         var result = validate()
         result.check(
             !connections.contains(where: { $0.id != id && $0.name.caseInsensitiveCompare(name) == .orderedSame }),
@@ -149,7 +142,7 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return result
     }
 
-    public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> ValidationResult<ConnectionField> {
+    public func validate(credentials: Credentials, confirmation: String, against connections: [Connection]) -> ValidationResult {
         var result = validate(against: connections)
         result.issues += credentials.validate(for: self).issues
         if encrypted, !connections.contains(where: { $0.id == id }) {
@@ -353,8 +346,8 @@ public struct Credentials: Codable, Equatable, Sendable {
         return credentials
     }
 
-    public func validate(for connection: Connection) -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    public func validate(for connection: Connection) -> ValidationResult {
+        var result = ValidationResult()
         switch connection.backend {
         case .s3Compatible:
             result.check(!accessKey.isBlank, field: .accessKey, message: String(localized: .accessKeyEmpty))

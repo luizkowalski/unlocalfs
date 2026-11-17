@@ -47,7 +47,7 @@ import UnlocalFSTestSupport
         #expect(app.problem(connection) == nil)
         #expect(!app.busy.contains(connection.id))
         #expect(try fixture.repository.credentials(for: connection.id).googleToken == newTokenJSON)
-        #expect(app.statusText(connection) == String(localized: .disconnected))
+        #expect(app.driveStatus(connection).text == String(localized: .disconnected))
     }
 
     @Test func googleDriveSignsInAgainOnlyWithTheSameAccount() async throws {
@@ -132,7 +132,7 @@ import UnlocalFSTestSupport
         await app.refresh()
 
         #expect(app.needsSignIn(connection) == needsSignIn)
-        #expect(app.statusText(connection) == statusText)
+        #expect(app.driveStatus(connection).text == statusText)
         #expect(app.uploadFailure(connection)?.uploadError == uploadError)
     }
 
@@ -144,7 +144,7 @@ import UnlocalFSTestSupport
         await app.refresh()
 
         #expect(!app.needsSignIn(connection))
-        #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
+        #expect(app.driveStatus(connection).text == String(localized: .uploadNeedsAttention))
     }
 
     @Test func quittingStopsAGoogleSignInThatWaitsInTheEditor() async throws {

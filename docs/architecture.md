@@ -16,14 +16,13 @@ To add a workflow, put its rules in Domain and its integration in Infrastructure
 
 Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 
-- `ConnectionRepository` and `DriveGateway` are the integration contracts. View models call the gateway directly for status, test, refresh, and activity. A workflow with rules goes through a use case.
+- `ConnectionRepository` and `DriveGateway` are the integration contracts. View models call the repository to save the automatic connect preference and the gateway for status, test, refresh, and activity. A workflow with rules goes through a use case.
 - `ConnectionField` names the field of each validation issue, so the editor maps errors to inputs without string matching.
 - `TrafficMeter` turns rclone's byte counter into bytes per day. It ignores a stale reading from the same process and counts a new process from zero.
 
 | Use case | Rule |
 | --- | --- |
 | SaveConnectionUseCase | A saved drive keeps its protocol, encryption, and encryption password; an SFTP drive keeps its folder. Drops unused credentials. |
-| SetAutomaticConnectUseCase | Saves "connect on start up" without touching credentials. |
 | DeleteConnectionUseCase | Refuses an active drive. Removes the connection, its cache, and the host keys of the last SFTP drive for a server. |
 | ConnectDriveUseCase | Connects or reconnects from the current status. |
 | SignInAgainUseCase | Refuses a different Google Drive account. Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |

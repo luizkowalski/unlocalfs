@@ -26,25 +26,10 @@ public struct SaveConnectionUseCase: Sendable {
         if previous.encrypted, try repository.credentials(for: previous.id).encryptionPassword != credentials.encryptionPassword {
             throw AppError(String(localized: .encryptionPasswordImmutable))
         }
-        if connection.backend.locksFolderAfterSave, previous.folderPath != connection.folderPath { throw duplicate }
+        if connection.backend.locksFolderAfterSave, previous.sftp.remotePath != connection.sftp.remotePath { throw duplicate }
         if previous.usesGoogleSignIn {
             try repository.credentials(for: previous.id).requireSameGoogleAccount(as: credentials.googleSignIn)
         }
-    }
-}
-
-public struct SetAutomaticConnectUseCase: Sendable {
-    private let repository: any ConnectionRepository
-
-    public init(repository: any ConnectionRepository) {
-        self.repository = repository
-    }
-
-    public func execute(_ connection: Connection, connectsAutomatically: Bool) throws -> [Connection] {
-        var connection = connection
-        connection.connectsAutomatically = connectsAutomatically
-        try repository.save(connection)
-        return try repository.all()
     }
 }
 

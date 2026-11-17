@@ -60,8 +60,8 @@ private let day = 24 * hour
         let task = Task { await app.cleanUpUnfinishedUploads(cleanup) }
         for await _ in entered { break }
         #expect(!app.canToggle(connection))
-        #expect(app.statusText(connection) == String(localized: .working))
-        #expect(app.indicator(connection) == .working)
+        #expect(app.driveStatus(connection).text == String(localized: .working))
+        #expect(app.driveStatus(connection).indicator == .working)
         resume.yield()
         await task.value
 
