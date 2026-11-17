@@ -66,9 +66,8 @@ struct ViewModelFixture {
 
     @MainActor func app(desktop: TestDesktopServices? = nil) -> AppViewModel {
         AppViewModel(
-            initialConnections: Result { try repository.all() }, drives: service,
+            initialConnections: Result { try repository.all() }, repository: repository, drives: service,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: service),
-            setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: service),
             signInAgain: SignInAgainUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),

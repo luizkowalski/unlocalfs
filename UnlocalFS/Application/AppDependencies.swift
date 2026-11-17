@@ -25,9 +25,8 @@ import UnlocalFSPresentation
             ),
         )
         let model = AppViewModel(
-            initialConnections: initialConnections, drives: drives,
+            initialConnections: initialConnections, repository: repository, drives: drives,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),
-            setAutomaticConnect: SetAutomaticConnectUseCase(repository: repository),
             connectDrive: ConnectDriveUseCase(repository: repository, drives: drives),
             signInAgain: SignInAgainUseCase(repository: repository, drives: drives),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),

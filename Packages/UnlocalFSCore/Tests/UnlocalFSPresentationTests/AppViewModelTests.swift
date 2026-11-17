@@ -55,6 +55,19 @@ import UnlocalFSTestSupport
         #expect(!app.isActive(connection))
     }
 
+    @Test func automaticConnectSavesAndKeepsTheCredentials() throws {
+        let connection = Connection.s3()
+        let credentials = Credentials.s3()
+        try fixture.repository.save(connection, credentials: credentials)
+        let app = fixture.app()
+
+        app.setConnectsAutomatically(true, for: connection)
+
+        #expect(app.connections.map(\.connectsAutomatically) == [true])
+        #expect(try fixture.repository.all() == app.connections)
+        #expect(try fixture.repository.credentials(for: connection.id) == credentials)
+    }
+
     @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
         let first = Connection.s3 { $0.name = "First" }
         let second = Connection.s3 { $0.name = "Second" }

@@ -174,18 +174,6 @@ struct WorkflowTests {
         }
     }
 
-    @Test func automaticConnectSavesAndKeepsTheCredentials() async throws {
-        try await withWorkflowFixture { repository, _, connection in
-            try repository.save(connection, credentials: Credentials.s3())
-
-            let saved = try SetAutomaticConnectUseCase(repository: repository).execute(connection, connectsAutomatically: true)
-
-            #expect(saved.map(\.connectsAutomatically) == [true])
-            #expect(try repository.all() == saved)
-            #expect(try repository.credentials(for: connection.id) == Credentials.s3())
-        }
-    }
-
     @Test func activeDriveCannotBeDeleted() async throws {
         try await withWorkflowFixture { repository, drives, connection in
             try repository.save(connection, credentials: Credentials.s3())

@@ -34,9 +34,9 @@ import UnlocalFSDomain
     var networkAvailable = true
     var sleeping = false
 
+    private let repository: any ConnectionRepository
     let drives: any DriveGateway
     private let deleteConnection: DeleteConnectionUseCase
-    private let setAutomaticConnect: SetAutomaticConnectUseCase
     let connectDrive: ConnectDriveUseCase
     let signInAgain: SignInAgainUseCase
     let shareFiles: ShareFilesUseCase
@@ -52,9 +52,9 @@ import UnlocalFSDomain
 
     public init(
         initialConnections: Result<[Connection], any Error>,
+        repository: any ConnectionRepository,
         drives: any DriveGateway,
         deleteConnection: DeleteConnectionUseCase,
-        setAutomaticConnect: SetAutomaticConnectUseCase,
         connectDrive: ConnectDriveUseCase,
         signInAgain: SignInAgainUseCase,
         shareFiles: ShareFilesUseCase,
@@ -63,9 +63,9 @@ import UnlocalFSDomain
         quit: QuitUseCase,
         desktop: any DesktopServices,
     ) {
+        self.repository = repository
         self.drives = drives
         self.deleteConnection = deleteConnection
-        self.setAutomaticConnect = setAutomaticConnect
         self.connectDrive = connectDrive
         self.signInAgain = signInAgain
         self.shareFiles = shareFiles
@@ -127,8 +127,11 @@ import UnlocalFSDomain
     }
 
     public func setConnectsAutomatically(_ connectsAutomatically: Bool, for connection: Connection) {
+        var connection = connection
+        connection.connectsAutomatically = connectsAutomatically
         do {
-            connections = try setAutomaticConnect.execute(connection, connectsAutomatically: connectsAutomatically)
+            try repository.save(connection)
+            connections = try repository.all()
         } catch { alert = error.localizedDescription }
     }
 
