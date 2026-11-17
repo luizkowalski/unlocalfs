@@ -22,7 +22,7 @@ import UnlocalFSTestSupport
 
         #expect(desktop.openedDrives.isEmpty)
         #expect(app.problem(connection) == nil)
-        #expect(app.statusText(connection) == String(localized: .checking))
+        #expect(app.driveStatus(connection).text == String(localized: .checking))
     }
 
     @Test func activatingAnEjectedDriveKeepsItsServiceRunning() async throws {
@@ -36,7 +36,7 @@ import UnlocalFSTestSupport
 
         #expect(desktop.openedDrives.isEmpty)
         #expect(app.problem(connection) == nil)
-        #expect(app.statusText(connection) == String(localized: .ejected))
+        #expect(app.driveStatus(connection).text == String(localized: .ejected))
         #expect(await fixture.service.status(connection).isRunning)
     }
 
@@ -95,8 +95,8 @@ import UnlocalFSTestSupport
         await app.refresh()
         await app.refresh()
 
-        #expect(app.indicator(connection) == .attention)
-        #expect(app.statusText(connection) == String(localized: .uploadNeedsAttention))
+        #expect(app.driveStatus(connection).indicator == .attention)
+        #expect(app.driveStatus(connection).text == String(localized: .uploadNeedsAttention))
         #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
         #expect(desktop.notifications.map(\.title) == [String(localized: .uploadsFailed("My files"))])
         #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedReason("AccessDenied: Access Denied"))])
@@ -131,8 +131,8 @@ import UnlocalFSTestSupport
 
         await app.refresh()
 
-        #expect(app.indicator(connection) == .idle)
-        #expect(app.statusText(connection) == String(localized: .uploadsPending(1)))
+        #expect(app.driveStatus(connection).indicator == .idle)
+        #expect(app.driveStatus(connection).text == String(localized: .uploadsPending(1)))
         #expect(app.servingStatus(connection)?.bytesCached == 2048)
         #expect(!app.isShowingUploadsBlockingDisconnect)
         #expect(desktop.notifications.isEmpty)
@@ -165,7 +165,7 @@ import UnlocalFSTestSupport
 
         await app.refresh()
 
-        #expect(app.statusText(connection) == String(localized: .uploadsPending(1)))
+        #expect(app.driveStatus(connection).text == String(localized: .uploadsPending(1)))
         #expect(desktop.notifications.isEmpty)
     }
 
@@ -179,10 +179,10 @@ import UnlocalFSTestSupport
         await app.networkChanged(available: false)
 
         #expect(app.isOffline(connection))
-        #expect(app.indicator(connection) == .attention)
-        #expect(app.statusText(connection) == String(localized: .networkUnavailable))
+        #expect(app.driveStatus(connection).indicator == .attention)
+        #expect(app.driveStatus(connection).text == String(localized: .networkUnavailable))
         #expect(!app.isOffline(stopped))
-        #expect(app.statusText(stopped) == String(localized: .disconnected))
+        #expect(app.driveStatus(stopped).text == String(localized: .disconnected))
     }
 
     @Test func connectAndDisconnectFollowTheConnectionState() async throws {
@@ -243,12 +243,12 @@ import UnlocalFSTestSupport
         let app = fixture.app()
         await app.refreshFiles(connection)
         #expect(app.problem(connection) != nil)
-        #expect(app.statusText(connection) == String(localized: .needsAttention))
+        #expect(app.driveStatus(connection).text == String(localized: .needsAttention))
 
         await app.checkAgain(connection)
 
         #expect(app.problem(connection) == nil)
-        #expect(app.statusText(connection) == String(localized: .disconnected))
+        #expect(app.driveStatus(connection).text == String(localized: .disconnected))
     }
 
     @Test func cancellingTheExportWritesNothing() async throws {

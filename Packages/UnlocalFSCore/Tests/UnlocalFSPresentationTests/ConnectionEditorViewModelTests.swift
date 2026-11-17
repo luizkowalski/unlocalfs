@@ -111,7 +111,7 @@ import UnlocalFSTestSupport
 
         #expect(app.connections == [connection])
         #expect(app.selected == connection)
-        #expect(app.statusText(connection) == String(localized: .disconnected))
+        #expect(app.driveStatus(connection).text == String(localized: .disconnected))
         #expect(try fixture.repository.all() == [connection])
         var expected = editor.credentials
         expected.obscuredEncryptionPassword = "prepared-password"

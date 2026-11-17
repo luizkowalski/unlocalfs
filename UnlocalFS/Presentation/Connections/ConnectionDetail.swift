@@ -62,7 +62,8 @@ struct ConnectionDetail: View {
     }
 
     private var header: some View {
-        HStack(spacing: 16) {
+        let status = model.driveStatus(connection)
+        return HStack(spacing: 16) {
             logo
                 .frame(width: 34, height: 34)
                 .foregroundStyle(.tint)
@@ -73,8 +74,8 @@ struct ConnectionDetail: View {
                 Text(connection.name).font(.title2.weight(.semibold))
                 Text(verbatim: "\(connection.provider.title) · \(connection.storageName)").foregroundStyle(.secondary)
                 HStack(spacing: 6) {
-                    StatusIndicator(indicator: model.indicator(connection))
-                    Text(model.statusText(connection)).foregroundStyle(.secondary)
+                    StatusIndicator(indicator: status.indicator)
+                    Text(status.text).foregroundStyle(.secondary)
                 }
                 .font(.callout)
             }
