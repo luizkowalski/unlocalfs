@@ -62,13 +62,6 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
-    public var folderPath: String {
-        switch backend {
-        case .s3Compatible, .gcs, .googleDrive: folder
-        case .sftp: sftp.remotePath
-        }
-    }
-
     public var storageName: String {
         switch backend {
         case .s3Compatible, .gcs: bucket

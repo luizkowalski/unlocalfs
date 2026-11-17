@@ -26,7 +26,7 @@ public struct SaveConnectionUseCase: Sendable {
         if previous.encrypted, try repository.credentials(for: previous.id).encryptionPassword != credentials.encryptionPassword {
             throw AppError(String(localized: .encryptionPasswordImmutable))
         }
-        if connection.backend.locksFolderAfterSave, previous.folderPath != connection.folderPath { throw duplicate }
+        if connection.backend.locksFolderAfterSave, previous.sftp.remotePath != connection.sftp.remotePath { throw duplicate }
         if previous.usesGoogleSignIn {
             try repository.credentials(for: previous.id).requireSameGoogleAccount(as: credentials.googleSignIn)
         }
