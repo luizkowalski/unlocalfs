@@ -27,8 +27,8 @@ public struct SFTPSettings: Codable, Equatable, Sendable {
 
     public init() {}
 
-    public func validate() -> ValidationResult<ConnectionField> {
-        var result = ValidationResult<ConnectionField>()
+    public func validate() -> ValidationResult {
+        var result = ValidationResult()
         let separators = CharacterSet.whitespacesAndNewlines.union(.controlCharacters)
         result.check(
             !host.isBlank && host.rangeOfCharacter(from: separators) == nil,
