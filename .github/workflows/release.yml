@@ -13,10 +13,12 @@ jobs:
     timeout-minutes: 15
     env:
       TAG: ${{ github.event.release.tag_name }}
-      DEVELOPER_DIR: /Applications/Xcode_27.2.app
       SIGN_IDENTITY: ${{ vars.SIGN_IDENTITY }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app
 
       - name: Install tools
         run: brew install xcodegen
