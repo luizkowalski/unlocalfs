@@ -87,4 +87,5 @@ jobs:
             -destination generic/platform=macOS \
             -derivedDataPath .build/xcode \
             -disableAutomaticPackageResolution \
-            -quiet
+            -quiet \
+            ARCHS=arm64

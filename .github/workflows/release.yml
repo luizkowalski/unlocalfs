@@ -55,6 +55,7 @@ jobs:
             -derivedDataPath .build/xcode \
             -disableAutomaticPackageResolution \
             -quiet \
+            ARCHS=arm64 \
             CONFIGURATION_BUILD_DIR="$PWD/dist" \
             MARKETING_VERSION="${TAG#v}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}"
