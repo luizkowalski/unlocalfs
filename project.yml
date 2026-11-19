@@ -1,5 +1,6 @@
 name: UnlocalFS
 options:
+  projectFileFormat: xcproj
   deploymentTarget:
     macOS: "15.0"
   postGenCommand: |
