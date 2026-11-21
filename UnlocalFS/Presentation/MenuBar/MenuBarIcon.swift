@@ -15,9 +15,9 @@ struct MenuBarIcon: View {
                 guard animatesUploads else { return }
                 while !Task.isCancelled {
                     do {
-                        try await Task.sleep(for: .milliseconds(250))
+                        try await Task.sleep(for: .milliseconds(125))
                     } catch { return }
-                    angle -= 30
+                    angle -= 15
                 }
             }
     }
