@@ -58,6 +58,9 @@ import UnlocalFSPresentation
         } label: {
             MenuBarIcon(activity: model.activity)
         }
+        .onChange(of: showsMenuBarExtra) {
+            if !showsMenuBarExtra { NSApp.setActivationPolicy(.regular) }
+        }
     }
 
     @ViewBuilder private var driveCommands: some View {
@@ -66,8 +69,8 @@ import UnlocalFSPresentation
             .disabled(!selectedAllows(model.canConnect))
         Button("Disconnect") { selected { await model.disconnect($0) } }
             .keyboardShortcut("e")
-            .disabled(!selectedAllows(model.canDisconnect))
-        Button("Reconnect") { selected { await model.toggle($0) } }
+            .disabled(isEditingSearch != nil || !selectedAllows(model.canDisconnect))
+        Button("Reconnect") { selected { await model.reconnect($0) } }
             .disabled(!selectedAllows(model.canReconnect))
         Button("Disconnect All") { Task { await model.disconnectAll() } }
             .disabled(!model.canDisconnectAll)

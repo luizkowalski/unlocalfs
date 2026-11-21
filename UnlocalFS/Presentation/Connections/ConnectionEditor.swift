@@ -29,7 +29,7 @@ struct ConnectionEditor: View {
     private static let transferCounts = [1, 2, 4, 8, 16, 32]
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
             if let challenge = viewModel.serverTrust {
                 ServerTrustView(challenge: challenge,
                                 onTrust: { Task { await viewModel.trustServer() } },

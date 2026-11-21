@@ -49,6 +49,7 @@ import UnlocalFSDomain
     var checkingQuit = false
     var notifiedFailures: Set<UUID> = []
     var waitingToDisconnect: Set<UUID> = []
+    var disconnectingAll = false
 
     public init(
         initialConnections: Result<[Connection], any Error>,

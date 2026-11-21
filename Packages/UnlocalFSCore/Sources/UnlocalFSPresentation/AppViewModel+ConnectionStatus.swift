@@ -47,7 +47,7 @@ public extension AppViewModel {
         canToggle(connection) && needsReconnect(connection)
     }
 
-    var canDisconnectAll: Bool { connections.contains(where: canDisconnect) }
+    var canDisconnectAll: Bool { !disconnectingAll && connections.contains(where: canDisconnect) }
 
     func canOpen(_ connection: Connection) -> Bool {
         statuses[connection.id]?.isMounted == true && !needsReconnect(connection)

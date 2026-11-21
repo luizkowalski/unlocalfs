@@ -37,8 +37,13 @@ struct MenuContent: View {
                 .labelStyle(.titleAndIcon)
             }
         }
-        Button("Disconnect All") { Task { await model.disconnectAll() } }
-            .disabled(!model.canDisconnectAll)
+        Button("Disconnect All") {
+            Task {
+                await model.disconnectAll()
+                if model.connections.contains(where: model.needsMainWindow) { openMain() }
+            }
+        }
+        .disabled(!model.canDisconnectAll)
         Divider()
         Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
             .onAppear { model.syncOpensAtLogin() }

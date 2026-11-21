@@ -159,7 +159,7 @@ private struct ConnectionRow: View {
                 Button("Disconnect") { Task { await model.disconnect(connection) } }
             }
             if model.canReconnect(connection) {
-                Button("Reconnect") { Task { await model.toggle(connection) } }
+                Button("Reconnect") { Task { await model.reconnect(connection) } }
             }
             if model.canOpen(connection) {
                 Divider()

@@ -47,7 +47,7 @@ The drive shows only the files and folders that UnlocalFS made. Files that you d
 | Folder | An optional path inside the bucket, such as `clients/acme`. Leave empty for the whole bucket. |
 | Sign in with | **Google account** to use your own Google account, or **Service account key** to use a key file. New connections start with **Google account**. |
 | Google account | Click **Sign in with Google**. Your browser opens. Choose the account, allow access, and go back to UnlocalFS. |
-| Service account key | Click **Import key…** and choose the JSON key file you downloaded from Google Cloud. |
+| Service account key | Click **Import Key…** and choose the JSON key file you downloaded from Google Cloud. |
 
 ### Google account
 

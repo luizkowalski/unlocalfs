@@ -214,6 +214,7 @@ import UnlocalFSTestSupport
         #expect(app.needsReconnect(connection))
         #expect(!app.canConnect(connection))
         #expect(!app.canDisconnect(connection))
+        #expect(app.canReconnect(connection))
     }
 
     @Test func disconnectAllStopsAtTheFirstDriveWithPendingUploads() async throws {
