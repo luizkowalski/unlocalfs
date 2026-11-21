@@ -8,7 +8,7 @@ struct SidebarSearchField: View {
 
     var body: some View {
         @Bindable var model = model
-        TextField("Search unlocals", text: $model.searchQuery)
+        TextField("Search drives", text: $model.searchQuery)
             .textFieldStyle(.roundedBorder)
             .focused($isFocused)
             .overlay(alignment: .trailing) {

@@ -5,7 +5,7 @@ import UnlocalFSDomain
 @MainActor @Observable public final class ActivityViewModel {
     public private(set) var snapshot: ActivitySnapshot = .checking
     public var cancellation: UploadCancellation?
-    public var alert: String?
+    public var alert: AppAlert?
     private let drives: any DriveGateway
     private let isBusy: (UUID) -> Bool
     private let recordSpeed: (SpeedSample, UUID) -> Void
@@ -51,7 +51,7 @@ import UnlocalFSDomain
         do {
             try await drives.deleteFileToStopUpload(cancellation.path, in: cancellation.connection)
         } catch {
-            alert = error.localizedDescription
+            alert = AppAlert(String(localized: .uploadNotStopped(cancellation.fileName)), error)
         }
     }
 

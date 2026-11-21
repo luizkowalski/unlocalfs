@@ -9,7 +9,7 @@ struct MenuContent: View {
     var body: some View {
         Button("Open UnlocalFS", action: openMain)
         Divider()
-        if model.connections.isEmpty { Text("No connections yet") }
+        if model.connections.isEmpty { Text("No drives yet") }
         ForEach(model.connections) { connection in
             Menu {
                 Text(model.driveStatus(connection).text)
@@ -26,13 +26,19 @@ struct MenuContent: View {
                     .disabled(!model.canOpen(connection))
             } label: {
                 Label {
-                    Text(verbatim: connection.encrypted ? "\(connection.name) \u{1003A1}" : connection.name)
+                    if connection.encrypted {
+                        Text("\(connection.name) \(Image(systemName: "lock.fill"))")
+                    } else {
+                        Text(verbatim: connection.name)
+                    }
                 } icon: {
                     connection.provider.logo.renderingMode(.template)
                 }
                 .labelStyle(.titleAndIcon)
             }
         }
+        Button("Disconnect All") { Task { await model.disconnectAll() } }
+            .disabled(!model.canDisconnectAll)
         Divider()
         Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
             .onAppear { model.syncOpensAtLogin() }

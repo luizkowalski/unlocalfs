@@ -18,7 +18,7 @@ import UnlocalFSTestSupport
         return fixture.app()
     }
 
-    @Test func queryFiltersUnlocalsByNameIgnoringCaseAndAccents() throws {
+    @Test func queryFiltersTheSidebarIgnoringCaseAndAccents() throws {
         let app = try appWithUnlocals()
         app.openSearch()
 
@@ -31,6 +31,7 @@ import UnlocalFSTestSupport
         for (query, names) in expectations {
             app.searchQuery = query
             #expect(app.visibleConnections.map(\.name) == names, "query “\(query)”")
+            #expect(app.showsTraffic == query.isEmpty, "query “\(query)”")
         }
     }
 

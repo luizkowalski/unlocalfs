@@ -9,12 +9,15 @@ struct FailedUploadButton: View {
     var body: some View {
         Button { showingDetails = true } label: {
             HStack(spacing: 4) {
-                Label("Upload failed", systemImage: "exclamationmark.triangle.fill")
+                Label {
+                    Text("Upload failed")
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                }
                 Image(systemName: "info.circle").accessibilityHidden(true)
             }
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.orange)
         .accessibilityLabel("Upload failed, show details")
         .help("Show why the upload failed")
         .popover(isPresented: $showingDetails, arrowEdge: .bottom) { details }

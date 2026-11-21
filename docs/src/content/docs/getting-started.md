@@ -32,4 +32,4 @@ For an S3 or Google Cloud Storage bucket, leave **Folder** empty to show the who
 
 ## Open at login
 
-Choose **Open at Login** in the menu bar to launch UnlocalFS when you log in. Turn on **Connect on start up** in each drive’s settings to connect that drive when the app opens. These are separate settings.
+Turn on **Open at Login** in **UnlocalFS → Settings** or in the menu bar to launch UnlocalFS when you log in. Turn on **Connect when UnlocalFS opens** in each drive’s settings to connect that drive when the app opens. These are separate settings.

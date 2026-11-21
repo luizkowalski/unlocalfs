@@ -23,7 +23,7 @@ import UnlocalFSDomain
     var pendingTrust: [UUID: (challenge: ServerTrustChallenge, opensFinder: Bool)] = [:]
     var signInRequired: Set<UUID> = []
     var signIns: [UUID: GoogleSignInRun] = [:]
-    public var alert: String?
+    public var alert: AppAlert?
     public var disconnectFailure: Connection?
     public var uploadsBlockingDisconnect: Connection?
     public var editor: ConnectionDraft?
@@ -80,7 +80,7 @@ import UnlocalFSDomain
             selection = connections.first.map { .drive($0.id) }
             ready = true
         case let .failure(error):
-            alert = error.localizedDescription
+            alert = AppAlert(String(localized: .drivesNotLoaded), error)
         }
     }
 
@@ -89,11 +89,6 @@ import UnlocalFSDomain
     public var selected: Connection? {
         guard case let .drive(id) = selection else { return nil }
         return connections.first { $0.id == id }
-    }
-
-    public var isShowingAlert: Bool {
-        get { alert != nil }
-        set { if !newValue { alert = nil } }
     }
 
     public var isConfirmingDelete: Bool {
@@ -132,7 +127,7 @@ import UnlocalFSDomain
         do {
             try repository.save(connection)
             connections = try repository.all()
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .driveNotSaved(connection.name)), error) }
     }
 
     public func delete(_ connection: Connection) async {
@@ -143,14 +138,14 @@ import UnlocalFSDomain
             statuses[connection.id] = nil
             clearProblem(connection)
             if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .driveNotDeleted(connection.name)), error) }
     }
 
     public func exportRcloneConfig(_ connection: Connection) async {
         guard let destination = desktop.chooseRcloneConfigDestination(for: connection) else { return }
         do {
             try await exportConfig.execute(connection, to: destination.url, includesSecrets: destination.includesSecrets)
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .configNotExported(connection.name)), error) }
     }
 
     public func refreshFiles(_ connection: Connection) async {
@@ -167,7 +162,7 @@ import UnlocalFSDomain
     public func setOpensAtLogin(_ enabled: Bool) {
         do {
             try desktop.setOpensAtLogin(enabled)
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .openAtLoginNotChanged), error) }
         syncOpensAtLogin()
     }
 

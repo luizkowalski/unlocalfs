@@ -73,7 +73,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add connection"
+            "value": "Add Connection"
           }
         },
         "pt-BR": {
@@ -136,6 +136,24 @@
         }
       },
       "comment": "Drive status while it is being checked"
+    },
+    "configNotExported": {
+      "comment": "Alert title when exporting an rclone config fails; %1$@ is the drive name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rclone config for “%1$@” couldn’t be exported."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível exportar a configuração do rclone de “%1$@”."
+          }
+        }
+      }
     },
     "connect": {
       "extractionState": "manual",
@@ -278,13 +296,67 @@
       },
       "comment": "Drive status (adjective, agrees with the drive)"
     },
+    "driveNotDeleted": {
+      "comment": "Alert title when deleting a drive fails; %1$@ is the drive name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” couldn’t be deleted."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível excluir “%1$@”."
+          }
+        }
+      }
+    },
+    "driveNotSaved": {
+      "comment": "Alert title when saving a drive setting fails; %1$@ is the drive name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%1$@” couldn’t be saved."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível salvar “%1$@”."
+          }
+        }
+      }
+    },
+    "drivesNotLoaded": {
+      "comment": "Alert title when the saved drives cannot be read at start up",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved drives couldn’t be loaded."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível carregar as unidades salvas."
+          }
+        }
+      }
+    },
     "duplicateConnection": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Duplicate connection"
+            "value": "Duplicate Connection"
           }
         },
         "pt-BR": {
@@ -302,7 +374,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edit connection"
+            "value": "Edit Connection"
           }
         },
         "pt-BR": {
@@ -526,6 +598,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ não tem envios inacabados com mais de um dia."
+          }
+        }
+      }
+    },
+    "nothingToCleanUp": {
+      "comment": "Alert title when a drive has no unfinished uploads to remove",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to clean up"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada para limpar"
+          }
+        }
+      }
+    },
+    "openAtLoginNotChanged": {
+      "comment": "Alert title when macOS rejects the Open at Login change",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open at Login couldn’t be changed."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível alterar Abrir ao iniciar sessão."
           }
         }
       }
@@ -763,6 +871,24 @@
         }
       }
     },
+    "uploadNotStopped": {
+      "comment": "Alert title when stopping an upload fails; %1$@ is the file name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The upload of “%1$@” couldn’t be stopped."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível parar o envio de “%1$@”."
+          }
+        }
+      }
+    },
     "uploadsFailed": {
       "extractionState": "manual",
       "localizations": {
@@ -810,6 +936,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alguns arquivos não puderam ser enviados: %1$@. O UnlocalFS tenta novamente enquanto a unidade estiver conectada."
+          }
+        }
+      }
+    },
+    "uploadsNotChecked": {
+      "comment": "Alert title when listing unfinished uploads fails; %1$@ is the drive name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfinished uploads on “%1$@” couldn’t be checked."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível verificar os envios inacabados de “%1$@”."
+          }
+        }
+      }
+    },
+    "uploadsNotRemoved": {
+      "comment": "Alert title when removing unfinished uploads fails or leaves some behind",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unfinished uploads weren’t removed."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os envios inacabados não foram removidos."
           }
         }
       }

@@ -25,17 +25,19 @@ struct ConnectionDetail: View {
             info(status).inspectorColumnWidth(min: 220, ideal: 260, max: 360)
         }
         .toolbar { actions }
+        .toolbar(removing: .title)
         .navigationTitle(connection.name)
         .sheet(item: Binding(get: { model.serverTrust(for: connection) }, set: { _ in })) { challenge in
-            ServerTrustSheet(challenge: challenge,
-                             onTrust: { Task { await model.trustServer(connection) } },
-                             onCancel: { Task { await model.cancelServerTrust(connection) } })
+            ServerTrustView(challenge: challenge,
+                            onTrust: { Task { await model.trustServer(connection) } },
+                            onCancel: { Task { await model.cancelServerTrust(connection) } })
+                .frame(width: 520)
         }
     }
 
     @ToolbarContentBuilder private var actions: some ToolbarContent {
         ToolbarItemGroup {
-            Button(model.toggleTitle(connection), systemImage: "power") {
+            Button(model.toggleTitle(connection), systemImage: toggleSymbol) {
                 Task { await model.toggle(connection, opensFinder: true) }
             }
             .disabled(!model.canToggle(connection))
@@ -56,9 +58,14 @@ struct ConnectionDetail: View {
                 .help("More")
         }
         ToolbarItem {
-            Button(showsInfo ? "Hide Info" : "Show Info", systemImage: "sidebar.trailing") { showsInfo.toggle() }
-                .help(showsInfo ? "Hide Info" : "Show Info")
+            Button(showsInfo ? "Hide Inspector" : "Show Inspector", systemImage: "sidebar.trailing") { showsInfo.toggle() }
+                .help(showsInfo ? "Hide Inspector" : "Show Inspector")
         }
+    }
+
+    private var toggleSymbol: String {
+        if model.needsReconnect(connection) { return "arrow.triangle.2.circlepath" }
+        return model.isActive(connection) ? "eject" : "externaldrive.connected.to.line.below"
     }
 
     private var header: some View {
@@ -95,7 +102,7 @@ struct ConnectionDetail: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .disabled(!model.canConnect(connection))
-                Toggle("Connect automatically when UnlocalFS opens", isOn: Binding(
+                Toggle("Connect when UnlocalFS opens", isOn: Binding(
                     get: { connection.connectsAutomatically },
                     set: { model.setConnectsAutomatically($0, for: connection) },
                 ))
@@ -229,7 +236,7 @@ struct ConnectionDetail: View {
         if problem != nil || failure != nil || isOffline || signingIn {
             FittedScrollView {
                 if signingIn {
-                    notice("Signing in to Google") {
+                    notice("Signing in to Google", systemImage: "person.badge.key") {
                         Text("Finish signing in in your browser.")
                     } actions: {
                         Button("Cancel Sign-In") { model.cancelSignIn(connection) }
@@ -250,7 +257,7 @@ struct ConnectionDetail: View {
     }
 
     private func problemNotice(_ problem: String) -> some View {
-        notice("Connection needs attention") {
+        notice("Connection needs attention", systemImage: "exclamationmark.triangle") {
             Text(problem).textSelection(.enabled)
         } actions: {
             if model.needsSignIn(connection) { signInAgainButton }
@@ -259,7 +266,7 @@ struct ConnectionDetail: View {
     }
 
     private func uploadFailureNotice(_ error: String?) -> some View {
-        notice("Uploads are failing") {
+        notice("Uploads are failing", systemImage: "exclamationmark.triangle") {
             if let error {
                 Text(error).textSelection(.enabled)
             } else {
@@ -279,11 +286,11 @@ struct ConnectionDetail: View {
     }
 
     private func notice(
-        _ title: LocalizedStringKey, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View,
+        _ title: LocalizedStringKey, systemImage: String, @ViewBuilder message: () -> some View, @ViewBuilder actions: () -> some View,
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Divider()
-            Label(title, systemImage: "exclamationmark.triangle")
+            Label(title, systemImage: systemImage)
                 .font(.headline)
             VStack(alignment: .leading, spacing: 12) { message() }.font(.callout).foregroundStyle(.secondary)
             actions()

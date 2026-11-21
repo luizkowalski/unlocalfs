@@ -7,6 +7,9 @@ import UnlocalFSPresentation
 @main struct UnlocalFSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @FocusedValue(\.isEditingSearch) private var isEditingSearch
+    @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = true
+
+    private var model: AppViewModel { delegate.model }
 
     var body: some Scene {
         Window("UnlocalFS", id: "main") {
@@ -25,40 +28,81 @@ import UnlocalFSPresentation
                 }
             }
             CommandGroup(replacing: .newItem) {
-                Button("New Connection…") { delegate.model.edit(Connection()) }
+                Button("New Connection…") { model.edit(Connection()) }
                     .keyboardShortcut("n")
-                    .disabled(!delegate.model.ready)
-                Button("Edit Connection…") {
-                    if let connection = delegate.model.selected { delegate.model.edit(connection) }
-                }
-                .keyboardShortcut(",")
-                .disabled(delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true)
-                Button("Duplicate Connection…") {
-                    if let connection = delegate.model.selected { delegate.model.duplicate(connection) }
-                }
-                .keyboardShortcut("d")
-                .disabled(delegate.model.selected == nil)
-                Button("Delete Connection…", role: .destructive) {
-                    delegate.model.deleting = delegate.model.selected
-                }
-                .keyboardShortcut(.delete)
-                .disabled(delegate.model.editor != nil || isEditingSearch != nil || (delegate.model.selected.map { !delegate.model.canEdit($0) } ?? true))
+                    .disabled(!model.ready)
+                Button("Edit Connection…") { selected(model.edit) }
+                    .keyboardShortcut("i")
+                    .disabled(!selectedAllows(model.canEdit))
+                Button("Duplicate Connection…") { selected(model.duplicate) }
+                    .keyboardShortcut("d")
+                    .disabled(model.selected == nil)
+                Button("Delete Connection…", role: .destructive) { model.deleting = model.selected }
+                    .keyboardShortcut(.delete)
+                    .disabled(model.editor != nil || isEditingSearch != nil || !selectedAllows(model.canEdit))
             }
             CommandGroup(after: .textEditing) {
-                Button("Find Unlocal…") { delegate.model.openSearch() }
+                Button("Find Drive…") { model.openSearch() }
                     .keyboardShortcut("f")
-                    .disabled(!delegate.model.ready || delegate.model.editor != nil)
+                    .disabled(!model.ready || model.editor != nil)
             }
+            SidebarCommands()
+            InspectorCommands()
+            CommandMenu("Drive") { driveCommands }
         }
-        MenuBarExtra {
+        Settings {
+            SettingsView().environment(delegate.model)
+        }
+        MenuBarExtra(isInserted: $showsMenuBarExtra) {
             MenuContent().environment(delegate.model)
         } label: {
-            MenuBarIcon(activity: delegate.model.activity)
+            MenuBarIcon(activity: model.activity)
         }
+    }
+
+    @ViewBuilder private var driveCommands: some View {
+        Button("Connect") { selected { await model.activate($0) } }
+            .keyboardShortcut("k")
+            .disabled(!selectedAllows(model.canConnect))
+        Button("Disconnect") { selected { await model.disconnect($0) } }
+            .keyboardShortcut("e")
+            .disabled(!selectedAllows(model.canDisconnect))
+        Button("Reconnect") { selected { await model.toggle($0) } }
+            .disabled(!selectedAllows(model.canReconnect))
+        Button("Disconnect All") { Task { await model.disconnectAll() } }
+            .disabled(!model.canDisconnectAll)
+        Divider()
+        Button("Open in Finder") { selected(model.openDrive) }
+            .keyboardShortcut("o")
+            .disabled(!selectedAllows(model.canOpen))
+        Button("Refresh Files") { selected { await model.refreshFiles($0) } }
+            .keyboardShortcut("r")
+            .disabled(!selectedAllows(model.canOpen))
+        Divider()
+        Button("Export rclone Config…") { selected { await model.exportRcloneConfig($0) } }
+            .disabled(!selectedAllows(\.exportsRcloneConfig))
+        Button("Clean Up Unfinished Uploads…") { selected { await model.reviewUnfinishedUploads($0) } }
+            .disabled(!selectedAllows(model.canCleanUpUploads))
+        Button("Show Log") { selected(model.openLog) }
+            .disabled(model.selected == nil)
+    }
+
+    private func selected(_ action: (Connection) -> Void) {
+        if let connection = model.selected { action(connection) }
+    }
+
+    private func selected(_ action: @escaping (Connection) async -> Void) {
+        guard let connection = model.selected else { return }
+        Task { await action(connection) }
+    }
+
+    private func selectedAllows(_ rule: (Connection) -> Bool) -> Bool {
+        model.selected.map(rule) ?? false
     }
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+    static let showsMenuBarExtraKey = "showsMenuBarExtra"
     let dependencies = AppDependencies.live()
     var model: AppViewModel { dependencies.model }
     var viewModels: ViewModelFactory { dependencies.viewModels }
@@ -89,7 +133,8 @@ import UnlocalFSPresentation
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        sender.setActivationPolicy(.accessory)
+        let showsMenuBarExtra = UserDefaults.standard.object(forKey: Self.showsMenuBarExtraKey) as? Bool ?? true
+        sender.setActivationPolicy(showsMenuBarExtra ? .accessory : .regular)
         return false
     }
 

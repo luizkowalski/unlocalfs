@@ -121,7 +121,7 @@ struct SpeedChart: View {
 enum Direction: String, Plottable {
     case upload, download
 
-    var color: Color { self == .upload ? .accentColor : .teal }
+    var color: Color { self == .upload ? .blue : .teal }
     var symbol: String { self == .upload ? "arrow.up" : "arrow.down" }
     var label: LocalizedStringKey { self == .upload ? "Upload speed" : "Download speed" }
 

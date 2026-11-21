@@ -26,13 +26,13 @@ struct ActivityView: View {
             item: Binding(get: { viewModel?.cancellation }, set: { viewModel?.cancellation = $0 }),
             titleVisibility: .visible,
         ) { cancellation in
-            Button("Delete File", role: .destructive) { Task { await viewModel?.stopUpload(cancellation) } }
+            Button("Stop and Delete", role: .destructive) { Task { await viewModel?.stopUpload(cancellation) } }
         } message: { cancellation in
             Text(cancellation.message)
         }
-        .alert("UnlocalFS", item: Binding(get: { viewModel?.alert }, set: { viewModel?.alert = $0 })) { _ in
+        .alert(viewModel?.alert?.title ?? "", item: Binding(get: { viewModel?.alert }, set: { viewModel?.alert = $0 })) { _ in
         } message: {
-            Text($0)
+            Text($0.message)
         }
     }
 
@@ -60,7 +60,12 @@ struct ActivityView: View {
                 case .checking:
                     Text("Checking activity…").foregroundStyle(.secondary)
                 case .unavailable:
-                    Label("Activity unavailable", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Label {
+                        Text("Activity unavailable")
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                    }
+                    .foregroundStyle(.secondary)
                 }
             }
         }

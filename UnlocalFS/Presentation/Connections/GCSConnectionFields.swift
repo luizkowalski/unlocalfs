@@ -44,7 +44,7 @@ struct GCSConnectionFields: View {
         } header: {
             Text("Credentials")
         } footer: {
-            footer.font(.caption).foregroundStyle(.secondary)
+            footer
         }
     }
 
@@ -55,7 +55,7 @@ struct GCSConnectionFields: View {
                 if let email {
                     Text(verbatim: email).lineLimit(1).truncationMode(.middle).textSelection(.enabled)
                 }
-                Button(email == nil ? "Import key…" : "Replace…") { importingKey = true }
+                Button(email == nil ? "Import Key…" : "Replace…") { importingKey = true }
             }
         }
     }

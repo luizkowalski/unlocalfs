@@ -273,7 +273,7 @@ import UnlocalFSTestSupport
 
         await app.exportRcloneConfig(connection)
 
-        let alert = try #require(app.alert)
+        let alert = try #require(app.alert?.message)
         #expect(alert.contains("Failed to create \(remote)"))
         #expect(!alert.contains("saved-"))
         #expect(!alert.contains("prepared-password"))
@@ -301,6 +301,6 @@ import UnlocalFSTestSupport
         app.setOpensAtLogin(true)
 
         #expect(!app.opensAtLogin)
-        #expect(app.alert == "Login registration failed")
+        #expect(app.alert?.message == "Login registration failed")
     }
 }

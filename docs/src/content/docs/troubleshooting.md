@@ -70,7 +70,7 @@ Finder and Quick Look read parts of files to show icons, previews, and details s
 
 ## Changes from another app do not appear
 
-Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the sidebar menu or menu bar, to see them sooner.
+Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the **Drive** menu, sidebar menu, or menu bar, to see them sooner.
 
 Avoid editing the same file through two drives at once: one save can overwrite the other.
 
