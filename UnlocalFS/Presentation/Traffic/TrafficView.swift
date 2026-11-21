@@ -36,9 +36,6 @@ struct TrafficView: View {
         .onChange(of: dragged) {
             if let dragged { viewModel.pick(dragged) }
         }
-        .onChange(of: viewModel.period) {
-            if viewModel.period == .custom { isPickingRange = true }
-        }
     }
 
     private var heading: some View {
@@ -77,6 +74,9 @@ struct TrafficView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Change Dates")
+                .popover(isPresented: $isPickingRange, arrowEdge: .bottom) {
+                    TrafficRangePicker(range: $viewModel.custom).font(.body).lineLimit(nil)
+                }
             }
         }
     }
@@ -91,7 +91,6 @@ struct TrafficView: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .fixedSize()
-        .popover(isPresented: $isPickingRange, arrowEdge: .bottom) { TrafficRangePicker(range: $viewModel.custom) }
     }
 }
 

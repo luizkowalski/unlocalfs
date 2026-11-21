@@ -18,7 +18,6 @@ struct GoogleDriveConnectionFields: View {
                 Text("Storage")
             } footer: {
                 Text("The drive shows only files and folders that UnlocalFS made. Files that you already have in Google Drive do not show.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             Section {
                 GoogleAccountField(viewModel: viewModel, errors: errors, focus: focus)
@@ -26,7 +25,6 @@ struct GoogleDriveConnectionFields: View {
                 Text("Credentials")
             } footer: {
                 Text("The sign-in is stored in your Mac’s Keychain. Deleted files go to the Google Drive trash.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }

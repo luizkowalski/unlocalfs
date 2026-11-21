@@ -113,6 +113,7 @@ private struct MonthGrid: View {
                             .buttonStyle(.plain)
                             .disabled(date > .now)
                             .accessibilityLabel(Text(date, format: .dateTime.day().month(.wide).year()))
+                            .accessibilityAddTraits(range.contains(date) ? .isSelected : [])
                     }
                 }
             }
@@ -141,7 +142,7 @@ private struct DayCell: View {
                         }
                         .frame(height: 24)
                     }
-                    if isEnd { Circle().fill(Color.accentColor).frame(width: 24, height: 24) }
+                    if isEnd { Circle().fill(Color(nsColor: .selectedContentBackgroundColor)).frame(width: 24, height: 24) }
                 }
             }
             .contentShape(.rect)

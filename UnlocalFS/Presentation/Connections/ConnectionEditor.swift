@@ -29,8 +29,27 @@ struct ConnectionEditor: View {
     private static let transferCounts = [1, 2, 4, 8, 16, 32]
 
     var body: some View {
-        let errors = viewModel.fieldErrors
         VStack(spacing: 0) {
+            if let challenge = viewModel.serverTrust {
+                ServerTrustView(challenge: challenge,
+                                onTrust: { Task { await viewModel.trustServer() } },
+                                onCancel: { Task { await viewModel.cancelServerTrust() } })
+            } else {
+                editor
+            }
+        }
+        .frame(width: 560)
+        .presentationSizing(.fitted)
+        .onAppear {
+            viewModel.loadCredentials()
+            if let field = viewModel.initialFocus { focus = field }
+        }
+        .onDisappear { viewModel.cancelSignIn() }
+    }
+
+    private var editor: some View {
+        let errors = viewModel.fieldErrors
+        return VStack(spacing: 0) {
             HStack {
                 Text(viewModel.title).font(.title2.bold())
                 Spacer()
@@ -67,7 +86,9 @@ struct ConnectionEditor: View {
                         focusFirstInvalidField()
                     }
                 } label: {
-                    if viewModel.testing { ProgressView().controlSize(.small) } else { Text("Test Connection") }
+                    Text("Test Connection")
+                        .opacity(viewModel.testing ? 0 : 1)
+                        .overlay { if viewModel.testing { ProgressView().controlSize(.small) } }
                 }
                 .disabled(viewModel.isLocked)
                 if viewModel.signingIn {
@@ -75,11 +96,20 @@ struct ConnectionEditor: View {
                     Text("Waiting for Google…").font(.callout).foregroundStyle(.secondary)
                     Button("Cancel Sign-In") { viewModel.cancelSignIn() }
                 } else if let error = viewModel.error {
-                    Label(error, systemImage: "exclamationmark.circle.fill")
-                        .foregroundStyle(.red).font(.callout).lineLimit(1).help(error).textSelection(.enabled)
+                    Label {
+                        Text(error).lineLimit(3).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red)
+                    }
+                    .font(.callout)
+                    .help(error)
                 } else if viewModel.tested {
-                    Label("Connection successful", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green).font(.callout)
+                    Label {
+                        Text("Connection successful")
+                    } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                    .font(.callout)
                 }
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(viewModel.testing || viewModel.saving)
@@ -91,18 +121,6 @@ struct ConnectionEditor: View {
             }
             .padding(20)
         }
-        .frame(width: 560)
-        .presentationSizing(.fitted)
-        .sheet(item: Binding(get: { viewModel.serverTrust }, set: { _ in })) { challenge in
-            ServerTrustSheet(challenge: challenge,
-                             onTrust: { Task { await viewModel.trustServer() } },
-                             onCancel: { Task { await viewModel.cancelServerTrust() } })
-        }
-        .onAppear {
-            viewModel.loadCredentials()
-            if let field = viewModel.initialFocus { focus = field }
-        }
-        .onDisappear { viewModel.cancelSignIn() }
     }
 
     private func settingsForm(errors: [ConnectionField: String]) -> some View {
@@ -117,7 +135,7 @@ struct ConnectionEditor: View {
                     }
                     .disabled(viewModel.connection.readOnly)
                 }
-                Toggle("Connect on start up", isOn: $viewModel.connection.connectsAutomatically)
+                Toggle("Connect when UnlocalFS opens", isOn: $viewModel.connection.connectsAutomatically)
             }
             Section("Encryption") {
                 Toggle(isOn: $viewModel.connection.encrypted) {
@@ -147,7 +165,6 @@ struct ConnectionEditor: View {
                 Text("Cache")
             } footer: {
                 Text("Files you have not opened for the longest time are removed first. Open files and pending uploads stay, so the cache can go over the limit.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             advancedSection
         }
@@ -179,7 +196,6 @@ struct ConnectionEditor: View {
             Text("Advanced")
         } footer: {
             Text("Bandwidth limits uploads and downloads. Parallel transfers controls how many files can move at once.")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -210,7 +226,6 @@ private extension ConnectionEditor {
             Text("Amazon S3")
         } footer: {
             Text("Applies to new uploads. Infrequent-access classes bill a minimum size and storage time. AWS can read files it encrypts; Encrypt files keeps them private.")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }

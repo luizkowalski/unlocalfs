@@ -85,7 +85,15 @@ public extension AppViewModel {
         await drives.cancelServerTrust(pending.challenge)
     }
 
+    func reconnect(_ connection: Connection) async {
+        guard canReconnect(connection) else { return }
+        await connect(connection, opensFinder: false)
+    }
+
     func disconnectAll() async {
+        guard !disconnectingAll else { return }
+        disconnectingAll = true
+        defer { disconnectingAll = false }
         for connection in connections where canDisconnect(connection) {
             await disconnect(connection)
             if isActive(connection) {

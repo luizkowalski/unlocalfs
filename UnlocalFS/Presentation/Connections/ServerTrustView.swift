@@ -1,7 +1,7 @@
 import SwiftUI
 import UnlocalFSDomain
 
-struct ServerTrustSheet: View {
+struct ServerTrustView: View {
     let challenge: ServerTrustChallenge
     let onTrust: () -> Void
     let onCancel: () -> Void
@@ -30,14 +30,13 @@ struct ServerTrustSheet: View {
                 Spacer()
                 Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction)
                 if challenge.keyChanged {
-                    Button("Replace key and connect", role: .destructive, action: onTrust)
+                    Button("Replace Key and Connect", role: .destructive, action: onTrust)
                 } else {
-                    Button("Trust and connect", action: onTrust).buttonStyle(.borderedProminent)
+                    Button("Trust and Connect", action: onTrust).buttonStyle(.borderedProminent)
                 }
             }
         }
         .padding(24)
-        .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
         .interactiveDismissDisabled()
     }

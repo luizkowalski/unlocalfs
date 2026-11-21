@@ -35,7 +35,6 @@ struct SFTPConnectionFields: View {
             Text(viewModel.locksRemoteFolder
                 ? "To use a different folder, duplicate this drive."
                 : "Leave the folder empty for your home folder. Start it with / for a path from the server’s root.")
-                .font(.caption).foregroundStyle(.secondary)
         }
     }
 
@@ -58,7 +57,7 @@ struct SFTPConnectionFields: View {
         } header: {
             Text("Authentication")
         } footer: {
-            Text(authenticationHelp).font(.caption).foregroundStyle(.secondary)
+            Text(authenticationHelp)
         }
     }
 

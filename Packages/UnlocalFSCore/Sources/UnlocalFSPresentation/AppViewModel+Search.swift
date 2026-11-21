@@ -6,6 +6,8 @@ public extension AppViewModel {
         searchQuery.isEmpty ? connections : connections.filter { $0.name.localizedStandardContains(searchQuery) }
     }
 
+    var showsTraffic: Bool { searchQuery.isEmpty }
+
     func openSearch() {
         isSearching = true
         searchFocusRequest += 1

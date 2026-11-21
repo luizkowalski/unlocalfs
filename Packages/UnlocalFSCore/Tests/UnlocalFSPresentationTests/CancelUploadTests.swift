@@ -22,7 +22,7 @@ import UnlocalFSTestSupport
         try await viewModel.stopUpload(#require(viewModel.cancellation))
 
         #expect(drive.contains("photos/new.jpg"))
-        #expect(viewModel.alert == String(localized: .reconnectToStopUpload))
+        #expect(viewModel.alert?.message == String(localized: .reconnectToStopUpload))
     }
 
     @Test func onlyUploadsCanBeCancelled() {

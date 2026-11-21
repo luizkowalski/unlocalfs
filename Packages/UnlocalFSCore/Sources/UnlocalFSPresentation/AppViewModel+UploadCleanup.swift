@@ -19,9 +19,12 @@ public extension AppViewModel {
                 uploadCleanup = UploadCleanup(connection: connection, abandoned: abandoned, inFlight: inFlight)
             } else {
                 let nothing = String(localized: .noAbandonedUploads(connection.name))
-                alert = inFlight == 0 ? nothing : "\(nothing) \(String(localized: .recentUploadsKept(inFlight)))"
+                alert = AppAlert(
+                    String(localized: .nothingToCleanUp),
+                    inFlight == 0 ? nothing : "\(nothing) \(String(localized: .recentUploadsKept(inFlight)))",
+                )
             }
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .uploadsNotChecked(connection.name)), error) }
     }
 
     func cleanUpUnfinishedUploads(_ cleanup: UploadCleanup) async {
@@ -34,13 +37,13 @@ public extension AppViewModel {
             let now = Date.now
             let remaining = try await drives.unfinishedUploads(in: connection).count { $0.isAbandoned(at: now) }
             if remaining > 0 {
-                alert = String(localized: .abandonedUploadsRemain(remaining))
+                alert = AppAlert(String(localized: .uploadsNotRemoved), String(localized: .abandonedUploadsRemain(remaining)))
             } else {
                 desktop.notify(
                     title: String(localized: .unfinishedUploadsRemoved(cleanup.abandoned)),
                     body: String(localized: .unfinishedUploadsRemovedBody(connection.name)), fallbackToAlert: false,
                 )
             }
-        } catch { alert = error.localizedDescription }
+        } catch { alert = AppAlert(String(localized: .uploadsNotRemoved), error) }
     }
 }

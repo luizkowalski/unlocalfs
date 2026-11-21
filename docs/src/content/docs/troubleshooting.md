@@ -36,7 +36,7 @@ Test Connection shows that UnlocalFS can list the folder. It does not check writ
 
 ## An SFTP connection fails
 
-- **The server is unknown or its key changed.** UnlocalFS shows the server's fingerprint and does not connect until you approve it. Check the fingerprint with the server's administrator before you choose **Trust and connect**. For a changed key, find out why before you choose **Replace key and connect**.
+- **The server is unknown or its key changed.** UnlocalFS shows the server's fingerprint and does not connect until you approve it. Check the fingerprint with the server's administrator before you choose **Trust and Connect**. For a changed key, find out why before you choose **Replace Key and Connect**.
 - **UnlocalFS cannot read a key file.** Check that the path in the connection exists and that you can read it.
 - **ssh-agent is not available.** Start an agent and load a key with `ssh-add`, or enter the agent's socket in the connection. UnlocalFS does not start an agent, and it does not fall back to a password.
 - **Sign-in fails.** Check the username, password, or key passphrase. The server must accept the sign-in option you chose.
@@ -70,7 +70,7 @@ Finder and Quick Look read parts of files to show icons, previews, and details s
 
 ## Changes from another app do not appear
 
-Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the sidebar menu or menu bar, to see them sooner.
+Changes made through another app, drive, or Mac normally appear within 5 minutes. Click **Refresh** in the app, or choose **Refresh Files** in the **Drive** menu, sidebar menu, or menu bar, to see them sooner.
 
 Avoid editing the same file through two drives at once: one save can overwrite the other.
 

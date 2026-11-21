@@ -37,7 +37,7 @@ private let day = 24 * hour
         await app.reviewUnfinishedUploads(connection)
 
         #expect(app.uploadCleanup == nil)
-        let alert = try #require(app.alert)
+        let alert = try #require(app.alert?.message)
         #expect(alert.contains(String(localized: .noAbandonedUploads(connection.name))) && alert.contains(String(localized: .recentUploadsKept(1))))
         #expect(storage.uploadCount == 1)
     }
@@ -79,7 +79,7 @@ private let day = 24 * hour
 
         await app.cleanUpUnfinishedUploads(UploadCleanup(connection: connection, abandoned: 1, inFlight: 0))
 
-        #expect(app.alert == String(localized: .abandonedUploadsRemain(1)))
+        #expect(app.alert?.message == String(localized: .abandonedUploadsRemain(1)))
         #expect(desktop.notifications.isEmpty)
     }
 

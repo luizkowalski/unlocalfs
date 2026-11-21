@@ -20,7 +20,6 @@ struct S3ConnectionFields: View {
                 Text("Storage")
             } footer: {
                 Text("Use the endpoint without the bucket name. For Cloudflare R2, use region auto.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             Section {
                 ConnectionEditorField(field: .accessKey, error: errors[.accessKey], focus: focus) { TextField("Access key", text: $viewModel.credentials.accessKey) }
@@ -30,7 +29,6 @@ struct S3ConnectionFields: View {
                 Text("Credentials")
             } footer: {
                 Text("Credentials are stored in your Mac’s Keychain.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
     }

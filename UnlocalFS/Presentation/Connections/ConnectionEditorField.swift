@@ -14,12 +14,16 @@ struct ConnectionEditorField<Input: View>: View {
                     .labelsHidden()
                     .focused(focus, equals: field)
                 if let error {
-                    Label(error, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption).foregroundStyle(.red).multilineTextAlignment(.trailing)
+                    Label {
+                        Text(error).multilineTextAlignment(.trailing)
+                    } icon: {
+                        Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red)
+                    }
+                    .font(.caption)
                 }
             }
         } label: {
-            Text(field.displayName).foregroundStyle(error == nil ? Color.primary : Color.red)
+            Text(field.displayName)
         }
     }
 }

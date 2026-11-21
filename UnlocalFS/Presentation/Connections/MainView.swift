@@ -25,15 +25,14 @@ struct MainView: View {
         .onChange(of: model.connections) { traffic?.reload() }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in traffic?.reload() }
         .sheet(item: $model.editor) { ConnectionEditor(viewModel: viewModels.makeEditor($0)) }
-        .alert("UnlocalFS", isPresented: $model.isShowingAlert, presenting: model.alert) { _ in
-            Button("OK", role: .cancel) {}
+        .alert(model.alert?.title ?? "", item: $model.alert) { _ in
         } message: {
-            Text($0)
+            Text($0.message)
         }
         .alert("“\(model.disconnectFailure?.name ?? "")” couldn’t be disconnected.",
                isPresented: $model.isShowingDisconnectFailure, presenting: model.disconnectFailure) { connection in
             Button("Keep Connected", role: .cancel) {}
-            Button("Try Disconnect Again") { Task { await model.disconnect(connection) } }
+            Button("Try Again") { Task { await model.disconnect(connection) } }
         } message: { _ in
             Text("Close files and stop apps using this drive, then try again. The drive is still connected.")
         }
@@ -67,7 +66,10 @@ struct MainView: View {
     private var sidebar: some View {
         @Bindable var model = model
         return List(selection: $model.selection) {
-            Section("Unlocals") {
+            if model.showsTraffic, let traffic {
+                TrafficRow(viewModel: traffic).tag(AppViewModel.SidebarItem.traffic)
+            }
+            Section("Drives") {
                 ForEach(model.visibleConnections) { ConnectionRow(connection: $0) }
             }
         }
@@ -89,16 +91,11 @@ struct MainView: View {
         }
         .onExitCommand(perform: model.isSearching ? { model.closeSearch() } : nil)
         .safeAreaInset(edge: .bottom) {
-            VStack(alignment: .leading, spacing: 12) {
-                if let traffic {
-                    TrafficCard(viewModel: traffic, isSelected: model.selection == .traffic) { model.selection = .traffic }
-                }
-                Button("Add connection", systemImage: "plus") { model.edit(Connection()) }
-                    .buttonStyle(.borderless)
-                    .disabled(!model.ready)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            Button("Add Connection", systemImage: "plus") { model.edit(Connection()) }
+                .buttonStyle(.borderless)
+                .disabled(!model.ready)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
         }
     }
 
@@ -155,22 +152,22 @@ private struct ConnectionRow: View {
         }
         .tag(AppViewModel.SidebarItem.drive(connection.id))
         .contextMenu {
-            Button("Connect") { Task { await model.activate(connection) } }
-                .disabled(!model.canConnect(connection))
-            Button("Disconnect") { Task { await model.disconnect(connection) } }
-                .disabled(!model.canDisconnect(connection))
-            Button("Disconnect All") { Task { await model.disconnectAll() } }
-            if model.needsReconnect(connection) {
-                Button("Reconnect") { Task { await model.toggle(connection) } }
-                    .disabled(!model.canToggle(connection))
+            if model.canConnect(connection) {
+                Button("Connect") { Task { await model.activate(connection) } }
+            }
+            if model.canDisconnect(connection) {
+                Button("Disconnect") { Task { await model.disconnect(connection) } }
+            }
+            if model.canReconnect(connection) {
+                Button("Reconnect") { Task { await model.reconnect(connection) } }
+            }
+            if model.canOpen(connection) {
+                Divider()
+                Button("Open in Finder") { model.openDrive(connection) }
+                Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
             }
             Divider()
-            Button("Open in Finder") { model.openDrive(connection) }
-                .disabled(!model.canOpen(connection))
-            Button("Refresh Files") { Task { await model.refreshFiles(connection) } }
-                .disabled(!model.canOpen(connection))
-            Divider()
-            DriveManagementItems(connection: connection)
+            DriveManagementItems(connection: connection, hidesUnavailable: true)
         }
     }
 }

@@ -15,9 +15,9 @@ struct MenuBarIcon: View {
                 guard animatesUploads else { return }
                 while !Task.isCancelled {
                     do {
-                        try await Task.sleep(for: .milliseconds(250))
+                        try await Task.sleep(for: .milliseconds(125))
                     } catch { return }
-                    angle -= 30
+                    angle -= 15
                 }
             }
     }
@@ -26,10 +26,10 @@ struct MenuBarIcon: View {
 
     private var image: NSImage {
         switch activity {
-        case .idle: Self.drive(badge: .labelColor, template: true)
-        case .connected: Self.drive(badge: .systemGreen, template: false)
-        case .uploading: Self.drive(overlay: "arrow.triangle.2.circlepath", color: .systemYellow, angle: angle)
-        case .downloading: Self.drive(overlay: "arrow.down", color: .systemBlue)
+        case .idle: Self.drive("externaldrive.badge.icloud")
+        case .connected: Self.drive("externaldrive.fill.badge.icloud")
+        case .uploading: Self.drive(overlay: "arrow.triangle.2.circlepath", angle: angle)
+        case .downloading: Self.drive(overlay: "arrow.down")
         }
     }
 
@@ -42,18 +42,18 @@ struct MenuBarIcon: View {
         }
     }
 
-    private static func drive(badge: NSColor, template: Bool) -> NSImage {
-        let image = NSImage(systemSymbolName: "externaldrive.badge.icloud", accessibilityDescription: nil)!
+    private static func drive(_ symbol: String, badge: NSColor = .labelColor) -> NSImage {
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)!
             .withSymbolConfiguration(.init(pointSize: 16, weight: .regular).applying(.init(paletteColors: [badge, .labelColor])))!
-        image.isTemplate = template
+        image.isTemplate = true
         return image
     }
 
-    private static func drive(overlay symbol: String, color: NSColor, angle: Double = 0) -> NSImage {
-        let drive = drive(badge: .clear, template: false)
+    private static func drive(overlay symbol: String, angle: Double = 0) -> NSImage {
+        let drive = drive("externaldrive.fill.badge.icloud", badge: .clear)
         let overlay = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)!
-            .withSymbolConfiguration(.init(pointSize: 7.5, weight: .bold).applying(.init(paletteColors: [color])))!
-        return NSImage(size: drive.size, flipped: false) { rect in
+            .withSymbolConfiguration(.init(pointSize: 7.5, weight: .bold))!
+        let image = NSImage(size: drive.size, flipped: false) { rect in
             drive.draw(in: rect)
             let rotation = NSAffineTransform()
             rotation.translateX(by: 6.2, yBy: 6.25)
@@ -62,5 +62,7 @@ struct MenuBarIcon: View {
             overlay.draw(in: NSRect(x: -overlay.size.width / 2, y: -overlay.size.height / 2, width: overlay.size.width, height: overlay.size.height))
             return true
         }
+        image.isTemplate = true
+        return image
     }
 }

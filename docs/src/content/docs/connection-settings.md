@@ -47,7 +47,7 @@ The drive shows only the files and folders that UnlocalFS made. Files that you d
 | Folder | An optional path inside the bucket, such as `clients/acme`. Leave empty for the whole bucket. |
 | Sign in with | **Google account** to use your own Google account, or **Service account key** to use a key file. New connections start with **Google account**. |
 | Google account | Click **Sign in with Google**. Your browser opens. Choose the account, allow access, and go back to UnlocalFS. |
-| Service account key | Click **Import key…** and choose the JSON key file you downloaded from Google Cloud. |
+| Service account key | Click **Import Key…** and choose the JSON key file you downloaded from Google Cloud. |
 
 ### Google account
 
@@ -82,7 +82,7 @@ UnlocalFS stores the key in your Mac's Keychain and shows only the service accou
 
 Passwords and key passphrases are stored in your Mac's Keychain. Key files stay where they are.
 
-The first test or connection shows the server's SHA256 key fingerprint. Check it with your server administrator, then choose **Trust and connect**. UnlocalFS saves the approved keys in `~/Library/Application Support/UnlocalFS/known_hosts` and checks them every time you connect. It does not read or change your Mac's SSH files, such as `~/.ssh/known_hosts`. If the key changes, UnlocalFS stops the connection and asks you to approve the new key. Find out why it changed before you accept it. When you delete the last drive for a server, UnlocalFS removes that server's keys from the file.
+The first test or connection shows the server's SHA256 key fingerprint. Check it with your server administrator, then choose **Trust and Connect**. UnlocalFS saves the approved keys in `~/Library/Application Support/UnlocalFS/known_hosts` and checks them every time you connect. It does not read or change your Mac's SSH files, such as `~/.ssh/known_hosts`. If the key changes, UnlocalFS stops the connection and asks you to approve the new key. Find out why it changed before you accept it. When you delete the last drive for a server, UnlocalFS removes that server's keys from the file.
 
 Drives saved with an earlier version of UnlocalFS used a trusted-hosts file that you chose. They now use the UnlocalFS file, so their next connection asks you to approve the server key once.
 

@@ -52,12 +52,40 @@
     "%@" : {
 
     },
+    "%@ %@" : {
+      "comment" : "Menu bar menu: drive name followed by a lock symbol for encrypted drives",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
     "%@ of %@" : {
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ de %@"
+          }
+        }
+      }
+    },
+    "%@, last 30 days" : {
+      "comment" : "Sidebar row that opens the Traffic page; %@ is the total of the last 30 days",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, últimos 30 dias"
           }
         }
       }
@@ -143,23 +171,11 @@
       }
     },
     "Activity unavailable" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Atividade indisponível"
-          }
-        }
-      }
-    },
-    "Add connection" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar conexão"
           }
         }
       }
@@ -536,24 +552,13 @@
         }
       }
     },
-    "Connect automatically when UnlocalFS opens" : {
+    "Connect when UnlocalFS opens" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conectar automaticamente quando o UnlocalFS abrir"
-          }
-        }
-      }
-    },
-    "Connect on start up" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conectar ao abrir o app"
+            "value" : "Conectar quando o UnlocalFS abrir"
           }
         }
       }
@@ -592,7 +597,6 @@
       }
     },
     "Connection successful" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -697,18 +701,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Excluir conexão…"
-          }
-        }
-      }
-    },
-    "Delete File" : {
-      "comment" : "Destructive button that stops an upload by deleting the file from the drive",
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Excluir arquivo"
           }
         }
       }
@@ -859,14 +851,14 @@
         }
       }
     },
-    "Duplicate" : {
-      "comment" : "Button: make a copy of the connection",
+    "Drives" : {
+      "comment" : "Sidebar section that lists the drives",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duplicar"
+            "value" : "Unidades"
           }
         }
       }
@@ -882,13 +874,14 @@
         }
       }
     },
-    "Edit Connection" : {
+    "Duplicate…" : {
+      "comment" : "Menu item: opens the editor with a copy of the connection",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editar conexão"
+            "value" : "Duplicar…"
           }
         }
       }
@@ -1012,14 +1005,14 @@
         }
       }
     },
-    "Find Unlocal…" : {
-      "comment" : "Edit menu item: shows the search field above the unlocal list",
+    "Find Drive…" : {
+      "comment" : "Edit menu item: shows the search field above the drive list",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscar Unlocal…"
+            "value" : "Buscar unidade…"
           }
         }
       }
@@ -1077,13 +1070,13 @@
         }
       }
     },
-    "Hide Info" : {
+    "Hide Inspector" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ocultar informações"
+            "value" : "Ocultar inspetor"
           }
         }
       }
@@ -1121,7 +1114,7 @@
         }
       }
     },
-    "Import key…" : {
+    "Import Key…" : {
       "comment" : "Button: import a service-account key file",
       "extractionState" : "stale",
       "localizations" : {
@@ -1390,16 +1383,6 @@
         }
       }
     },
-    "No connections yet" : {
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma conexão ainda"
-          }
-        }
-      }
-    },
     "No drive moved data in this period." : {
       "comment" : "Traffic page: no drive has traffic in the period",
       "localizations" : {
@@ -1417,6 +1400,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma unidade conectada"
+          }
+        }
+      }
+    },
+    "No drives yet" : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma unidade ainda"
           }
         }
       }
@@ -1819,7 +1812,7 @@
         }
       }
     },
-    "Replace key and connect" : {
+    "Replace Key and Connect" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
@@ -1873,14 +1866,14 @@
         }
       }
     },
-    "Search unlocals" : {
-      "comment" : "Placeholder and VoiceOver label of the search field above the unlocal list",
+    "Search drives" : {
+      "comment" : "Placeholder and VoiceOver label of the search field above the drive list",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Buscar unlocals"
+            "value" : "Buscar unidades"
           }
         }
       }
@@ -1985,13 +1978,24 @@
         }
       }
     },
-    "Show Info" : {
+    "Show in Menu Bar" : {
+      "comment" : "Settings toggle: shows the UnlocalFS icon in the menu bar",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar na barra de menus"
+          }
+        }
+      }
+    },
+    "Show Inspector" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostrar informações"
+            "value" : "Mostrar inspetor"
           }
         }
       }
@@ -2115,6 +2119,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Status"
+          }
+        }
+      }
+    },
+    "Stop and Delete" : {
+      "comment" : "Destructive button that stops an upload by deleting the file from the drive",
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parar e excluir"
           }
         }
       }
@@ -2312,7 +2328,6 @@
     },
     "Traffic" : {
       "comment" : "Traffic page title: bytes each drive uploaded and downloaded",
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -2322,18 +2337,7 @@
         }
       }
     },
-    "Traffic, last 30 days" : {
-      "comment" : "Sidebar card that opens the Traffic page; shows the total of the last 30 days",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tráfego, últimos 30 dias"
-          }
-        }
-      }
-    },
-    "Trust and connect" : {
+    "Trust and Connect" : {
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
@@ -2354,13 +2358,14 @@
         }
       }
     },
-    "Try Disconnect Again" : {
+    "Try Again" : {
+      "comment" : "Alert button: try to disconnect the drive again",
       "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tentar desconectar novamente"
+            "value" : "Tentar novamente"
           }
         }
       }
@@ -2409,7 +2414,6 @@
       }
     },
     "Upload failed" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -2567,6 +2571,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando o cache fica cheio, as cópias mais antigas são apagadas."
+          }
+        }
+      }
+    },
+    "When the menu bar icon is off, UnlocalFS stays in the Dock after you close its window." : {
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando o ícone da barra de menus está desligado, o UnlocalFS fica no Dock depois que você fecha a janela."
           }
         }
       }

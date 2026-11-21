@@ -3,11 +3,11 @@ title: Traffic
 description: See how much data each drive uploaded and downloaded.
 ---
 
-The **Traffic** card at the bottom of the sidebar shows how much data your drives moved over the network in the last 30 days. Click it to open the Traffic page.
+The **Traffic** row at the top of the sidebar shows how much data your drives moved over the network in the last 30 days. Select it to open the Traffic page.
 
 Choose **30 Days**, **90 Days**, or **12 Months**. The chart shows a bar for each day, or for each month when the range is longer than three months, split into upload and download. Drag across the chart to see only those days, and click the ✕ next to the title to see the whole period again.
 
-To see other dates, choose **Custom**. Pick a preset such as **Last Month**, or click the first and last day in the calendar and click **Apply**. Click the dates in the title to change them.
+To see other dates, choose **Custom**, then click the dates in the title. Pick a preset such as **Last Month**, or click the first and last day in the calendar and click **Apply**.
 
 The page shows the total for all drives, split into upload and download. The list shows each drive that moved data, with a bar for its share. One line under the list names the drives that moved nothing. A deleted drive still shows in periods where it moved data.
 
