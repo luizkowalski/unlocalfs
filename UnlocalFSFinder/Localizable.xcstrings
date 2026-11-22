@@ -1,0 +1,39 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Upload failed" : {
+      "comment" : "Finder badge label for a file or folder whose upload failed",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha no envio"
+          }
+        }
+      }
+    },
+    "Uploaded" : {
+      "comment" : "Finder badge label for a file or folder that is on the server",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviado"
+          }
+        }
+      }
+    },
+    "Uploading" : {
+      "comment" : "Finder badge label for a file or folder that waits to upload or uploads now",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
