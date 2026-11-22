@@ -60,13 +60,13 @@ public enum FinderSyncReply: Codable, Hashable, Sendable {
     case snapshot(FinderSnapshot, version: Int)
     case menu([FinderMenuItem])
     case accepted
-    case unsupported
     case failed
 }
 
 public enum FinderSyncMessage {
     public static let version = 1
     public static let changedNotification = "net.luizkowalski.unlocalfs.finder.changed"
+    public static var portName: String { Bundle.main.object(forInfoDictionaryKey: "FinderPortName") as? String ?? "" }
 
     private struct Envelope<Body: Codable>: Codable {
         var version = FinderSyncMessage.version

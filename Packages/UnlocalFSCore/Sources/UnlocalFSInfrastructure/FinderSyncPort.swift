@@ -34,8 +34,6 @@ import UnlocalFSDomain
         let reply: FinderSyncReply
         do {
             reply = try handler(FinderSyncMessage.decode(FinderSyncRequest.self, from: data))
-        } catch is FinderSyncMessage.UnsupportedVersion {
-            reply = .unsupported
         } catch {
             reply = .failed
         }

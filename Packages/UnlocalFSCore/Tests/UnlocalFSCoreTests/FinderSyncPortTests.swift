@@ -36,7 +36,7 @@ import UnlocalFSInfrastructure
 
         #expect(try await FinderSyncMessage.decode(FinderSyncReply.self, from: sendRaw(Data("garbage".utf8))) == .failed)
         let newer = Data(#"{"version":2,"body":{"snapshot":{}}}"#.utf8)
-        #expect(try await FinderSyncMessage.decode(FinderSyncReply.self, from: sendRaw(newer)) == .unsupported)
+        #expect(try await FinderSyncMessage.decode(FinderSyncReply.self, from: sendRaw(newer)) == .failed)
         #expect(try await send(.menu([])) == .menu([]))
         _ = port
     }

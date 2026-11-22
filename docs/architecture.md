@@ -85,7 +85,7 @@ These checks stay in Infrastructure, because uploads can change between two oper
 `UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and holds no rules: the app is the only source of truth.
 
 - The app answers on one `CFMessagePort` (`FinderSyncPort`), named after the team-prefixed app group that the extension claims, so the sandbox allows the lookup. An `NSXPCListener` with a Mach name would need a launchd job.
-- `FinderSyncMessage` holds the shared requests, replies, and snapshot. A message from another protocol version gets `unsupported`.
+- `FinderSyncMessage` holds the shared requests, replies, and snapshot. A message from another protocol version fails like an unreadable one.
 - After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
 - The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase` or `DuplicateFilesUseCase`, which check each file.
