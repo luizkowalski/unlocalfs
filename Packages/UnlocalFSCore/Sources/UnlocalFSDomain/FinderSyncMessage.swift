@@ -66,6 +66,7 @@ public enum FinderSyncReply: Codable, Hashable, Sendable {
 
 public enum FinderSyncMessage {
     public static let version = 1
+    public static let changedNotification = "net.luizkowalski.unlocalfs.finder.changed"
 
     private struct Envelope<Body: Codable>: Codable {
         var version = FinderSyncMessage.version

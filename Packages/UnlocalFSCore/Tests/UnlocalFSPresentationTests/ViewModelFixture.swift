@@ -210,6 +210,7 @@ final class MemoryCredentialStorage: CredentialStorage {
 
     var notifications: [Notification] = []
     var rcloneConfigDestination: RcloneConfigDestination?
+    var finderChanges = 0
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -226,4 +227,6 @@ final class MemoryCredentialStorage: CredentialStorage {
     func notify(title: String, body: String, fallbackToAlert: Bool) {
         notifications.append(Notification(title: title, body: body, fallbackToAlert: fallbackToAlert))
     }
+
+    func announceFinderChange() { finderChanges += 1 }
 }

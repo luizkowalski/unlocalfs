@@ -50,6 +50,7 @@ import UnlocalFSDomain
     var notifiedFailures: Set<UUID> = []
     var waitingToDisconnect: Set<UUID> = []
     var disconnectingAll = false
+    @ObservationIgnored var announcedFinderVersion: Int?
 
     public init(
         initialConnections: Result<[Connection], any Error>,

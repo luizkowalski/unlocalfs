@@ -1,4 +1,5 @@
 import AppKit
+import notify
 import OSLog
 import ServiceManagement
 import UnlocalFSDomain
@@ -82,6 +83,10 @@ import UserNotifications
                     """,
                 )
         }
+    }
+
+    func announceFinderChange() {
+        notify_post(FinderSyncMessage.changedNotification)
     }
 
     func notify(title: String, body: String, fallbackToAlert: Bool) {
