@@ -41,6 +41,7 @@ UnlocalFS puts your S3 or Google Cloud Storage bucket, a Google Drive folder, or
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
 - **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
 - **Notifications:** Get told when uploads fail, and when a drive you tried to disconnect finishes uploading.
+- **Finder badges:** See in Finder which files and folders are uploaded, still uploading, or failed. Turn on the Finder extension in Settings.
 - **Sharing links:** Right-click a file on an S3 drive in Finder to copy a link that expires after 1 hour, 1 day, or 7 days.
 - **Refresh files:** See changes made from other apps or Macs right away.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.

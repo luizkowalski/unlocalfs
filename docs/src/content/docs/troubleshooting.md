@@ -74,6 +74,13 @@ Changes made through another app, drive, or Mac normally appear within 5 minutes
 
 Avoid editing the same file through two drives at once: one save can overwrite the other.
 
+## Finder badges or menu items are missing
+
+- Open **UnlocalFS → Settings**. If **Finder Extension** shows **Turn On…**, click it and turn on the UnlocalFS extension.
+- UnlocalFS must run. Badges and menu items go away when you quit it.
+- The menu items show only for files, not folders, and only when all selected files are on one drive that supports them.
+- If you have more than one copy of UnlocalFS on your Mac, macOS can load the extension from an old copy. Remove the old copies and turn on the extension again.
+
 ## Share link services are missing
 
 Open UnlocalFS once. Enable the entries in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**. Links require a connected, unencrypted S3 drive and an uploaded file. SFTP drives do not support links.

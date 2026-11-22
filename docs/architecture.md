@@ -80,6 +80,16 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - A copy runs with `operations/copyfile` in the drive's rclone, which already has the credentials. A drive does not disconnect while a copy runs.
 - Multipart cleanup runs on the bucket, not on the crypt layer.
 
+### Finder extension
+
+`UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and holds no rules: the app is the only source of truth.
+
+- The app answers on one `CFMessagePort` (`FinderSyncPort`), named after the team-prefixed app group that the extension claims, so the sandbox allows the lookup. An `NSXPCListener` with a Mach name would need a launchd job.
+- `FinderSyncMessage` holds the shared requests, replies, and snapshot. A message from another protocol version gets `unsupported`.
+- After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
+- `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
+- The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase` or `DuplicateFilesUseCase`, which check each file.
+
 ## Presentation
 
 The app target has no tests. So view models decide what the UI shows: which items, their order, and counts. Views decide how it looks.
@@ -89,6 +99,7 @@ The app target has no tests. So view models decide what the UI shows: which item
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
 - `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
 - The gateway returns activity in no set order. `TransferSummary` sets the order.
+- `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` uses `Connection.allowsShareLinks` and `allowsServerCopy`, the same rules as the use cases, so the menu never offers an action that the use case refuses.
 - The status shows rclone's last upload error only while uploads fail, because rclone never clears it.
 - The speed history keeps the newest sample of each second, because rclone updates `speedAvg` about once a second. It drops samples newer than the latest one, so a clock that moves back leaves no future points.
 
