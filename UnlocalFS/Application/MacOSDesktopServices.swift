@@ -1,4 +1,5 @@
 import AppKit
+import FinderSync
 import notify
 import OSLog
 import ServiceManagement
@@ -10,6 +11,7 @@ import UserNotifications
 @MainActor struct MacOSDesktopServices: DesktopServices {
     let paths: AppPaths
     var opensAtLogin: Bool { SMAppService.mainApp.status == .enabled }
+    var finderExtensionEnabled: Bool { FIFinderSyncController.isExtensionEnabled }
 
     func setOpensAtLogin(_ enabled: Bool) throws {
         if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
@@ -88,6 +90,8 @@ import UserNotifications
     func announceFinderChange() {
         notify_post(FinderSyncMessage.changedNotification)
     }
+
+    func showFinderExtensionSettings() { FIFinderSyncController.showExtensionManagementInterface() }
 
     func notify(title: String, body: String, fallbackToAlert: Bool) {
         let content = UNMutableNotificationContent()

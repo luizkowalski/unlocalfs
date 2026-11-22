@@ -31,6 +31,7 @@ import UnlocalFSDomain
     public var uploadCleanup: UploadCleanup?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
+    public private(set) var finderExtensionEnabled: Bool
     var networkAvailable = true
     var sleeping = false
 
@@ -76,6 +77,7 @@ import UnlocalFSDomain
         self.quit = quit
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
+        finderExtensionEnabled = desktop.finderExtensionEnabled
         switch initialConnections {
         case let .success(connections):
             self.connections = connections
@@ -172,6 +174,13 @@ import UnlocalFSDomain
         let enabled = desktop.opensAtLogin
         if opensAtLogin != enabled { opensAtLogin = enabled }
     }
+
+    public func syncFinderExtension() {
+        let enabled = desktop.finderExtensionEnabled
+        if finderExtensionEnabled != enabled { finderExtensionEnabled = enabled }
+    }
+
+    public func openFinderExtensionSettings() { desktop.showFinderExtensionSettings() }
 }
 
 public extension AppViewModel {
