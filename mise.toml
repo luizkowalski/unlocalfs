@@ -2,7 +2,7 @@
 swiftlint = "0.65.1"
 swiftformat = { version = "0.64.7", no_app = true, rename_exe = "swiftformat" }
 xcodegen = "2.48.0"
-"pypi:graphifyy" = { version = "0.9.114", extras = "mcp" }
+"pypi:graphifyy" = { version = "0.9.115", extras = "mcp" }
 
 [tasks.test]
 description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"
