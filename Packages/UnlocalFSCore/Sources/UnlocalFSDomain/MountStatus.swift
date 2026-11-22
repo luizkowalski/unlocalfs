@@ -16,11 +16,14 @@ public struct UploadsPendingError: LocalizedError, Sendable {
     }
 }
 
+public enum UploadState: String, Codable, Hashable, Sendable {
+    case waiting, uploading, failed
+}
+
 public struct MountStatus: Equatable, Sendable {
     public var isMounted = false
     public var isRunning = false
-    public var pendingUploads = 0
-    public var failedUploads = 0
+    public var uploads: [String: UploadState] = [:]
     public var uploadError: String?
     public var needsSignIn = false
     public var isDownloading = false
@@ -31,6 +34,8 @@ public struct MountStatus: Equatable, Sendable {
     public var controlError: String?
     public init() {}
 
+    public var pendingUploads: Int { uploads.count }
+    public var failedUploads: Int { uploads.values.count { $0 == .failed } }
     public var isActive: Bool { isMounted || isRunning || needsReconnect }
     public var needsReconnect: Bool { controlError != nil }
     public var isServing: Bool { isRunning && !needsReconnect }

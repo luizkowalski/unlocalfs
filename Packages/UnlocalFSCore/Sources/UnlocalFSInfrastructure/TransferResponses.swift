@@ -13,13 +13,13 @@ struct UploadQueue: Decodable {
         let uploading: Bool
 
         var hasFailedAttempt: Bool { tries > 1 || (tries > 0 && !uploading) }
+        var state: UploadState { hasFailedAttempt ? .failed : uploading ? .uploading : .waiting }
     }
 }
 
-extension MountStatus {
-    mutating func countUploads(_ queue: [UploadQueue.Item]) {
-        pendingUploads = queue.count
-        failedUploads = queue.count(where: \.hasFailedAttempt)
+extension [UploadQueue.Item] {
+    var states: [String: UploadState] {
+        Dictionary(map { ($0.name, $0.state) }) { $0 == .failed ? $0 : $1 }
     }
 }
 

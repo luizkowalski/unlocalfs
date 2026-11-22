@@ -60,6 +60,10 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var exportsRcloneConfig: Bool { encrypted }
 
+    public var allowsShareLinks: Bool { backend.supportsShareLinks && !encrypted }
+
+    public var allowsServerCopy: Bool { backend.supportsServerCopy && !readOnly }
+
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
     public var storageName: String {

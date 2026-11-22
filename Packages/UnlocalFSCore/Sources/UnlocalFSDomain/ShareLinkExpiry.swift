@@ -1,4 +1,4 @@
-public enum ShareLinkExpiry: String, Sendable {
+public enum ShareLinkExpiry: String, Codable, Sendable {
     case hour = "1h"
     case day = "1d"
     case week = "1w"

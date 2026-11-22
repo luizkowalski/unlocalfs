@@ -15,11 +15,10 @@ public struct ShareFilesUseCase: Sendable {
         for file in files {
             try await links.append(FileActionError.wrapping(file) {
                 let drive = try drives.drive(containing: file, among: connections)
-                guard drive.connection.backend.supportsShareLinks else {
-                    throw AppError(String(localized: .linksUnavailable(drive.connection.provider.title)))
-                }
-                guard !drive.connection.encrypted else {
-                    throw AppError(String(localized: .linksUnavailableEncrypted))
+                guard drive.connection.allowsShareLinks else {
+                    throw AppError(drive.connection.backend.supportsShareLinks
+                        ? String(localized: .linksUnavailableEncrypted)
+                        : String(localized: .linksUnavailable(drive.connection.provider.title)))
                 }
                 return try await drives.shareLink(
                     for: drive.connection, path: drive.path, expiry: expiry, credentials: repository.credentials(for: drive.connection.id),

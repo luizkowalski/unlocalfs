@@ -71,13 +71,33 @@ struct ConnectionRulesTests {
 
     @Test func pendingUploadsPreventDisconnect() {
         var status = MountStatus()
-        status.pendingUploads = 1
+        status.uploads = ["report.pdf": .waiting]
         #expect(throws: UploadsPendingError.self) { try status.requireSafeDisconnect() }
     }
 
     @Test func failedUploadsPreventDisconnect() {
         var status = MountStatus()
-        status.failedUploads = 1
+        status.uploads = ["report.pdf": .failed]
         #expect(throws: AppError.self) { try status.requireSafeDisconnect() }
+    }
+
+    @Test func uploadCountsComeFromEachQueuedPath() {
+        var status = MountStatus()
+        status.uploads = ["a.txt": .waiting, "b.txt": .uploading, "c.txt": .failed]
+        #expect(status.pendingUploads == 3)
+        #expect(status.failedUploads == 1)
+    }
+
+    @Test(arguments: [
+        (Connection.s3(), true, true),
+        (Connection.s3 { $0.encrypted = true }, false, true),
+        (Connection.s3 { $0.readOnly = true }, true, false),
+        (Connection.sftp(), false, false),
+        (Connection.gcs(), false, true),
+        (Connection.googleDrive { $0.readOnly = true }, false, false),
+    ])
+    func shareLinksAndServerCopiesFollowTheBackendAndTheDriveOptions(connection: Connection, links: Bool, copies: Bool) {
+        #expect(connection.allowsShareLinks == links)
+        #expect(connection.allowsServerCopy == copies)
     }
 }

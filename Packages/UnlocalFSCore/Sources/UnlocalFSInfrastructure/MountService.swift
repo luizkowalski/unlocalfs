@@ -124,7 +124,7 @@ public actor MountService: DriveGateway {
         do {
             let snapshot = try await snapshot(connection, ControlSnapshot.statusRequest)
             status.isRunning = true
-            status.countUploads(snapshot.queue)
+            status.uploads = snapshot.queue.states
             if status.failedUploads > 0 { status.uploadError = snapshot.lastError }
             if isRevokedGrant(connection, error: status.uploadError), snapshot.queue.contains(where: { $0.hasFailedAttempt && !$0.uploading }) {
                 status.needsSignIn = true

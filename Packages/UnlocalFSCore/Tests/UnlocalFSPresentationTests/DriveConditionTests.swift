@@ -30,8 +30,7 @@ struct DriveConditionTests {
         var status = MountStatus()
         status.isMounted = mounted
         status.isRunning = running
-        status.pendingUploads = pending
-        status.failedUploads = failed
+        status.uploads = Dictionary(uniqueKeysWithValues: (0 ..< pending).map { ("waiting\($0)", .waiting) } + (0 ..< failed).map { ("failed\($0)", .failed) })
         status.controlError = controlError
         return status
     }
