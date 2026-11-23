@@ -1,5 +1,6 @@
 included:
   - UnlocalFS
+  - UnlocalFSFinder
   - Packages/UnlocalFSCore/Sources
   - Packages/UnlocalFSCore/Tests
 disabled_rules:

@@ -30,12 +30,8 @@ public struct AppPaths: Sendable {
 
     public func mount(_ connection: Connection) -> URL { mounts.appending(path: connection.name) }
     public func drive(containing file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
-        let components = file.standardizedFileURL.pathComponents
         for connection in connections {
-            let root = mount(connection).standardizedFileURL.pathComponents
-            if components.count > root.count, components.starts(with: root) {
-                return (connection, components.dropFirst(root.count).joined(separator: "/"))
-            }
+            if let path = file.path(inside: mount(connection)), !path.isEmpty { return (connection, path) }
         }
         return nil
     }

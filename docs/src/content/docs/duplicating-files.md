@@ -5,7 +5,7 @@ description: Copy files inside a drive without downloading them.
 
 When you duplicate or copy a file inside a drive in Finder, Finder downloads the whole file and uploads it again. A large file takes a long time, uses your network, and fills the cache. **Duplicate on Server** tells your storage to copy the file itself. Nothing downloads to your Mac and nothing uploads from it.
 
-Right-click files in a connected drive, choose **Services**, then **Duplicate on Server**. Each copy goes in the same folder and gets the name that Finder uses: "report copy.pdf", then "report copy 2.pdf". UnlocalFS sends a notification when the copies are ready, and they show in Finder a few seconds later.
+Right-click files in a connected drive and choose **Duplicate on Server**. This item needs the UnlocalFS Finder extension; see [Finder badges and menu](/using-drives/#finder-badges-and-menu). Without the extension, find it under **Services** in the right-click menu. Each copy goes in the same folder and gets the name that Finder uses: "report copy.pdf", then "report copy 2.pdf". UnlocalFS sends a notification when the copies are ready, and they show in Finder a few seconds later.
 
 - Duplicate on Server works on Amazon S3, other S3-compatible storage, Google Cloud Storage, and Google Drive, also when the drive is encrypted.
 - It is not available for SFTP drives, because the server cannot copy files for UnlocalFS. It is not available for read-only drives.
@@ -13,4 +13,4 @@ Right-click files in a connected drive, choose **Services**, then **Duplicate on
 - Select files, not folders.
 - Large files can take a minute or more. The drive does not disconnect while a copy runs.
 - Finder's own **Duplicate** and copy and paste still download and upload the file.
-- If the entry does not show, open UnlocalFS once. You can turn it on and add a keyboard shortcut in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**.
+- If the Services entry does not show, open UnlocalFS once. You can turn it on and add a keyboard shortcut in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**.

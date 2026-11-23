@@ -19,6 +19,22 @@ The activity table shows each file’s name, folder, transfer status, and size. 
 
 To stop an upload, click the ⓧ button next to a file that waits, uploads, or failed. UnlocalFS stops the upload by deleting the file from the drive, so you lose the changes you did not upload. A confirmation with a **Stop and Delete** button shows first: the file is deleted from this drive, and if the server has an older copy, that copy is deleted too. If the upload finishes before you confirm, UnlocalFS deletes nothing and tells you. If the drive is disconnected, UnlocalFS deletes nothing and asks you to reconnect. While an app keeps the file open, macOS hides it under a `.nfs` name until the app closes it. When you stop a large S3 upload that is in progress, its parts can stay in the bucket. **Clean Up Unfinished Uploads…** removes them after a day.
 
+## Finder badges and menu
+
+The UnlocalFS Finder extension shows the upload status of each file and folder on a connected drive:
+
+- A green check: the file is on the server.
+- A blue arrow: the file waits to upload or uploads now.
+- A red mark: an upload failed. UnlocalFS tries again on its own. Select the drive in the app to see the error.
+
+A folder shows the status of the files in it: a red mark if one of them failed, a blue arrow if one of them waits, and a green check when all of them are on the server. The drive icon in `~/UnlocalFS` shows the status of the whole drive. Wait for the green check before you disconnect the drive or close your Mac.
+
+The extension also adds **Copy Share Link** and **Duplicate on Server** to the menu when you right-click files. It shows only the items that work for the selected files. See [Sharing links](/sharing-links/) and [Duplicating files](/duplicating-files/).
+
+- The extension is off until you turn it on. Open **UnlocalFS → Settings** and click **Turn On…** next to **Finder Extension**. macOS opens the page where you turn on the UnlocalFS extension.
+- Badges show only while UnlocalFS runs.
+- A badge can be a few seconds old. After you save a file, it can show its old badge until UnlocalFS checks the drive again, which it does every 3 seconds. A new file shows no badge until UnlocalFS has checked it.
+
 ## Clean up unfinished uploads
 
 S3 uploads a large file in parts. If an upload stops before it finishes, for example because the Mac lost power or UnlocalFS was forced to quit, the parts stay in the bucket. Finder and the S3 console do not list them, but the storage provider still bills them until a lifecycle rule removes them.

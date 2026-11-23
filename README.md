@@ -41,6 +41,7 @@ UnlocalFS puts your S3 or Google Cloud Storage bucket, a Google Drive folder, or
 - **Safe disconnects:** Prevent a drive from disconnecting while uploads are pending or need a retry.
 - **Drive health:** Check drives after wake and network changes. Reconnect an unavailable drive while keeping its cache.
 - **Notifications:** Get told when uploads fail, and when a drive you tried to disconnect finishes uploading.
+- **Finder badges:** See in Finder which files and folders are uploaded, still uploading, or failed. Turn on the Finder extension in Settings.
 - **Sharing links:** Right-click a file on an S3 drive in Finder to copy a link that expires after 1 hour, 1 day, or 7 days.
 - **Refresh files:** See changes made from other apps or Macs right away.
 - **Duplicate connections:** Reuse a drive’s settings and credentials to connect another folder quickly.
@@ -102,6 +103,7 @@ The app uses Clean Architecture with MVVM and Observation:
 
 - `UnlocalFSDomain` owns connection rules, repository and drive interfaces, and save, delete, toggle, share, and quit use cases.
 - `UnlocalFSInfrastructure` implements JSON persistence, Keychain storage, rclone commands, and filesystem operations. It depends on Domain.
+- `UnlocalFSFinderLink` holds the message port between the app and the Finder extension. It depends on Domain.
 - `UnlocalFSPresentation` contains the view models. It depends only on Domain. `AppViewModel` shares window and menu bar state; `ViewModelFactory` creates the editor and activity models.
 - `UnlocalFS/Presentation` contains the SwiftUI views.
 - `UnlocalFS/Application` constructs dependencies and handles macOS lifecycle events, Finder, clipboard, notifications, and login registration.

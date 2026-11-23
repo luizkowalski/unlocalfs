@@ -2,6 +2,7 @@ import AppKit
 import OSLog
 import ServiceManagement
 import UnlocalFSDomain
+import UnlocalFSFinderLink
 import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 import UserNotifications
@@ -82,6 +83,10 @@ import UserNotifications
                     """,
                 )
         }
+    }
+
+    func announceFinderChange() {
+        FinderSyncPort.announceChange()
     }
 
     func notify(title: String, body: String, fallbackToAlert: Bool) {

@@ -16,6 +16,8 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: 0.1.0
     CURRENT_PROJECT_VERSION: 1
+    APP_GROUP: $(TeamIdentifierPrefix)net.luizkowalski.unlocalfs
+    FINDER_PORT_NAME: $(APP_GROUP).finder
 targets:
   UnlocalFS:
     type: application
@@ -36,6 +38,9 @@ targets:
         product: UnlocalFSInfrastructure
       - package: UnlocalFSCore
         product: UnlocalFSPresentation
+      - package: UnlocalFSCore
+        product: UnlocalFSFinderLink
+      - target: UnlocalFSFinder
     configFiles:
       Debug: Signing.xcconfig
       Release: Signing.xcconfig
@@ -64,6 +69,26 @@ targets:
           else
               codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" --options runtime --timestamp "$helper"
           fi
+  UnlocalFSFinder:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: UnlocalFSFinder
+    dependencies:
+      - package: UnlocalFSCore
+        product: UnlocalFSDomain
+      - package: UnlocalFSCore
+        product: UnlocalFSFinderLink
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.luizkowalski.unlocalfs.finder
+        INFOPLIST_FILE: UnlocalFSFinder/Info.plist
+        CODE_SIGN_ENTITLEMENTS: UnlocalFSFinder/UnlocalFSFinder.entitlements
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: YES
 schemes:
   UnlocalFS:
     build:

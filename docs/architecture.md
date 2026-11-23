@@ -6,8 +6,11 @@ UnlocalFS uses Clean Architecture with MVVM. Domain and Infrastructure are the m
 flowchart LR
     Application --> Presentation
     Application --> Infrastructure
+    Application --> FinderLink
+    Extension --> FinderLink
     Presentation --> Domain
     Infrastructure --> Domain
+    FinderLink --> Domain
 ```
 
 To add a workflow, put its rules in Domain and its integration in Infrastructure, and inject it from Application. Add a factory method for a new feature view model. Add an abstraction only at a real boundary. For tests, see [testing.md](testing.md).
@@ -80,6 +83,18 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - A copy runs with `operations/copyfile` in the drive's rclone, which already has the credentials. A drive does not disconnect while a copy runs.
 - Multipart cleanup runs on the bucket, not on the crypt layer.
 
+### Finder extension
+
+`UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and `UnlocalFSFinderLink`, and holds no rules: the app is the only source of truth.
+
+- The app answers on one `CFMessagePort` (`FinderSyncPort`), named after the team-prefixed app group that the extension claims, so the sandbox allows the lookup. An `NSXPCListener` with a Mach name would need a launchd job.
+- `UnlocalFSFinderLink` holds both ends of the port and of the change notification: `FinderSyncPort` in the app and `FinderSyncClient` in the extension. Only this target knows the message format, the port name, and the notification name. The requests, replies, and snapshot are Domain values. A message from another protocol version fails like an unreadable one, on both sides, so an old extension clears its badges instead of retrying.
+- The `APP_GROUP` and `FINDER_PORT_NAME` build settings in `project.yml` set the extension's app group and the port name in both Info.plists.
+- After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
+- Each reply says, for each drive, when the last status pass that read it started. A pass skips busy drives, so they keep their old time. `FinderBadgeCache` badges a file that Finder shows for the first time only after a later pass read its drive, so a new file never shows uploaded early, and a busy drive holds back only its own files. A timed-out pull keeps the badges and tries again; a missing port or a reply the extension cannot read clears them.
+- `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
+- The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase` or `DuplicateFilesUseCase`, which check each file.
+
 ## Presentation
 
 The app target has no tests. So view models decide what the UI shows: which items, their order, and counts. Views decide how it looks.
@@ -89,6 +104,8 @@ The app target has no tests. So view models decide what the UI shows: which item
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
 - `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
 - The gateway returns activity in no set order. `TransferSummary` sets the order.
+- `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` and the use cases read the same `Connection.shareLinkRefusal` and `serverCopyRefusal`, so the menu never offers an action that the use case refuses.
+- The Settings view reads the Finder extension switch itself, because no rule depends on it.
 - The status shows rclone's last upload error only while uploads fail, because rclone never clears it.
 - The speed history keeps the newest sample of each second, because rclone updates `speedAvg` about once a second. It drops samples newer than the latest one, so a clock that moves back leaves no future points.
 

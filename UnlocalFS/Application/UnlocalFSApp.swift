@@ -1,7 +1,9 @@
 import AppKit
 import Network
+import OSLog
 import SwiftUI
 import UnlocalFSDomain
+import UnlocalFSFinderLink
 import UnlocalFSPresentation
 
 @main struct UnlocalFSApp: App {
@@ -113,6 +115,7 @@ import UnlocalFSPresentation
     private var serviceRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
+    private var finderPort: FinderSyncPort?
 
     func applicationDidFinishLaunching(_: Notification) {
         Task { await model.run() }
@@ -126,6 +129,11 @@ import UnlocalFSPresentation
         }
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
         NSApp.servicesProvider = self
+        do {
+            finderPort = try FinderSyncPort { [model] in model.reply(to: $0) }
+        } catch {
+            Logger().error("Finder extension unavailable: \(error.localizedDescription, privacy: .public)")
+        }
         NSUpdateDynamicServices()
     }
 

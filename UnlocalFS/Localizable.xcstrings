@@ -1017,6 +1017,17 @@
         }
       }
     },
+    "Finder Extension" : {
+      "comment" : "Settings row title for the Finder Sync extension",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensão do Finder"
+          }
+        }
+      }
+    },
     "Finish signing in in your browser." : {
       "localizations" : {
         "pt-BR" : {
@@ -2035,6 +2046,17 @@
         }
       }
     },
+    "Shows upload status in Finder and adds Copy Share Link and Duplicate on Server to its right-click menu." : {
+      "comment" : "Settings description of the Finder extension",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra o estado dos envios no Finder e adiciona Copiar link de compartilhamento e Duplicar no servidor ao menu de contexto."
+          }
+        }
+      }
+    },
     "Sign In Again…" : {
       "comment" : "Button: sign in to Google again for this drive",
       "localizations" : {
@@ -2377,6 +2399,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tentando novamente após uma falha no envio"
+          }
+        }
+      }
+    },
+    "Turn On…" : {
+      "comment" : "Settings button that opens System Settings to turn on the Finder extension",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar…"
           }
         }
       }

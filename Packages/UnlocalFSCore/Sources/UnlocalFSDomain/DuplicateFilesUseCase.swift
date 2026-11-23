@@ -15,10 +15,7 @@ public struct DuplicateFilesUseCase: Sendable {
         for file in files {
             try await selection.append(FileActionError.wrapping(file) {
                 let drive = try drives.drive(containing: file, among: connections)
-                guard drive.connection.backend.supportsServerCopy else {
-                    throw AppError(String(localized: .serverCopyUnavailable(drive.connection.provider.title)))
-                }
-                guard !drive.connection.readOnly else { throw AppError(String(localized: .driveIsReadOnly)) }
+                if let refusal = drive.connection.serverCopyRefusal { throw AppError(refusal) }
                 return drive
             })
         }

@@ -71,13 +71,13 @@ struct ConnectionRulesTests {
 
     @Test func pendingUploadsPreventDisconnect() {
         var status = MountStatus()
-        status.pendingUploads = 1
+        status.uploads = ["report.pdf": .pending]
         #expect(throws: UploadsPendingError.self) { try status.requireSafeDisconnect() }
     }
 
     @Test func failedUploadsPreventDisconnect() {
         var status = MountStatus()
-        status.failedUploads = 1
+        status.uploads = ["report.pdf": .failed]
         #expect(throws: AppError.self) { try status.requireSafeDisconnect() }
     }
 }

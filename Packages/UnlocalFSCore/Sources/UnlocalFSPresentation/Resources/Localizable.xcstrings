@@ -191,6 +191,60 @@
       },
       "comment": "Drive status (adjective, agrees with the drive)"
     },
+    "copyShareLinkDay": {
+      "comment": "Finder context menu item that copies a link valid for one day",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Share Link (1 Day)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (1 dia)"
+          }
+        }
+      }
+    },
+    "copyShareLinkHour": {
+      "comment": "Finder context menu item that copies a link valid for one hour",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Share Link (1 Hour)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (1 hora)"
+          }
+        }
+      }
+    },
+    "copyShareLinkWeek": {
+      "comment": "Finder context menu item that copies a link valid for seven days",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Share Link (7 Days)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar link de compartilhamento (7 dias)"
+          }
+        }
+      }
+    },
     "couldNotCopyLink": {
       "extractionState": "manual",
       "localizations": {
@@ -367,6 +421,24 @@
         }
       },
       "comment": "Title of the editor for a copy of a connection"
+    },
+    "duplicateOnServer": {
+      "comment": "Finder context menu item that copies the selected files on the storage server",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate on Server"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicar no servidor"
+          }
+        }
+      }
     },
     "editConnection": {
       "extractionState": "manual",
