@@ -30,7 +30,9 @@ The UnlocalFS Finder extension shows the upload status of each file and folder o
 
 A folder shows the status of the files in it: a red mark if one of them failed, a blue arrow if one of them waits, and a green check when all of them are on the server. The drive icon in `~/UnlocalFS` shows the status of the whole drive. Wait for the green check before you disconnect the drive or close your Mac.
 
-The extension also adds **Copy Share Link** and **Duplicate on Server** to the menu when you right-click files. It shows only the items that work for the selected files. See [Sharing links](/sharing-links/) and [Duplicating files](/duplicating-files/).
+The extension also adds **Copy Share Link**, **Duplicate on Server**, and **Show Versions…** to the menu when you right-click files, and **Show Recently Deleted…** when you right-click a folder. It shows only the items that work for the selection. See [Sharing links](/sharing-links/), [Duplicating files](/duplicating-files/), and [File versions](/file-versions/).
+
+Files that you delete on a drive do not go to the Trash. On an S3 bucket with versioning, you can get them back with [Recently Deleted](/file-versions/#recently-deleted).
 
 - The extension is off until you turn it on. Open **UnlocalFS → Settings** and click **Turn On…** next to **Finder Extension**. macOS opens the page where you turn on the UnlocalFS extension.
 - Badges show only while UnlocalFS runs.

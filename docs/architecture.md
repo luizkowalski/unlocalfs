@@ -31,6 +31,7 @@ Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 | SignInAgainUseCase | Refuses a different Google Drive account. Tests and saves a new Google token, then sends it to a serving drive. Never disconnects. |
 | ShareFilesUseCase | Refuses SFTP, GCS, Google Drive, and encrypted drives before it loads credentials. |
 | DuplicateFilesUseCase | Refuses SFTP and read-only drives. Never loads credentials. |
+| FileVersionsUseCase | Refuses drives that are not S3 before any rc call. Lists nothing when versioning is off. A restore also refuses read-only drives. |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives. Reads credentials only for an export with secrets. |
 | QuitUseCase | Waits during an operation. Offers to disconnect, then disconnects all drives at the same time and keeps the app open on a failure. |
 
@@ -82,6 +83,8 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - rclone cannot remove a queued upload, so a stop deletes the file through the mount. A stop deletes nothing when the upload has finished. If the upload finishes between that check and the delete, the delete also removes the new server copy.
 - A copy runs with `operations/copyfile` in the drive's rclone, which already has the credentials. A drive does not disconnect while a copy runs.
 - Multipart cleanup runs on the bucket, not on the crypt layer.
+- Versions go through the drive's own remotes with a `versions=true` override (`unlocalfs-s3,versions=true:…`, and for crypt `unlocalfs,remote='…':`), so no credentials leave the running rclone. One non-recursive listing of a folder gives both a file's history and the folder's deleted files; `VersionListing` in Domain reads rclone's `-vYYYY-MM-DD-HHMMSS-mmm` names. A restore is a server-side `operations/copyfile` with the versioned remote on both sides, in the same job group as a duplicate, so a drive does not disconnect while it runs.
+- The versioning state is read once after each connect and when a versions window loads, not in the status poll.
 
 ### Finder extension
 
@@ -92,6 +95,7 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - The `APP_GROUP` and `FINDER_PORT_NAME` build settings in `project.yml` set the extension's app group and the port name in both Info.plists.
 - After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
 - Each reply says, for each drive, when the last status pass that read it started. A pass skips busy drives, so they keep their old time. `FinderBadgeCache` badges a file that Finder shows for the first time only after a later pass read its drive, so a new file never shows uploaded early, and a busy drive holds back only its own files. A timed-out pull keeps the badges and tries again; a missing port or a reply the extension cannot read clears them.
+- A right-click on the empty area of a folder window sends the folder as the selection, so one folder and a folder window get the same items.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
 - The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase` or `DuplicateFilesUseCase`, which check each file.
 
