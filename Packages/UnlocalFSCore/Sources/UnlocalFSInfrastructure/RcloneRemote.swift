@@ -147,6 +147,11 @@ extension Connection {
     var storageRemoteName: String { "unlocalfs-\(rcloneType)" }
     var driveStorage: String { "\(storageRemoteName):\(rclonePath)" }
     var driveTarget: String { encrypted ? "\(Self.cryptRemoteName):" : driveStorage }
+
+    var versionsTarget: String {
+        let storage = "\(storageRemoteName),versions=true:\(rclonePath)"
+        return encrypted ? "\(Self.cryptRemoteName),remote='\(storage.replacing("'", with: "''"))':" : storage
+    }
 }
 
 struct NamedRemote: Encodable {

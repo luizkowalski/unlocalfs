@@ -66,6 +66,10 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return nil
     }
 
+    public var versionsRefusal: String? {
+        backend.supportsVersions ? nil : String(localized: .versionsUnavailable(provider.title))
+    }
+
     public var serverCopyRefusal: String? {
         if !backend.supportsServerCopy { return String(localized: .serverCopyUnavailable(provider.title)) }
         if readOnly { return String(localized: .driveIsReadOnly) }

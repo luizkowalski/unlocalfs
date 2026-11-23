@@ -187,6 +187,6 @@ struct MultipartUpload: Decodable {
     }
 }
 
-private func rcloneDate(_ string: String) throws -> Date {
+func rcloneDate(_ string: String) throws -> Date {
     try (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(string)) ?? Date.ISO8601FormatStyle().parse(string)
 }

@@ -2,7 +2,7 @@ import Foundation
 import UnlocalFSDomain
 
 extension MountService {
-    private static let copyGroup = "duplicate"
+    static let copyGroup = "duplicate"
 
     public func duplicate(_ path: String, in connection: Connection) async throws -> String {
         try requireServing(connection, otherwise: .reconnectToDuplicate)
@@ -31,7 +31,7 @@ extension MountService {
         }
     }
 
-    private func reserveCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
+    func reserveCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
         let mounted = try await names(in: paths.mount(connection).appending(path: folder))
         let name = CopyName(of: (path as NSString).lastPathComponent)
         var attempt = 0
@@ -48,7 +48,7 @@ extension MountService {
         }
     }
 
-    @concurrent private nonisolated func names(in folder: URL) async throws -> Set<String> {
+    @concurrent nonisolated func names(in folder: URL) async throws -> Set<String> {
         try Set(FileManager.default.contentsOfDirectory(atPath: folder.path))
     }
 }

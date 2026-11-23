@@ -46,6 +46,7 @@ public struct AppPaths: Sendable {
     public func pidFile(_ connection: Connection) -> URL { socket(connection).appendingPathExtension("pid") }
     var knownHosts: URL { support.appending(path: "known_hosts") }
     public var traffic: URL { support.appending(path: "traffic.sqlite") }
+    public var previews: URL { FileManager.default.temporaryDirectory.appending(path: "UnlocalFS Previews") }
 
     private var sockets: URL { support.appending(path: "run") }
 }
