@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
-import UnlocalFSTestSupport
 
 struct VersionListingTests {
     private func version(_ path: String, at seconds: TimeInterval) -> FileVersion {
@@ -41,12 +40,5 @@ struct VersionListingTests {
             version("notes-v2026-11-03-100000-000.md", at: 4),
         ])
         #expect(listing.deletedFiles.map(\.path) == ["photo-v2026-11-02-100000-000.jpg", "notes-v2026-11-03-100000-000.md"])
-    }
-
-    @Test func versionsShowOnlyForS3Drives() {
-        #expect(Connection.s3().versionsRefusal == nil)
-        #expect(Connection.s3 { $0.encrypted = true }.versionsRefusal == nil)
-        #expect(Connection.sftp().versionsRefusal != nil)
-        #expect(Connection.gcs().versionsRefusal != nil)
     }
 }

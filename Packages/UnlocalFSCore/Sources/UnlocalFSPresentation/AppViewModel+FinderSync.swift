@@ -43,8 +43,7 @@ extension AppViewModel {
     }
 
     func showVersions(of file: URL) {
-        guard let target = versionsTarget(for: file), target.connection.versionsRefusal == nil else { return }
-        desktop.showVersions(target)
+        if let target = versionsTarget(for: file) { desktop.showVersions(target) }
     }
 
     public func reply(to request: FinderSyncRequest) -> FinderSyncReply {

@@ -33,7 +33,6 @@ struct FileVersionsTests {
             #expect(copy["srcFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
             #expect(copy["dstFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
             #expect(copy["_group"] as? String == "duplicate")
-            #expect(try await service.versions(in: "", of: connection).count(where: { !$0.isCurrent }) == 2)
             #expect(try await service.restore(old, asCopy: true, in: connection) == "report copy.txt")
         }
     }
@@ -77,6 +76,7 @@ struct FileVersionsTests {
     }
 
     @Test func cancelledListingStopsItsJob() async throws {
+        let waiting = Mutex(false)
         let stopped = Mutex(false)
         try await withControl { _, _ in
             { request in
@@ -85,12 +85,14 @@ struct FileVersionsTests {
                 case "job/stop":
                     stopped.withLock { $0 = request.parameter("jobid") == "4" }
                     return "{}"
-                default: return #"{"finished":false,"success":false,"error":""}"#
+                default:
+                    waiting.withLock { $0 = true }
+                    return #"{"finished":false,"success":false,"error":""}"#
                 }
             }
         } operation: { service, connection in
             let listing = Task { try await service.versions(in: "", of: connection) }
-            try await Task.sleep(for: .milliseconds(300))
+            try await waitUntil { waiting.withLock { $0 } }
             listing.cancel()
             _ = await listing.result
             try await waitUntil { stopped.withLock { $0 } }

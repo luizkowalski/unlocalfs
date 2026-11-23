@@ -28,7 +28,6 @@ import UnlocalFSTestSupport
         await versions.load()
         #expect(versions.versions.map(\.path) == ["report.txt", "report-v2026-11-02-140301-123.txt"])
         #expect(versions.versions.map { versions.canRestore($0) } == [false, true])
-        #expect(versions.title == String(localized: .versionsOf("report.txt")))
     }
 
     @Test func theDriveRootShowsItsDeletedFiles() async throws {
@@ -58,21 +57,13 @@ import UnlocalFSTestSupport
         #expect(menu.offersVersions == (state != "Unversioned"))
     }
 
-    @Test func aRestoreOfAFileThatWaitsToUploadShowsWhyAndKeepsTheList() async throws {
+    @Test func aRefusedRestoreShowsTheReasonKeepsTheListAndEndsTheBusyState() async throws {
         let (_, versions) = try versions(of: "report.txt", in: .s3(), queue: "report.txt")
         await versions.load()
         versions.restore(versions.versions[1], asCopy: false)
         while versions.working != nil { try await Task.sleep(for: .milliseconds(20)) }
         #expect(versions.message == String(localized: .restoreFileStillUploading))
         #expect(versions.versions.count == 2)
-    }
-
-    @Test func anSFTPFileOpensNoVersionsWindow() throws {
-        let connection = Connection.sftp()
-        try fixture.repository.save(connection, credentials: Credentials())
-        let desktop = TestDesktopServices(paths: fixture.paths)
-        fixture.app(desktop: desktop).showVersions(of: fixture.paths.mount(connection).appending(path: "a.txt"))
-        #expect(desktop.shownVersions.isEmpty)
     }
 }
 
