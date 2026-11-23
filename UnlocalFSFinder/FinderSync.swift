@@ -57,9 +57,7 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
 
     @objc private func run(_ sender: NSMenuItem) {
         let (items, urls) = menuItems.withLock { $0 }
-        guard items.indices.contains(sender.tag) else { return }
-        let command = items[sender.tag].command
-        guard FinderSyncClient()?.send(.run(command, files: urls)) == .accepted, command.opensWindow else { return }
+        guard items.indices.contains(sender.tag), FinderSyncClient()?.send(.run(items[sender.tag].command, files: urls)) == .windowOpened else { return }
         let app = Bundle.main.bundleURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration())
     }

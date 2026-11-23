@@ -5,21 +5,19 @@ import UnlocalFSDomain
 @MainActor @Observable public final class VersionsViewModel {
     public let target: VersionsTarget
     public private(set) var versions: [FileVersion] = []
-    public private(set) var versioning: BucketVersioning?
+    private var versioning: BucketVersioning?
     public private(set) var loading = false
     public private(set) var working: FileVersion.ID?
     public private(set) var message: String?
     public var preview: URL?
 
     private let fileVersions: FileVersionsUseCase
-    private let onVersioning: (BucketVersioning) -> Void
     @ObservationIgnored private var download: Task<Void, Never>?
     @ObservationIgnored private var previews: [URL] = []
 
-    init(target: VersionsTarget, fileVersions: FileVersionsUseCase, onVersioning: @escaping (BucketVersioning) -> Void) {
+    public init(target: VersionsTarget, fileVersions: FileVersionsUseCase) {
         self.target = target
         self.fileVersions = fileVersions
-        self.onVersioning = onVersioning
     }
 
     public var title: String {
@@ -51,7 +49,6 @@ import UnlocalFSDomain
             versioning = loaded.versioning
             versions = loaded.versions
             message = nil
-            onVersioning(loaded.versioning)
         } catch {
             if !Task.isCancelled { message = error.localizedDescription }
         }

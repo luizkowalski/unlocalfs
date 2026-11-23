@@ -30,12 +30,6 @@ import UnlocalFSDomain
         ActivityViewModel(drives: drives, isBusy: { [app] in app.busy.contains($0) }, recordSpeed: app.recordSpeed)
     }
 
-    public func makeVersions(_ target: VersionsTarget) -> VersionsViewModel {
-        VersionsViewModel(target: target, fileVersions: FileVersionsUseCase(drives: drives)) { [app] in
-            app.versioning[target.connection.id] = $0
-        }
-    }
-
     public func makeTraffic() -> TrafficViewModel {
         TrafficViewModel(repository: traffic, connections: { [app] in app.connections }, unsaved: { [app] in app.unsavedTraffic })
     }

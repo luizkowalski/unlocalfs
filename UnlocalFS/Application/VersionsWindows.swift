@@ -4,17 +4,20 @@ import UnlocalFSDomain
 import UnlocalFSPresentation
 
 @MainActor final class VersionsWindows: NSObject, NSWindowDelegate {
-    var makeModel: ((VersionsTarget) -> VersionsViewModel)?
+    private let fileVersions: FileVersionsUseCase
     private var open: [VersionsTarget.ID: (window: NSWindow, model: VersionsViewModel)] = [:]
 
+    init(fileVersions: FileVersionsUseCase) {
+        self.fileVersions = fileVersions
+    }
+
     func show(_ target: VersionsTarget) {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate()
+        NSApp.bringToFront()
         if let window = open[target.id]?.window {
             bringForward(window)
             return
         }
-        guard let model = makeModel?(target) else { return }
+        let model = VersionsViewModel(target: target, fileVersions: fileVersions)
         let window = NSWindow(contentViewController: NSHostingController(rootView: VersionsView(model: model)))
         window.title = model.title
         window.setContentSize(NSSize(width: 620, height: 380))

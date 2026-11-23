@@ -52,7 +52,6 @@ struct MenuContent: View {
 
     private func openMain() {
         openWindow(id: "main")
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate()
+        NSApp.bringToFront()
     }
 }

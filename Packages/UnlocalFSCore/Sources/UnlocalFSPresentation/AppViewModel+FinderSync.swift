@@ -17,7 +17,7 @@ extension AppViewModel {
     private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
         let owners = files.map { versionsTarget(for: $0)?.connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
-        let showsVersions = files.count == 1 && connection.versionsRefusal == nil && versioning[connection.id] != .off
+        let showsVersions = files.count == 1 && connection.versionsRefusal == nil
         if files.contains(where: \.hasDirectoryPath) {
             return showsVersions ? [FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showRecentlyDeleted)] : []
         }
@@ -42,10 +42,6 @@ extension AppViewModel {
         return driveRoot.map { VersionsTarget(connection: $0, path: "", isFolder: true) }
     }
 
-    func showVersions(of file: URL) {
-        if let target = versionsTarget(for: file) { desktop.showVersions(target) }
-    }
-
     public func reply(to request: FinderSyncRequest) -> FinderSyncReply {
         switch request {
         case let .snapshot(since):
@@ -59,7 +55,10 @@ extension AppViewModel {
             switch command {
             case let .copyShareLink(expiry): Task { await copyShareLinks(for: files, expiry: expiry) }
             case .duplicateOnServer: Task { await duplicateOnServer(files) }
-            case .showVersions, .showRecentlyDeleted: if let file = files.first { showVersions(of: file) }
+            case .showVersions, .showRecentlyDeleted:
+                guard let target = files.first.flatMap(versionsTarget) else { return .failed }
+                desktop.showVersions(target)
+                return .windowOpened
             }
             return .accepted
         }

@@ -160,26 +160,21 @@ import UnlocalFSTestSupport
         #expect(app.reply(to: .menu(files)) == .menu(expected))
     }
 
-    @Test func oneFolderOrADriveRootOffersRecentlyDeletedOnlyOnVersionedS3Drives() throws {
+    @Test func oneFolderOrADriveRootOffersRecentlyDeletedOnlyOnS3Drives() throws {
         let plain = Connection.s3(name: "Plain")
-        let unversioned = Connection.s3(name: "Old")
         let server = Connection.sftp(name: "Server")
-        for connection in [plain, unversioned, server] {
+        for connection in [plain, server] {
             try fixture.repository.save(connection, credentials: Credentials())
         }
         let app = fixture.app()
-        app.versioning[unversioned.id] = .off
         func menu(_ connection: Connection, _ path: String) -> [FinderCommand] {
-            let url = fixture.paths.mount(connection).appending(path: path, directoryHint: path.hasSuffix(".pdf") ? .notDirectory : .isDirectory)
-            guard case let .menu(items) = app.reply(to: .menu([url])) else { return [] }
+            guard case let .menu(items) = app.reply(to: .menu([fixture.paths.mount(connection).appending(path: path, directoryHint: .isDirectory)])) else { return [] }
             return items.map(\.command)
         }
 
         #expect(menu(plain, "b") == [.showRecentlyDeleted])
         #expect(menu(plain, "") == [.showRecentlyDeleted])
         #expect(menu(server, "b").isEmpty)
-        #expect(menu(unversioned, "b").isEmpty)
-        #expect(!menu(unversioned, "a.pdf").contains(.showVersions))
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

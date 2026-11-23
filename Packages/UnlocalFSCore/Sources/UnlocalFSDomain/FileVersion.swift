@@ -4,7 +4,7 @@ public enum BucketVersioning: Sendable {
     case enabled, suspended, off, unknown
 }
 
-public struct FileVersion: Hashable, Identifiable, Sendable {
+public struct FileVersion: Identifiable, Sendable {
     public let path: String
     public let filePath: String
     public let size: Int64

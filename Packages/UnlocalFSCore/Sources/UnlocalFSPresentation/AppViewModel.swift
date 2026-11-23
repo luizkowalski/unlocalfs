@@ -16,7 +16,6 @@ import UnlocalFSDomain
     public internal(set) var statuses: [UUID: MountStatus] = [:] { didSet { announceFinderChange() } }
     public internal(set) var speeds: [UUID: [SpeedSample]] = [:]
     public internal(set) var errors: [UUID: String] = [:]
-    var versioning: [UUID: BucketVersioning] = [:]
     public internal(set) var busy: Set<UUID> = [] {
         didSet { if refreshing { refreshRequested = true } }
     }

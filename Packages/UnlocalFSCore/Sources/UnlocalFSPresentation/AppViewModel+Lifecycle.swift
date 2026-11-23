@@ -25,11 +25,11 @@ public extension AppViewModel {
         if let pending = pendingTrust.removeValue(forKey: connection.id) { await drives.cancelServerTrust(pending.challenge) }
         do {
             let outcome = try await connectDrive.execute(connection)
-            switch outcome {
-            case .connected:
-                if connection.versionsRefusal == nil { Task { versioning[connection.id] = await drives.versioning(of: connection) } }
-                if opensFinder { openDrive(connection) }
-            case .ejected: break
+            if opensFinder {
+                switch outcome {
+                case .connected: openDrive(connection)
+                case .ejected: break
+                }
             }
         } catch let challenge as ServerTrustChallenge {
             pendingTrust[connection.id] = (challenge, opensFinder)

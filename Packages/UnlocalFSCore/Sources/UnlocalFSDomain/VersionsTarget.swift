@@ -1,6 +1,6 @@
 import Foundation
 
-public struct VersionsTarget: Equatable, Identifiable, Sendable {
+public struct VersionsTarget: Identifiable, Sendable {
     public let connection: Connection
     public let path: String
     public let isFolder: Bool

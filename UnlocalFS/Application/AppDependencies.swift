@@ -25,7 +25,7 @@ import UnlocalFSPresentation
                 secret: Bundle.main.object(forInfoDictionaryKey: "GoogleClientSecret") as? String ?? "",
             ),
         )
-        let versionsWindows = VersionsWindows()
+        let versionsWindows = VersionsWindows(fileVersions: FileVersionsUseCase(drives: drives))
         let model = AppViewModel(
             initialConnections: initialConnections, repository: repository, drives: drives,
             deleteConnection: DeleteConnectionUseCase(repository: repository, drives: drives),
@@ -36,11 +36,9 @@ import UnlocalFSPresentation
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),
             quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths, versionsWindows: versionsWindows),
         )
-        let viewModels = ViewModelFactory(
+        return AppDependencies(model: model, viewModels: ViewModelFactory(
             app: model, repository: repository, drives: drives, saveConnection: SaveConnectionUseCase(repository: repository, drives: drives),
             traffic: traffic,
-        )
-        versionsWindows.makeModel = viewModels.makeVersions
-        return AppDependencies(model: model, viewModels: viewModels)
+        ))
     }
 }

@@ -27,13 +27,6 @@ public enum FinderCommand: Codable, Hashable, Sendable {
     case duplicateOnServer
     case showVersions
     case showRecentlyDeleted
-
-    public var opensWindow: Bool {
-        switch self {
-        case .copyShareLink, .duplicateOnServer: false
-        case .showVersions, .showRecentlyDeleted: true
-        }
-    }
 }
 
 public struct FinderMenuItem: Codable, Hashable, Sendable {
@@ -57,5 +50,6 @@ public enum FinderSyncReply: Codable, Hashable, Sendable {
     case snapshot(FinderSnapshot, version: Int, checkedAt: [URL: Date])
     case menu([FinderMenuItem])
     case accepted
+    case windowOpened
     case failed
 }
