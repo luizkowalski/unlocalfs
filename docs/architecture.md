@@ -106,6 +106,7 @@ The app target has no tests. So view models decide what the UI shows: which item
 - Views change `AppViewModel` state only through intents such as `toggle`. They can set the selection and what the app presents.
 - `DriveCondition` is the one value behind the status text and dot. Its switches have no `default`, so a new case fails to compile. It hides whether the drive is mounted, so button rules read the status.
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
+- A versions window opens from a `VersionsTarget`: `AppViewModel` resolves the Finder URL, and Application makes the view model through `ViewModelFactory` and hosts it in an AppKit window, because `openWindow` needs a view. Closing the window stops a list or a download, not a restore.
 - `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
 - The gateway returns activity in no set order. `TransferSummary` sets the order.
 - `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` and the use cases read the same `Connection.shareLinkRefusal` and `serverCopyRefusal`, so the menu never offers an action that the use case refuses.
