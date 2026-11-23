@@ -9,7 +9,7 @@ import UnlocalFSDomain
 
     @Test func requestsAndRepliesCrossThePortUnchanged() async throws {
         let snapshot = FinderSnapshot(drives: [.init(mount: URL(filePath: "/Users/me/UnlocalFS/Photos"), uploads: ["a.jpg": .failed])])
-        let reply = FinderSyncReply.snapshot(snapshot, version: snapshot.hashValue, checkedAt: Date(timeIntervalSinceReferenceDate: 1000))
+        let reply = FinderSyncReply.snapshot(snapshot, version: snapshot.hashValue, checkedAt: [snapshot.drives[0].mount: Date(timeIntervalSinceReferenceDate: 1000)])
         let request = FinderSyncRequest.run(.copyShareLink(.week), files: [URL(filePath: "/Users/me/UnlocalFS/Photos/a b.jpg")])
         let received = Mutex<[FinderSyncRequest]>([])
         let port = try FinderSyncPort(name: name) { request in

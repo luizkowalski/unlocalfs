@@ -24,15 +24,18 @@ public struct FinderBadgeCache: Sendable {
         }
     }
 
-    public mutating func confirm(checkedAt: Date) -> Set<URL> {
-        let ready = firstSeen.filter { $0.value < checkedAt }.keys
+    public mutating func confirm(checkedAt checks: [URL: Date]) -> Set<URL> {
+        let ready = firstSeen.filter { url, seen in
+            guard let checked = checks.first(where: { url.path(inside: $0.key) != nil })?.value else { return true }
+            return seen < checked
+        }.keys
         for url in ready {
             firstSeen[url] = nil
         }
         return Set(ready)
     }
 
-    public mutating func apply(_ badges: FinderBadges, version: Int, watching folders: Set<URL>, checkedAt: Date) -> (foldersChanged: Bool, ready: Set<URL>) {
+    public mutating func apply(_ badges: FinderBadges, version: Int, watching folders: Set<URL>, checkedAt: [URL: Date]) -> (foldersChanged: Bool, ready: Set<URL>) {
         let foldersChanged = watched != folders
         self.badges = badges
         self.version = version

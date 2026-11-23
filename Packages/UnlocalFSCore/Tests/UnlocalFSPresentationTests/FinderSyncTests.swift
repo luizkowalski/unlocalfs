@@ -54,7 +54,8 @@ import UnlocalFSTestSupport
         let beforePass = Date.now
         await app.refresh()
         let first = try pull(app)
-        #expect(first.checkedAt >= beforePass && first.checkedAt <= .now)
+        let checkedAt = try #require(first.checkedAt[fixture.paths.mount(connection)])
+        #expect(checkedAt >= beforePass && checkedAt <= .now)
         #expect(app.reply(to: .snapshot(since: first.version)) == .unchanged(checkedAt: first.checkedAt))
 
         try fixture.queue(#"{"name":"a.jpg","id":1,"size":1,"expiry":5,"tries":0,"uploading":false}"#)
@@ -64,25 +65,29 @@ import UnlocalFSTestSupport
     }
 
     @Test func aPassThatSkipsABusyDriveDoesNotCountAsACheckOfIt() async throws {
-        let connection = Connection.s3()
-        try fixture.serve(connection)
+        let busy = Connection.s3(name: "Busy")
+        let other = Connection.s3(name: "Other")
+        try fixture.serve(busy)
+        try fixture.serve(other)
         let app = fixture.app()
         await app.refresh()
-        let checked = try pull(app).checkedAt
+        let first = try pull(app).checkedAt
 
-        app.busy.insert(connection.id)
+        app.busy.insert(busy.id)
         await app.refresh()
-        #expect(try pull(app).checkedAt == checked)
+        let duringBusy = try pull(app).checkedAt
+        #expect(duringBusy[fixture.paths.mount(busy)] == first[fixture.paths.mount(busy)])
+        #expect(try #require(duringBusy[fixture.paths.mount(other)]) > #require(first[fixture.paths.mount(other)]))
 
-        app.busy.remove(connection.id)
+        app.busy.remove(busy.id)
         await app.refresh()
-        #expect(try pull(app).checkedAt > checked)
+        #expect(try #require(pull(app).checkedAt[fixture.paths.mount(busy)]) > #require(first[fixture.paths.mount(busy)]))
     }
 
     private struct Pull {
         let snapshot: FinderSnapshot
         let version: Int
-        let checkedAt: Date
+        let checkedAt: [URL: Date]
     }
 
     private struct NoSnapshot: Error {}

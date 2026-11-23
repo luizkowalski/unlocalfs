@@ -16,9 +16,9 @@ struct FinderBadgeCacheTests {
 
         let firstTime = cache.see(file, at: start)
         let secondTime = cache.see(file, at: start + 1)
-        let olderCheck = cache.confirm(checkedAt: start - 1)
+        let olderCheck = cache.confirm(checkedAt: [drive: start - 1])
         let stillWaiting = cache.isWaiting
-        let newerCheck = cache.confirm(checkedAt: start + 1)
+        let newerCheck = cache.confirm(checkedAt: [drive: start + 1])
 
         #expect(firstTime && !secondTime)
         #expect(olderCheck.isEmpty && stillWaiting)
@@ -33,15 +33,31 @@ struct FinderBadgeCacheTests {
         _ = cache.see(old, at: start)
         _ = cache.see(new, at: start + 10)
 
-        let result = cache.apply(badges([:]), version: 1, watching: [drive], checkedAt: start + 5)
+        let result = cache.apply(badges([:]), version: 1, watching: [drive], checkedAt: [drive: start + 5])
 
         #expect(result.foldersChanged)
         #expect(result.ready == [old])
         #expect(cache.isWaiting)
-        let later = cache.apply(badges([:]), version: 2, watching: [drive], checkedAt: start + 20)
+        let later = cache.apply(badges([:]), version: 2, watching: [drive], checkedAt: [drive: start + 20])
         #expect(!later.foldersChanged && later.ready == [old, new])
         #expect(cache.version == 2)
         #expect(!cache.isWaiting)
+    }
+
+    @Test func eachNewFileWaitsOnlyForACheckOfItsOwnDrive() {
+        var cache = FinderBadgeCache()
+        let busyDrive = URL(filePath: "/Users/me/UnlocalFS/Work", directoryHint: .isDirectory)
+        let photo = drive.appending(path: "new.jpg")
+        let report = busyDrive.appending(path: "new.pdf")
+        let outside = URL(filePath: "/Users/me/UnlocalFS/Old Drive", directoryHint: .isDirectory)
+        for url in [photo, report, outside] {
+            _ = cache.see(url, at: start)
+        }
+
+        let ready = cache.confirm(checkedAt: [drive: start + 1, busyDrive: start - 1])
+
+        #expect(ready == [photo, outside])
+        #expect(cache.confirm(checkedAt: [drive: start + 1, busyDrive: start + 1]) == [report])
     }
 
     @Test func aFolderFinderStopsShowingDropsOnlyItsFiles() {
@@ -53,21 +69,21 @@ struct FinderBadgeCacheTests {
 
         cache.forget(folder: drive.appending(path: "b", directoryHint: .isDirectory))
 
-        #expect(cache.confirm(checkedAt: start + 1) == [kept])
+        #expect(cache.confirm(checkedAt: [drive: start + 1]) == [kept])
     }
 
     @Test func resetReturnsWhatToClearAndStartsOver() {
         var cache = FinderBadgeCache()
         let file = drive.appending(path: "a.pdf")
         _ = cache.see(file, at: start)
-        _ = cache.apply(badges([:]), version: 1, watching: [drive], checkedAt: start + 1)
+        _ = cache.apply(badges([:]), version: 1, watching: [drive], checkedAt: [drive: start + 1])
 
         let cleared = cache.reset()
 
         #expect(cleared.known == [file] && cleared.watched == [drive])
         #expect(cache.version == nil)
         let seenAgain = cache.see(file, at: start + 2)
-        let watchesAgain = cache.apply(badges([:]), version: 2, watching: [drive], checkedAt: start + 3).foldersChanged
+        let watchesAgain = cache.apply(badges([:]), version: 2, watching: [drive], checkedAt: [drive: start + 3]).foldersChanged
         #expect(seenAgain && watchesAgain)
     }
 }
