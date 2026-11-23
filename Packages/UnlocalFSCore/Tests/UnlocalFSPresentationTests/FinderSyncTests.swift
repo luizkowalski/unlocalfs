@@ -19,14 +19,12 @@ import UnlocalFSTestSupport
         let app = fixture.app(desktop: desktop)
 
         await app.refresh()
-        let idle = app.finderSnapshot
-        #expect(idle.drives == [FinderSnapshot.Drive(mount: fixture.paths.mount(connection), uploads: [:])])
+        #expect(try pull(app).snapshot.drives == [FinderSnapshot.Drive(mount: fixture.paths.mount(connection), uploads: [:])])
         #expect(desktop.finderChanges == 1)
 
         try fixture.queue(#"{"name":"photos/a.jpg","id":1,"size":1,"expiry":5,"tries":0,"uploading":false}"#)
         await app.refresh()
-        #expect(app.finderSnapshot.drives.map(\.uploads) == [["photos/a.jpg": .waiting]])
-        #expect(app.finderSnapshot.version != idle.version)
+        #expect(try pull(app).snapshot.drives.map(\.uploads) == [["photos/a.jpg": .pending]])
         #expect(desktop.finderChanges == 2)
 
         await app.refresh()
@@ -39,32 +37,59 @@ import UnlocalFSTestSupport
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         await app.refresh()
-        #expect(app.finderSnapshot.drives.count == 1)
+        #expect(try pull(app).snapshot.drives.count == 1)
 
         try FileManager.default.removeItem(at: fixture.paths.socket(connection))
         await app.refresh()
 
-        #expect(app.finderSnapshot.drives.isEmpty)
+        #expect(try pull(app).snapshot.drives.isEmpty)
         #expect(desktop.finderChanges == 2)
     }
 
     @Test func snapshotRequestsGetOnlyWhatChangedAndWhenTheStatusPassStarted() async throws {
         let connection = Connection.s3()
-        try fixture.serve(connection, failed: 1)
+        try fixture.serve(connection)
         let app = fixture.app()
-        #expect(app.reply(to: .snapshot(since: nil)) == .snapshot(FinderSnapshot(drives: []), version: FinderSnapshot(drives: []).version, checkedAt: .distantPast))
 
         let beforePass = Date.now
         await app.refresh()
-        let snapshot = app.finderSnapshot
-        guard case let .unchanged(checkedAt) = app.reply(to: .snapshot(since: snapshot.version)) else {
-            Issue.record("Expected an unchanged reply")
-            return
-        }
+        let first = try pull(app)
+        #expect(first.checkedAt >= beforePass && first.checkedAt <= .now)
+        #expect(app.reply(to: .snapshot(since: first.version)) == .unchanged(checkedAt: first.checkedAt))
 
-        #expect(checkedAt >= beforePass && checkedAt <= .now)
-        #expect(app.reply(to: .snapshot(since: nil)) == .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt))
-        #expect(app.reply(to: .snapshot(since: snapshot.version + 1)) == .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt))
+        try fixture.queue(#"{"name":"a.jpg","id":1,"size":1,"expiry":5,"tries":0,"uploading":false}"#)
+        await app.refresh()
+        let changed = try pull(app)
+        #expect(app.reply(to: .snapshot(since: first.version)) == .snapshot(changed.snapshot, version: changed.version, checkedAt: changed.checkedAt))
+    }
+
+    @Test func aPassThatSkipsABusyDriveDoesNotCountAsACheckOfIt() async throws {
+        let connection = Connection.s3()
+        try fixture.serve(connection)
+        let app = fixture.app()
+        await app.refresh()
+        let checked = try pull(app).checkedAt
+
+        app.busy.insert(connection.id)
+        await app.refresh()
+        #expect(try pull(app).checkedAt == checked)
+
+        app.busy.remove(connection.id)
+        await app.refresh()
+        #expect(try pull(app).checkedAt > checked)
+    }
+
+    private struct Pull {
+        let snapshot: FinderSnapshot
+        let version: Int
+        let checkedAt: Date
+    }
+
+    private struct NoSnapshot: Error {}
+
+    private func pull(_ app: AppViewModel) throws -> Pull {
+        guard case let .snapshot(snapshot, version, checkedAt) = app.reply(to: .snapshot(since: nil)) else { throw NoSnapshot() }
+        return Pull(snapshot: snapshot, version: version, checkedAt: checkedAt)
     }
 
     enum Selection: CaseIterable {
@@ -82,8 +107,8 @@ import UnlocalFSTestSupport
             try fixture.repository.save(connection, credentials: Credentials())
         }
         let app = fixture.app()
-        func file(_ connection: Connection, _ name: String = "a.pdf") -> FinderItem {
-            FinderItem(url: fixture.paths.mount(connection).appending(path: name), isFolder: false)
+        func file(_ connection: Connection, _ name: String = "a.pdf") -> URL {
+            fixture.paths.mount(connection).appending(path: name)
         }
         let links = [
             FinderMenuItem(title: String(localized: .copyShareLinkHour), command: .copyShareLink(.hour)),
@@ -92,18 +117,18 @@ import UnlocalFSTestSupport
         ]
         let duplicate = FinderMenuItem(title: String(localized: .duplicateOnServer), command: .duplicateOnServer)
 
-        let (items, expected): ([FinderItem], [FinderMenuItem]) = switch selection {
+        let (files, expected): ([URL], [FinderMenuItem]) = switch selection {
         case .plainFiles: ([file(plain), file(plain, "b/c.pdf")], links + [duplicate])
         case .encryptedFile: ([file(encrypted)], [duplicate])
         case .readOnlyFile: ([file(readOnly)], links)
         case .serverFile: ([file(server)], [])
-        case .fileAndFolder: ([file(plain), FinderItem(url: fixture.paths.mount(plain).appending(path: "b"), isFolder: true)], [])
+        case .fileAndFolder: ([file(plain), fixture.paths.mount(plain).appending(path: "b", directoryHint: .isDirectory)], [])
         case .twoDrives: ([file(plain), file(other)], [])
-        case .outside: ([FinderItem(url: fixture.root.appending(path: "a.pdf"), isFolder: false)], [])
+        case .outside: ([fixture.root.appending(path: "a.pdf")], [])
         case .nothing: ([], [])
         }
 
-        #expect(app.reply(to: .menu(items)) == .menu(expected))
+        #expect(app.reply(to: .menu(files)) == .menu(expected))
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

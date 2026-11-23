@@ -130,7 +130,7 @@ import UnlocalFSPresentation
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
         NSApp.servicesProvider = self
         do {
-            finderPort = try FinderSyncPort(name: FinderSyncMessage.portName) { [model] in model.reply(to: $0) }
+            finderPort = try FinderSyncPort { [model] in model.reply(to: $0) }
         } catch {
             Logger().error("Finder extension unavailable: \(error.localizedDescription, privacy: .public)")
         }
@@ -232,7 +232,7 @@ extension AppDelegate {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
         if app == .current {
             returnServiceFocus()
-            model.syncDesktopSettings()
+            model.syncOpensAtLogin()
         } else {
             requester = app
         }

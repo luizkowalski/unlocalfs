@@ -21,9 +21,8 @@ public extension AppViewModel {
         }
         refreshing = true
         defer { refreshing = false }
-        var started: Date
         repeat {
-            started = .now
+            let started = Date.now
             refreshRequested = false
             let checked = connections.filter { !busy.contains($0.id) }
             await withTaskGroup(of: (Connection, MountStatus).self) { group in
@@ -33,10 +32,10 @@ public extension AppViewModel {
                 for await (connection, status) in group {
                     guard !sleeping, !refreshRequested, !busy.contains(connection.id) else { continue }
                     update(status, for: connection)
+                    statusCheckedAt[connection.id] = started
                 }
             }
         } while refreshRequested && !sleeping
-        statusCheckedAt = started
         announceFinderChange()
     }
 

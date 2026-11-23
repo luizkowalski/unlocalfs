@@ -2,22 +2,27 @@ import Foundation
 import UnlocalFSDomain
 
 extension AppViewModel {
-    var finderSnapshot: FinderSnapshot {
-        FinderSnapshot(drives: connections.compactMap { connection in
-            guard let status = statuses[connection.id], status.isServing else { return nil }
-            return FinderSnapshot.Drive(mount: desktop.mountLocation(connection), uploads: status.uploads)
-        })
+    private var servingDrives: [(connection: Connection, status: MountStatus)] {
+        connections.compactMap { connection in servingStatus(connection).map { (connection, $0) } }
     }
 
-    private func finderMenu(for items: [FinderItem]) -> [FinderMenuItem] {
-        guard items.allSatisfy({ !$0.isFolder }) else { return [] }
-        let owners = items.map { drives.remoteFile($0.url, among: connections)?.connection }
+    private var finderSnapshot: FinderSnapshot {
+        FinderSnapshot(drives: servingDrives.map { FinderSnapshot.Drive(mount: desktop.mountLocation($0.connection), uploads: $0.status.uploads) })
+    }
+
+    private var finderCheckedAt: Date {
+        servingDrives.map { statusCheckedAt[$0.connection.id] ?? .distantPast }.min() ?? .now
+    }
+
+    private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
+        guard files.allSatisfy({ !$0.hasDirectoryPath }) else { return [] }
+        let owners = files.map { drives.remoteFile($0, among: connections)?.connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
         var menu: [FinderMenuItem] = []
-        if connection.allowsShareLinks {
+        if connection.shareLinkRefusal == nil {
             menu += ShareLinkExpiry.allCases.map { FinderMenuItem(title: $0.menuTitle, command: .copyShareLink($0)) }
         }
-        if connection.allowsServerCopy {
+        if connection.serverCopyRefusal == nil {
             menu.append(FinderMenuItem(title: String(localized: .duplicateOnServer), command: .duplicateOnServer))
         }
         return menu
@@ -27,10 +32,11 @@ extension AppViewModel {
         switch request {
         case let .snapshot(since):
             let snapshot = finderSnapshot
-            let version = snapshot.version
-            return since == version ? .unchanged(checkedAt: statusCheckedAt) : .snapshot(snapshot, version: version, checkedAt: statusCheckedAt)
-        case let .menu(items):
-            return .menu(finderMenu(for: items))
+            let version = snapshot.hashValue
+            let checkedAt = finderCheckedAt
+            return since == version ? .unchanged(checkedAt: checkedAt) : .snapshot(snapshot, version: version, checkedAt: checkedAt)
+        case let .menu(files):
+            return .menu(finderMenu(for: files))
         case let .run(command, files):
             Task { await perform(command, on: files) }
             return .accepted

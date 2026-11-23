@@ -1,4 +1,5 @@
 import Foundation
+import notify
 import UnlocalFSDomain
 
 public struct FinderSyncClient {
@@ -15,6 +16,11 @@ public struct FinderSyncClient {
         guard CFMessagePortSendRequest(port, 0, data as CFData, timeout, timeout, CFRunLoopMode.defaultMode.rawValue, &reply) == kCFMessagePortSuccess,
               let reply
         else { return nil }
-        return try? FinderSyncMessage.decode(FinderSyncReply.self, from: reply.takeRetainedValue() as Data)
+        return (try? FinderSyncMessage.decode(FinderSyncReply.self, from: reply.takeRetainedValue() as Data)) ?? .failed
+    }
+
+    public static func observeChanges(on queue: DispatchQueue, _ handler: @escaping @Sendable () -> Void) {
+        var token: Int32 = 0
+        notify_register_dispatch(FinderSyncMessage.changedNotification, &token, queue) { _ in handler() }
     }
 }

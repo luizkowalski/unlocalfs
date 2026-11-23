@@ -3,7 +3,6 @@ import UnlocalFSDomain
 
 @MainActor public protocol DesktopServices {
     var opensAtLogin: Bool { get }
-    var finderExtensionEnabled: Bool { get }
     func setOpensAtLogin(_ enabled: Bool) throws
     func mountLocation(_ connection: Connection) -> URL
     func openDrive(_ connection: Connection)
@@ -12,7 +11,6 @@ import UnlocalFSDomain
     func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination?
     func notify(title: String, body: String, fallbackToAlert: Bool)
     func announceFinderChange()
-    func showFinderExtensionSettings()
 }
 
 public struct RcloneConfigDestination {

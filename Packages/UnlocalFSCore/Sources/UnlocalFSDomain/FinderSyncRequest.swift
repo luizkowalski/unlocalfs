@@ -17,20 +17,8 @@ public struct FinderSnapshot: Codable, Hashable, Sendable {
         self.drives = drives
     }
 
-    public var version: Int { hashValue }
-
     public var watchedFolders: Set<URL> {
         Set(drives.flatMap { [$0.mount, $0.mount.deletingLastPathComponent()] })
-    }
-}
-
-public struct FinderItem: Codable, Hashable, Sendable {
-    public let url: URL
-    public let isFolder: Bool
-
-    public init(url: URL, isFolder: Bool) {
-        self.url = url
-        self.isFolder = isFolder
     }
 }
 
@@ -51,7 +39,7 @@ public struct FinderMenuItem: Codable, Hashable, Sendable {
 
 public enum FinderSyncRequest: Codable, Hashable, Sendable {
     case snapshot(since: Int?)
-    case menu([FinderItem])
+    case menu([URL])
     case run(FinderCommand, files: [URL])
 }
 

@@ -71,7 +71,7 @@ struct ConnectionRulesTests {
 
     @Test func pendingUploadsPreventDisconnect() {
         var status = MountStatus()
-        status.uploads = ["report.pdf": .waiting]
+        status.uploads = ["report.pdf": .pending]
         #expect(throws: UploadsPendingError.self) { try status.requireSafeDisconnect() }
     }
 

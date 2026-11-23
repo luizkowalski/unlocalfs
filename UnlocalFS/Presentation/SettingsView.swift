@@ -1,9 +1,11 @@
+import FinderSync
 import SwiftUI
 import UnlocalFSPresentation
 
 struct SettingsView: View {
     @Environment(AppViewModel.self) private var model
     @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = true
+    @State private var finderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
 
     var body: some View {
         Form {
@@ -13,10 +15,10 @@ struct SettingsView: View {
                 Text("When the menu bar icon is off, UnlocalFS stays in the Dock after you close its window.")
             }
             LabeledContent {
-                if model.finderExtensionEnabled {
+                if finderExtensionEnabled {
                     Text("On")
                 } else {
-                    Button("Turn On…") { model.openFinderExtensionSettings() }
+                    Button("Turn On…") { FIFinderSyncController.showExtensionManagementInterface() }
                 }
             } label: {
                 Text("Finder Extension")
@@ -26,6 +28,9 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 420)
         .fixedSize()
-        .onAppear { model.syncDesktopSettings() }
+        .onAppear { model.syncOpensAtLogin() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            finderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
+        }
     }
 }

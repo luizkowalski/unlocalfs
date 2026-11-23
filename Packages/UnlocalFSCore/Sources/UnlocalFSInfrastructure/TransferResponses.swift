@@ -13,9 +13,7 @@ struct UploadQueue: Decodable {
         let uploading: Bool
 
         var hasFailedAttempt: Bool { tries > 1 || (tries > 0 && !uploading) }
-        var state: UploadState {
-            if hasFailedAttempt { .failed } else if uploading { .uploading } else { .waiting }
-        }
+        var state: UploadState { hasFailedAttempt ? .failed : .pending }
     }
 }
 

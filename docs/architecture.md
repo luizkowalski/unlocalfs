@@ -88,7 +88,8 @@ These checks stay in Infrastructure, because uploads can change between two oper
 `UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and `UnlocalFSFinderLink`, and holds no rules: the app is the only source of truth.
 
 - The app answers on one `CFMessagePort` (`FinderSyncPort`), named after the team-prefixed app group that the extension claims, so the sandbox allows the lookup. An `NSXPCListener` with a Mach name would need a launchd job.
-- `UnlocalFSFinderLink` holds both ends of the port: `FinderSyncPort` in the app, `FinderSyncClient` in the extension, and `FinderSyncMessage`, which encodes them. The requests, replies, and snapshot are Domain values. A message from another protocol version fails like an unreadable one.
+- `UnlocalFSFinderLink` holds both ends of the port and of the change notification: `FinderSyncPort` in the app and `FinderSyncClient` in the extension. Only this target knows the message format, the port name, and the notification name. The requests, replies, and snapshot are Domain values. A message from another protocol version fails like an unreadable one, on both sides, so an old extension clears its badges instead of retrying.
+- The `APP_GROUP` and `FINDER_PORT_NAME` build settings in `project.yml` set the extension's app group and the port name in both Info.plists.
 - After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
 - Each reply says when the status pass behind it started. `FinderBadgeCache` badges a file that Finder shows for the first time only from a pass that started later, so a new file never shows uploaded early. A timed-out pull keeps the badges and tries again; only a missing port clears them.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
@@ -103,7 +104,8 @@ The app target has no tests. So view models decide what the UI shows: which item
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
 - `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
 - The gateway returns activity in no set order. `TransferSummary` sets the order.
-- `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` uses `Connection.allowsShareLinks` and `allowsServerCopy`, the same rules as the use cases, so the menu never offers an action that the use case refuses.
+- `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` and the use cases read the same `Connection.shareLinkRefusal` and `serverCopyRefusal`, so the menu never offers an action that the use case refuses.
+- The Settings view reads the Finder extension switch itself, because no rule depends on it.
 - The status shows rclone's last upload error only while uploads fail, because rclone never clears it.
 - The speed history keeps the newest sample of each second, because rclone updates `speedAvg` about once a second. It drops samples newer than the latest one, so a clock that moves back leaves no future points.
 

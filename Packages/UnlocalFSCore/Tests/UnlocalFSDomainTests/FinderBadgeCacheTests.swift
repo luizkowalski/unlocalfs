@@ -53,9 +53,7 @@ struct FinderBadgeCacheTests {
 
         cache.forget(folder: drive.appending(path: "b", directoryHint: .isDirectory))
 
-        let ready = cache.confirm(checkedAt: start + 1)
-        #expect(cache.allKnown == [kept])
-        #expect(ready == [kept])
+        #expect(cache.confirm(checkedAt: start + 1) == [kept])
     }
 
     @Test func resetReturnsWhatToClearAndStartsOver() {
@@ -67,8 +65,9 @@ struct FinderBadgeCacheTests {
         let cleared = cache.reset()
 
         #expect(cleared.known == [file] && cleared.watched == [drive])
-        #expect(cache.allKnown.isEmpty && cache.watched.isEmpty && cache.version == nil)
+        #expect(cache.version == nil)
         let seenAgain = cache.see(file, at: start + 2)
-        #expect(seenAgain)
+        let watchesAgain = cache.apply(badges([:]), version: 2, watching: [drive], checkedAt: start + 3).foldersChanged
+        #expect(seenAgain && watchesAgain)
     }
 }

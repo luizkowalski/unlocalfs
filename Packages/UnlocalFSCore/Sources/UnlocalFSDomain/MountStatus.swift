@@ -17,7 +17,7 @@ public struct UploadsPendingError: LocalizedError, Sendable {
 }
 
 public enum UploadState: String, Codable, Hashable, Sendable {
-    case waiting, uploading, failed
+    case pending, failed
 }
 
 public struct MountStatus: Equatable, Sendable {

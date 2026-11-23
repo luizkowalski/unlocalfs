@@ -31,7 +31,6 @@ import UnlocalFSDomain
     public var uploadCleanup: UploadCleanup?
     public private(set) var ready = false
     public private(set) var opensAtLogin: Bool
-    public private(set) var finderExtensionEnabled: Bool
     var networkAvailable = true
     var sleeping = false
 
@@ -52,7 +51,7 @@ import UnlocalFSDomain
     var waitingToDisconnect: Set<UUID> = []
     var disconnectingAll = false
     @ObservationIgnored var announcedFinderSnapshot: FinderSnapshot?
-    @ObservationIgnored var statusCheckedAt = Date.distantPast
+    @ObservationIgnored var statusCheckedAt: [UUID: Date] = [:]
 
     public init(
         initialConnections: Result<[Connection], any Error>,
@@ -78,7 +77,6 @@ import UnlocalFSDomain
         self.quit = quit
         self.desktop = desktop
         opensAtLogin = desktop.opensAtLogin
-        finderExtensionEnabled = desktop.finderExtensionEnabled
         switch initialConnections {
         case let .success(connections):
             self.connections = connections
@@ -168,15 +166,13 @@ import UnlocalFSDomain
         do {
             try desktop.setOpensAtLogin(enabled)
         } catch { alert = AppAlert(String(localized: .openAtLoginNotChanged), error) }
-        syncDesktopSettings()
+        syncOpensAtLogin()
     }
 
-    public func syncDesktopSettings() {
-        if opensAtLogin != desktop.opensAtLogin { opensAtLogin = desktop.opensAtLogin }
-        if finderExtensionEnabled != desktop.finderExtensionEnabled { finderExtensionEnabled = desktop.finderExtensionEnabled }
+    public func syncOpensAtLogin() {
+        let enabled = desktop.opensAtLogin
+        if opensAtLogin != enabled { opensAtLogin = enabled }
     }
-
-    public func openFinderExtensionSettings() { desktop.showFinderExtensionSettings() }
 }
 
 public extension AppViewModel {

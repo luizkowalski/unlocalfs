@@ -10,20 +10,21 @@ public enum FinderBadge: CaseIterable, Comparable, Sendable {
 
 public struct FinderBadges: Sendable {
     private struct Drive {
-        let root: [String]
+        let mount: URL
         let badges: [String: FinderBadge]
     }
 
     private let drives: [Drive]
 
     public init(_ snapshot: FinderSnapshot) {
-        drives = snapshot.drives.map { Drive(root: $0.mount.standardizedFileURL.pathComponents, badges: Self.rollUp($0.uploads)) }
+        drives = snapshot.drives.map { Drive(mount: $0.mount, badges: Self.rollUp($0.uploads)) }
     }
 
     public func badge(for url: URL) -> FinderBadge? {
-        let components = url.standardizedFileURL.pathComponents
-        guard let drive = drives.first(where: { components.starts(with: $0.root) }) else { return nil }
-        return drive.badges[components.dropFirst(drive.root.count).joined(separator: "/"), default: .uploaded]
+        for drive in drives {
+            if let path = url.path(inside: drive.mount) { return drive.badges[path, default: .uploaded] }
+        }
+        return nil
     }
 
     private static func rollUp(_ uploads: [String: UploadState]) -> [String: FinderBadge] {

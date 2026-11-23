@@ -2,14 +2,14 @@ import Foundation
 import Synchronization
 import Testing
 import UnlocalFSDomain
-import UnlocalFSFinderLink
+@testable import UnlocalFSFinderLink
 
 @MainActor @Suite(.timeLimit(.minutes(1))) struct FinderSyncPortTests {
     private let name = "unlocalfs-tests.finder.\(UUID().uuidString)"
 
     @Test func requestsAndRepliesCrossThePortUnchanged() async throws {
         let snapshot = FinderSnapshot(drives: [.init(mount: URL(filePath: "/Users/me/UnlocalFS/Photos"), uploads: ["a.jpg": .failed])])
-        let reply = FinderSyncReply.snapshot(snapshot, version: snapshot.version, checkedAt: Date(timeIntervalSinceReferenceDate: 1000))
+        let reply = FinderSyncReply.snapshot(snapshot, version: snapshot.hashValue, checkedAt: Date(timeIntervalSinceReferenceDate: 1000))
         let request = FinderSyncRequest.run(.copyShareLink(.week), files: [URL(filePath: "/Users/me/UnlocalFS/Photos/a b.jpg")])
         let received = Mutex<[FinderSyncRequest]>([])
         let port = try FinderSyncPort(name: name) { request in
@@ -29,6 +29,17 @@ import UnlocalFSFinderLink
         #expect(try await sendRaw(Data(#"{"version":2,"body":{"snapshot":{}}}"#.utf8)) == .failed)
         #expect(await send(.menu([])) == .menu([]))
         _ = port
+    }
+
+    @Test func aReplyTheClientCannotReadCountsAsFailed() async throws {
+        let newerApp = CFMessagePortCreateLocal(nil, name as CFString, { _, _, _, _ in
+            Unmanaged.passRetained(Data(#"{"version":2,"body":{"accepted":{}}}"#.utf8) as CFData)
+        }, nil, nil)
+        let port = try #require(newerApp)
+        CFMessagePortSetDispatchQueue(port, .main)
+        defer { CFMessagePortInvalidate(port) }
+
+        #expect(await send(.menu([])) == .failed)
     }
 
     private func send(_ request: FinderSyncRequest) async -> FinderSyncReply? {

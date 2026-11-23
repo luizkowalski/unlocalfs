@@ -8,7 +8,7 @@ struct FinderBadgeTests {
     private static let photos2 = mounts.appending(path: "Photos 2", directoryHint: .isDirectory)
 
     private static let badges = FinderBadges(FinderSnapshot(drives: [
-        .init(mount: photos, uploads: ["a/b/report.pdf": .uploading, "a/c/photo.jpg": .failed, "a/bc/x": .waiting, "photos2/x.jpg": .waiting]),
+        .init(mount: photos, uploads: ["a/b/report.pdf": .pending, "a/c/photo.jpg": .failed, "a/bc/x": .pending, "photos2/x.jpg": .pending]),
         .init(mount: photos2, uploads: [:]),
     ]))
 

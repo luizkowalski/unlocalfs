@@ -3,13 +3,13 @@ import Foundation
 public struct FinderBadgeCache: Sendable {
     public private(set) var version: Int?
     public private(set) var badges = FinderBadges(FinderSnapshot(drives: []))
-    public private(set) var watched: Set<URL> = []
+    private var watched: Set<URL> = []
     private var known: [String: Set<URL>] = [:]
     private var firstSeen: [URL: Date] = [:]
 
     public init() {}
 
-    public var allKnown: Set<URL> { known.values.reduce(into: []) { $0.formUnion($1) } }
+    private var allKnown: Set<URL> { known.values.reduce(into: []) { $0.formUnion($1) } }
     public var isWaiting: Bool { !firstSeen.isEmpty }
 
     public mutating func see(_ url: URL, at date: Date) -> Bool {

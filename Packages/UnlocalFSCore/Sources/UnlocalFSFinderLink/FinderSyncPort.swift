@@ -1,18 +1,19 @@
 import Foundation
+import notify
 import UnlocalFSDomain
 
 @MainActor public final class FinderSyncPort {
     public typealias Handler = @MainActor (FinderSyncRequest) -> FinderSyncReply
 
     public struct Unavailable: LocalizedError {
-        public let name: String
+        let name: String
         public var errorDescription: String? { "Finder extension port \(name) is in use" }
     }
 
     private let handler: Handler
     private nonisolated(unsafe) var port: CFMessagePort?
 
-    public init(name: String, handler: @escaping Handler) throws {
+    public init(name: String = FinderSyncMessage.portName, handler: @escaping Handler) throws {
         self.handler = handler
         var context = CFMessagePortContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
         var shouldFree: DarwinBoolean = false
@@ -28,6 +29,10 @@ import UnlocalFSDomain
 
     deinit {
         if let port { CFMessagePortInvalidate(port) }
+    }
+
+    public nonisolated static func announceChange() {
+        notify_post(FinderSyncMessage.changedNotification)
     }
 
     private func respond(to data: Data) -> Data {

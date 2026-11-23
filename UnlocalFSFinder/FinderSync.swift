@@ -1,6 +1,5 @@
 import Cocoa
 import FinderSync
-import notify
 import Synchronization
 import UnlocalFSDomain
 import UnlocalFSFinderLink
@@ -23,8 +22,7 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
         }
         pulls.setEventHandler { [weak self] in self?.pull() }
         pulls.activate()
-        var token: Int32 = 0
-        notify_register_dispatch(FinderSyncMessage.changedNotification, &token, queue) { [weak self] _ in self?.schedulePull() }
+        FinderSyncClient.observeChanges(on: queue) { [weak self] in self?.schedulePull() }
         fallback.schedule(deadline: .now(), repeating: 30)
         fallback.setEventHandler { [weak self] in self?.schedulePull() }
         fallback.resume()
@@ -44,7 +42,7 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
         guard menuKind == .contextualMenuForItems, let urls = controller.selectedItemURLs(), !urls.isEmpty,
-              case let .menu(items) = FinderSyncClient()?.send(.menu(urls.map { FinderItem(url: $0, isFolder: $0.hasDirectoryPath) })), !items.isEmpty
+              case let .menu(items) = FinderSyncClient()?.send(.menu(urls)), !items.isEmpty
         else { return nil }
         menuItems.withLock { $0 = items }
         let menu = NSMenu(title: "")

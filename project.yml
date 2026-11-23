@@ -16,6 +16,8 @@ settings:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: 0.1.0
     CURRENT_PROJECT_VERSION: 1
+    APP_GROUP: $(TeamIdentifierPrefix)net.luizkowalski.unlocalfs
+    FINDER_PORT_NAME: $(APP_GROUP).finder
 targets:
   UnlocalFS:
     type: application

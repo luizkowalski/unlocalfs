@@ -79,16 +79,15 @@ import UnlocalFSTestSupport
 
     private nonisolated static let connected = statusBatch()
 
-    @Test func desktopSettingsAreNotReadOnEveryPoll() async {
+    @Test func loginItemStateIsNotReadOnEveryPoll() async {
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         desktop.opensAtLogin = true
-        desktop.finderExtensionEnabled = true
 
         await app.refresh()
 
-        #expect(!app.opensAtLogin && !app.finderExtensionEnabled)
-        app.syncDesktopSettings()
-        #expect(app.opensAtLogin && app.finderExtensionEnabled)
+        #expect(!app.opensAtLogin)
+        app.syncOpensAtLogin()
+        #expect(app.opensAtLogin)
     }
 }

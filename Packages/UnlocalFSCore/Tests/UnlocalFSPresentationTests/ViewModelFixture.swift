@@ -211,7 +211,6 @@ final class MemoryCredentialStorage: CredentialStorage {
     var notifications: [Notification] = []
     var rcloneConfigDestination: RcloneConfigDestination?
     var finderChanges = 0
-    var finderExtensionEnabled = false
     private var notificationWaiters: [CheckedContinuation<Notification, Never>] = []
 
     init(paths: AppPaths) { self.paths = paths }
@@ -240,5 +239,4 @@ final class MemoryCredentialStorage: CredentialStorage {
     }
 
     func announceFinderChange() { finderChanges += 1 }
-    func showFinderExtensionSettings() {}
 }
