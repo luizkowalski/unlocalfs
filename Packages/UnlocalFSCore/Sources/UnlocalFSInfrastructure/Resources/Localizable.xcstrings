@@ -195,13 +195,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Could not list the versions: %1$@. The drive's key needs the s3:ListBucketVersions and s3:GetObjectVersion permissions."
+            "value": "Could not list the versions: %1$@. The storage may not support versions, or the drive's key needs the s3:ListBucketVersions and s3:GetObjectVersion permissions."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível listar as versões: %1$@. A chave da unidade precisa das permissões s3:ListBucketVersions e s3:GetObjectVersion."
+            "value": "Não foi possível listar as versões: %1$@. O armazenamento pode não ter versões, ou a chave da unidade precisa das permissões s3:ListBucketVersions e s3:GetObjectVersion."
           }
         }
       }
