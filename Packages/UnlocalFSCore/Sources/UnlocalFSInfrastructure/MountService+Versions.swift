@@ -33,20 +33,10 @@ public extension MountService {
             throw AppError(String(localized: .restoreFileStillUploading))
         }
         let folder = (version.filePath as NSString).deletingLastPathComponent
-        let destination: String
-        if asCopy {
-            destination = try await reserveCopyPath(for: version.filePath, in: folder, of: connection, target: connection.driveTarget)
-        } else {
-            destination = version.filePath
-            reservedCopies[connection.id, default: []].insert(destination)
-        }
-        defer { reservedCopies[connection.id]?.remove(destination) }
-        let target = connection.versionsTarget
-        _ = try await runJob(connection, "operations/copyfile", [
-            "srcFs": target, "srcRemote": version.path, "dstFs": target, "dstRemote": destination, "_group": Self.copyGroup,
-        ])
-        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
-        _ = try? await names(in: paths.mount(connection).appending(path: folder))
+        let destination = asCopy
+            ? try await reserveCopyPath(for: version.filePath, in: folder, of: connection, target: connection.driveTarget)
+            : version.filePath
+        try await copyOnServer(version.path, to: destination, on: connection.versionsTarget, in: connection)
         return destination
     }
 
@@ -66,20 +56,6 @@ public extension MountService {
 
     nonisolated func discardPreview(_ file: URL) {
         try? FileManager.default.removeItem(at: file.deletingLastPathComponent())
-    }
-
-    private func runJob(_ connection: Connection, _ method: String, _ parameters: [String: String]) async throws -> Data {
-        try await runJob(connection, method, body: JSONEncoder().encode(parameters.merging(["_async": "true"]) { $1 }))
-    }
-
-    private func runJob(_ connection: Connection, _ method: String, body: Data) async throws -> Data {
-        let job = try await JSONDecoder().decode(StartedJob.self, from: control(connection, method, body: body))
-        do {
-            return try await waitForJob(job, on: connection)
-        } catch is CancellationError {
-            Task { _ = try? await control(connection, "job/stop", ["jobid": "\(job.jobid)"]) }
-            throw CancellationError()
-        }
     }
 }
 

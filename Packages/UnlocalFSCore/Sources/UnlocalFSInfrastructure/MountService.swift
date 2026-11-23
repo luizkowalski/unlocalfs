@@ -329,3 +329,21 @@ public actor MountService: DriveGateway {
         }
     }
 }
+
+extension MountService {
+    @discardableResult
+    func runJob(_ connection: Connection, _ method: String, _ parameters: [String: String]) async throws -> Data {
+        try await runJob(connection, method, body: JSONEncoder().encode(parameters.merging(["_async": "true"]) { $1 }))
+    }
+
+    @discardableResult
+    func runJob(_ connection: Connection, _ method: String, body: Data) async throws -> Data {
+        let job = try await JSONDecoder().decode(StartedJob.self, from: control(connection, method, body: body))
+        do {
+            return try await waitForJob(job, on: connection)
+        } catch is CancellationError {
+            Task { _ = try? await control(connection, "job/stop", ["jobid": "\(job.jobid)"]) }
+            throw CancellationError()
+        }
+    }
+}

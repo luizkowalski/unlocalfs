@@ -2,7 +2,7 @@ import Foundation
 import UnlocalFSDomain
 
 extension MountService {
-    static let copyGroup = "duplicate"
+    private static let copyGroup = "duplicate"
 
     public func duplicate(_ path: String, in connection: Connection) async throws -> String {
         try requireServing(connection, otherwise: .reconnectToDuplicate)
@@ -12,14 +12,19 @@ extension MountService {
         let target = connection.driveTarget
         let folder = (path as NSString).deletingLastPathComponent
         let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
-        defer { reservedCopies[connection.id]?.remove(destination) }
-        let job = try await control(StartedJob.self, connection, "operations/copyfile", [
-            "srcFs": target, "srcRemote": path, "dstFs": target, "dstRemote": destination,
-            "_async": "true", "_group": Self.copyGroup,
-        ])
-        try await waitForJob(job, on: connection)
-        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
+        try await copyOnServer(path, to: destination, on: target, in: connection)
         return destination
+    }
+
+    func copyOnServer(_ source: String, to destination: String, on remote: String, in connection: Connection) async throws {
+        reservedCopies[connection.id, default: []].insert(destination)
+        defer { reservedCopies[connection.id]?.remove(destination) }
+        try await runJob(connection, "operations/copyfile", [
+            "srcFs": remote, "srcRemote": source, "dstFs": remote, "dstRemote": destination, "_group": Self.copyGroup,
+        ])
+        let folder = (destination as NSString).deletingLastPathComponent
+        _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
+        _ = try? await names(in: paths.mount(connection).appending(path: folder))
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {

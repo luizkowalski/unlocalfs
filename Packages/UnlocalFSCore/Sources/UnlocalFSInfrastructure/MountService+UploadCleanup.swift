@@ -13,7 +13,6 @@ public extension MountService {
 
     @discardableResult
     private func runBackendCommand(_ command: String, in connection: Connection, opt: String = "{}") async throws -> Data {
-        let job = try await control(StartedJob.self, connection, "backend/command", ["command": command, "fs": connection.driveStorage, "opt": opt, "_async": "true"])
-        return try await waitForJob(job, on: connection)
+        try await runJob(connection, "backend/command", ["command": command, "fs": connection.driveStorage, "opt": opt])
     }
 }

@@ -97,7 +97,7 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - Each reply says, for each drive, when the last status pass that read it started. A pass skips busy drives, so they keep their old time. `FinderBadgeCache` badges a file that Finder shows for the first time only after a later pass read its drive, so a new file never shows uploaded early, and a busy drive holds back only its own files. A timed-out pull keeps the badges and tries again; a missing port or a reply the extension cannot read clears them.
 - A right-click on the empty area of a folder window sends the folder as the selection, so one folder and a folder window get the same items.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
-- The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase` or `DuplicateFilesUseCase`, which check each file.
+- The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase`, `DuplicateFilesUseCase`, or `FileVersionsUseCase`, which check each file.
 
 ## Presentation
 

@@ -42,7 +42,6 @@ import UnlocalFSDomain
     let signInAgain: SignInAgainUseCase
     let shareFiles: ShareFilesUseCase
     let duplicateFiles: DuplicateFilesUseCase
-    let fileVersions: FileVersionsUseCase
     private let exportConfig: ExportRcloneConfigUseCase
     let quit: QuitUseCase
     let desktop: any DesktopServices
@@ -64,7 +63,6 @@ import UnlocalFSDomain
         signInAgain: SignInAgainUseCase,
         shareFiles: ShareFilesUseCase,
         duplicateFiles: DuplicateFilesUseCase,
-        fileVersions: FileVersionsUseCase,
         exportConfig: ExportRcloneConfigUseCase,
         quit: QuitUseCase,
         desktop: any DesktopServices,
@@ -76,7 +74,6 @@ import UnlocalFSDomain
         self.signInAgain = signInAgain
         self.shareFiles = shareFiles
         self.duplicateFiles = duplicateFiles
-        self.fileVersions = fileVersions
         self.exportConfig = exportConfig
         self.quit = quit
         self.desktop = desktop

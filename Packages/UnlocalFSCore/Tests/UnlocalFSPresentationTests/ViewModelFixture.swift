@@ -72,7 +72,6 @@ struct ViewModelFixture {
             signInAgain: SignInAgainUseCase(repository: repository, drives: service),
             shareFiles: ShareFilesUseCase(repository: repository, drives: service),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: service),
-            fileVersions: FileVersionsUseCase(drives: service),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: service),
             quit: QuitUseCase(drives: service), desktop: desktop ?? TestDesktopServices(paths: paths),
         )
@@ -212,7 +211,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     var notifications: [Notification] = []
     var rcloneConfigDestination: RcloneConfigDestination?
     var finderChanges = 0
-    var shownVersions: [VersionsViewModel] = []
+    var shownVersions: [VersionsTarget] = []
     private var notificationWaiters: [CheckedContinuation<Notification, Never>] = []
 
     init(paths: AppPaths) { self.paths = paths }
@@ -236,7 +235,7 @@ final class MemoryCredentialStorage: CredentialStorage {
         notificationWaiters = []
     }
 
-    func showVersions(_ versions: VersionsViewModel) { shownVersions.append(versions) }
+    func showVersions(_ target: VersionsTarget) { shownVersions.append(target) }
 
     func nextNotification() async -> Notification {
         await withCheckedContinuation { notificationWaiters.append($0) }

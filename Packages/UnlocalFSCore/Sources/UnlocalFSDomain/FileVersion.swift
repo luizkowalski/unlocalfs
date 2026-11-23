@@ -19,17 +19,9 @@ public struct FileVersion: Hashable, Identifiable, Sendable {
         self.size = size
         self.savedAt = savedAt
         let folder = (path as NSString).deletingLastPathComponent
-        let name = (path as NSString).lastPathComponent
-        let pathExtension = (name as NSString).pathExtension
-        let stem = (name as NSString).deletingPathExtension
-        if let match = stem.wholeMatch(of: /(.+)-v\d{4}-\d{2}-\d{2}-\d{6}-\d{3}/) {
-            let base = pathExtension.isEmpty ? String(match.1) : "\(match.1).\(pathExtension)"
-            filePath = (folder as NSString).appendingPathComponent(base)
-            isCurrent = false
-        } else {
-            filePath = path
-            isCurrent = true
-        }
+        let fileName = VersionName(of: (path as NSString).lastPathComponent).fileName
+        filePath = fileName.map { (folder as NSString).appendingPathComponent($0) } ?? path
+        isCurrent = fileName == nil
     }
 }
 

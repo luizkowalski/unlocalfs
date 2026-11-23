@@ -15,10 +15,10 @@ extension AppViewModel {
     }
 
     private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
-        let owners = files.map { versionsDrive(containing: $0)?.connection }
+        let owners = files.map { versionsTarget(for: $0)?.connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
         let showsVersions = files.count == 1 && connection.versionsRefusal == nil && versioning[connection.id] != .off
-        guard files.allSatisfy({ !$0.hasDirectoryPath }) else {
+        if files.contains(where: \.hasDirectoryPath) {
             return showsVersions ? [FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showRecentlyDeleted)] : []
         }
         var menu: [FinderMenuItem] = []
@@ -34,17 +34,17 @@ extension AppViewModel {
         return menu
     }
 
-    private func versionsDrive(containing file: URL) -> (connection: Connection, path: String)? {
-        drives.remoteFile(file, among: connections) ?? connections.first { file.path(inside: desktop.mountLocation($0)) == "" }.map { ($0, "") }
+    private func versionsTarget(for file: URL) -> VersionsTarget? {
+        if let drive = drives.remoteFile(file, among: connections) {
+            return VersionsTarget(connection: drive.connection, path: drive.path, isFolder: file.hasDirectoryPath)
+        }
+        let driveRoot = connections.first { file.path(inside: desktop.mountLocation($0)) == "" }
+        return driveRoot.map { VersionsTarget(connection: $0, path: "", isFolder: true) }
     }
 
     func showVersions(of file: URL) {
-        guard let drive = versionsDrive(containing: file), drive.connection.versionsRefusal == nil else { return }
-        let id = drive.connection.id
-        desktop.showVersions(VersionsViewModel(
-            connection: drive.connection, path: drive.path, isFolder: file.hasDirectoryPath, fileVersions: fileVersions, drives: drives,
-            onVersioning: { [weak self] in self?.versioning[id] = $0 },
-        ))
+        guard let target = versionsTarget(for: file), target.connection.versionsRefusal == nil else { return }
+        desktop.showVersions(target)
     }
 
     public func reply(to request: FinderSyncRequest) -> FinderSyncReply {
