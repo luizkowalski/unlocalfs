@@ -212,6 +212,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     var rcloneConfigDestination: RcloneConfigDestination?
     var finderChanges = 0
     var finderExtensionEnabled = false
+    private var notificationWaiters: [CheckedContinuation<Notification, Never>] = []
 
     init(paths: AppPaths) { self.paths = paths }
 
@@ -226,7 +227,16 @@ final class MemoryCredentialStorage: CredentialStorage {
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }
     func chooseRcloneConfigDestination(for _: Connection) -> RcloneConfigDestination? { rcloneConfigDestination }
     func notify(title: String, body: String, fallbackToAlert: Bool) {
-        notifications.append(Notification(title: title, body: body, fallbackToAlert: fallbackToAlert))
+        let notification = Notification(title: title, body: body, fallbackToAlert: fallbackToAlert)
+        notifications.append(notification)
+        for waiter in notificationWaiters {
+            waiter.resume(returning: notification)
+        }
+        notificationWaiters = []
+    }
+
+    func nextNotification() async -> Notification {
+        await withCheckedContinuation { notificationWaiters.append($0) }
     }
 
     func announceFinderChange() { finderChanges += 1 }

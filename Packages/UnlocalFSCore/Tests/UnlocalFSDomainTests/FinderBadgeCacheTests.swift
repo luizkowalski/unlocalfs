@@ -44,16 +44,6 @@ struct FinderBadgeCacheTests {
         #expect(!cache.isWaiting)
     }
 
-    @Test func onlyOnePullIsScheduledAtATime() {
-        var cache = FinderBadgeCache()
-        let first = cache.claimPull()
-        let second = cache.claimPull()
-        cache.pullStarted()
-        let afterStart = cache.claimPull()
-
-        #expect(first && !second && afterStart)
-    }
-
     @Test func aFolderFinderStopsShowingDropsOnlyItsFiles() {
         var cache = FinderBadgeCache()
         let kept = drive.appending(path: "a/kept.pdf")

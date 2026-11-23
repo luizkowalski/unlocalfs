@@ -51,7 +51,7 @@ import UnlocalFSDomain
     var notifiedFailures: Set<UUID> = []
     var waitingToDisconnect: Set<UUID> = []
     var disconnectingAll = false
-    @ObservationIgnored var announcedFinderVersion: Int?
+    @ObservationIgnored var announcedFinderSnapshot: FinderSnapshot?
     @ObservationIgnored var statusCheckedAt = Date.distantPast
 
     public init(
@@ -168,17 +168,12 @@ import UnlocalFSDomain
         do {
             try desktop.setOpensAtLogin(enabled)
         } catch { alert = AppAlert(String(localized: .openAtLoginNotChanged), error) }
-        syncOpensAtLogin()
+        syncDesktopSettings()
     }
 
-    public func syncOpensAtLogin() {
-        let enabled = desktop.opensAtLogin
-        if opensAtLogin != enabled { opensAtLogin = enabled }
-    }
-
-    public func syncFinderExtension() {
-        let enabled = desktop.finderExtensionEnabled
-        if finderExtensionEnabled != enabled { finderExtensionEnabled = enabled }
+    public func syncDesktopSettings() {
+        if opensAtLogin != desktop.opensAtLogin { opensAtLogin = desktop.opensAtLogin }
+        if finderExtensionEnabled != desktop.finderExtensionEnabled { finderExtensionEnabled = desktop.finderExtensionEnabled }
     }
 
     public func openFinderExtensionSettings() { desktop.showFinderExtensionSettings() }

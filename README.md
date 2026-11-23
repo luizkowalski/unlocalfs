@@ -103,6 +103,7 @@ The app uses Clean Architecture with MVVM and Observation:
 
 - `UnlocalFSDomain` owns connection rules, repository and drive interfaces, and save, delete, toggle, share, and quit use cases.
 - `UnlocalFSInfrastructure` implements JSON persistence, Keychain storage, rclone commands, and filesystem operations. It depends on Domain.
+- `UnlocalFSFinderLink` holds the message port between the app and the Finder extension. It depends on Domain.
 - `UnlocalFSPresentation` contains the view models. It depends only on Domain. `AppViewModel` shares window and menu bar state; `ViewModelFactory` creates the editor and activity models.
 - `UnlocalFS/Presentation` contains the SwiftUI views.
 - `UnlocalFS/Application` constructs dependencies and handles macOS lifecycle events, Finder, clipboard, notifications, and login registration.

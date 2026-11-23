@@ -4,6 +4,7 @@ import notify
 import OSLog
 import ServiceManagement
 import UnlocalFSDomain
+import UnlocalFSFinderLink
 import UnlocalFSInfrastructure
 import UnlocalFSPresentation
 import UserNotifications

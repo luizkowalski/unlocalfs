@@ -62,29 +62,3 @@ public enum FinderSyncReply: Codable, Hashable, Sendable {
     case accepted
     case failed
 }
-
-public enum FinderSyncMessage {
-    public static let version = 1
-    public static let changedNotification = "net.luizkowalski.unlocalfs.finder.changed"
-    public static var portName: String { Bundle.main.object(forInfoDictionaryKey: "FinderPortName") as? String ?? "" }
-
-    private struct Envelope<Body: Codable>: Codable {
-        var version = FinderSyncMessage.version
-        let body: Body
-    }
-
-    private struct Header: Decodable {
-        let version: Int
-    }
-
-    public struct UnsupportedVersion: Error {}
-
-    public static func encode(_ body: some Codable) throws -> Data {
-        try JSONEncoder().encode(Envelope(body: body))
-    }
-
-    public static func decode<Body: Codable>(_: Body.Type, from data: Data) throws -> Body {
-        guard try JSONDecoder().decode(Header.self, from: data).version == version else { throw UnsupportedVersion() }
-        return try JSONDecoder().decode(Envelope<Body>.self, from: data).body
-    }
-}

@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "UnlocalFSDomain", targets: ["UnlocalFSDomain"]),
         .library(name: "UnlocalFSInfrastructure", targets: ["UnlocalFSInfrastructure"]),
         .library(name: "UnlocalFSPresentation", targets: ["UnlocalFSPresentation"]),
+        .library(name: "UnlocalFSFinderLink", targets: ["UnlocalFSFinderLink"]),
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-subprocess", from: "1.0.0"),
@@ -22,10 +23,11 @@ let package = Package(
             .product(name: "GRDB", package: "GRDB.swift"),
         ], resources: [.process("Resources")]),
         .target(name: "UnlocalFSPresentation", dependencies: ["UnlocalFSDomain"], resources: [.process("Resources")]),
+        .target(name: "UnlocalFSFinderLink", dependencies: ["UnlocalFSDomain"]),
         .target(name: "UnlocalFSTestSupport", dependencies: ["UnlocalFSDomain", "UnlocalFSInfrastructure"], path: "Tests/UnlocalFSTestSupport"),
         .testTarget(name: "UnlocalFSDomainTests", dependencies: ["UnlocalFSDomain", "UnlocalFSTestSupport"]),
         .testTarget(name: "UnlocalFSCoreTests", dependencies: [
-            "UnlocalFSDomain", "UnlocalFSInfrastructure", "UnlocalFSPresentation", "UnlocalFSTestSupport",
+            "UnlocalFSDomain", "UnlocalFSInfrastructure", "UnlocalFSPresentation", "UnlocalFSFinderLink", "UnlocalFSTestSupport",
         ]),
         .testTarget(name: "UnlocalFSPresentationTests", dependencies: [
             "UnlocalFSPresentation", "UnlocalFSDomain", "UnlocalFSInfrastructure", "UnlocalFSTestSupport",

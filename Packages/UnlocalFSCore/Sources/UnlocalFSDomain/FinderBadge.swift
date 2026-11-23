@@ -1,14 +1,10 @@
 import Foundation
 
-public enum FinderBadge: String, CaseIterable, Comparable, Sendable {
+public enum FinderBadge: CaseIterable, Comparable, Sendable {
     case uploaded, uploading, failed
 
     init(_ state: UploadState) {
         self = state == .failed ? .failed : .uploading
-    }
-
-    public static func < (lhs: FinderBadge, rhs: FinderBadge) -> Bool {
-        allCases.firstIndex(of: lhs)! < allCases.firstIndex(of: rhs)!
     }
 }
 

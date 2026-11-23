@@ -46,7 +46,7 @@ struct MenuContent: View {
         .disabled(!model.canDisconnectAll)
         Divider()
         Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
-            .onAppear { model.syncOpensAtLogin() }
+            .onAppear { model.syncDesktopSettings() }
         Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 

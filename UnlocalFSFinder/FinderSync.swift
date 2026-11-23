@@ -3,21 +3,26 @@ import FinderSync
 import notify
 import Synchronization
 import UnlocalFSDomain
+import UnlocalFSFinderLink
 
 final class FinderSync: FIFinderSync, @unchecked Sendable {
     private let cache = Mutex(FinderBadgeCache())
     private let menuItems = Mutex<[FinderMenuItem]>([])
     private let queue = DispatchQueue(label: "net.luizkowalski.unlocalfs.finder")
+    private let pulls: DispatchSourceUserDataOr
     private let fallback: DispatchSourceTimer
     private var controller: FIFinderSyncController { .default() }
 
     override init() {
+        pulls = DispatchSource.makeUserDataOrSource(queue: queue)
         fallback = DispatchSource.makeTimerSource(queue: queue)
         super.init()
         controller.directoryURLs = []
         for badge in FinderBadge.allCases {
-            controller.setBadgeImage(badge.image, label: badge.label, forBadgeIdentifier: badge.rawValue)
+            controller.setBadgeImage(badge.image, label: badge.label, forBadgeIdentifier: badge.identifier)
         }
+        pulls.setEventHandler { [weak self] in self?.pull() }
+        pulls.activate()
         var token: Int32 = 0
         notify_register_dispatch(FinderSyncMessage.changedNotification, &token, queue) { [weak self] _ in self?.schedulePull() }
         fallback.schedule(deadline: .now(), repeating: 30)
@@ -38,8 +43,8 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
-        guard menuKind == .contextualMenuForItems, let urls = controller.selectedItemURLs(), !urls.isEmpty, let port = appPort(),
-              case let .menu(items) = send(.menu(urls.map { FinderItem(url: $0, isFolder: $0.hasDirectoryPath) }), to: port), !items.isEmpty
+        guard menuKind == .contextualMenuForItems, let urls = controller.selectedItemURLs(), !urls.isEmpty,
+              case let .menu(items) = FinderSyncClient()?.send(.menu(urls.map { FinderItem(url: $0, isFolder: $0.hasDirectoryPath) })), !items.isEmpty
         else { return nil }
         menuItems.withLock { $0 = items }
         let menu = NSMenu(title: "")
@@ -53,21 +58,21 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
 
     @objc private func run(_ sender: NSMenuItem) {
         guard let item = menuItems.withLock({ $0.indices.contains(sender.tag) ? $0[sender.tag] : nil }),
-              let urls = controller.selectedItemURLs(), !urls.isEmpty, let port = appPort() else { return }
-        _ = send(.run(item.command, files: urls), to: port)
+              let urls = controller.selectedItemURLs(), !urls.isEmpty else { return }
+        _ = FinderSyncClient()?.send(.run(item.command, files: urls))
     }
 
-    private func schedulePull(after delay: DispatchTimeInterval = .seconds(0)) {
-        guard cache.withLock({ $0.claimPull() }) else { return }
-        queue.asyncAfter(deadline: .now() + delay) { [self] in
-            cache.withLock { $0.pullStarted() }
-            pull()
-        }
+    private func schedulePull() {
+        pulls.or(data: 1)
+    }
+
+    private func schedulePullAgain() {
+        queue.asyncAfter(deadline: .now() + 3) { [weak self] in self?.schedulePull() }
     }
 
     private func pull() {
-        guard let port = appPort() else { return clear() }
-        switch send(.snapshot(since: cache.withLock { $0.version }), to: port, timeout: 2) {
+        guard let app = FinderSyncClient() else { return clear() }
+        switch app.send(.snapshot(since: cache.withLock { $0.version }), timeout: 2) {
         case let .unchanged(checkedAt):
             let (badges, ready) = cache.withLock { ($0.badges, $0.confirm(checkedAt: checkedAt)) }
             show(badges, on: ready)
@@ -78,12 +83,11 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
             if result.foldersChanged { controller.directoryURLs = watched }
             show(badges, on: result.ready)
         case nil:
-            schedulePull(after: .seconds(3))
-            return
+            return schedulePullAgain()
         default:
             return clear()
         }
-        if cache.withLock({ $0.isWaiting }) { schedulePull(after: .seconds(3)) }
+        if cache.withLock({ $0.isWaiting }) { schedulePullAgain() }
     }
 
     private func clear() {
@@ -96,25 +100,14 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
 
     private func show(_ badges: FinderBadges, on urls: Set<URL>) {
         for url in urls {
-            controller.setBadgeIdentifier(badges.badge(for: url)?.rawValue ?? "", for: url)
+            controller.setBadgeIdentifier(badges.badge(for: url)?.identifier ?? "", for: url)
         }
-    }
-
-    private func appPort() -> CFMessagePort? {
-        CFMessagePortCreateRemote(nil, FinderSyncMessage.portName as CFString)
-    }
-
-    private func send(_ request: FinderSyncRequest, to port: CFMessagePort, timeout: CFTimeInterval = 0.5) -> FinderSyncReply? {
-        guard let data = try? FinderSyncMessage.encode(request) else { return nil }
-        var reply: Unmanaged<CFData>?
-        guard CFMessagePortSendRequest(port, 0, data as CFData, timeout, timeout, CFRunLoopMode.defaultMode.rawValue, &reply) == kCFMessagePortSuccess,
-              let reply
-        else { return nil }
-        return try? FinderSyncMessage.decode(FinderSyncReply.self, from: reply.takeRetainedValue() as Data)
     }
 }
 
 private extension FinderBadge {
+    var identifier: String { "\(self)" }
+
     var image: NSImage {
         let (symbol, color): (String, NSColor) = switch self {
         case .uploaded: ("checkmark.circle.fill", .systemGreen)

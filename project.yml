@@ -36,6 +36,8 @@ targets:
         product: UnlocalFSInfrastructure
       - package: UnlocalFSCore
         product: UnlocalFSPresentation
+      - package: UnlocalFSCore
+        product: UnlocalFSFinderLink
       - target: UnlocalFSFinder
     configFiles:
       Debug: Signing.xcconfig
@@ -73,6 +75,8 @@ targets:
     dependencies:
       - package: UnlocalFSCore
         product: UnlocalFSDomain
+      - package: UnlocalFSCore
+        product: UnlocalFSFinderLink
     configFiles:
       Debug: Signing.xcconfig
       Release: Signing.xcconfig

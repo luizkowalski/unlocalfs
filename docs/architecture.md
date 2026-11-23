@@ -6,8 +6,11 @@ UnlocalFS uses Clean Architecture with MVVM. Domain and Infrastructure are the m
 flowchart LR
     Application --> Presentation
     Application --> Infrastructure
+    Application --> FinderLink
+    Extension --> FinderLink
     Presentation --> Domain
     Infrastructure --> Domain
+    FinderLink --> Domain
 ```
 
 To add a workflow, put its rules in Domain and its integration in Infrastructure, and inject it from Application. Add a factory method for a new feature view model. Add an abstraction only at a real boundary. For tests, see [testing.md](testing.md).
@@ -82,10 +85,10 @@ These checks stay in Infrastructure, because uploads can change between two oper
 
 ### Finder extension
 
-`UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and holds no rules: the app is the only source of truth.
+`UnlocalFSFinder` is a sandboxed Finder Sync extension. It links only Domain and `UnlocalFSFinderLink`, and holds no rules: the app is the only source of truth.
 
 - The app answers on one `CFMessagePort` (`FinderSyncPort`), named after the team-prefixed app group that the extension claims, so the sandbox allows the lookup. An `NSXPCListener` with a Mach name would need a launchd job.
-- `FinderSyncMessage` holds the shared requests, replies, and snapshot. A message from another protocol version fails like an unreadable one.
+- `UnlocalFSFinderLink` holds both ends of the port: `FinderSyncPort` in the app, `FinderSyncClient` in the extension, and `FinderSyncMessage`, which encodes them. The requests, replies, and snapshot are Domain values. A message from another protocol version fails like an unreadable one.
 - After a status pass changes the snapshot, the app posts a Darwin notification. Each extension process (Finder, and one for each open or save panel) then pulls the snapshot. It also pulls every 30 seconds and when Finder shows a file for the first time.
 - Each reply says when the status pass behind it started. `FinderBadgeCache` badges a file that Finder shows for the first time only from a pass that started later, so a new file never shows uploaded early. A timed-out pull keeps the badges and tries again; only a missing port clears them.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.

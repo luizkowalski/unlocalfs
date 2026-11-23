@@ -26,9 +26,6 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 420)
         .fixedSize()
-        .onAppear {
-            model.syncOpensAtLogin()
-            model.syncFinderExtension()
-        }
+        .onAppear { model.syncDesktopSettings() }
     }
 }

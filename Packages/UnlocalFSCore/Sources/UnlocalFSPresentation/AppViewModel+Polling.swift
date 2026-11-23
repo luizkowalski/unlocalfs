@@ -21,7 +21,7 @@ public extension AppViewModel {
         }
         refreshing = true
         defer { refreshing = false }
-        var started = Date.now
+        var started: Date
         repeat {
             started = .now
             refreshRequested = false

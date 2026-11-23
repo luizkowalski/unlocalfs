@@ -9,7 +9,7 @@ extension AppViewModel {
         })
     }
 
-    func finderMenu(for items: [FinderItem]) -> [FinderMenuItem] {
+    private func finderMenu(for items: [FinderItem]) -> [FinderMenuItem] {
         guard items.allSatisfy({ !$0.isFolder }) else { return [] }
         let owners = items.map { drives.remoteFile($0.url, among: connections)?.connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
@@ -32,19 +32,19 @@ extension AppViewModel {
         case let .menu(items):
             return .menu(finderMenu(for: items))
         case let .run(command, files):
-            Task { await run(command, on: files) }
+            Task { await perform(command, on: files) }
             return .accepted
         }
     }
 
     func announceFinderChange() {
-        let version = finderSnapshot.version
-        guard version != announcedFinderVersion else { return }
-        announcedFinderVersion = version
+        let snapshot = finderSnapshot
+        guard snapshot != announcedFinderSnapshot else { return }
+        announcedFinderSnapshot = snapshot
         desktop.announceFinderChange()
     }
 
-    private func run(_ command: FinderCommand, on files: [URL]) async {
+    private func perform(_ command: FinderCommand, on files: [URL]) async {
         switch command {
         case let .copyShareLink(expiry): await copyShareLinks(for: files, expiry: expiry)
         case .duplicateOnServer: await duplicateOnServer(files)

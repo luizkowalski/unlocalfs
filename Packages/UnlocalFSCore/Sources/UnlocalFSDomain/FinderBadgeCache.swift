@@ -6,7 +6,6 @@ public struct FinderBadgeCache: Sendable {
     public private(set) var watched: Set<URL> = []
     private var known: [String: Set<URL>] = [:]
     private var firstSeen: [URL: Date] = [:]
-    private var pullScheduled = false
 
     public init() {}
 
@@ -24,14 +23,6 @@ public struct FinderBadgeCache: Sendable {
             firstSeen[url] = nil
         }
     }
-
-    public mutating func claimPull() -> Bool {
-        guard !pullScheduled else { return false }
-        pullScheduled = true
-        return true
-    }
-
-    public mutating func pullStarted() { pullScheduled = false }
 
     public mutating func confirm(checkedAt: Date) -> Set<URL> {
         let ready = firstSeen.filter { $0.value < checkedAt }.keys

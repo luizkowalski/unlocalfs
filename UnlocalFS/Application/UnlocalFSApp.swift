@@ -3,7 +3,7 @@ import Network
 import OSLog
 import SwiftUI
 import UnlocalFSDomain
-import UnlocalFSInfrastructure
+import UnlocalFSFinderLink
 import UnlocalFSPresentation
 
 @main struct UnlocalFSApp: App {
@@ -232,8 +232,7 @@ extension AppDelegate {
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
         if app == .current {
             returnServiceFocus()
-            model.syncOpensAtLogin()
-            model.syncFinderExtension()
+            model.syncDesktopSettings()
         } else {
             requester = app
         }
