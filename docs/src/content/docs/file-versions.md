@@ -22,7 +22,7 @@ Right-click a folder, or the empty area of a folder window or of the drive, and 
 ## Limits
 
 - Versions are available for Amazon S3 and other S3-compatible storage, also when the drive is encrypted. They are not available for Google Cloud Storage, Google Drive, or SFTP drives.
-- UnlocalFS does not turn versioning on. Turn it on in your storage provider's console. The items do not show when versioning is off for the bucket. When versioning is paused, the window shows the old versions, but new saves do not keep a version.
+- UnlocalFS does not turn versioning on. Turn it on in your storage provider's console. When versioning is off for the bucket, or the provider has no versions (Cloudflare R2), the window says so. When versioning is paused, the window shows the old versions, but new saves do not keep a version.
 - Recently Deleted shows the files of one folder, not of its subfolders. You cannot reach files in a deleted folder, because Finder cannot show that folder.
 - Wait until a file finishes uploading before you restore a version of it.
 - Read-only drives show versions and **Open**, but not **Restore**.

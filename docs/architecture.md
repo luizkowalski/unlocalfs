@@ -84,7 +84,7 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - A copy runs with `operations/copyfile` in the drive's rclone, which already has the credentials. A drive does not disconnect while a copy runs.
 - Multipart cleanup runs on the bucket, not on the crypt layer.
 - Versions go through the drive's own remotes with a `versions=true` override (`unlocalfs-s3,versions=true:…`, and for crypt `unlocalfs,remote='…':`), so no credentials leave the running rclone. One non-recursive listing of a folder gives both a file's history and the folder's deleted files; `VersionListing` in Domain reads rclone's `-vYYYY-MM-DD-HHMMSS-mmm` names. A restore is a server-side `operations/copyfile` with the versioned remote on both sides, in the same job group as a duplicate, so a drive does not disconnect while it runs.
-- The versioning state is read once after each connect and when a versions window loads, not in the status poll.
+- The versioning state is read only when a versions window loads. The Finder menu offers the items on every S3 drive and keeps no versioning state.
 
 ### Finder extension
 
@@ -106,7 +106,7 @@ The app target has no tests. So view models decide what the UI shows: which item
 - Views change `AppViewModel` state only through intents such as `toggle`. They can set the selection and what the app presents.
 - `DriveCondition` is the one value behind the status text and dot. Its switches have no `default`, so a new case fails to compile. It hides whether the drive is mounted, so button rules read the status.
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
-- A versions window opens from a `VersionsTarget`: `AppViewModel` resolves the Finder URL, and Application makes the view model through `ViewModelFactory` and hosts it in an AppKit window, because `openWindow` needs a view. Closing the window stops a list or a download, not a restore.
+- A versions window opens from a `VersionsTarget`: `AppViewModel` resolves the Finder URL, and `VersionsWindows` in Application makes the view model and hosts it in an AppKit window, because `openWindow` needs a view and the factory needs the app view model first. Closing the window stops a list or a download, not a restore. A show command gets the `windowOpened` reply after the window exists, and only then does the extension bring the app forward, because macOS lets the app take focus only from the user's click.
 - `GoogleSignInRun` returns a token only if it is still the current run. The editor locks while a sign-in runs.
 - The gateway returns activity in no set order. `TransferSummary` sets the order.
 - `finderSnapshot` is derived from `statuses`, and its version is its hash. `finderMenu` and the use cases read the same `Connection.shareLinkRefusal` and `serverCopyRefusal`, so the menu never offers an action that the use case refuses.

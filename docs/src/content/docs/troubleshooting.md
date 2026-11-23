@@ -78,7 +78,7 @@ Avoid editing the same file through two drives at once: one save can overwrite t
 
 - Open **UnlocalFS → Settings**. If **Finder Extension** shows **Turn On…**, click it and turn on the UnlocalFS extension.
 - UnlocalFS must run. Badges and menu items go away when you quit it.
-- The share and duplicate items show only for files, not folders, and only when all selected files are on one drive that supports them. **Show Versions…** and **Show Recently Deleted…** show for one file or one folder on an S3 drive whose bucket has versioning on.
+- The share and duplicate items show only for files, not folders, and only when all selected files are on one drive that supports them. **Show Versions…** and **Show Recently Deleted…** show for one file or one folder on an S3 drive.
 - If you have more than one copy of UnlocalFS on your Mac, macOS can load the extension from an old copy. Remove the old copies and turn on the extension again.
 
 ## Versions do not load
