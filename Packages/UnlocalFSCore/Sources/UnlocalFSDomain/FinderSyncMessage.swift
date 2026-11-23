@@ -56,8 +56,8 @@ public enum FinderSyncRequest: Codable, Hashable, Sendable {
 }
 
 public enum FinderSyncReply: Codable, Hashable, Sendable {
-    case unchanged
-    case snapshot(FinderSnapshot, version: Int)
+    case unchanged(checkedAt: Date)
+    case snapshot(FinderSnapshot, version: Int, checkedAt: Date)
     case menu([FinderMenuItem])
     case accepted
     case failed

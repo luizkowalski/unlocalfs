@@ -48,16 +48,23 @@ import UnlocalFSTestSupport
         #expect(desktop.finderChanges == 2)
     }
 
-    @Test func snapshotRequestsGetOnlyWhatChanged() async throws {
+    @Test func snapshotRequestsGetOnlyWhatChangedAndWhenTheStatusPassStarted() async throws {
         let connection = Connection.s3()
         try fixture.serve(connection, failed: 1)
         let app = fixture.app()
+        #expect(app.reply(to: .snapshot(since: nil)) == .snapshot(FinderSnapshot(drives: []), version: FinderSnapshot(drives: []).version, checkedAt: .distantPast))
+
+        let beforePass = Date.now
         await app.refresh()
         let snapshot = app.finderSnapshot
+        guard case let .unchanged(checkedAt) = app.reply(to: .snapshot(since: snapshot.version)) else {
+            Issue.record("Expected an unchanged reply")
+            return
+        }
 
-        #expect(app.reply(to: .snapshot(since: snapshot.version)) == .unchanged)
-        #expect(app.reply(to: .snapshot(since: nil)) == .snapshot(snapshot, version: snapshot.version))
-        #expect(app.reply(to: .snapshot(since: snapshot.version + 1)) == .snapshot(snapshot, version: snapshot.version))
+        #expect(checkedAt >= beforePass && checkedAt <= .now)
+        #expect(app.reply(to: .snapshot(since: nil)) == .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt))
+        #expect(app.reply(to: .snapshot(since: snapshot.version + 1)) == .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt))
     }
 
     enum Selection: CaseIterable {
@@ -122,5 +129,33 @@ import UnlocalFSTestSupport
         let notification = try #require(desktop.notifications.last)
         #expect(notification.title == String(localized: .couldNotDuplicate("plan.pdf")))
         #expect(notification.body.contains(server.provider.title))
+    }
+
+    @Test func aCopyLinkCommandExplainsWhyAnEncryptedDriveHasNoLinks() async throws {
+        let encrypted = try fixture.saveEncryptedConnection()
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+
+        #expect(app.reply(to: .run(.copyShareLink(.day), files: [fixture.paths.mount(encrypted).appending(path: "plan.pdf")])) == .accepted)
+        for _ in 0 ..< 500 where desktop.notifications.isEmpty {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+
+        let notification = try #require(desktop.notifications.last)
+        #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
+        #expect(notification.body == String(localized: .linksUnavailableEncrypted))
+        #expect(desktop.copiedLinks.isEmpty)
+    }
+
+    @Test func finderExtensionStateIsReadAgainOnSync() {
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+        #expect(!app.finderExtensionEnabled)
+
+        desktop.finderExtensionEnabled = true
+        #expect(!app.finderExtensionEnabled)
+        app.syncFinderExtension()
+
+        #expect(app.finderExtensionEnabled)
     }
 }

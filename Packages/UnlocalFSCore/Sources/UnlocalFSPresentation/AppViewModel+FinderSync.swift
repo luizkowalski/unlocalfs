@@ -28,7 +28,7 @@ extension AppViewModel {
         case let .snapshot(since):
             let snapshot = finderSnapshot
             let version = snapshot.version
-            return since == version ? .unchanged : .snapshot(snapshot, version: version)
+            return since == version ? .unchanged(checkedAt: statusCheckedAt) : .snapshot(snapshot, version: version, checkedAt: statusCheckedAt)
         case let .menu(items):
             return .menu(finderMenu(for: items))
         case let .run(command, files):

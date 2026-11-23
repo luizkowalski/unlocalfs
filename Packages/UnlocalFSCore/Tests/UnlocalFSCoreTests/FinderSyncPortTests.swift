@@ -9,12 +9,13 @@ import UnlocalFSInfrastructure
     private let snapshot = FinderSnapshot(drives: [.init(mount: URL(filePath: "/Users/me/UnlocalFS/Photos"), uploads: ["a.jpg": .failed])])
 
     @Test func snapshotRequestsGetTheHandlersReply() async throws {
+        let checkedAt = Date(timeIntervalSinceReferenceDate: 1000)
         let port = try FinderSyncPort(name: name) { [snapshot] request in
-            request == .snapshot(since: snapshot.version) ? .unchanged : .snapshot(snapshot, version: snapshot.version)
+            request == .snapshot(since: snapshot.version) ? .unchanged(checkedAt: checkedAt) : .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt)
         }
 
-        #expect(try await send(.snapshot(since: snapshot.version)) == .unchanged)
-        #expect(try await send(.snapshot(since: nil)) == .snapshot(snapshot, version: snapshot.version))
+        #expect(try await send(.snapshot(since: snapshot.version)) == .unchanged(checkedAt: checkedAt))
+        #expect(try await send(.snapshot(since: nil)) == .snapshot(snapshot, version: snapshot.version, checkedAt: checkedAt))
         _ = port
     }
 
