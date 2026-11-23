@@ -167,14 +167,14 @@ import UnlocalFSTestSupport
             try fixture.repository.save(connection, credentials: Credentials())
         }
         let app = fixture.app()
-        func menu(_ connection: Connection, _ path: String) -> [FinderCommand] {
-            guard case let .menu(items) = app.reply(to: .menu([fixture.paths.mount(connection).appending(path: path, directoryHint: .isDirectory)])) else { return [] }
-            return items.map(\.command)
+        func menu(_ connection: Connection, _ path: String) -> FinderSyncReply {
+            app.reply(to: .menu([fixture.paths.mount(connection).appending(path: path, directoryHint: .isDirectory)]))
         }
 
-        #expect(menu(plain, "b") == [.showRecentlyDeleted])
-        #expect(menu(plain, "") == [.showRecentlyDeleted])
-        #expect(menu(server, "b").isEmpty)
+        let deleted = FinderSyncReply.menu([FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showVersions)])
+        #expect(menu(plain, "b") == deleted)
+        #expect(menu(plain, "") == deleted)
+        #expect(menu(server, "b") == .menu([]))
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

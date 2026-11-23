@@ -18,8 +18,7 @@ import UnlocalFSTestSupport
         let desktop = TestDesktopServices(paths: fixture.paths)
         let mount = fixture.paths.mount(connection)
         let file = path.isEmpty ? mount.appending(path: "", directoryHint: .isDirectory) : mount.appending(path: path)
-        let command: FinderCommand = path.isEmpty ? .showRecentlyDeleted : .showVersions
-        #expect(fixture.app(desktop: desktop).reply(to: .run(command, files: [file])) == .windowOpened)
+        #expect(fixture.app(desktop: desktop).reply(to: .run(.showVersions, files: [file])) == .windowOpened)
         return try VersionsViewModel(target: #require(desktop.shownVersions.last), fileVersions: FileVersionsUseCase(drives: fixture.service))
     }
 

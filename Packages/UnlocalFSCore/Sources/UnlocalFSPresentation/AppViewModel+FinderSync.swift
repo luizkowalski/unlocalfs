@@ -19,7 +19,7 @@ extension AppViewModel {
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
         let showsVersions = files.count == 1 && connection.versionsRefusal == nil
         if files.contains(where: \.hasDirectoryPath) {
-            return showsVersions ? [FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showRecentlyDeleted)] : []
+            return showsVersions ? [FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showVersions)] : []
         }
         var menu: [FinderMenuItem] = []
         if connection.shareLinkRefusal == nil {
@@ -55,7 +55,7 @@ extension AppViewModel {
             switch command {
             case let .copyShareLink(expiry): Task { await copyShareLinks(for: files, expiry: expiry) }
             case .duplicateOnServer: Task { await duplicateOnServer(files) }
-            case .showVersions, .showRecentlyDeleted:
+            case .showVersions:
                 guard let target = files.first.flatMap(versionsTarget) else { return .failed }
                 desktop.showVersions(target)
                 return .windowOpened

@@ -22,6 +22,7 @@ public struct AppPaths: Sendable {
     }
 
     public func prepare() throws {
+        try? FileManager.default.removeItem(at: previews)
         for directory in [support, sockets, logs, mounts] {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         }
@@ -46,7 +47,7 @@ public struct AppPaths: Sendable {
     public func pidFile(_ connection: Connection) -> URL { socket(connection).appendingPathExtension("pid") }
     var knownHosts: URL { support.appending(path: "known_hosts") }
     public var traffic: URL { support.appending(path: "traffic.sqlite") }
-    public var previews: URL { FileManager.default.temporaryDirectory.appending(path: "UnlocalFS Previews") }
+    var previews: URL { support.appending(path: "previews") }
 
     private var sockets: URL { support.appending(path: "run") }
 }

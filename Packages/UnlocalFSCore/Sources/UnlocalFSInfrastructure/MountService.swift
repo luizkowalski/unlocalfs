@@ -332,12 +332,8 @@ public actor MountService: DriveGateway {
 
 extension MountService {
     @discardableResult
-    func runJob(_ connection: Connection, _ method: String, _ parameters: [String: String]) async throws -> Data {
-        try await runJob(connection, method, body: JSONEncoder().encode(parameters.merging(["_async": "true"]) { $1 }))
-    }
-
-    @discardableResult
-    func runJob(_ connection: Connection, _ method: String, body: Data) async throws -> Data {
+    func runJob(_ connection: Connection, _ method: String, _ parameters: [String: Any]) async throws -> Data {
+        let body = try JSONSerialization.data(withJSONObject: parameters.merging(["_async": true]) { $1 })
         let job = try await JSONDecoder().decode(StartedJob.self, from: control(connection, method, body: body))
         do {
             return try await waitForJob(job, on: connection)

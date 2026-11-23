@@ -26,14 +26,14 @@ import UnlocalFSDomain
         let port = try FinderSyncPort(name: name) { _ in .menu([]) }
 
         #expect(try await sendRaw(Data("garbage".utf8)) == .failed)
-        #expect(try await sendRaw(Data(#"{"version":3,"body":{"snapshot":{}}}"#.utf8)) == .failed)
+        #expect(try await sendRaw(Data(#"{"version":\#(FinderSyncMessage.version + 1),"body":{"snapshot":{}}}"#.utf8)) == .failed)
         #expect(await send(.menu([])) == .menu([]))
         _ = port
     }
 
     @Test func aReplyTheClientCannotReadCountsAsFailed() async throws {
         let newerApp = CFMessagePortCreateLocal(nil, name as CFString, { _, _, _, _ in
-            Unmanaged.passRetained(Data(#"{"version":3,"body":{"accepted":{}}}"#.utf8) as CFData)
+            Unmanaged.passRetained(Data(#"{"version":\#(FinderSyncMessage.version + 1),"body":{"accepted":{}}}"#.utf8) as CFData)
         }, nil, nil)
         let port = try #require(newerApp)
         CFMessagePortSetDispatchQueue(port, .main)

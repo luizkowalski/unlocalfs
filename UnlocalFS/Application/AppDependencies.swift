@@ -11,7 +11,6 @@ import UnlocalFSPresentation
         let paths = AppPaths.standard
         let contents = Bundle.main.bundleURL.appending(path: "Contents")
         let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: Keychain())
-        try? FileManager.default.removeItem(at: paths.previews)
         let initialConnections = Result {
             try paths.prepare()
             return try repository.all()

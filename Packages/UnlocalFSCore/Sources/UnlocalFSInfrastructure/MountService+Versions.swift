@@ -15,9 +15,9 @@ public extension MountService {
     func versions(in folder: String, of connection: Connection) async throws -> [FileVersion] {
         let reply: Data
         do {
-            reply = try await runJob(connection, "operations/list", body: JSONSerialization.data(withJSONObject: [
-                "fs": connection.versionsTarget, "remote": folder, "opt": ["noMimeType": true], "_config": ["UseServerModTime": true], "_async": true,
-            ]))
+            reply = try await runJob(connection, "operations/list", [
+                "fs": connection.versionsTarget, "remote": folder, "opt": ["noMimeType": true], "_config": ["UseServerModTime": true],
+            ])
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -32,10 +32,7 @@ public extension MountService {
         if try await isWaitingToUpload(version.filePath, in: connection) {
             throw AppError(String(localized: .restoreFileStillUploading))
         }
-        let folder = (version.filePath as NSString).deletingLastPathComponent
-        let destination = asCopy
-            ? try await reserveCopyPath(for: version.filePath, in: folder, of: connection, target: connection.driveTarget)
-            : version.filePath
+        let destination = asCopy ? try await reserveCopyPath(for: version.filePath, of: connection) : version.filePath
         try await copyOnServer(version.path, to: destination, on: connection.versionsTarget, in: connection)
         return destination
     }

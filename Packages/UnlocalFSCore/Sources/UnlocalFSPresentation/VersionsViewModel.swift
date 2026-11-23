@@ -37,7 +37,7 @@ import UnlocalFSDomain
     }
 
     public func canRestore(_ version: FileVersion) -> Bool {
-        target.connection.serverCopyRefusal == nil && !version.isCurrent && working == nil
+        target.connection.versionRestoreRefusal == nil && !version.isCurrent && working == nil
     }
 
     public func load() async {

@@ -9,10 +9,8 @@ extension MountService {
         if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
-        let target = connection.driveTarget
-        let folder = (path as NSString).deletingLastPathComponent
-        let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
-        try await copyOnServer(path, to: destination, on: target, in: connection)
+        let destination = try await reserveCopyPath(for: path, of: connection)
+        try await copyOnServer(path, to: destination, on: connection.driveTarget, in: connection)
         return destination
     }
 
@@ -36,7 +34,9 @@ extension MountService {
         }
     }
 
-    func reserveCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
+    func reserveCopyPath(for path: String, of connection: Connection) async throws -> String {
+        let folder = (path as NSString).deletingLastPathComponent
+        let target = connection.driveTarget
         let mounted = try await names(in: paths.mount(connection).appending(path: folder))
         let name = CopyName(of: (path as NSString).lastPathComponent)
         var attempt = 0

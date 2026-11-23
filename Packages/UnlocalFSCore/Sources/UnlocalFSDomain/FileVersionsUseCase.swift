@@ -21,7 +21,7 @@ public struct FileVersionsUseCase: Sendable {
     }
 
     public func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws -> String {
-        if let refusal = connection.versionsRefusal ?? connection.serverCopyRefusal { throw AppError(refusal) }
+        if let refusal = connection.versionRestoreRefusal { throw AppError(refusal) }
         return try await drives.restore(version, asCopy: asCopy, in: connection)
     }
 
