@@ -11,6 +11,7 @@ import UnlocalFSPresentation
         let paths = AppPaths.standard
         let contents = Bundle.main.bundleURL.appending(path: "Contents")
         let repository = SavedConnectionRepository(store: ConnectionStore(url: paths.config), credentials: Keychain())
+        try? FileManager.default.removeItem(at: paths.previews)
         let initialConnections = Result {
             try paths.prepare()
             return try repository.all()
@@ -31,6 +32,7 @@ import UnlocalFSPresentation
             signInAgain: SignInAgainUseCase(repository: repository, drives: drives),
             shareFiles: ShareFilesUseCase(repository: repository, drives: drives),
             duplicateFiles: DuplicateFilesUseCase(repository: repository, drives: drives),
+            fileVersions: FileVersionsUseCase(drives: drives),
             exportConfig: ExportRcloneConfigUseCase(repository: repository, drives: drives),
             quit: QuitUseCase(drives: drives), desktop: MacOSDesktopServices(paths: paths),
         )

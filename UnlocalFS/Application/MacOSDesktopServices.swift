@@ -1,6 +1,7 @@
 import AppKit
 import OSLog
 import ServiceManagement
+import SwiftUI
 import UnlocalFSDomain
 import UnlocalFSFinderLink
 import UnlocalFSInfrastructure
@@ -9,6 +10,7 @@ import UserNotifications
 
 @MainActor struct MacOSDesktopServices: DesktopServices {
     let paths: AppPaths
+    private let versionsWindows = VersionsWindows()
     var opensAtLogin: Bool { SMAppService.mainApp.status == .enabled }
 
     func setOpensAtLogin(_ enabled: Bool) throws {
@@ -85,6 +87,10 @@ import UserNotifications
         }
     }
 
+    func showVersions(_ versions: VersionsViewModel) {
+        versionsWindows.show(versions)
+    }
+
     func announceFinderChange() {
         FinderSyncPort.announceChange()
     }
@@ -112,5 +118,27 @@ import UserNotifications
                 alert.runModal()
             }
         }
+    }
+}
+
+@MainActor private final class VersionsWindows: NSObject, NSWindowDelegate {
+    private var open: [String: (window: NSWindow, model: VersionsViewModel)] = [:]
+
+    func show(_ model: VersionsViewModel) {
+        defer { NSApp.activate() }
+        if let window = open[model.id]?.window { return window.makeKeyAndOrderFront(nil) }
+        let window = NSWindow(contentViewController: NSHostingController(rootView: VersionsView(model: model)))
+        window.title = model.title
+        window.setContentSize(NSSize(width: 620, height: 380))
+        window.isReleasedWhenClosed = false
+        window.delegate = self
+        open[model.id] = (window, model)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        guard let id = open.first(where: { $0.value.window === notification.object as? NSWindow })?.key else { return }
+        open.removeValue(forKey: id)?.model.close()
     }
 }

@@ -6,7 +6,7 @@ import UnlocalFSFinderLink
 
 final class FinderSync: FIFinderSync, @unchecked Sendable {
     private let cache = Mutex(FinderBadgeCache())
-    private let menuItems = Mutex<[FinderMenuItem]>([])
+    private let menuItems = Mutex<(items: [FinderMenuItem], urls: [URL])>(([], []))
     private let queue = DispatchQueue(label: "net.luizkowalski.unlocalfs.finder")
     private let pulls: DispatchSourceUserDataOr
     private let fallback: DispatchSourceTimer
@@ -39,10 +39,13 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
-        guard menuKind == .contextualMenuForItems, let urls = controller.selectedItemURLs(), !urls.isEmpty,
-              case let .menu(items) = FinderSyncClient()?.send(.menu(urls)), !items.isEmpty
-        else { return nil }
-        menuItems.withLock { $0 = items }
+        let urls: [URL] = switch menuKind {
+        case .contextualMenuForItems: controller.selectedItemURLs() ?? []
+        case .contextualMenuForContainer: controller.targetedURL().map { [URL(filePath: $0.path(percentEncoded: false), directoryHint: .isDirectory)] } ?? []
+        default: []
+        }
+        guard !urls.isEmpty, case let .menu(items) = FinderSyncClient()?.send(.menu(urls)), !items.isEmpty else { return nil }
+        menuItems.withLock { $0 = (items, urls) }
         let menu = NSMenu(title: "")
         for (index, item) in items.enumerated() {
             let menuItem = NSMenuItem(title: item.title, action: #selector(run(_:)), keyEquivalent: "")
@@ -53,9 +56,9 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     @objc private func run(_ sender: NSMenuItem) {
-        guard let item = menuItems.withLock({ $0.indices.contains(sender.tag) ? $0[sender.tag] : nil }),
-              let urls = controller.selectedItemURLs(), !urls.isEmpty else { return }
-        _ = FinderSyncClient()?.send(.run(item.command, files: urls))
+        let (items, urls) = menuItems.withLock { $0 }
+        guard items.indices.contains(sender.tag) else { return }
+        _ = FinderSyncClient()?.send(.run(items[sender.tag].command, files: urls))
     }
 
     private func schedulePull() {

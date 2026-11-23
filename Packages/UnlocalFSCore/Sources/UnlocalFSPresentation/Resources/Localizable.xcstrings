@@ -674,6 +674,40 @@
         }
       }
     },
+    "noDeletedFiles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files were deleted in this folder."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhum arquivo foi apagado nesta pasta."
+          }
+        }
+      }
+    },
+    "noEarlierVersions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file has no earlier versions."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este arquivo não tem versões anteriores."
+          }
+        }
+      }
+    },
     "nothingToCleanUp": {
       "comment": "Alert title when a drive has no unfinished uploads to remove",
       "extractionState": "manual",
@@ -706,6 +740,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Não foi possível alterar Abrir ao iniciar sessão."
+          }
+        }
+      }
+    },
+    "recentlyDeletedIn": {
+      "comment": "Window title. %1$@ is the folder or drive name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Deleted in “%1$@”"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apagados recentemente em “%1$@”"
           }
         }
       }
@@ -820,6 +872,42 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "showRecentlyDeleted": {
+      "comment": "Finder context menu item that opens the files deleted in the selected folder",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Recently Deleted…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar apagados recentemente…"
+          }
+        }
+      }
+    },
+    "showVersions": {
+      "comment": "Finder context menu item that opens the earlier versions of the selected file",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Versions…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar versões…"
           }
         }
       }
@@ -1125,6 +1213,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mantenha o UnlocalFS em execução até que os envios terminem. Você receberá uma notificação quando puder desconectar."
+          }
+        }
+      }
+    },
+    "versioningOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versioning is off for this bucket, so the server keeps no earlier versions."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O versionamento está desligado neste bucket, então o servidor não guarda versões anteriores."
+          }
+        }
+      }
+    },
+    "versioningSuspended": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versioning is paused for this bucket. New saves do not keep a version."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O versionamento está pausado neste bucket. Novos salvamentos não guardam versão."
+          }
+        }
+      }
+    },
+    "versionsOf": {
+      "comment": "Window title. %1$@ is the file name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versions of “%1$@”"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versões de “%1$@”"
           }
         }
       }

@@ -25,6 +25,8 @@ public struct FinderSnapshot: Codable, Hashable, Sendable {
 public enum FinderCommand: Codable, Hashable, Sendable {
     case copyShareLink(ShareLinkExpiry)
     case duplicateOnServer
+    case showVersions
+    case showRecentlyDeleted
 }
 
 public struct FinderMenuItem: Codable, Hashable, Sendable {
