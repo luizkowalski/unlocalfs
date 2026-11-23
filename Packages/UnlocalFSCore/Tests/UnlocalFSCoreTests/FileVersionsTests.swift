@@ -28,12 +28,13 @@ struct FileVersionsTests {
         try await withControl { _, _ in bucket.respond } operation: { service, connection in
             try await FileManager.default.createDirectory(at: service.paths.mount(connection), withIntermediateDirectories: true)
             let old = try #require(try await service.versions(in: "", of: connection).first { !$0.isCurrent })
-            #expect(try await service.restore(old, asCopy: false, in: connection) == "report.txt")
+            try await service.restore(old, asCopy: false, in: connection)
             let copy = try #require(bucket.requests.last { $0["dstRemote"] as? String == "report.txt" })
             #expect(copy["srcFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
             #expect(copy["dstFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
             #expect(copy["_group"] as? String == "duplicate")
-            #expect(try await service.restore(old, asCopy: true, in: connection) == "report copy.txt")
+            try await service.restore(old, asCopy: true, in: connection)
+            #expect(bucket.requests.last { $0["dstRemote"] != nil }?["dstRemote"] as? String == "report copy.txt")
         }
     }
 
@@ -41,7 +42,7 @@ struct FileVersionsTests {
         let bucket = VersionedBucket(["report.txt", "report-v2026-11-02-140301-123.txt"], queue: "report.txt")
         try await withControl { _, _ in bucket.respond } operation: { service, connection in
             let old = try #require(try await service.versions(in: "", of: connection).first { !$0.isCurrent })
-            await #expect { _ = try await service.restore(old, asCopy: false, in: connection) } throws: { error in
+            await #expect { try await service.restore(old, asCopy: false, in: connection) } throws: { error in
                 error.localizedDescription == String(localized: .restoreFileStillUploading)
             }
             #expect(!bucket.requests.contains { $0["dstRemote"] != nil })

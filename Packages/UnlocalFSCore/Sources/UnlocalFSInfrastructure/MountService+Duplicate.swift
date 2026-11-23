@@ -9,12 +9,12 @@ extension MountService {
         if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
-        let destination = try await reserveCopyPath(for: path, of: connection)
-        try await copyOnServer(path, to: destination, on: connection.driveTarget, in: connection)
-        return destination
+        return try await copyOnServer(path, to: path, asCopy: true, on: connection.driveTarget, in: connection)
     }
 
-    func copyOnServer(_ source: String, to destination: String, on remote: String, in connection: Connection) async throws {
+    @discardableResult
+    func copyOnServer(_ source: String, to file: String, asCopy: Bool, on remote: String, in connection: Connection) async throws -> String {
+        let destination = asCopy ? try await reserveCopyPath(for: file, of: connection) : file
         reservedCopies[connection.id, default: []].insert(destination)
         defer { reservedCopies[connection.id]?.remove(destination) }
         try await runJob(connection, "operations/copyfile", [
@@ -23,6 +23,7 @@ extension MountService {
         let folder = (destination as NSString).deletingLastPathComponent
         _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
         _ = try? await names(in: paths.mount(connection).appending(path: folder))
+        return destination
     }
 
     func requireNoCopies(_ connection: Connection, status: MountStatus) async throws {
@@ -34,7 +35,7 @@ extension MountService {
         }
     }
 
-    func reserveCopyPath(for path: String, of connection: Connection) async throws -> String {
+    private func reserveCopyPath(for path: String, of connection: Connection) async throws -> String {
         let folder = (path as NSString).deletingLastPathComponent
         let target = connection.driveTarget
         let mounted = try await names(in: paths.mount(connection).appending(path: folder))

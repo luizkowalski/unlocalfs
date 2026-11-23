@@ -20,9 +20,9 @@ public struct FileVersionsUseCase: Sendable {
         return FileVersions(versioning: versioning, versions: target.versions(in: listing))
     }
 
-    public func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws -> String {
+    public func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws {
         if let refusal = connection.versionRestoreRefusal { throw AppError(refusal) }
-        return try await drives.restore(version, asCopy: asCopy, in: connection)
+        try await drives.restore(version, asCopy: asCopy, in: connection)
     }
 
     public func preview(_ version: FileVersion, in connection: Connection) async throws -> URL {

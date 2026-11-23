@@ -38,6 +38,15 @@ import UnlocalFSTestSupport
         #expect(versions.title == String(localized: .recentlyDeletedIn(connection.name)))
     }
 
+    @Test func aRestoredDeletedFileLeavesRecentlyDeleted() async throws {
+        let versions = try versions(of: "", in: .s3())
+        await versions.load()
+        versions.restore(versions.versions[0], asCopy: false)
+        while versions.working != nil { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(versions.message == nil)
+        #expect(versions.versions.isEmpty)
+    }
+
     @Test func aReadOnlyDriveShowsVersionsButCannotRestore() async throws {
         let versions = try versions(of: "report.txt", in: .s3 { $0.readOnly = true })
         await versions.load()

@@ -36,6 +36,8 @@ import UnlocalFSDomain
         target.isFolder ? String(localized: .noDeletedFiles) : String(localized: .noEarlierVersions)
     }
 
+    public var canOpen: Bool { working == nil }
+
     public func canRestore(_ version: FileVersion) -> Bool {
         target.connection.versionRestoreRefusal == nil && !version.isCurrent && working == nil
     }
@@ -64,7 +66,7 @@ import UnlocalFSDomain
 
     public func restore(_ version: FileVersion, asCopy: Bool) {
         run(version) { [self] in
-            _ = try await fileVersions.restore(version, asCopy: asCopy, in: target.connection)
+            try await fileVersions.restore(version, asCopy: asCopy, in: target.connection)
             await load()
         }
     }

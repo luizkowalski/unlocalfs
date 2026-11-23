@@ -20,7 +20,7 @@ public protocol DriveGateway: Sendable {
     func duplicate(_ path: String, in connection: Connection) async throws -> String
     func versioning(of connection: Connection) async -> BucketVersioning
     func versions(in folder: String, of connection: Connection) async throws -> [FileVersion]
-    func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws -> String
+    func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws
     func preview(_ version: FileVersion, in connection: Connection) async throws -> URL
     func discardPreview(_ file: URL)
     func deleteFileToStopUpload(_ path: String, in connection: Connection) async throws

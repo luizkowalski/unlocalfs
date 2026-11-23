@@ -28,13 +28,11 @@ public extension MountService {
             .map { FileVersion(path: $0.path, size: $0.size, savedAt: $0.modTime) }
     }
 
-    func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws -> String {
+    func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws {
         if try await isWaitingToUpload(version.filePath, in: connection) {
             throw AppError(String(localized: .restoreFileStillUploading))
         }
-        let destination = asCopy ? try await reserveCopyPath(for: version.filePath, of: connection) : version.filePath
-        try await copyOnServer(version.path, to: destination, on: connection.versionsTarget, in: connection)
-        return destination
+        try await copyOnServer(version.path, to: version.filePath, asCopy: asCopy, on: connection.versionsTarget, in: connection)
     }
 
     func preview(_ version: FileVersion, in connection: Connection) async throws -> URL {
