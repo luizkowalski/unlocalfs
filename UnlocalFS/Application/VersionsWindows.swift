@@ -8,9 +8,10 @@ import UnlocalFSPresentation
     private var open: [VersionsTarget.ID: (window: NSWindow, model: VersionsViewModel)] = [:]
 
     func show(_ target: VersionsTarget) {
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate()
         if let window = open[target.id]?.window {
-            window.makeKeyAndOrderFront(nil)
+            bringForward(window)
             return
         }
         guard let model = makeModel?(target) else { return }
@@ -21,7 +22,12 @@ import UnlocalFSPresentation
         window.delegate = self
         open[target.id] = (window, model)
         window.center()
+        bringForward(window)
+    }
+
+    private func bringForward(_ window: NSWindow) {
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
     }
 
     func windowWillClose(_ notification: Notification) {

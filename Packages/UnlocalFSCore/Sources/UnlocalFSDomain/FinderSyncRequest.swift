@@ -27,6 +27,13 @@ public enum FinderCommand: Codable, Hashable, Sendable {
     case duplicateOnServer
     case showVersions
     case showRecentlyDeleted
+
+    public var opensWindow: Bool {
+        switch self {
+        case .copyShareLink, .duplicateOnServer: false
+        case .showVersions, .showRecentlyDeleted: true
+        }
+    }
 }
 
 public struct FinderMenuItem: Codable, Hashable, Sendable {

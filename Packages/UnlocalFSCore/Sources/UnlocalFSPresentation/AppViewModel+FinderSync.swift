@@ -56,7 +56,11 @@ extension AppViewModel {
         case let .menu(files):
             return .menu(finderMenu(for: files))
         case let .run(command, files):
-            Task { await perform(command, on: files) }
+            switch command {
+            case let .copyShareLink(expiry): Task { await copyShareLinks(for: files, expiry: expiry) }
+            case .duplicateOnServer: Task { await duplicateOnServer(files) }
+            case .showVersions, .showRecentlyDeleted: if let file = files.first { showVersions(of: file) }
+            }
             return .accepted
         }
     }
@@ -66,14 +70,6 @@ extension AppViewModel {
         guard snapshot != announcedFinderSnapshot else { return }
         announcedFinderSnapshot = snapshot
         desktop.announceFinderChange()
-    }
-
-    private func perform(_ command: FinderCommand, on files: [URL]) async {
-        switch command {
-        case let .copyShareLink(expiry): await copyShareLinks(for: files, expiry: expiry)
-        case .duplicateOnServer: await duplicateOnServer(files)
-        case .showVersions, .showRecentlyDeleted: if let file = files.first { showVersions(of: file) }
-        }
     }
 }
 
