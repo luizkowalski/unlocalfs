@@ -1,7 +1,7 @@
 import Foundation
 
 public enum FinderBadge: CaseIterable, Comparable, Sendable {
-    case uploaded, uploading, failed
+    case checking, uploaded, uploading, failed
 
     init(_ state: UploadState) {
         self = state == .failed ? .failed : .uploading

@@ -36,7 +36,6 @@ public extension AppViewModel {
                 }
             }
         } while refreshRequested && !sleeping
-        announceFinderChange()
     }
 
     func willSleep() { sleeping = true }

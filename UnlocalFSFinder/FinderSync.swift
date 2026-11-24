@@ -29,11 +29,9 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     override func requestBadgeIdentifier(for url: URL) {
-        if cache.withLock({ $0.see(url, at: .now) }) {
-            schedulePull()
-        } else {
-            show(cache.withLock { $0.badges }, on: [url])
-        }
+        let isNew = cache.withLock { $0.see(url, at: .now) }
+        show([url])
+        if isNew { schedulePull() }
     }
 
     override func endObservingDirectory(at url: URL) {
@@ -64,28 +62,27 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
         pulls.or(data: 1)
     }
 
-    private func schedulePullAgain() {
-        queue.asyncAfter(deadline: .now() + 3) { [weak self] in self?.schedulePull() }
+    private func schedulePullAgain(after delay: TimeInterval) {
+        fallback.schedule(deadline: .now() + delay, repeating: 30)
     }
 
     private func pull() {
         guard let app = FinderSyncClient() else { return clear() }
         switch app.send(.snapshot(since: cache.withLock { $0.version }), timeout: 2) {
         case let .unchanged(checkedAt):
-            let (badges, ready) = cache.withLock { ($0.badges, $0.confirm(checkedAt: checkedAt)) }
-            show(badges, on: ready)
+            show(cache.withLock { $0.confirm(checkedAt: checkedAt) })
         case let .snapshot(snapshot, version, checkedAt):
             let badges = FinderBadges(snapshot)
             let watched = snapshot.watchedFolders
             let result = cache.withLock { $0.apply(badges, version: version, watching: watched, checkedAt: checkedAt) }
             if result.foldersChanged { controller.directoryURLs = watched }
-            show(badges, on: result.ready)
+            show(result.ready)
         case nil:
-            return schedulePullAgain()
+            return schedulePullAgain(after: 3)
         default:
             return clear()
         }
-        if cache.withLock({ $0.isWaiting }) { schedulePullAgain() }
+        if cache.withLock({ $0.isWaiting }) { schedulePullAgain(after: 0.5) }
     }
 
     private func clear() {
@@ -96,9 +93,10 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
         if !cleared.watched.isEmpty { controller.directoryURLs = [] }
     }
 
-    private func show(_ badges: FinderBadges, on urls: Set<URL>) {
-        for url in urls {
-            controller.setBadgeIdentifier(badges.badge(for: url)?.identifier ?? "", for: url)
+    private func show(_ urls: Set<URL>) {
+        let badges = cache.withLock { cache in urls.map { ($0, cache.badge(for: $0)) } }
+        for (url, badge) in badges {
+            controller.setBadgeIdentifier(badge?.identifier ?? "", for: url)
         }
     }
 }
@@ -108,6 +106,7 @@ private extension FinderBadge {
 
     var image: NSImage {
         let (symbol, color): (String, NSColor) = switch self {
+        case .checking: ("ellipsis.circle.fill", .systemGray)
         case .uploaded: ("checkmark.circle.fill", .systemGreen)
         case .uploading: ("arrow.up.circle.fill", .systemBlue)
         case .failed: ("exclamationmark.circle.fill", .systemRed)
@@ -118,6 +117,7 @@ private extension FinderBadge {
 
     var label: String {
         switch self {
+        case .checking: String(localized: "Checking")
         case .uploaded: String(localized: "Uploaded")
         case .uploading: String(localized: "Uploading")
         case .failed: String(localized: "Upload failed")

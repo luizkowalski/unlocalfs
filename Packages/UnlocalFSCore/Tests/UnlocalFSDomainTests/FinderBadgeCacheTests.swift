@@ -44,6 +44,21 @@ struct FinderBadgeCacheTests {
         #expect(!cache.isWaiting)
     }
 
+    @Test func aDriveFileShowsCheckingUntilItsDriveIsCheckedAndOtherFilesShowNothing() {
+        var cache = FinderBadgeCache()
+        let file = drive.appending(path: "new.pdf")
+        let outside = URL(filePath: "/Users/me/UnlocalFS/notes.txt")
+        _ = cache.apply(badges(["new.pdf": .failed]), version: 1, watching: [drive], checkedAt: [drive: start - 1])
+        _ = cache.see(file, at: start)
+        _ = cache.see(outside, at: start)
+
+        let waiting = (file: cache.badge(for: file), outside: cache.badge(for: outside))
+        _ = cache.confirm(checkedAt: [drive: start + 1])
+
+        #expect(waiting.file == .checking && waiting.outside == nil)
+        #expect(cache.badge(for: file) == .failed)
+    }
+
     @Test func eachNewFileWaitsOnlyForACheckOfItsOwnDrive() {
         var cache = FinderBadgeCache()
         let busyDrive = URL(filePath: "/Users/me/UnlocalFS/Work", directoryHint: .isDirectory)
@@ -70,6 +85,21 @@ struct FinderBadgeCacheTests {
         cache.forget(folder: drive.appending(path: "b", directoryHint: .isDirectory))
 
         #expect(cache.confirm(checkedAt: [drive: start + 1]) == [kept])
+    }
+
+    @Test func aCheckedFileShowsItsBadgeAtOnceWhenFinderShowsItsFolderAgain() {
+        var cache = FinderBadgeCache()
+        let folder = drive.appending(path: "a", directoryHint: .isDirectory)
+        let file = folder.appending(path: "old.pdf")
+        _ = cache.apply(badges(["a/old.pdf": .failed]), version: 1, watching: [drive], checkedAt: [drive: start - 1])
+        _ = cache.see(file, at: start)
+        _ = cache.confirm(checkedAt: [drive: start + 1])
+        cache.forget(folder: folder)
+
+        let needsPull = cache.see(file, at: start + 2)
+
+        #expect(!needsPull && !cache.isWaiting)
+        #expect(cache.badge(for: file) == .failed)
     }
 
     @Test func resetReturnsWhatToClearAndStartsOver() {
