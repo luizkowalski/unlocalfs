@@ -97,6 +97,7 @@ struct ViewModelFixture {
                 try FileManager.default.removeItem(at: socket)
                 return "{}"
             }
+            if request.method == "job/list" { return #"{"runningIds":[]}"# }
             guard request.method == "job/batch" else { throw ControlFailure("Unknown method \(request.method)") }
             let results = try ["vfs-stats.json", "queue.json", "stats.json"].map { try String(contentsOf: root.appending(path: $0), encoding: .utf8) }
             return #"{"results":[\#(results.joined(separator: ",")),{"transferred":[]}]}"#

@@ -48,16 +48,7 @@ import UnlocalFSTestSupport
 
     @Test func aDisconnectIsAnnouncedWithoutWaitingForTheNextPoll() async throws {
         let connection = Connection.s3()
-        let socket = fixture.paths.socket(connection)
-        try fixture.serve(connection) { request in
-            switch request.method {
-            case "job/list": return #"{"runningIds":[]}"#
-            case "core/quit":
-                try FileManager.default.removeItem(at: socket)
-                return "{}"
-            default: return statusBatch()
-            }
-        }
+        try fixture.serve(connection)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         await app.refresh()
