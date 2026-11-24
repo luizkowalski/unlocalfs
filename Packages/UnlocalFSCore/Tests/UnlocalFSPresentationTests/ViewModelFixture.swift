@@ -220,7 +220,6 @@ final class MemoryCredentialStorage: CredentialStorage {
         opensAtLogin = enabled
     }
 
-    func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
     func openDrive(_ connection: Connection) { openedDrives.append(connection.id) }
     func openLog(_: Connection) {}
     func copyShareLinks(_ links: [URL]) { copiedLinks = links }

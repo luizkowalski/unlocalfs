@@ -21,12 +21,19 @@ public protocol DriveGateway: Sendable {
     func deleteFileToStopUpload(_ path: String, in connection: Connection) async throws
     func unfinishedUploads(in connection: Connection) async throws -> [UnfinishedUpload]
     func removeAbandonedUploads(in connection: Connection) async throws
-    func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)?
+    func mountLocation(_ connection: Connection) -> URL
     func removeCache(_ connection: Connection)
 }
 
-extension DriveGateway {
-    func drive(containing file: URL, among connections: [Connection]) throws -> (connection: Connection, path: String) {
+public extension DriveGateway {
+    func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
+        for connection in connections {
+            if let path = file.path(inside: mountLocation(connection)), !path.isEmpty { return (connection, path) }
+        }
+        return nil
+    }
+
+    internal func drive(containing file: URL, among connections: [Connection]) throws -> (connection: Connection, path: String) {
         guard let drive = remoteFile(file, among: connections) else { throw AppError(String(localized: .fileNotInDrive)) }
         return drive
     }

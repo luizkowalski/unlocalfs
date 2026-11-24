@@ -15,7 +15,6 @@ import UserNotifications
         if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
     }
 
-    func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
     func openDrive(_ connection: Connection) { NSWorkspace.shared.open(paths.mount(connection)) }
     func openLog(_ connection: Connection) { NSWorkspace.shared.open(paths.log(connection)) }
 

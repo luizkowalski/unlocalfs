@@ -24,9 +24,7 @@ public actor MountService: DriveGateway {
         serverTrust = SFTPTrustStore(paths: paths)
     }
 
-    public nonisolated func remoteFile(_ file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
-        paths.drive(containing: file, among: connections)
-    }
+    public nonisolated func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
 
     public nonisolated func removeCache(_ connection: Connection) { paths.removeCache(connection) }
 

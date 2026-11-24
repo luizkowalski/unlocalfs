@@ -29,13 +29,6 @@ public struct AppPaths: Sendable {
     }
 
     public func mount(_ connection: Connection) -> URL { mounts.appending(path: connection.name) }
-    public func drive(containing file: URL, among connections: [Connection]) -> (connection: Connection, path: String)? {
-        for connection in connections {
-            if let path = file.path(inside: mount(connection)), !path.isEmpty { return (connection, path) }
-        }
-        return nil
-    }
-
     public func cache(_ connection: Connection) -> URL { support.appending(path: "cache/\(connection.id.uuidString)") }
     public func removeCache(_ connection: Connection) {
         try? FileManager.default.removeItem(at: cache(connection))

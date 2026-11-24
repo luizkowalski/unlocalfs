@@ -180,7 +180,7 @@ public extension AppViewModel {
         isActive(connection) && !networkAvailable
     }
 
-    func mountLocation(_ connection: Connection) -> URL { desktop.mountLocation(connection) }
+    func mountLocation(_ connection: Connection) -> URL { drives.mountLocation(connection) }
 
     func openDrive(_ connection: Connection) { desktop.openDrive(connection) }
     func openLog(_ connection: Connection) { desktop.openLog(connection) }

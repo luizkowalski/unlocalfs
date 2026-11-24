@@ -7,11 +7,11 @@ extension AppViewModel {
     }
 
     private var finderSnapshot: FinderSnapshot {
-        FinderSnapshot(drives: servingDrives.map { FinderSnapshot.Drive(mount: desktop.mountLocation($0.connection), uploads: $0.status.uploads) })
+        FinderSnapshot(drives: servingDrives.map { FinderSnapshot.Drive(mount: drives.mountLocation($0.connection), uploads: $0.status.uploads) })
     }
 
     private var finderCheckedAt: [URL: Date] {
-        Dictionary(servingDrives.map { (desktop.mountLocation($0.connection), statusCheckedAt[$0.connection.id] ?? .distantPast) }, uniquingKeysWith: min)
+        Dictionary(servingDrives.map { (drives.mountLocation($0.connection), statusCheckedAt[$0.connection.id] ?? .distantPast) }, uniquingKeysWith: min)
     }
 
     private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
