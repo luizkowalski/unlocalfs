@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Checking" : {
+      "comment" : "Finder badge label for a file or folder whose upload status the app has not checked yet",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificando"
+          }
+        }
+      }
+    },
     "Upload failed" : {
       "comment" : "Finder badge label for a file or folder whose upload failed",
       "localizations" : {

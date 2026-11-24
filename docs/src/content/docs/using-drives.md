@@ -23,6 +23,7 @@ To stop an upload, click the ⓧ button next to a file that waits, uploads, or f
 
 The UnlocalFS Finder extension shows the upload status of each file and folder on a connected drive:
 
+- A gray circle with dots: UnlocalFS has not checked the file yet. It changes to another badge within a few seconds.
 - A green check: the file is on the server.
 - A blue arrow: the file waits to upload or uploads now.
 - A red mark: an upload failed. UnlocalFS tries again on its own. Select the drive in the app to see the error.
@@ -33,7 +34,7 @@ The extension also adds **Copy Share Link** and **Duplicate on Server** to the m
 
 - The extension is off until you turn it on. Open **UnlocalFS → Settings** and click **Turn On…** next to **Finder Extension**. macOS opens the page where you turn on the UnlocalFS extension.
 - Badges show only while UnlocalFS runs.
-- A badge can be a few seconds old. After you save a file, it can show its old badge until UnlocalFS checks the drive again, which it does every 3 seconds. A new file shows no badge until UnlocalFS has checked it.
+- A badge can be a few seconds old. After you save a file, it can show its old badge until UnlocalFS checks the drive again, which it does every 3 seconds. A file that Finder shows for the first time has the gray badge until UnlocalFS has checked it.
 
 ## Clean up unfinished uploads
 
