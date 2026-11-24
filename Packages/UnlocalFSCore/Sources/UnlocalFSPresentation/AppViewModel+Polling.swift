@@ -36,7 +36,6 @@ public extension AppViewModel {
                 }
             }
         } while refreshRequested && !sleeping
-        announceFinderChange()
     }
 
     func willSleep() { sleeping = true }
@@ -74,6 +73,7 @@ public extension AppViewModel {
             }
         }
         if statuses[connection.id] != status { statuses[connection.id] = status }
+        announceFinderChange()
         if status.isServing {
             recordSpeed(SpeedSample(status, at: .now), for: connection.id)
         } else if !status.isRunning, speeds[connection.id] != nil {
