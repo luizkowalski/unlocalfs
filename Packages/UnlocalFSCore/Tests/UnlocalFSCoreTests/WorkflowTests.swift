@@ -24,64 +24,17 @@ struct WorkflowTests {
         }
     }
 
-    @Test(arguments: redirections)
-    func savedSFTPDriveCannotBeRedirected(change: Redirection) async throws {
+    @Test(arguments: LockedChange.allCases)
+    func aSavedDriveKeepsItsProtocolFolderAndEncryption(change: LockedChange) async throws {
         try await withWorkflowFixture { repository, drives, _ in
-            let connection = Connection.sftp()
-            let credentials = Credentials(password: "secret")
-            try repository.save(connection, credentials: credentials)
-            var edited = connection
-            change(&edited)
-            edited.endpoint = "https://s3.example.com"
-            edited.bucket = "my-bucket"
+            let drive = change.drive
+            try repository.save(drive.saved, credentials: drive.savedCredentials)
             await #expect(throws: AppError.self) {
                 _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service)
-                    .execute(edited, credentials: Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "pw", password: "secret"), confirmation: "pw")
+                    .execute(drive.edited, credentials: drive.editedCredentials, confirmation: drive.editedCredentials.encryptionPassword)
             }
-            #expect(try repository.all() == [connection])
-            #expect(try repository.credentials(for: connection.id) == credentials)
-        }
-    }
-
-    @Test func savedS3DriveCannotBecomeSFTP() async throws {
-        try await withWorkflowFixture { repository, drives, connection in
-            try repository.save(connection, credentials: Credentials.s3())
-            let edited = Connection.sftp(name: connection.name) { $0.id = connection.id }
-            await #expect(throws: AppError.self) {
-                _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service)
-                    .execute(edited, credentials: Credentials(password: "secret"))
-            }
-            #expect(try repository.all() == [connection])
-        }
-    }
-
-    @Test(arguments: [false, true])
-    func savedS3DriveKeepsItsEncryption(encrypted: Bool) async throws {
-        try await withWorkflowFixture { repository, drives, connection in
-            var saved = connection
-            saved.encrypted = encrypted
-            let credentials = Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: encrypted ? "pw" : "")
-            try repository.save(saved, credentials: credentials)
-            var edited = saved
-            edited.encrypted = true
-            await #expect(throws: AppError.self) {
-                _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service)
-                    .execute(edited, credentials: Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "new"), confirmation: "new")
-            }
-            #expect(try repository.all() == [saved])
-            #expect(try repository.credentials(for: saved.id) == credentials)
-        }
-    }
-
-    @Test func savedEncryptedSFTPDriveKeepsItsEncryptionPassword() async throws {
-        try await withWorkflowFixture { repository, drives, _ in
-            let connection = Connection.sftp { $0.encrypted = true }
-            try repository.save(connection, credentials: Credentials(encryptionPassword: "original", password: "secret"))
-            await #expect(throws: AppError.self) {
-                _ = try await SaveConnectionUseCase(repository: repository, drives: drives.service)
-                    .execute(connection, credentials: Credentials(encryptionPassword: "changed", password: "secret"))
-            }
-            #expect(try repository.credentials(for: connection.id).encryptionPassword == "original")
+            #expect(try repository.all() == [drive.saved])
+            #expect(try repository.credentials(for: drive.saved.id) == drive.savedCredentials)
         }
     }
 
@@ -305,13 +258,42 @@ struct WorkflowTests {
     }
 }
 
-typealias Redirection = @Sendable (inout Connection) -> Void
+enum LockedChange: CaseIterable, Sendable {
+    case sftpFolder, backend, encryption, encryptionPassword
 
-private let redirections: [Redirection] = [
-    { $0.sftp.remotePath = "/elsewhere" },
-    { $0.encrypted = true },
-    { $0.provider = .other },
-]
+    struct Drive {
+        let saved: Connection
+        let savedCredentials: Credentials
+        let edited: Connection
+        let editedCredentials: Credentials
+    }
+
+    var drive: Drive {
+        let server = Connection.sftp { $0.encrypted = self == .encryptionPassword }
+        let bucket = Connection.s3()
+        switch self {
+        case .sftpFolder:
+            var edited = server
+            edited.sftp.remotePath = "/elsewhere"
+            return Drive(saved: server, savedCredentials: Credentials(password: "secret"), edited: edited, editedCredentials: Credentials(password: "secret"))
+        case .backend:
+            let edited = Connection.sftp(name: bucket.name) { $0.id = bucket.id }
+            return Drive(saved: bucket, savedCredentials: .s3(), edited: edited, editedCredentials: Credentials(password: "secret"))
+        case .encryption:
+            var edited = bucket
+            edited.encrypted = true
+            return Drive(
+                saved: bucket, savedCredentials: .s3(), edited: edited,
+                editedCredentials: Credentials(accessKey: "key", secretKey: "secret", encryptionPassword: "new"),
+            )
+        case .encryptionPassword:
+            return Drive(
+                saved: server, savedCredentials: Credentials(encryptionPassword: "original", password: "secret"), edited: server,
+                editedCredentials: Credentials(encryptionPassword: "changed", password: "secret"),
+            )
+        }
+    }
+}
 
 private func withWorkflowFixture(
     operation: (SavedConnectionRepository, StubbedDrives, Connection) async throws -> Void,

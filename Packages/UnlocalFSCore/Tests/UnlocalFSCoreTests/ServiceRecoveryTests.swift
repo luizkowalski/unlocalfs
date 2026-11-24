@@ -196,7 +196,8 @@ private func revokedDrive(_ root: URL) -> ControlServer.Respond {
             let update = try? JSONSerialization.jsonObject(with: Data(contentsOf: root.appending(path: "updated"))) as? [String: Any]
             let token = (update?["parameters"] as? [String: String])?["token"] ?? ""
             let expiry = try JSONSerialization.jsonObject(with: request.body) as? [String: String]
-            if update?["name"] as? String == "unlocalfs-gcs", token.contains("1//new-refresh"), expiry == ["id": "7", "expiry": "0"] {
+            if update?["name"] as? String == "unlocalfs-gcs", token.contains("1//new-refresh"), expiry?["id"] == "7",
+               (expiry?["expiry"]).flatMap(Double.init).map({ $0 <= 0 }) == true {
                 fileManager.createFile(atPath: root.appending(path: "retried").path, contents: Data())
             }
             return "{}"

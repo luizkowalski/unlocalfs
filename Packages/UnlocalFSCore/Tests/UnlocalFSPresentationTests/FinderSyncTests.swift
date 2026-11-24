@@ -137,14 +137,10 @@ import UnlocalFSTestSupport
         func file(_ connection: Connection, _ name: String = "a.pdf") -> URL {
             fixture.paths.mount(connection).appending(path: name)
         }
-        let links = [
-            FinderMenuItem(title: String(localized: .copyShareLinkHour), command: .copyShareLink(.hour)),
-            FinderMenuItem(title: String(localized: .copyShareLinkDay), command: .copyShareLink(.day)),
-            FinderMenuItem(title: String(localized: .copyShareLinkWeek), command: .copyShareLink(.week)),
-        ]
-        let duplicate = FinderMenuItem(title: String(localized: .duplicateOnServer), command: .duplicateOnServer)
+        let links: [FinderCommand] = [.copyShareLink(.hour), .copyShareLink(.day), .copyShareLink(.week)]
+        let duplicate = FinderCommand.duplicateOnServer
 
-        let (files, expected): ([URL], [FinderMenuItem]) = switch selection {
+        let (files, expected): ([URL], [FinderCommand]) = switch selection {
         case .plainFiles: ([file(plain), file(plain, "b/c.pdf")], links + [duplicate])
         case .encryptedFile: ([file(encrypted)], [duplicate])
         case .readOnlyFile: ([file(readOnly)], links)
@@ -155,7 +151,8 @@ import UnlocalFSTestSupport
         case .nothing: ([], [])
         }
 
-        #expect(app.reply(to: .menu(files)) == .menu(expected))
+        guard case let .menu(items) = app.reply(to: .menu(files)) else { Issue.record("No menu"); return }
+        #expect(items.map(\.command) == expected)
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

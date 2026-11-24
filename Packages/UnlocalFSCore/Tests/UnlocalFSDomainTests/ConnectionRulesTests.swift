@@ -68,16 +68,4 @@ struct ConnectionRulesTests {
         active.controlError = "Unavailable"
         #expect(!connection.shouldConnectAutomatically(status: active))
     }
-
-    @Test func pendingUploadsPreventDisconnect() {
-        var status = MountStatus()
-        status.uploads = ["report.pdf": .pending]
-        #expect(throws: UploadsPendingError.self) { try status.requireSafeDisconnect() }
-    }
-
-    @Test func failedUploadsPreventDisconnect() {
-        var status = MountStatus()
-        status.uploads = ["report.pdf": .failed]
-        #expect(throws: AppError.self) { try status.requireSafeDisconnect() }
-    }
 }

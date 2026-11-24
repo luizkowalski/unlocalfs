@@ -333,12 +333,15 @@ extension MountSafetyTests {
         for secret in ["s3-secret", "crypt-password", "obscured-secret", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
             #expect(!started.contains(secret), "\(secret) reached the rcd process")
         }
-        let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.backend.rcloneType)"))
-        let parameters = try #require(try JSONSerialization.jsonObject(with: created) as? [String: Any])["parameters"] as? [String: String]
-        for (name, value) in expected {
-            #expect(parameters?[name] == value, "\(name)")
+        let created = try FileManager.default.contentsOfDirectory(at: drives.root, includingPropertiesForKeys: nil).filter { $0.lastPathComponent.hasPrefix("create-") }
+        let parameters = try created.reduce(into: [String: String]()) { merged, file in
+            let body = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]
+            merged.merge(body?["parameters"] as? [String: String] ?? [:]) { first, _ in first }
         }
-        #expect(FileManager.default.fileExists(atPath: drives.root.appending(path: "create-unlocalfs").path))
+        for (name, value) in expected {
+            #expect(parameters[name] == value, "\(name)")
+        }
+        #expect(parameters["password"] == "obscured-secret")
     }
 }
 

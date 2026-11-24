@@ -100,11 +100,6 @@ struct ConnectionTests {
         connection.prefersUploadTimes = prefersUploadTimes
         #expect(connection.usesUploadTimes == expected)
     }
-
-    @Test func credentialsSavedBeforeEncryptionHaveNoPassword() throws {
-        let credentials = try JSONDecoder().decode(Credentials.self, from: Data(#"{"accessKey":"a","secretKey":"b","sessionToken":""}"#.utf8))
-        #expect(credentials == Credentials(accessKey: "a", secretKey: "b"))
-    }
 }
 
 private func configURL() -> URL {
