@@ -113,7 +113,6 @@ import UnlocalFSPresentation
     var viewModels: ViewModelFactory { dependencies.viewModels }
     private var requester = NSWorkspace.shared.frontmostApplication
     private var serviceRequester: NSRunningApplication?
-    private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
     private var finderPort: FinderSyncPort?
 
@@ -150,8 +149,7 @@ import UnlocalFSPresentation
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard !checkingQuit else { return .terminateCancel }
-        checkingQuit = true
+        guard model.beginQuit() else { return .terminateCancel }
         Task {
             var allowed: Bool
             switch await model.quitDecision() {
@@ -181,7 +179,6 @@ import UnlocalFSPresentation
             }
             if allowed { await model.stopSignInsForQuit() } else { model.cancelQuit() }
             sender.reply(toApplicationShouldTerminate: allowed)
-            checkingQuit = false
         }
         return .terminateLater
     }

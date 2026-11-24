@@ -130,6 +130,13 @@ extension Backend {
         case .googleDrive: "drive"
         }
     }
+
+    var readsInChunkStreams: Bool {
+        switch self {
+        case .s3Compatible, .gcs, .googleDrive: true
+        case .sftp: false
+        }
+    }
 }
 
 extension Connection {

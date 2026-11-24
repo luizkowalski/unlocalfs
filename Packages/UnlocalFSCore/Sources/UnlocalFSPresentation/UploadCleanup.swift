@@ -8,8 +8,9 @@ public struct UploadCleanup: Equatable, Sendable {
 
     public var title: String { String(localized: .removeUnfinishedUploads(abandoned)) }
 
-    public var message: String {
-        let explanation = String(localized: .abandonedUploadsExplanation)
-        return inFlight == 0 ? explanation : "\(explanation) \(String(localized: .recentUploadsKept(inFlight)))"
+    public var message: String { Self.describe(String(localized: .abandonedUploadsExplanation), keeping: inFlight) }
+
+    static func describe(_ text: String, keeping inFlight: Int) -> String {
+        inFlight == 0 ? text : "\(text) \(String(localized: .recentUploadsKept(inFlight)))"
     }
 }

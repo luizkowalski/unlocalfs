@@ -16,6 +16,8 @@ import UnlocalFSTestSupport
         try fixture.serve(connection, queued: 1)
         let app = fixture.app()
         await app.refresh()
+        try #require(app.beginQuit())
+        #expect(!app.beginQuit())
         try #require(await app.quitDecision() == .disconnect)
 
         await app.disconnect(connection)

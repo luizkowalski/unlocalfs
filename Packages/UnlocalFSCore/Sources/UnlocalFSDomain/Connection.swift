@@ -72,6 +72,11 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         return nil
     }
 
+    public func hasSameStorageSettings(as other: Connection) -> Bool {
+        (provider, endpoint, region, bucket, folder, encrypted) == (other.provider, other.endpoint, other.region, other.bucket, other.folder, other.encrypted)
+            && sftp == other.sftp && gcs == other.gcs
+    }
+
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
     public var storageName: String {

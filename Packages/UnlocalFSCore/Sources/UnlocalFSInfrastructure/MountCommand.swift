@@ -50,7 +50,7 @@ struct MountCommand {
             "vfs_cache_min_free_space": connection.minimumFreeSpace > 0 ? "\(connection.minimumFreeSpace)B" : "off",
             "vfs_fast_fingerprint": "true",
         ]
-        if connection.backend != .sftp {
+        if connection.backend.readsInChunkStreams {
             parameters["vfs_read_chunk_streams"] = "\(Self.readChunkStreams)"
             parameters["vfs_read_chunk_size"] = Self.readChunkSize
             parameters["vfs_read_chunk_size_limit"] = Self.readChunkSizeLimit

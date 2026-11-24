@@ -18,10 +18,9 @@ public extension AppViewModel {
             if abandoned > 0 {
                 uploadCleanup = UploadCleanup(connection: connection, abandoned: abandoned, inFlight: inFlight)
             } else {
-                let nothing = String(localized: .noAbandonedUploads(connection.name))
                 alert = AppAlert(
                     String(localized: .nothingToCleanUp),
-                    inFlight == 0 ? nothing : "\(nothing) \(String(localized: .recentUploadsKept(inFlight)))",
+                    UploadCleanup.describe(String(localized: .noAbandonedUploads(connection.name)), keeping: inFlight),
                 )
             }
         } catch { alert = AppAlert(String(localized: .uploadsNotChecked(connection.name)), error) }

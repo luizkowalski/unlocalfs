@@ -2,9 +2,14 @@ import Foundation
 import UnlocalFSDomain
 
 public extension AppViewModel {
-    func quitDecision() async -> QuitUseCase.Decision {
+    func beginQuit() -> Bool {
+        guard !checkingQuit else { return false }
         checkingQuit = true
-        return await quit.execute(connections: connections, operationInProgress: !busy.isEmpty)
+        return true
+    }
+
+    func quitDecision() async -> QuitUseCase.Decision {
+        await quit.execute(connections: connections, operationInProgress: !busy.isEmpty)
     }
 
     func cancelQuit() { checkingQuit = false }
@@ -12,7 +17,6 @@ public extension AppViewModel {
     func stopSignInsForQuit() async { await drives.stopSignIns() }
 
     func disconnectForQuit() async -> (connection: Connection, error: any Error)? {
-        checkingQuit = true
         let active = Set(connections.filter(isActive).map(\.id))
         busy.formUnion(active)
         let failure = await quit.disconnectAll(connections: connections)

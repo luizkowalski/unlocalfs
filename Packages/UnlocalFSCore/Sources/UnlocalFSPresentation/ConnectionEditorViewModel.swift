@@ -5,22 +5,17 @@ import UnlocalFSDomain
 @MainActor @Observable public final class ConnectionEditorViewModel {
     public var connection: Connection {
         didSet {
-            if testInputs(connection) != testInputs(oldValue) || connection.sftp != oldValue.sftp || connection.gcs != oldValue.gcs { tested = false }
             if connection.backend != oldValue.backend { credentials.googleSignIn = GoogleSignIn() }
         }
     }
 
-    public var credentials = Credentials() {
-        didSet {
-            if credentials != oldValue { tested = false }
-        }
-    }
+    public var credentials = Credentials()
 
     public var confirmation = ""
     private var credentialsLoaded = false
     public private(set) var testing = false
     public private(set) var saving = false
-    public private(set) var tested = false
+    private var testedWith: (connection: Connection, credentials: Credentials)?
     public private(set) var serverTrust: ServerTrustChallenge?
     private let signIn: GoogleSignInRun
     public private(set) var error: String?
@@ -81,6 +76,10 @@ import UnlocalFSDomain
         }
     }
 
+    public var tested: Bool {
+        testedWith.map { $0.connection.hasSameStorageSettings(as: connection) && $0.credentials == credentials } ?? false
+    }
+
     public var isLocked: Bool { testing || saving || serverTrust != nil || !credentialsLoaded || signingIn }
 
     public var signingIn: Bool { signIn.isRunning }
@@ -125,11 +124,12 @@ import UnlocalFSDomain
     public func test() async {
         guard validate() else { return }
         testing = true
-        tested = false
+        testedWith = nil
         defer { testing = false }
+        let inputs = (connection, credentials)
         do {
-            try await drives.test(connection, credentials: credentials)
-            tested = true
+            try await drives.test(inputs.0, credentials: inputs.1)
+            testedWith = inputs
         } catch let challenge as ServerTrustChallenge {
             serverTrust = challenge
         } catch { self.error = error.localizedDescription }
@@ -173,9 +173,5 @@ import UnlocalFSDomain
         showErrors = true
         error = nil
         return fieldErrors.isEmpty
-    }
-
-    private func testInputs(_ connection: Connection) -> [String] {
-        [connection.provider.rawValue, connection.endpoint, connection.region, connection.bucket, connection.folder, String(connection.encrypted)]
     }
 }
