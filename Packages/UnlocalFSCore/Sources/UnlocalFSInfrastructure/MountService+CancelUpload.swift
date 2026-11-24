@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 public extension MountService {
     func deleteFileToStopUpload(_ path: String, in connection: Connection) async throws {
-        try requireServing(connection, otherwise: .reconnectToStopUpload)
+        try requireMounted(connection, otherwise: .reconnectToStopUpload)
         guard try await isWaitingToUpload(path, in: connection) else {
             throw AppError(String(localized: .uploadAlreadyFinished((path as NSString).lastPathComponent)))
         }

@@ -30,8 +30,10 @@ public struct AppPaths: Sendable {
 
     public func mount(_ connection: Connection) -> URL { mounts.appending(path: connection.name) }
     public func cache(_ connection: Connection) -> URL { support.appending(path: "cache/\(connection.id.uuidString)") }
-    public func removeCache(_ connection: Connection) {
-        try? FileManager.default.removeItem(at: cache(connection))
+    public func removeCache(_ connection: Connection) throws {
+        do {
+            try FileManager.default.removeItem(at: cache(connection))
+        } catch let error as CocoaError where error.code == .fileNoSuchFile {}
     }
 
     public func log(_ connection: Connection) -> URL { logs.appending(path: "\(connection.id.uuidString).log") }

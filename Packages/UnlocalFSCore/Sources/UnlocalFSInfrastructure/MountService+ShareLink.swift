@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 public extension MountService {
     func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL {
-        try requireServing(connection, otherwise: .reconnectForLinks)
+        try requireMounted(connection, otherwise: .reconnectForLinks)
         let uploading: Bool
         do {
             uploading = try await isWaitingToUpload(path, in: connection)

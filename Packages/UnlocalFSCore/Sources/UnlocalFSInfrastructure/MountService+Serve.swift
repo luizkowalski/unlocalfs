@@ -21,8 +21,13 @@ extension MountService {
 
     func stopsAfterEject(_ connection: Connection) async -> Bool {
         guard let mounts = try? await control(LiveMounts.self, connection, "mount/listmounts"), mounts.mountPoints.isEmpty else { return false }
-        saveTraffic(connection)
-        return await (try? stop(connection, askingToQuit: true)) != nil
+        do {
+            try await stop(connection, askingToQuit: true)
+            try forgetProcess(connection)
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func wait(for process: Process, until ready: () async throws -> Bool) async throws {

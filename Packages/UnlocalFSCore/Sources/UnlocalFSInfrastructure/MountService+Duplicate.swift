@@ -5,7 +5,7 @@ extension MountService {
     private static let copyGroup = "duplicate"
 
     public func duplicate(_ path: String, in connection: Connection) async throws -> String {
-        try requireServing(connection, otherwise: .reconnectToDuplicate)
+        try requireMounted(connection, otherwise: .reconnectToDuplicate)
         if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }

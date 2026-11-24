@@ -26,10 +26,14 @@ public actor MountService: DriveGateway {
 
     public nonisolated func mountLocation(_ connection: Connection) -> URL { paths.mount(connection) }
 
-    public nonisolated func removeCache(_ connection: Connection) { paths.removeCache(connection) }
+    public nonisolated func removeCache(_ connection: Connection) throws { try paths.removeCache(connection) }
 
     public func test(_ connection: Connection, credentials: Credentials) async throws {
-        let remote = try await remote(for: connection, credentials: credentials)
+        try await test(remote(for: connection, credentials: credentials))
+    }
+
+    private func test(_ remote: RcloneRemote) async throws {
+        let connection = remote.connection
         do {
             _ = try await runRemoteCommand(["lsf", connection.driveTarget, "--max-depth", "1", "--dirs-only", "--crypt-strict-names"], remote: remote)
         } catch {
@@ -67,8 +71,8 @@ public actor MountService: DriveGateway {
         starting.insert(connection.id)
         defer { starting.remove(connection.id) }
         guard await !status(connection).isActive else { throw AppError(String(localized: .alreadyRunning)) }
-        let credentials = try await prepareCredentials(credentials)
-        try await test(connection, credentials: credentials)
+        let remote = try await remote(for: connection, credentials: credentials)
+        try await test(remote)
         try paths.prepare()
         let mount = paths.mount(connection)
         try FileManager.default.createDirectory(at: mount, withIntermediateDirectories: true)
@@ -81,7 +85,7 @@ public actor MountService: DriveGateway {
         let socket = paths.socket(connection)
         if FileManager.default.fileExists(atPath: socket.path) { try FileManager.default.removeItem(at: socket) }
         let logURL = paths.log(connection)
-        let command = try await MountCommand(remote: remote(for: connection, credentials: credentials), paths: paths)
+        let command = MountCommand(remote: remote, paths: paths)
         let descriptor = open(logURL.path, O_WRONLY | O_APPEND | O_CREAT, 0o600)
         guard descriptor >= 0 else { throw AppError(String(localized: .couldNotOpenLog(String(cString: strerror(errno))))) }
         let log = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
@@ -101,7 +105,7 @@ public actor MountService: DriveGateway {
         } catch {
             process.terminate()
             processes[connection.id] = nil
-            throw redacted(error, credentials: credentials)
+            throw redacted(error, credentials: remote.credentials ?? credentials)
         }
     }
 
@@ -185,23 +189,28 @@ public actor MountService: DriveGateway {
             throw AppError(String(localized: .couldNotStopOldService))
         }
         let reachable = try await reachesControl(connection, updating: &current)
-        try current.requireSafeDisconnect()
-        try await requireNoCopies(connection, status: current)
-        saveTraffic(connection)
+        try await requireSafeStop(connection, status: current)
         if current.isMounted { try await eject(connection, force: !current.isRunning || !reachable) }
         if current.needsReconnect {
             try await stop(connection, askingToQuit: reachable)
         } else if current.isRunning {
             let remaining = await status(connection)
-            try remaining.requireSafeDisconnect()
-            try await requireNoCopies(connection, status: remaining)
-            saveTraffic(connection)
+            try await requireSafeStop(connection, status: remaining)
             if let error = remaining.controlError {
                 guard try await waitForStop(connection) else { throw AppError(error) }
             } else if remaining.isRunning {
                 try await stop(connection, askingToQuit: true)
             }
         }
+        try forgetProcess(connection)
+    }
+
+    private func requireSafeStop(_ connection: Connection, status: MountStatus) async throws {
+        try status.requireSafeDisconnect()
+        try await requireNoCopies(connection, status: status)
+    }
+
+    func forgetProcess(_ connection: Connection) throws {
         processes[connection.id] = nil
         trackers[connection.id] = nil
         let pidFile = paths.pidFile(connection)
@@ -241,7 +250,7 @@ public actor MountService: DriveGateway {
         try await JSONDecoder().decode(ControlSnapshot.self, from: control(connection, "job/batch", body: Data(request.utf8)))
     }
 
-    func requireServing(_ connection: Connection, otherwise message: LocalizedStringResource) throws {
+    func requireMounted(_ connection: Connection, otherwise message: LocalizedStringResource) throws {
         guard isMounted(paths.mount(connection)), FileManager.default.fileExists(atPath: paths.socket(connection).path) else {
             throw AppError(String(localized: message))
         }
@@ -277,7 +286,7 @@ public actor MountService: DriveGateway {
         var remote = try await remote(for: connection, preparedCredentials: prepareCredentials(credentials))
         guard connection.backend == .sftp else { return remote }
         let sftp = connection.sftp
-        if sftp.authentication == .privateKey { try requireReadableFile(sftp.keyPath, failure: { .cannotReadPrivateKeyFile($0) }) }
+        if sftp.authentication == .privateKey { try requireReadableKey(sftp.keyPath) }
         if sftp.authentication == .agent { remote.agentSocket = try agentSocket(sftp) }
         return remote
     }
@@ -287,11 +296,11 @@ public actor MountService: DriveGateway {
         return try RcloneRemote(connection: connection, credentials: credentials, knownHosts: knownHosts, googleClient: googleClient)
     }
 
-    private func requireReadableFile(_ path: String, failure: (String) -> LocalizedStringResource) throws {
+    private func requireReadableKey(_ path: String) throws {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue,
               FileManager.default.isReadableFile(atPath: path) else {
-            throw AppError(String(localized: failure(path)))
+            throw AppError(String(localized: .cannotReadPrivateKeyFile(path)))
         }
     }
 

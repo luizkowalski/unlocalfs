@@ -6,6 +6,7 @@ extension MountService {
     private static let ejectRetryTime: Duration = .seconds(10)
 
     func eject(_ connection: Connection, force: Bool) async throws {
+        saveTraffic(connection)
         let (executable, flags) = force ? ("/sbin/umount", ["-f"]) : ("/usr/sbin/diskutil", ["unmount"])
         let arguments = flags + [paths.mount(connection).path]
         let deadline = ContinuousClock.now.advanced(by: Self.ejectRetryTime)
@@ -39,6 +40,7 @@ extension MountService {
     }
 
     func stop(_ connection: Connection, askingToQuit: Bool) async throws {
+        saveTraffic(connection)
         var quitError: any Error = AppError(String(localized: .driveStillStopping))
         if askingToQuit {
             do {

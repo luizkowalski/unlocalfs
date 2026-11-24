@@ -329,7 +329,7 @@ extension MountSafetyTests {
         for secret in ["s3-secret", "crypt-password", "obscured-secret", "saved-refresh", "saved-access", "PRIVATE KEY", GoogleClient.test.secret] {
             #expect(!started.contains(secret), "\(secret) reached the rcd process")
         }
-        let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.rcloneType)"))
+        let created = try Data(contentsOf: drives.root.appending(path: "create-unlocalfs-\(connection.backend.rcloneType)"))
         let parameters = try #require(try JSONSerialization.jsonObject(with: created) as? [String: Any])["parameters"] as? [String: String]
         for (name, value) in expected {
             #expect(parameters?[name] == value, "\(name)")

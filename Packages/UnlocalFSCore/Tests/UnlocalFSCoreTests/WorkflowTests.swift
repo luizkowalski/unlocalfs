@@ -206,15 +206,23 @@ struct WorkflowTests {
         }
     }
 
-    @Test func deletingADriveRemovesOnlyItsCache() async throws {
+    @Test func deletingADriveRemovesOnlyItsCacheAndKeepsTheDriveWhenTheCacheStays() async throws {
         try await withWorkflowFixture { repository, drives, connection in
             let sibling = Connection.s3(name: "Sibling")
             for drive in [connection, sibling] {
                 try repository.save(drive, credentials: Credentials.s3())
                 try FileManager.default.createDirectory(at: drives.paths.cache(drive).appending(path: "vfs"), withIntermediateDirectories: true)
             }
+            let locked = drives.paths.cache(connection).appending(path: "vfs")
+            try Data().write(to: locked.appending(path: "photo.jpg"))
+            try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: locked.path)
+            let delete = DeleteConnectionUseCase(repository: repository, drives: drives.service)
 
-            let remaining = try await DeleteConnectionUseCase(repository: repository, drives: drives.service).execute(connection)
+            await #expect(throws: (any Error).self) { _ = try await delete.execute(connection) }
+            #expect(try repository.all().count == 2)
+
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: locked.path)
+            let remaining = try await delete.execute(connection)
 
             #expect(remaining == [sibling])
             #expect(!FileManager.default.fileExists(atPath: drives.paths.cache(connection).path))

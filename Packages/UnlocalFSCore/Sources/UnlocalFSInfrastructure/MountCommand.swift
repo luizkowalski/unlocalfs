@@ -37,9 +37,7 @@ struct MountCommand {
     }
 
     var environment: [String: String] {
-        var environment = ["UNLOCALFS_VOLUME_NAME": remote.connection.name]
-        environment["SSH_AUTH_SOCK"] = remote.agentSocket
-        return environment
+        remote.processEnvironment.merging(["UNLOCALFS_VOLUME_NAME": remote.connection.name]) { _, volume in volume }
     }
 
     var mountParameters: [String: String] {

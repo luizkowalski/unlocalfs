@@ -22,7 +22,7 @@ public protocol DriveGateway: Sendable {
     func unfinishedUploads(in connection: Connection) async throws -> [UnfinishedUpload]
     func removeAbandonedUploads(in connection: Connection) async throws
     func mountLocation(_ connection: Connection) -> URL
-    func removeCache(_ connection: Connection)
+    func removeCache(_ connection: Connection) throws
 }
 
 public extension DriveGateway {

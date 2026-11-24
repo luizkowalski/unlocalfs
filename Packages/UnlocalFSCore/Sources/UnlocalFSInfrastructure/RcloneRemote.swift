@@ -28,7 +28,7 @@ struct RcloneRemote {
         }
     }
 
-    var storageRemote: NamedRemote { NamedRemote(name: connection.storageRemoteName, type: connection.rcloneType, options: options) }
+    var storageRemote: NamedRemote { NamedRemote(name: connection.storageRemoteName, type: connection.backend.rcloneType, options: options) }
 
     var namedRemotes: [NamedRemote] {
         guard connection.encrypted else { return [storageRemote] }
@@ -42,8 +42,11 @@ struct RcloneRemote {
             environment[prefix + "TYPE"] = remote.type
             for (key, value) in remote.parameters { environment[prefix + key.uppercased()] = value }
         }
-        environment["SSH_AUTH_SOCK"] = agentSocket
-        return environment
+        return environment.merging(processEnvironment) { _, process in process }
+    }
+
+    var processEnvironment: [String: String] {
+        agentSocket.map { ["SSH_AUTH_SOCK": $0] } ?? [:]
     }
 
     private var cryptOptions: [String: String] {
@@ -140,10 +143,8 @@ extension Backend {
 }
 
 extension Connection {
-    var rcloneType: String { backend.rcloneType }
-
     static let cryptRemoteName = "unlocalfs"
-    var storageRemoteName: String { "unlocalfs-\(rcloneType)" }
+    var storageRemoteName: String { "unlocalfs-\(backend.rcloneType)" }
     var driveStorage: String { "\(storageRemoteName):\(remoteFolder)" }
     var driveTarget: String { encrypted ? "\(Self.cryptRemoteName):" : driveStorage }
 }
