@@ -63,7 +63,7 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     private func schedulePullAgain(after delay: TimeInterval) {
-        queue.asyncAfter(deadline: .now() + delay) { [weak self] in self?.schedulePull() }
+        fallback.schedule(deadline: .now() + delay, repeating: 30)
     }
 
     private func pull() {
