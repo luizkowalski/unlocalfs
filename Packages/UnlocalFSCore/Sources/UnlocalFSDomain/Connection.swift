@@ -79,6 +79,14 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
 
     public var bucketPath: String { folder.isEmpty ? bucket : "\(bucket)/\(folder)" }
 
+    public var remoteFolder: String {
+        switch backend {
+        case .s3Compatible, .gcs: bucketPath
+        case .sftp: sftp.remotePath
+        case .googleDrive: folder
+        }
+    }
+
     public var storageName: String {
         switch backend {
         case .s3Compatible, .gcs: bucket
@@ -167,88 +175,6 @@ public struct Connection: Codable, Identifiable, Equatable, Sendable {
         }
         return result
     }
-}
-
-public enum ConnectionField: CaseIterable, Sendable {
-    case name, endpoint, bucket, folder, accessKey, secretKey
-    case serviceAccountKey, googleAccount
-    case host, port, username, remotePath
-    case password, keyFile
-    case encryptionPassword, confirmation
-    case kmsKey
-
-    public var displayName: String {
-        switch self {
-        case .name: String(localized: .fieldName)
-        case .endpoint: String(localized: .fieldEndpoint)
-        case .bucket: String(localized: .fieldBucket)
-        case .folder: String(localized: .fieldFolder)
-        case .accessKey: String(localized: .fieldAccessKey)
-        case .secretKey: String(localized: .fieldSecretKey)
-        case .serviceAccountKey: String(localized: .fieldServiceAccountKey)
-        case .googleAccount: String(localized: .fieldGoogleAccount)
-        case .host: String(localized: .fieldHost)
-        case .port: String(localized: .fieldPort)
-        case .username: String(localized: .fieldUsername)
-        case .remotePath: String(localized: .fieldRemoteFolder)
-        case .password: String(localized: .password)
-        case .keyFile: String(localized: .privateKey)
-        case .encryptionPassword: String(localized: .fieldEncryptionPassword)
-        case .confirmation: String(localized: .fieldConfirmPassword)
-        case .kmsKey: String(localized: .fieldKMSKey)
-        }
-    }
-}
-
-public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
-    case aws = "AWS"
-    case cloudflare = "Cloudflare"
-    case digitalOcean = "DigitalOcean"
-    case googleCloudStorage = "GCS"
-    case googleDrive = "GoogleDrive"
-    case minio = "Minio"
-    case wasabi = "Wasabi"
-    case other = "Other"
-    case sftp = "SFTP"
-
-    public var id: Self { self }
-
-    public var group: ProviderGroup {
-        switch self {
-        case .aws, .cloudflare, .digitalOcean, .minio, .wasabi: .s3Services
-        case .googleCloudStorage, .googleDrive: .google
-        case .other, .sftp: .generic
-        }
-    }
-
-    public var backend: Backend {
-        switch self {
-        case .other, .aws, .cloudflare, .minio, .wasabi, .digitalOcean: .s3Compatible
-        case .sftp: .sftp
-        case .googleCloudStorage: .gcs
-        case .googleDrive: .googleDrive
-        }
-    }
-
-    public var hasAWSSettings: Bool { self == .aws }
-
-    public var title: String {
-        switch self {
-        case .other: String(localized: .providerS3Compatible)
-        case .aws: String(localized: .providerAmazonS3)
-        case .cloudflare: String(localized: .providerCloudflareR2)
-        case .minio: String(localized: .providerMinIO)
-        case .wasabi: String(localized: .providerWasabi)
-        case .digitalOcean: String(localized: .providerDigitalOceanSpaces)
-        case .sftp: String(localized: .providerSFTP)
-        case .googleCloudStorage: String(localized: .providerGoogleCloudStorage)
-        case .googleDrive: String(localized: .providerGoogleDrive)
-        }
-    }
-}
-
-public enum ProviderGroup: CaseIterable, Sendable {
-    case s3Services, google, generic
 }
 
 public struct Credentials: Codable, Equatable, Sendable {

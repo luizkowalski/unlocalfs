@@ -142,17 +142,9 @@ extension Backend {
 extension Connection {
     var rcloneType: String { backend.rcloneType }
 
-    var rclonePath: String {
-        switch backend {
-        case .s3Compatible, .gcs: bucketPath
-        case .sftp: sftp.remotePath
-        case .googleDrive: folder
-        }
-    }
-
     static let cryptRemoteName = "unlocalfs"
     var storageRemoteName: String { "unlocalfs-\(rcloneType)" }
-    var driveStorage: String { "\(storageRemoteName):\(rclonePath)" }
+    var driveStorage: String { "\(storageRemoteName):\(remoteFolder)" }
     var driveTarget: String { encrypted ? "\(Self.cryptRemoteName):" : driveStorage }
 }
 

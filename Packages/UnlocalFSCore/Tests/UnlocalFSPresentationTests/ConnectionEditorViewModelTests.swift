@@ -260,7 +260,7 @@ import UnlocalFSTestSupport
         #expect(fixture.editor(draft: .init(connection: drive)).providerSections == [[.googleDrive]])
     }
 
-    @Test func savedDrivesKeepTheirProtocolAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {
+    @Test func savedDrivesKeepTheirProtocolEncryptionAndSFTPFolderButNewAndDuplicateDraftsAreFree() async throws {
         let s3Connection = Connection.s3()
         let sftp = Connection.sftp()
         try fixture.repository.save(s3Connection, credentials: Credentials.s3())
@@ -268,6 +268,7 @@ import UnlocalFSTestSupport
 
         let savedS3 = fixture.editor(draft: .init(connection: s3Connection))
         #expect(!savedS3.locksRemoteFolder)
+        #expect(savedS3.locksEncryption)
         #expect(!savedS3.availableProviders.contains(.sftp))
         #expect(fixture.editor(draft: .init(connection: Connection())).availableProviders == Provider.allCases)
         #expect(fixture.editor(draft: .init(duplicating: s3Connection)).availableProviders == Provider.allCases)
@@ -282,6 +283,7 @@ import UnlocalFSTestSupport
         copy.loadCredentials()
         copy.connection.sftp.remotePath = "/elsewhere"
         #expect(!copy.locksRemoteFolder)
+        #expect(!copy.locksEncryption)
         #expect(copy.credentials.password == "saved-password")
         #expect(await copy.save())
         #expect(try fixture.repository.all().count == 3)

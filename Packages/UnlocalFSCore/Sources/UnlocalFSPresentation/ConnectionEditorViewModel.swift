@@ -57,6 +57,7 @@ import UnlocalFSDomain
     }
 
     public var locksRemoteFolder: Bool { savedBackend?.locksFolderAfterSave ?? false }
+    public var locksEncryption: Bool { !isNew }
 
     var availableProviders: [Provider] {
         guard let savedBackend else { return Provider.allCases }

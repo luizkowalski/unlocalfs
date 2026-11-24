@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 extension MountService {
     public func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws {
-        guard connection.rclonePath.last?.isWhitespace != true else {
+        guard connection.remoteFolder.last?.isWhitespace != true else {
             throw AppError(String(localized: .folderEndsWithSpace))
         }
         var prepared: Credentials?
