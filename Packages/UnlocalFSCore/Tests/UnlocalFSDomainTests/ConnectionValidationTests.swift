@@ -172,7 +172,7 @@ struct GCSValidationTests {
         #expect(!key.json.contains("\n"))
         let fields = try #require(try JSONSerialization.jsonObject(with: Data(key.json.utf8)) as? [String: String])
         #expect(fields["project_id"] == "demo" && fields["token_uri"] == "https://oauth2.googleapis.com/token")
-        #expect(fields["private_key"] == "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n")
+        #expect(fields["private_key"] == "-----BEGIN PRIVATE KEY-----\nnot-a-real-key\n-----END PRIVATE KEY-----\n")
         #expect(ServiceAccountKey(json: key.json)?.email == key.email)
     }
 
@@ -215,13 +215,3 @@ private func awsFixture(kmsKeyID: String) -> Connection {
         $0.aws.kmsKeyID = kmsKeyID
     }
 }
-
-let serviceAccountJSON = """
-{
-  "type": "service_account",
-  "project_id": "demo",
-  "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n",
-  "client_email": "drive@demo.iam.gserviceaccount.com",
-  "token_uri": "https://oauth2.googleapis.com/token"
-}
-"""

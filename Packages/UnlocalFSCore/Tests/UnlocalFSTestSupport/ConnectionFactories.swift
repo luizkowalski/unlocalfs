@@ -56,3 +56,13 @@ public let newTokenJSON = #"{"access_token":"ya29.new","token_type":"Bearer","re
 public let revokedGrantError = "Post https://storage.googleapis.com/upload/storage/v1/b/my-bucket/o: couldn't fetch token: invalid_grant: maybe token expired?"
 
 public let googleTokenJSON = #"{"access_token":"ya29.saved-access","token_type":"Bearer","refresh_token":"1//saved-refresh","expiry":"2026-11-12T01:00:00Z"}"#
+
+public let serviceAccountJSON = """
+{
+  "type": "service_account",
+  "project_id": "demo",
+  "client_email": "drive@demo.iam.gserviceaccount.com",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nnot-a-real-key\\n-----END PRIVATE KEY-----\\n"
+}
+"""

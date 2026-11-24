@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import UnlocalFSPresentation
+import UnlocalFSTestSupport
 
 struct TrafficPeriodTests {
     private let wednesday = date(2026, 10, 21, hour: 15)
@@ -33,12 +34,6 @@ struct TrafficPeriodTests {
         #expect((date(2026, 9, 30, hour: 23) ... date(2026, 10, 2, hour: 8)).dayCount(calendar: utc) == 3)
     }
 }
-
-private let utc: Calendar = {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "UTC")!
-    return calendar
-}()
 
 private func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0) -> Date {
     utc.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!

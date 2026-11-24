@@ -192,14 +192,6 @@ final class Overlap: Sendable {
     }
 }
 
-final class MemoryCredentialStorage: CredentialStorage {
-    private let items = Mutex<[UUID: Credentials]>([:])
-
-    func read(_ id: UUID) throws -> Credentials? { items.withLock { $0[id] } }
-    func save(_ credentials: Credentials, for id: UUID) throws { items.withLock { $0[id] = credentials } }
-    func delete(_ id: UUID) throws { items.withLock { $0[id] = nil } }
-}
-
 @MainActor final class TestDesktopServices: DesktopServices {
     let paths: AppPaths
     var opensAtLogin = false

@@ -91,22 +91,6 @@ struct RepositoryTests {
     }
 }
 
-final class MemoryCredentialStorage: CredentialStorage {
-    private let items = Mutex<[UUID: Credentials]>([:])
-
-    private let readError: AppError?
-
-    init(readError: AppError? = nil) { self.readError = readError }
-
-    func read(_ id: UUID) throws -> Credentials? {
-        if let readError { throw readError }
-        return items.withLock { $0[id] }
-    }
-
-    func save(_ credentials: Credentials, for id: UUID) throws { items.withLock { $0[id] = credentials } }
-    func delete(_ id: UUID) throws { items.withLock { $0[id] = nil } }
-}
-
 private struct UnavailableCredentialStorage: CredentialStorage {
     func read(_: UUID) throws -> Credentials? { nil }
     func save(_: Credentials, for _: UUID) throws { throw AppError("Keychain unavailable") }

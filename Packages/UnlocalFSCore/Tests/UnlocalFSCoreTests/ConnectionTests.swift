@@ -107,16 +107,6 @@ struct ConnectionTests {
     }
 }
 
-let serviceAccountJSON = """
-{
-  "type": "service_account",
-  "project_id": "demo",
-  "client_email": "drive@demo.iam.gserviceaccount.com",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "private_key": "-----BEGIN PRIVATE KEY-----\\nnot-a-real-key\\n-----END PRIVATE KEY-----\\n"
-}
-"""
-
 private func configURL() -> URL {
     FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString)/config.json")
 }

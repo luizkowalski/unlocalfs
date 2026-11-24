@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import UnlocalFSDomain
+import UnlocalFSTestSupport
 
 struct TrafficMeterTests {
     private let rclone = RcloneProcess(pid: 42, startedAt: Date(timeIntervalSince1970: 1000))
@@ -90,9 +91,3 @@ struct TrafficMeterTests {
         TrafficCheckpoint(process: rclone, network: network, savedAt: savedAt ?? noon - 600)
     }
 }
-
-private let utc: Calendar = {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "UTC")!
-    return calendar
-}()
