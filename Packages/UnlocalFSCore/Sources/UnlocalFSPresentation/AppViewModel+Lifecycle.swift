@@ -17,7 +17,7 @@ public extension AppViewModel {
     }
 
     private func connect(_ connection: Connection, opensFinder: Bool) async {
-        guard !checkingQuit, canToggle(connection) else { return }
+        guard canToggle(connection) else { return }
         closeSearch()
         busy.insert(connection.id)
         clearProblem(connection)
@@ -43,7 +43,7 @@ public extension AppViewModel {
     }
 
     func disconnect(_ connection: Connection) async {
-        guard !checkingQuit, canDisconnect(connection) else { return }
+        guard canDisconnect(connection) else { return }
         busy.insert(connection.id)
         clearProblem(connection)
         if disconnectFailure?.id == connection.id { disconnectFailure = nil }

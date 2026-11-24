@@ -3,7 +3,7 @@ import UnlocalFSDomain
 
 public extension AppViewModel {
     func signInAgain(_ connection: Connection) async {
-        guard !checkingQuit, canToggle(connection) else { return }
+        guard canToggle(connection) else { return }
         busy.insert(connection.id)
         let previousError = errors.removeValue(forKey: connection.id)
         defer { busy.remove(connection.id) }

@@ -138,10 +138,22 @@ import UnlocalFSDomain
         defer { busy.remove(connection.id) }
         do {
             connections = try await deleteConnection.execute(connection)
-            statuses[connection.id] = nil
-            clearProblem(connection)
+            await forget(connection)
             if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
         } catch { alert = AppAlert(String(localized: .driveNotDeleted(connection.name)), error) }
+    }
+
+    private func forget(_ connection: Connection) async {
+        let id = connection.id
+        if let pending = pendingTrust.removeValue(forKey: id) { await drives.cancelServerTrust(pending.challenge) }
+        signIns.removeValue(forKey: id)?.cancel()
+        statuses[id] = nil
+        speeds[id] = nil
+        errors[id] = nil
+        signInRequired.remove(id)
+        notifiedFailures.remove(id)
+        waitingToDisconnect.remove(id)
+        statusCheckedAt[id] = nil
     }
 
     public func exportRcloneConfig(_ connection: Connection) async {

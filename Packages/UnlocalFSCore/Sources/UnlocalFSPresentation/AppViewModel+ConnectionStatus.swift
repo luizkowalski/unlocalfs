@@ -32,7 +32,7 @@ public extension AppViewModel {
     }
 
     func canToggle(_ connection: Connection) -> Bool {
-        !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
+        !checkingQuit && !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
     }
 
     func canConnect(_ connection: Connection) -> Bool {
