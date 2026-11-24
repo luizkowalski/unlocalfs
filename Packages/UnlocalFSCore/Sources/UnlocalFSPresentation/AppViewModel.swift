@@ -13,7 +13,7 @@ import UnlocalFSDomain
     public internal(set) var isSearching = false
     public internal(set) var searchFocusRequest = 0
     public static let speedWindow: TimeInterval = 60
-    public internal(set) var statuses: [UUID: MountStatus] = [:]
+    public internal(set) var statuses: [UUID: MountStatus] = [:] { didSet { announceFinderChange() } }
     public internal(set) var speeds: [UUID: [SpeedSample]] = [:]
     public internal(set) var errors: [UUID: String] = [:]
     public internal(set) var busy: Set<UUID> = [] {
