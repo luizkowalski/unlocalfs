@@ -127,7 +127,7 @@ import UnlocalFSTestSupport
             let slowCopies = try ControlServer(at: socket) { request in
                 if request.method == "operations/copyfile", FileManager.default.fileExists(atPath: hold.path) {
                     FileManager.default.createFile(atPath: entered.path, contents: Data())
-                    try await Task.sleep(for: .seconds(2))
+                    try? await waitUntil(timeout: .seconds(3)) { !FileManager.default.fileExists(atPath: hold.path) }
                 }
                 if request.method == "operations/stat", FileManager.default.fileExists(atPath: entered.path) {
                     FileManager.default.createFile(atPath: reserved.path, contents: Data())

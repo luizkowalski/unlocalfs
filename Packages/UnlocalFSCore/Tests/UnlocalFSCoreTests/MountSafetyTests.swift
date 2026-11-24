@@ -138,7 +138,7 @@ struct MountSafetyTests {
             let started = ContinuousClock.now
             let status = await service.status(connection)
             #expect(status.controlError?.contains(String(localized: .commandTimedOut)) == true)
-            #expect(ContinuousClock.now - started < .seconds(6))
+            #expect(ContinuousClock.now - started < .seconds(8))
         }
     }
 

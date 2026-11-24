@@ -30,10 +30,7 @@ struct ServiceRecoveryTests {
         } operation: { service, connection in
             try await service.unmount(connection)
 
-            for _ in 0 ..< 40 where helper.isRunning {
-                try await Task.sleep(for: .milliseconds(50))
-            }
-            #expect(!helper.isRunning)
+            try await waitUntil { !helper.isRunning }
             #expect(await !service.status(connection).isActive)
         }
     }
@@ -70,10 +67,7 @@ struct ServiceRecoveryTests {
 
             try await service.unmount(connection)
 
-            for _ in 0 ..< 40 where helper.isRunning {
-                try await Task.sleep(for: .milliseconds(50))
-            }
-            #expect(!helper.isRunning)
+            try await waitUntil { !helper.isRunning }
             #expect(await !service.status(connection).isActive)
         }
     }

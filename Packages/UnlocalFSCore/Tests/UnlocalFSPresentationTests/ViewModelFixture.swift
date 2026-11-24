@@ -186,6 +186,10 @@ final class Overlap: Sendable {
     func release() { state.withLock { $0.inFlight -= 1 } }
 
     var peak: Int { state.withLock { $0.peak } }
+
+    func waitForOthers(_ count: Int) async {
+        try? await waitUntil(timeout: .seconds(3)) { state.withLock { $0.inFlight } >= count }
+    }
 }
 
 final class MemoryCredentialStorage: CredentialStorage {

@@ -2,7 +2,7 @@ import Foundation
 import UnlocalFSDomain
 
 public func waitUntil(
-    timeout: Duration = .seconds(10), file: String = #fileID, line: Int = #line,
+    timeout: Duration = .seconds(10), isolation _: isolated (any Actor)? = #isolation, file: String = #fileID, line: Int = #line,
     _ condition: () async throws -> Bool,
 ) async throws {
     let deadline = ContinuousClock.now.advanced(by: timeout)

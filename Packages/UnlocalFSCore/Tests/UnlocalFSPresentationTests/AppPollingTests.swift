@@ -29,10 +29,7 @@ import UnlocalFSTestSupport
         let polling = Task { await app.refresh() }
         for await _ in entered {}
 
-        for _ in 0 ..< 100 where !app.isActive(fast) {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        #expect(app.isActive(fast))
+        try await waitUntil { app.isActive(fast) }
         #expect(!app.isActive(slow))
         resume.finish()
         await polling.value

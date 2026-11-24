@@ -42,7 +42,7 @@ import UnlocalFSTestSupport
                 case "core/quit":
                     overlap.hold()
                     defer { overlap.release() }
-                    try await Task.sleep(for: .milliseconds(200))
+                    await overlap.waitForOthers(2)
                     try FileManager.default.removeItem(at: socket)
                     return "{}"
                 default:
