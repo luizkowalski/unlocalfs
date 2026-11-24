@@ -87,6 +87,21 @@ struct FinderBadgeCacheTests {
         #expect(cache.confirm(checkedAt: [drive: start + 1]) == [kept])
     }
 
+    @Test func aCheckedFileShowsItsBadgeAtOnceWhenFinderShowsItsFolderAgain() {
+        var cache = FinderBadgeCache()
+        let folder = drive.appending(path: "a", directoryHint: .isDirectory)
+        let file = folder.appending(path: "old.pdf")
+        _ = cache.apply(badges(["a/old.pdf": .failed]), version: 1, watching: [drive], checkedAt: [drive: start - 1])
+        _ = cache.see(file, at: start)
+        _ = cache.confirm(checkedAt: [drive: start + 1])
+        cache.forget(folder: folder)
+
+        let needsPull = cache.see(file, at: start + 2)
+
+        #expect(!needsPull && !cache.isWaiting)
+        #expect(cache.badge(for: file) == .failed)
+    }
+
     @Test func resetReturnsWhatToClearAndStartsOver() {
         var cache = FinderBadgeCache()
         let file = drive.appending(path: "a.pdf")

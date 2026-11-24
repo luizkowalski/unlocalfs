@@ -6,6 +6,7 @@ public struct FinderBadgeCache: Sendable {
     private var watched: Set<URL> = []
     private var known: [String: Set<URL>] = [:]
     private var firstSeen: [URL: Date] = [:]
+    private var confirmed: Set<URL> = []
 
     public init() {}
 
@@ -18,7 +19,7 @@ public struct FinderBadgeCache: Sendable {
     }
 
     public mutating func see(_ url: URL, at date: Date) -> Bool {
-        guard known[url.deletingLastPathComponent().path, default: []].insert(url).inserted else { return false }
+        guard known[url.deletingLastPathComponent().path, default: []].insert(url).inserted, !confirmed.contains(url) else { return false }
         firstSeen[url] = date
         return true
     }
@@ -37,6 +38,7 @@ public struct FinderBadgeCache: Sendable {
         for url in ready {
             firstSeen[url] = nil
         }
+        confirmed.formUnion(ready)
         return Set(ready)
     }
 
