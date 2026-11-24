@@ -7,17 +7,14 @@ struct MenuContent: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Open UnlocalFS", action: openMain)
+        Button("Open UnlocalFS") { openWindow.main() }
         Divider()
         if model.connections.isEmpty { Text("No drives yet") }
         ForEach(model.connections) { connection in
             Menu {
                 Text(model.driveStatus(connection).text)
                 Button(model.toggleTitle(connection)) {
-                    Task {
-                        await model.toggle(connection)
-                        if model.needsMainWindow(connection) { openMain() }
-                    }
+                    Task { await model.toggle(connection) }
                 }
                 .disabled(!model.canToggle(connection))
                 Button("Open in Finder") { model.openDrive(connection) }
@@ -37,22 +34,11 @@ struct MenuContent: View {
                 .labelStyle(.titleAndIcon)
             }
         }
-        Button("Disconnect All") {
-            Task {
-                await model.disconnectAll()
-                if model.connections.contains(where: model.needsMainWindow) { openMain() }
-            }
-        }
-        .disabled(!model.canDisconnectAll)
+        Button("Disconnect All") { Task { await model.disconnectAll() } }
+            .disabled(!model.canDisconnectAll)
         Divider()
         Toggle("Open at Login", isOn: Binding(get: { model.opensAtLogin }, set: { model.setOpensAtLogin($0) }))
             .onAppear { model.syncOpensAtLogin() }
         Button("Quit UnlocalFS") { NSApp.terminate(nil) }.keyboardShortcut("q")
-    }
-
-    private func openMain() {
-        openWindow(id: "main")
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate()
     }
 }

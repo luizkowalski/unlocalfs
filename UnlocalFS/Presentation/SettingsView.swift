@@ -4,7 +4,7 @@ import UnlocalFSPresentation
 
 struct SettingsView: View {
     @Environment(AppViewModel.self) private var model
-    @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = true
+    @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = AppDelegate.showsMenuBarExtraByDefault
     @State private var finderExtensionEnabled = FIFinderSyncController.isExtensionEnabled
 
     var body: some View {

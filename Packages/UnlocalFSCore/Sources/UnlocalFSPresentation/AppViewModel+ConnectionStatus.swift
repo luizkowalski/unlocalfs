@@ -21,7 +21,7 @@ public extension AppViewModel {
         return status
     }
 
-    func uploadFailure(_ connection: Connection) -> MountStatus? {
+    internal func uploadFailure(_ connection: Connection) -> MountStatus? {
         guard !busy.contains(connection.id), !isOffline(connection),
               let status = servingStatus(connection), status.failedUploads > 0 else { return nil }
         return status
@@ -72,6 +72,18 @@ public extension AppViewModel {
         return (condition.statusText, condition.indicator)
     }
 
+    func notices(_ connection: Connection) -> [Notice] {
+        var notices: [Notice] = isSigningIn(connection) ? [.signingIn] : []
+        var offersSignIn = needsSignIn(connection)
+        if let problem = problem(connection) {
+            notices.append(.problem(problem, offersSignIn: offersSignIn))
+            offersSignIn = false
+        }
+        if let failure = uploadFailure(connection) { notices.append(.uploadsFailing(reason: failure.uploadError, offersSignIn: offersSignIn)) }
+        if isOffline(connection) { notices.append(.offline) }
+        return notices
+    }
+
     func needsReconnect(_ connection: Connection) -> Bool {
         statuses[connection.id]?.needsReconnect == true
     }
@@ -87,6 +99,8 @@ public extension AppViewModel {
     func uploadsBlockingMessage(_ connection: Connection) -> String {
         canOpen(connection) ? String(localized: .uploadsPendingDriveStaysConnected) : String(localized: .uploadsPendingKeepAppRunning)
     }
+
+    var needsMainWindow: Bool { connections.contains(where: needsMainWindow) }
 
     func needsMainWindow(_ connection: Connection) -> Bool {
         serverTrust(for: connection) != nil || disconnectFailure?.id == connection.id || uploadsBlockingDisconnect?.id == connection.id

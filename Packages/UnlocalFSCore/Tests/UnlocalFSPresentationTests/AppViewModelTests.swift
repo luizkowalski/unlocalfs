@@ -118,8 +118,10 @@ import UnlocalFSTestSupport
         #expect(desktop.notifications.map(\.body) == [String(localized: .uploadsFailedReason("AccessDenied: Access Denied"))])
 
         await app.disconnect(connection)
-        #expect(app.problem(connection) != nil)
-        #expect(app.uploadFailure(connection)?.uploadError == "AccessDenied: Access Denied")
+        let problem = try #require(app.problem(connection))
+        #expect(app.notices(connection) == [
+            .problem(problem, offersSignIn: false), .uploadsFailing(reason: "AccessDenied: Access Denied", offersSignIn: false),
+        ])
 
         try fixture.queue()
         await app.refresh()
@@ -159,10 +161,10 @@ import UnlocalFSTestSupport
         #expect(await fixture.service.status(connection).isRunning)
         #expect(app.uploadsBlockingDisconnect == connection)
         #expect(app.uploadsBlockingMessage(connection) == String(localized: .uploadsPendingKeepAppRunning))
-        #expect(app.needsMainWindow(connection))
+        #expect(app.needsMainWindow(connection) && app.needsMainWindow)
 
         app.uploadsBlockingDisconnect = nil
-        #expect(!app.needsMainWindow(connection))
+        #expect(!app.needsMainWindow(connection) && !app.needsMainWindow)
         try fixture.serve(connection)
         await app.refresh()
         await app.refresh()

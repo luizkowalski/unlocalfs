@@ -133,7 +133,7 @@ import UnlocalFSTestSupport
 
         #expect(app.needsSignIn(connection) == needsSignIn)
         #expect(app.driveStatus(connection).text == statusText)
-        #expect(app.uploadFailure(connection)?.uploadError == uploadError)
+        #expect(app.notices(connection) == [.uploadsFailing(reason: uploadError, offersSignIn: needsSignIn)])
     }
 
     @Test func uploadRetryingAfterANewSignInNoLongerAsksToSignIn() async throws {

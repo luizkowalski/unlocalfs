@@ -232,43 +232,40 @@ struct ConnectionDetail: View {
     }
 
     @ViewBuilder private var notices: some View {
-        let problem = model.problem(connection)
-        let failure = model.uploadFailure(connection)
-        let isOffline = model.isOffline(connection)
-        let signingIn = model.isSigningIn(connection)
-        if problem != nil || failure != nil || isOffline || signingIn {
+        let notices = model.notices(connection)
+        if !notices.isEmpty {
             FittedScrollView {
-                if signingIn {
-                    notice("Signing in to Google", systemImage: "person.badge.key") {
-                        Text("Finish signing in in your browser.")
-                    } actions: {
-                        Button("Cancel Sign-In") { model.cancelSignIn(connection) }
+                ForEach(notices, id: \.self) { item in
+                    switch item {
+                    case .signingIn:
+                        notice("Signing in to Google", systemImage: "person.badge.key") {
+                            Text("Finish signing in in your browser.")
+                        } actions: {
+                            Button("Cancel Sign-In") { model.cancelSignIn(connection) }
+                        }
+                    case let .problem(problem, offersSignIn):
+                        problemNotice(problem, offersSignIn: offersSignIn)
+                    case let .uploadsFailing(reason, offersSignIn):
+                        uploadFailureNotice(reason, offersSignIn: offersSignIn)
+                    case .offline:
+                        Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
+                            .font(.callout).foregroundStyle(.secondary)
                     }
-                }
-                if let problem {
-                    problemNotice(problem)
-                }
-                if let failure {
-                    uploadFailureNotice(failure.uploadError)
-                }
-                if isOffline {
-                    Label("Network unavailable. Cached files are kept.", systemImage: "wifi.slash")
-                        .font(.callout).foregroundStyle(.secondary)
                 }
             }
         }
     }
 
-    private func problemNotice(_ problem: String) -> some View {
+    private func problemNotice(_ problem: String, offersSignIn: Bool) -> some View {
         notice("Connection needs attention", systemImage: "exclamationmark.triangle") {
             Text(problem).textSelection(.enabled)
         } actions: {
-            if model.needsSignIn(connection) { signInAgainButton }
+            if offersSignIn { signInAgainButton }
             Button("Check Again") { Task { await model.checkAgain(connection) } }
         }
     }
 
-    private func uploadFailureNotice(_ error: String?) -> some View {
+    private func uploadFailureNotice(_ error: String?, offersSignIn: Bool) -> some View {
         notice("Uploads are failing", systemImage: "exclamationmark.triangle") {
             if let error {
                 Text(error).textSelection(.enabled)
@@ -277,7 +274,7 @@ struct ConnectionDetail: View {
             }
             Text("UnlocalFS tries again on its own, up to every 5 minutes, while the drive stays connected.")
         } actions: {
-            if model.needsSignIn(connection) { signInAgainButton }
+            if offersSignIn { signInAgainButton }
             if error == nil {
                 Button("Show Log") { model.openLog(connection) }
             }

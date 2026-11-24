@@ -46,7 +46,7 @@ struct ActivityView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Activity").font(.headline)
                 Spacer()
-                if case let .transfers(summary) = snapshot, summary.fileCount > 0 {
+                if let summary = snapshot.moving {
                     transfers(summary).foregroundStyle(.secondary)
                 }
             }

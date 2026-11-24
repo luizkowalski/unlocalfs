@@ -7,6 +7,12 @@ import UnlocalFSDomain
     public enum Indicator { case working, attention, connected, idle }
     public enum SidebarItem: Hashable, Sendable { case traffic, drive(UUID) }
     public enum DriveToggle: Sendable { case connect, disconnect, reconnect }
+    public enum Notice: Hashable, Sendable {
+        case signingIn
+        case problem(String, offersSignIn: Bool)
+        case uploadsFailing(reason: String?, offersSignIn: Bool)
+        case offline
+    }
 
     public private(set) var connections: [Connection] = []
     public var selection: SidebarItem?
@@ -176,7 +182,7 @@ import UnlocalFSDomain
 }
 
 public extension AppViewModel {
-    func isOffline(_ connection: Connection) -> Bool {
+    internal func isOffline(_ connection: Connection) -> Bool {
         isActive(connection) && !networkAvailable
     }
 

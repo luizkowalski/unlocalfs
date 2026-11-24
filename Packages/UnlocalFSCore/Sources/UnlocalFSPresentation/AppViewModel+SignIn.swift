@@ -27,9 +27,9 @@ public extension AppViewModel {
         signIns.removeValue(forKey: connection.id)?.cancel()
     }
 
-    func isSigningIn(_ connection: Connection) -> Bool { signIns[connection.id] != nil }
+    internal func isSigningIn(_ connection: Connection) -> Bool { signIns[connection.id] != nil }
 
-    func needsSignIn(_ connection: Connection) -> Bool {
+    internal func needsSignIn(_ connection: Connection) -> Bool {
         signInRequired.contains(connection.id) || statuses[connection.id]?.needsSignIn == true
     }
 }

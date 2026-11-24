@@ -9,7 +9,8 @@ import UnlocalFSPresentation
 @main struct UnlocalFSApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @FocusedValue(\.isEditingSearch) private var isEditingSearch
-    @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = true
+    @AppStorage(AppDelegate.showsMenuBarExtraKey) private var showsMenuBarExtra = AppDelegate.showsMenuBarExtraByDefault
+    @Environment(\.openWindow) private var openWindow
 
     private var model: AppViewModel { delegate.model }
 
@@ -18,6 +19,9 @@ import UnlocalFSPresentation
             MainView().environment(delegate.model).environment(delegate.viewModels)
         }
         .defaultSize(width: 860, height: 680)
+        .onChange(of: model.needsMainWindow) { _, needed in
+            if needed { openWindow.main() }
+        }
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About UnlocalFS") {
@@ -106,8 +110,18 @@ import UnlocalFSPresentation
     }
 }
 
+@MainActor
+extension OpenWindowAction {
+    func main() {
+        self(id: "main")
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate()
+    }
+}
+
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
     static let showsMenuBarExtraKey = "showsMenuBarExtra"
+    static let showsMenuBarExtraByDefault = true
     let dependencies = AppDependencies.live()
     var model: AppViewModel { dependencies.model }
     var viewModels: ViewModelFactory { dependencies.viewModels }
@@ -143,7 +157,7 @@ import UnlocalFSPresentation
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        let showsMenuBarExtra = UserDefaults.standard.object(forKey: Self.showsMenuBarExtraKey) as? Bool ?? true
+        let showsMenuBarExtra = UserDefaults.standard.object(forKey: Self.showsMenuBarExtraKey) as? Bool ?? Self.showsMenuBarExtraByDefault
         sender.setActivationPolicy(showsMenuBarExtra ? .accessory : .regular)
         return false
     }
