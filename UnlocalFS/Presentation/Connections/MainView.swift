@@ -29,24 +29,21 @@ struct MainView: View {
         } message: {
             Text($0.message)
         }
-        .alert("“\(model.disconnectFailure?.name ?? "")” couldn’t be disconnected.",
-               isPresented: $model.isShowingDisconnectFailure, presenting: model.disconnectFailure) { connection in
+        .alert("“\(model.disconnectFailure?.name ?? "")” couldn’t be disconnected.", item: $model.disconnectFailure) { connection in
             Button("Keep Connected", role: .cancel) {}
             Button("Try Again") { Task { await model.disconnect(connection) } }
         } message: { _ in
             Text("Close files and stop apps using this drive, then try again. The drive is still connected.")
         }
-        .alert("“\(model.uploadsBlockingDisconnect?.name ?? "")” is still uploading files.",
-               isPresented: $model.isShowingUploadsBlockingDisconnect, presenting: model.uploadsBlockingDisconnect) { _ in
+        .alert("“\(model.uploadsBlockingDisconnect?.name ?? "")” is still uploading files.", item: $model.uploadsBlockingDisconnect) { _ in
             Button("OK", role: .cancel) {}
         } message: { connection in
             Text(model.uploadsBlockingMessage(connection))
         }
         .confirmationDialog(
             "Delete \(model.deleting?.name ?? "connection")?",
-            isPresented: $model.isConfirmingDelete,
+            item: $model.deleting,
             titleVisibility: .visible,
-            presenting: model.deleting,
         ) { connection in
             Button("Delete Connection", role: .destructive) { Task { await model.delete(connection) } }
         } message: { _ in
@@ -93,7 +90,7 @@ struct MainView: View {
         .safeAreaInset(edge: .bottom) {
             Button("Add Connection", systemImage: "plus") { model.edit(Connection()) }
                 .buttonStyle(.borderless)
-                .disabled(!model.ready)
+                .disabled(!model.canStartEditing)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
         }
@@ -112,7 +109,7 @@ struct MainView: View {
             } actions: {
                 Button("Add Connection") { model.edit(Connection()) }
                     .buttonStyle(.borderedProminent)
-                    .disabled(!model.ready)
+                    .disabled(!model.canStartEditing)
             }
         }
     }

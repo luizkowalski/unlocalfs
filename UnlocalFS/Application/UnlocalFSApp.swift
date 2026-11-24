@@ -32,21 +32,21 @@ import UnlocalFSPresentation
             CommandGroup(replacing: .newItem) {
                 Button("New Connection…") { model.edit(Connection()) }
                     .keyboardShortcut("n")
-                    .disabled(!model.ready)
+                    .disabled(!model.canStartEditing)
                 Button("Edit Connection…") { selected(model.edit) }
                     .keyboardShortcut("i")
-                    .disabled(!selectedAllows(model.canEdit))
+                    .disabled(!model.canStartEditing || !selectedAllows(model.canEdit))
                 Button("Duplicate Connection…") { selected(model.duplicate) }
                     .keyboardShortcut("d")
-                    .disabled(model.selected == nil)
+                    .disabled(!model.canStartEditing || model.selected == nil)
                 Button("Delete Connection…", role: .destructive) { model.deleting = model.selected }
                     .keyboardShortcut(.delete)
-                    .disabled(model.editor != nil || isEditingSearch != nil || !selectedAllows(model.canEdit))
+                    .disabled(!model.canStartEditing || isEditingSearch != nil || !selectedAllows(model.canEdit))
             }
             CommandGroup(after: .textEditing) {
                 Button("Find Drive…") { model.openSearch() }
                     .keyboardShortcut("f")
-                    .disabled(!model.ready || model.editor != nil)
+                    .disabled(!model.canStartEditing)
             }
             SidebarCommands()
             InspectorCommands()

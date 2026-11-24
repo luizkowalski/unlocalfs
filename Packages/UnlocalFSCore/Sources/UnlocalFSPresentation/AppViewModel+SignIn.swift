@@ -3,25 +3,24 @@ import UnlocalFSDomain
 
 public extension AppViewModel {
     func signInAgain(_ connection: Connection) async {
-        guard canToggle(connection) else { return }
-        busy.insert(connection.id)
-        let previousError = errors.removeValue(forKey: connection.id)
-        defer { busy.remove(connection.id) }
-        let run = GoogleSignInRun(drives: drives)
-        signIns[connection.id] = run
-        let result = await run.signIn(for: connection.backend)
-        signIns[connection.id] = nil
-        guard let result else {
-            errors[connection.id] = previousError
-            return
+        await operate(on: connection, when: canToggle(connection)) {
+            let previousError = errors.removeValue(forKey: connection.id)
+            let run = GoogleSignInRun(drives: drives)
+            signIns[connection.id] = run
+            let result = await run.signIn(for: connection.backend)
+            signIns[connection.id] = nil
+            guard let result else {
+                errors[connection.id] = previousError
+                return
+            }
+            do {
+                try await signInAgain.execute(connection, signIn: result.get())
+                signInRequired.remove(connection.id)
+            } catch {
+                errors[connection.id] = error.localizedDescription
+            }
+            await update(drives.status(connection), for: connection)
         }
-        do {
-            try await signInAgain.execute(connection, signIn: result.get())
-            signInRequired.remove(connection.id)
-        } catch {
-            errors[connection.id] = error.localizedDescription
-        }
-        await update(drives.status(connection), for: connection)
     }
 
     func cancelSignIn(_ connection: Connection) {

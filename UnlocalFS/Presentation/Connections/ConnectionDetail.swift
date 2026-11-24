@@ -38,7 +38,7 @@ struct ConnectionDetail: View {
     @ToolbarContentBuilder private var actions: some ToolbarContent {
         ToolbarItemGroup {
             Button(model.toggleTitle(connection), systemImage: toggleSymbol) {
-                Task { await model.toggle(connection, opensFinder: true) }
+                Task { await model.toggle(connection) }
             }
             .disabled(!model.canToggle(connection))
             .help(model.toggleTitle(connection))
@@ -64,8 +64,11 @@ struct ConnectionDetail: View {
     }
 
     private var toggleSymbol: String {
-        if model.needsReconnect(connection) { return "arrow.triangle.2.circlepath" }
-        return model.isActive(connection) ? "eject" : "externaldrive.connected.to.line.below"
+        switch model.driveToggle(connection) {
+        case .connect: "externaldrive.connected.to.line.below"
+        case .disconnect: "eject"
+        case .reconnect: "arrow.triangle.2.circlepath"
+        }
     }
 
     private var header: some View {
@@ -97,7 +100,7 @@ struct ConnectionDetail: View {
         } actions: {
             VStack(spacing: 14) {
                 Button("Connect", systemImage: "externaldrive.connected.to.line.below") {
-                    Task { await model.toggle(connection, opensFinder: true) }
+                    Task { await model.activate(connection) }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)

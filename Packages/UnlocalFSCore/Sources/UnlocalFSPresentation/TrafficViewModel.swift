@@ -7,7 +7,7 @@ import UnlocalFSDomain
     public var custom: ClosedRange<Date> { didSet { showAll() } }
     public private(set) var interval = DateInterval()
     public private(set) var bars: [TrafficBar] = []
-    public private(set) var recent: [TrafficBar] = []
+    public private(set) var recentTotal = Traffic()
     public private(set) var picked: DateInterval?
     public private(set) var rows: [DriveTraffic] = []
     public private(set) var quiet: [String] = []
@@ -26,7 +26,6 @@ import UnlocalFSDomain
 
     public var unit: Calendar.Component { interval.duration > 92 * 86400 ? .month : .day }
     public var total: Traffic? { error == nil ? rows.reduce(Traffic()) { $0 + $1.traffic } : nil }
-    public var recentTotal: Traffic { recent.reduce(Traffic()) { $0 + $1.traffic } }
 
     public func pick(_ dates: ClosedRange<Date>) {
         let touched = bars.filter { $0.interval.end > dates.lowerBound && $0.interval.start <= dates.upperBound }
@@ -51,14 +50,15 @@ import UnlocalFSDomain
         interval = period.interval(now: now, custom: custom, calendar: calendar)
         do {
             bars = try bars(in: interval, unit: unit, now: now, calendar: calendar)
-            recent = try bars(in: TrafficPeriod.last30Days.interval(now: now, custom: custom, calendar: calendar), unit: .day, now: now, calendar: calendar)
+            recentTotal = try bars(in: TrafficPeriod.last30Days.interval(now: now, custom: custom, calendar: calendar), unit: .day, now: now, calendar: calendar)
+                .reduce(Traffic()) { $0 + $1.traffic }
             let all = try rows(in: (picked ?? interval).days(calendar), now: now, calendar: calendar)
             rows = all.filter { $0.traffic.total > 0 }
             quiet = all.filter { $0.traffic.total == 0 }.map(\.name)
             error = nil
         } catch {
             bars = []
-            recent = []
+            recentTotal = Traffic()
             rows = []
             quiet = []
             self.error = error.localizedDescription

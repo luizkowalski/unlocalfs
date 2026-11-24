@@ -35,17 +35,24 @@ public extension AppViewModel {
         !checkingQuit && !busy.contains(connection.id) && statuses[connection.id] != nil && editor?.id != connection.id
     }
 
+    func driveToggle(_ connection: Connection) -> DriveToggle {
+        if needsReconnect(connection) { return .reconnect }
+        return isActive(connection) ? .disconnect : .connect
+    }
+
     func canConnect(_ connection: Connection) -> Bool {
-        canToggle(connection) && !isActive(connection)
+        canToggle(connection) && driveToggle(connection) == .connect
     }
 
     func canDisconnect(_ connection: Connection) -> Bool {
-        canToggle(connection) && isActive(connection) && !needsReconnect(connection)
+        canToggle(connection) && driveToggle(connection) == .disconnect
     }
 
     func canReconnect(_ connection: Connection) -> Bool {
-        canToggle(connection) && needsReconnect(connection)
+        canToggle(connection) && driveToggle(connection) == .reconnect
     }
+
+    var canStartEditing: Bool { ready && editor == nil }
 
     var canDisconnectAll: Bool { !disconnectingAll && connections.contains(where: canDisconnect) }
 
@@ -70,8 +77,11 @@ public extension AppViewModel {
     }
 
     func toggleTitle(_ connection: Connection) -> String {
-        if needsReconnect(connection) { return String(localized: .reconnect) }
-        return isActive(connection) ? String(localized: .disconnect) : String(localized: .connect)
+        switch driveToggle(connection) {
+        case .connect: String(localized: .connect)
+        case .disconnect: String(localized: .disconnect)
+        case .reconnect: String(localized: .reconnect)
+        }
     }
 
     func uploadsBlockingMessage(_ connection: Connection) -> String {

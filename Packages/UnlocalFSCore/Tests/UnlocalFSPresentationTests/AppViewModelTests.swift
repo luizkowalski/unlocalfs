@@ -68,6 +68,20 @@ import UnlocalFSTestSupport
         #expect(try fixture.repository.credentials(for: connection.id) == credentials)
     }
 
+    @Test func aSecondEditorDoesNotReplaceTheOpenDraft() throws {
+        let first = Connection.s3(name: "First")
+        let second = Connection.s3(name: "Second")
+        for connection in [first, second] { try fixture.repository.save(connection, credentials: Credentials()) }
+        let app = fixture.app()
+
+        app.edit(first)
+        app.duplicate(second)
+        app.edit(Connection())
+
+        #expect(app.editor?.id == first.id)
+        #expect(!app.canStartEditing)
+    }
+
     @Test func deletingADriveKeepsTrafficSelectedOrSelectsTheFirstRemainingDrive() async throws {
         let first = Connection.s3 { $0.name = "First" }
         let second = Connection.s3 { $0.name = "Second" }
@@ -75,9 +89,11 @@ import UnlocalFSTestSupport
         for connection in [first, second, third] { try fixture.repository.save(connection, credentials: Credentials()) }
         let app = fixture.app()
         #expect(app.selection == .drive(first.id))
+        await app.refresh()
 
         app.selection = .traffic
         await app.delete(second)
+        #expect(app.connections == [first, third])
         #expect(app.selection == .traffic)
         #expect(app.selected == nil)
 
@@ -134,7 +150,7 @@ import UnlocalFSTestSupport
         #expect(app.driveStatus(connection).indicator == .idle)
         #expect(app.driveStatus(connection).text == String(localized: .uploadsPending(1)))
         #expect(app.servingStatus(connection)?.bytesCached == 2048)
-        #expect(!app.isShowingUploadsBlockingDisconnect)
+        #expect(app.uploadsBlockingDisconnect == nil)
         #expect(desktop.notifications.isEmpty)
 
         await app.disconnect(connection)
@@ -145,7 +161,7 @@ import UnlocalFSTestSupport
         #expect(app.uploadsBlockingMessage(connection) == String(localized: .uploadsPendingKeepAppRunning))
         #expect(app.needsMainWindow(connection))
 
-        app.isShowingUploadsBlockingDisconnect = false
+        app.uploadsBlockingDisconnect = nil
         #expect(!app.needsMainWindow(connection))
         try fixture.serve(connection)
         await app.refresh()

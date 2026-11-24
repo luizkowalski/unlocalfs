@@ -6,6 +6,7 @@ import UnlocalFSDomain
     public enum Activity { case idle, connected, uploading, downloading }
     public enum Indicator { case working, attention, connected, idle }
     public enum SidebarItem: Hashable, Sendable { case traffic, drive(UUID) }
+    public enum DriveToggle: Sendable { case connect, disconnect, reconnect }
 
     public private(set) var connections: [Connection] = []
     public var selection: SidebarItem?
@@ -13,10 +14,10 @@ import UnlocalFSDomain
     public internal(set) var isSearching = false
     public internal(set) var searchFocusRequest = 0
     public static let speedWindow: TimeInterval = 60
-    public internal(set) var statuses: [UUID: MountStatus] = [:]
+    var statuses: [UUID: MountStatus] = [:]
     public internal(set) var speeds: [UUID: [SpeedSample]] = [:]
-    public internal(set) var errors: [UUID: String] = [:]
-    public internal(set) var busy: Set<UUID> = [] {
+    var errors: [UUID: String] = [:]
+    var busy: Set<UUID> = [] {
         didSet { if refreshing { refreshRequested = true } }
     }
 
@@ -94,26 +95,13 @@ import UnlocalFSDomain
         return connections.first { $0.id == id }
     }
 
-    public var isConfirmingDelete: Bool {
-        get { deleting != nil }
-        set { if !newValue { deleting = nil } }
-    }
-
-    public var isShowingDisconnectFailure: Bool {
-        get { disconnectFailure != nil }
-        set { if !newValue { disconnectFailure = nil } }
-    }
-
-    public var isShowingUploadsBlockingDisconnect: Bool {
-        get { uploadsBlockingDisconnect != nil }
-        set { if !newValue { uploadsBlockingDisconnect = nil } }
-    }
-
     public func edit(_ connection: Connection) {
+        guard canStartEditing else { return }
         editor = ConnectionDraft(connection: connection)
     }
 
     public func duplicate(_ connection: Connection) {
+        guard canStartEditing else { return }
         editor = ConnectionDraft(duplicating: connection)
     }
 
@@ -134,13 +122,13 @@ import UnlocalFSDomain
     }
 
     public func delete(_ connection: Connection) async {
-        busy.insert(connection.id)
-        defer { busy.remove(connection.id) }
-        do {
-            connections = try await deleteConnection.execute(connection)
-            await forget(connection)
-            if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
-        } catch { alert = AppAlert(String(localized: .driveNotDeleted(connection.name)), error) }
+        await operate(on: connection, when: canEdit(connection)) {
+            do {
+                connections = try await deleteConnection.execute(connection)
+                await forget(connection)
+                if selection != .traffic { selection = connections.first.map { .drive($0.id) } }
+            } catch { alert = AppAlert(String(localized: .driveNotDeleted(connection.name)), error) }
+        }
     }
 
     private func forget(_ connection: Connection) async {

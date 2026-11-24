@@ -83,7 +83,7 @@ private let day = 24 * hour
         #expect(desktop.notifications.isEmpty)
     }
 
-    @Test func onlyRunningWritableDrivesCanCleanUp() async throws {
+    @Test func onlyRunningWritableDrivesCanCleanUpWhileTheAppStaysOpen() async throws {
         let writable = Connection.s3(name: "Writable")
         let readOnly = Connection.s3(name: "Read-only") { $0.readOnly = true }
         let stopped = Connection.s3(name: "Stopped")
@@ -95,6 +95,8 @@ private let day = 24 * hour
         #expect(app.canCleanUpUploads(writable))
         #expect(!app.canCleanUpUploads(readOnly))
         #expect(!app.canCleanUpUploads(stopped))
+        #expect(app.beginQuit())
+        #expect(!app.canCleanUpUploads(writable))
     }
 
     @discardableResult

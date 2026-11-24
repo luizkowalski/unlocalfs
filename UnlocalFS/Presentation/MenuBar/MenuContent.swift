@@ -15,7 +15,7 @@ struct MenuContent: View {
                 Text(model.driveStatus(connection).text)
                 Button(model.toggleTitle(connection)) {
                     Task {
-                        await model.toggle(connection, opensFinder: true)
+                        await model.toggle(connection)
                         if model.needsMainWindow(connection) { openMain() }
                     }
                 }
