@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 import Testing
 import UnlocalFSDomain
 @testable import UnlocalFSInfrastructure
@@ -65,8 +66,10 @@ struct MountSafetyTests {
     }
 
     @Test func uploadsQueuedDuringEjectKeepTheServiceAlive() async throws {
+        let quit = Mutex(false)
         try await withControl { root, _ in
             { request in
+                if request.method == "core/quit" { quit.withLock { $0 = true } }
                 if request.method == "job/list" { return #"{"runningIds":[]}"# }
                 let queue = mark(root.appending(path: "checked")) ? waitingItem : ""
                 return statusBatch(queue: #"{"queue":[\#(queue)]}"#)
@@ -75,6 +78,7 @@ struct MountSafetyTests {
             await #expect { try await service.unmount(connection) } throws: { error in
                 error is UploadsPendingError
             }
+            #expect(!quit.withLock { $0 })
         }
     }
 

@@ -30,7 +30,8 @@ private let day = 24 * hour
 
     @Test func reviewWithOnlyRecentUploadsRemovesNothing() async throws {
         let connection = Connection.s3()
-        let storage = try serve(connection, uploadAges: [hour])
+        let commands = Mutex<[String]>([])
+        try serve(connection, uploadAges: [hour]) { command in commands.withLock { $0.append(command) } }
         let app = fixture.app()
         await app.refresh()
 
@@ -39,7 +40,7 @@ private let day = 24 * hour
         #expect(app.uploadCleanup == nil)
         let alert = try #require(app.alert?.message)
         #expect(alert.contains(String(localized: .noAbandonedUploads(connection.name))) && alert.contains(String(localized: .recentUploadsKept(1))))
-        #expect(storage.uploadCount == 1)
+        #expect(commands.withLock { $0 } == ["list-multipart-uploads"])
     }
 
     @Test func cleanupKeepsTheDriveBusyAndReportsRemovedUploads() async throws {

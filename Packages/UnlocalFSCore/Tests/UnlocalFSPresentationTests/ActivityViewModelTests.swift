@@ -74,9 +74,11 @@ import UnlocalFSTestSupport
         #expect(viewModel.snapshot == .idle)
     }
 
-    @Test func cancelledObservationStopsWithoutLoadingActivity() async {
+    @Test func cancelledObservationStopsWithoutLoadingActivity() async throws {
+        let connection = Connection.s3()
+        try fixture.serve(connection)
         let viewModel = ActivityViewModel(drives: fixture.service, isBusy: { _ in false }, recordSpeed: { _, _ in })
-        let task = Task { await viewModel.observe(Connection.s3()) }
+        let task = Task { await viewModel.observe(connection) }
         task.cancel()
 
         await task.value
