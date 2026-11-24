@@ -33,7 +33,8 @@ public extension DriveGateway {
         return nil
     }
 
-    internal func drive(containing file: URL, among connections: [Connection]) throws -> (connection: Connection, path: String) {
+    func drive(containing file: URL, among connections: [Connection]) throws -> (connection: Connection, path: String) {
+        guard !file.hasDirectoryPath else { throw AppError(String(localized: .foldersNotSupported)) }
         guard let drive = remoteFile(file, among: connections) else { throw AppError(String(localized: .fileNotInDrive)) }
         return drive
     }

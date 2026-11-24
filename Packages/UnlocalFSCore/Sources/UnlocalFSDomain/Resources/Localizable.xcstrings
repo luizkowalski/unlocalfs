@@ -596,6 +596,23 @@
         }
       }
     },
+    "foldersNotSupported": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select files, not folders."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecione arquivos, não pastas."
+          }
+        }
+      }
+    },
     "googleAccountChanged": {
       "extractionState": "manual",
       "localizations": {

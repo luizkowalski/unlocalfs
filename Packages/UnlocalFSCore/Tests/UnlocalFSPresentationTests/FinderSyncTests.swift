@@ -172,6 +172,19 @@ import UnlocalFSTestSupport
         #expect(notification.body.contains(server.provider.title))
     }
 
+    @Test func aCommandOnAFolderAsksForFiles() async throws {
+        let connection = Connection.s3()
+        try fixture.repository.save(connection, credentials: Credentials.s3())
+        let desktop = TestDesktopServices(paths: fixture.paths)
+        let app = fixture.app(desktop: desktop)
+        let folder = fixture.paths.mount(connection).appending(path: "photos", directoryHint: .isDirectory)
+
+        #expect(app.reply(to: .run(.duplicateOnServer, files: [folder])) == .accepted)
+        let notification = await desktop.nextNotification()
+
+        #expect(notification.body == String(localized: .foldersNotSupported))
+    }
+
     @Test func aCopyLinkCommandExplainsWhyAnEncryptedDriveHasNoLinks() async throws {
         let encrypted = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)

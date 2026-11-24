@@ -15,8 +15,7 @@ extension AppViewModel {
     }
 
     private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
-        guard files.allSatisfy({ !$0.hasDirectoryPath }) else { return [] }
-        let owners = files.map { drives.remoteFile($0, among: connections)?.connection }
+        let owners = files.map { try? drives.drive(containing: $0, among: connections).connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
         var menu: [FinderMenuItem] = []
         if connection.shareLinkRefusal == nil {
