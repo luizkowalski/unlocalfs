@@ -29,8 +29,8 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
     }
 
     override func requestBadgeIdentifier(for url: URL) {
-        let isNew = cache.withLock { $0.see(url, at: .now) }
-        show([url])
+        let (isNew, badge) = cache.withLock { ($0.see(url, at: .now), $0.badge(for: url)) }
+        controller.setBadgeIdentifier(badge?.identifier ?? "", for: url)
         if isNew { schedulePull() }
     }
 
@@ -62,41 +62,16 @@ final class FinderSync: FIFinderSync, @unchecked Sendable {
         pulls.or(data: 1)
     }
 
-    private func schedulePullAgain(after delay: TimeInterval) {
-        queue.asyncAfter(deadline: .now() + delay) { [weak self] in self?.schedulePull() }
-    }
-
     private func pull() {
-        guard let app = FinderSyncClient() else { return clear() }
-        switch app.send(.snapshot(since: cache.withLock { $0.version }), timeout: 2) {
-        case let .unchanged(checkedAt):
-            show(cache.withLock { $0.confirm(checkedAt: checkedAt) })
-        case let .snapshot(snapshot, version, checkedAt):
-            let badges = FinderBadges(snapshot)
-            let watched = snapshot.watchedFolders
-            let result = cache.withLock { $0.apply(badges, version: version, watching: watched, checkedAt: checkedAt) }
-            if result.foldersChanged { controller.directoryURLs = watched }
-            show(result.ready)
-        case nil:
-            return schedulePullAgain(after: 3)
-        default:
-            return clear()
-        }
-        if cache.withLock({ $0.isWaiting }) { schedulePullAgain(after: 0.5) }
-    }
-
-    private func clear() {
-        let cleared = cache.withLock { $0.reset() }
-        for url in cleared.known {
-            controller.setBadgeIdentifier("", for: url)
-        }
-        if !cleared.watched.isEmpty { controller.directoryURLs = [] }
-    }
-
-    private func show(_ urls: Set<URL>) {
-        let badges = cache.withLock { cache in urls.map { ($0, cache.badge(for: $0)) } }
-        for (url, badge) in badges {
+        let version = cache.withLock { $0.version }
+        let reply: FinderSyncReply? = if let app = FinderSyncClient() { app.send(.snapshot(since: version), timeout: 2) } else { .failed }
+        let update = cache.withLock { $0.receive(reply) }
+        if let folders = update.watchedFolders { controller.directoryURLs = folders }
+        for (url, badge) in update.badges {
             controller.setBadgeIdentifier(badge?.identifier ?? "", for: url)
+        }
+        if let delay = update.pullAgainAfter {
+            queue.asyncAfter(deadline: .now() + delay) { [weak self] in self?.schedulePull() }
         }
     }
 }
