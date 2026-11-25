@@ -2405,6 +2405,7 @@
     },
     "Turn On…" : {
       "comment" : "Settings button that opens System Settings to turn on the Finder extension",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

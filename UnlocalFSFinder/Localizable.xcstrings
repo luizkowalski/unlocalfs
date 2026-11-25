@@ -3,6 +3,7 @@
   "strings" : {
     "Checking" : {
       "comment" : "Finder badge label for a file or folder whose upload status the app has not checked yet",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -14,6 +15,7 @@
     },
     "Upload failed" : {
       "comment" : "Finder badge label for a file or folder whose upload failed",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -25,6 +27,7 @@
     },
     "Uploaded" : {
       "comment" : "Finder badge label for a file or folder that is on the server",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {
@@ -36,6 +39,7 @@
     },
     "Uploading" : {
       "comment" : "Finder badge label for a file or folder that waits to upload or uploads now",
+      "extractionState" : "stale",
       "localizations" : {
         "pt-BR" : {
           "stringUnit" : {

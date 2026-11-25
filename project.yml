@@ -94,6 +94,10 @@ schemes:
     build:
       targets:
         UnlocalFS: all
+      postActions:
+        - name: Register dev build
+          settingsTarget: UnlocalFS
+          script: '"$PROJECT_DIR/scripts/register-dev-build.swift"'
     run:
       config: Debug
     test:
