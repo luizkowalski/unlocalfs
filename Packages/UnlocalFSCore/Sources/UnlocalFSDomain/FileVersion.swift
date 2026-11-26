@@ -19,7 +19,8 @@ public struct FileVersion: Identifiable, Sendable {
         self.size = size
         self.savedAt = savedAt
         let folder = (path as NSString).deletingLastPathComponent
-        let fileName = VersionName(of: (path as NSString).lastPathComponent).fileName
+        let fileName = (path as NSString).lastPathComponent.wholeMatch(of: /(.+)-v\d{4}-\d{2}-\d{2}-\d{6}-\d{3}(\.[^.]*)?/)
+            .map { "\($0.1)\($0.2 ?? "")" }
         filePath = fileName.map { (folder as NSString).appendingPathComponent($0) } ?? path
         isCurrent = fileName == nil
     }

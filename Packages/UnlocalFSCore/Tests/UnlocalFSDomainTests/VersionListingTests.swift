@@ -23,6 +23,8 @@ struct VersionListingTests {
     @Test(arguments: [
         ("Makefile-v2026-11-02-140301-000", "Makefile", false),
         ("archive.tar-v2026-11-02-140301-000.gz", "archive.tar.gz", false),
+        (".env-v2026-11-02-140301-000", ".env", false),
+        ("Q3 report-v2026-11-02-140301-000.final draft", "Q3 report.final draft", false),
         ("notes-v2-final.txt", "notes-v2-final.txt", true),
     ])
     func versionNamesMapToTheirFile(name: String, file: String, isCurrent: Bool) {
@@ -31,7 +33,7 @@ struct VersionListingTests {
         #expect(version.isCurrent == isCurrent)
     }
 
-    @Test func deletedFilesAreFilesWithOnlyOldVersionsNewestDeletionFirst() {
+    @Test func deletedFilesAreFilesWithOnlyOldVersionsLatestSaveFirst() {
         let listing = VersionListing([
             version("photo-v2026-11-01-100000-000.jpg", at: 1),
             version("photo-v2026-11-02-100000-000.jpg", at: 5),
