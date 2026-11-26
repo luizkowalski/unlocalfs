@@ -1,7 +1,7 @@
 [tools]
 swiftlint = "0.65.1"
 swiftformat = { version = "0.64.7", no_app = true, rename_exe = "swiftformat" }
-xcodegen = "2.48.0"
+xcodegen = "2.49.0"
 
 [tasks.test]
 description = "Run all tests, including rclone against local S3 and SFTP servers, the NFS client, and Keychain"

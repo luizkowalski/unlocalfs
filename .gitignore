@@ -11,3 +11,5 @@ UnlocalFS.xcodeproj/
 
 # local AI
 .codex/
+.claude/skills/*
+.agents/skills/*
