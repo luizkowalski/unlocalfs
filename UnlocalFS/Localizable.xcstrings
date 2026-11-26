@@ -1956,17 +1956,6 @@
         }
       }
     },
-    "Select files in an UnlocalFS drive." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione arquivos em uma unidade do UnlocalFS."
-          }
-        }
-      }
-    },
     "Server" : {
       "comment" : "Label of the SFTP server address, and section header",
       "localizations" : {
@@ -2659,6 +2648,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Quando o ícone da barra de menus está desligado, o UnlocalFS fica no Dock depois que você fecha a janela."
+          }
+        }
+      }
+    },
+    "While it is off, you cannot copy share links, duplicate files on the server, or show versions from Finder." : {
+      "comment" : "Settings note under the Finder extension description when the extension is off",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto ela estiver desligada, não é possível copiar links de compartilhamento, duplicar arquivos no servidor nem mostrar versões pelo Finder."
           }
         }
       }

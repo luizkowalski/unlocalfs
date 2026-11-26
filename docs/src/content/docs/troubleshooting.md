@@ -85,9 +85,9 @@ Avoid editing the same file through two drives at once: one save can overwrite t
 
 The window shows the server's error. An `AccessDenied` error means that the drive's access key cannot read versions. Give it the `s3:ListBucketVersions`, `s3:GetObjectVersion`, and `s3:GetBucketVersioning` permissions. Some S3-compatible providers do not support versions.
 
-## Share link services are missing
+## Copy Share Link is missing
 
-Open UnlocalFS once. Enable the entries in **System Settings → Keyboard → Keyboard Shortcuts → Services → Files and Folders**. Links require a connected, unencrypted S3 drive and an uploaded file. SFTP drives do not support links.
+Turn on the Finder extension: open **UnlocalFS → Settings** and click **Turn On…** next to **Finder Extension**. Links require a connected, unencrypted S3 drive and an uploaded file. SFTP drives do not support links.
 
 ## Finder adds .DS_Store files
 

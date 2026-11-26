@@ -217,25 +217,47 @@ import UnlocalFSTestSupport
         #expect(app.canReconnect(connection))
     }
 
-    @Test func disconnectAllStopsAtTheFirstDriveWithPendingUploads() async throws {
-        let first = Connection.s3()
-        let second = Connection.s3(name: "Second drive")
-        try fixture.serve(first, queued: 1)
-        try fixture.serve(second, queued: 1)
+    @Test func disconnectAllDisconnectsTheOtherDrivesAndShowsTheFirstBlockedOne() async throws {
+        let blocked = Connection.s3(name: "A blocked drive")
+        let alsoBlocked = Connection.s3(name: "B blocked drive")
+        let clean = Connection.s3(name: "C clean drive")
+        try fixture.serve(blocked, queued: 1)
+        try fixture.serve(alsoBlocked, queued: 1)
+        try fixture.serveRunning(clean)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         await app.refresh()
-        let blocked = try #require(app.connections.first)
 
         await app.disconnectAll()
 
+        #expect(!app.isActive(clean))
+        #expect(app.isActive(alsoBlocked))
         #expect(app.uploadsBlockingDisconnect == blocked)
         #expect(app.selected == blocked)
 
         try fixture.serve(blocked)
         await app.refresh()
 
-        #expect(desktop.notifications.map(\.title) == [String(localized: .finishedUploading(blocked.name))])
+        let finished = [blocked, alsoBlocked].map { String(localized: .finishedUploading($0.name)) }
+        #expect(Set(desktop.notifications.map(\.title)) == Set(finished))
+    }
+
+    @Test func disconnectAllDisconnectsEveryDriveAtTheSameTime() async throws {
+        let overlap = Overlap()
+        for name in ["A drive", "B drive"] {
+            try fixture.serveRunning(Connection.s3(name: name)) {
+                overlap.hold()
+                defer { overlap.release() }
+                try await Task.sleep(for: .milliseconds(200))
+            }
+        }
+        let app = fixture.app()
+        await app.refresh()
+
+        await app.disconnectAll()
+
+        #expect(!app.connections.contains(where: app.isActive))
+        #expect(overlap.peak == 2)
     }
 
     @Test func checkAgainClearsTheErrorAndReloadsTheStatus() async throws {

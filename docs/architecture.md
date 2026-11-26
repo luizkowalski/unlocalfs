@@ -33,7 +33,7 @@ Domain imports only Foundation: no UI, Security, subprocess, or filesystem code.
 | DuplicateFilesUseCase | Refuses SFTP and read-only drives. Never loads credentials. |
 | FileVersionsUseCase | Refuses drives that are not S3 before any rc call. Lists nothing when versioning is off. A restore also refuses read-only drives. |
 | ExportRcloneConfigUseCase | Refuses unencrypted drives. Reads credentials only for an export with secrets. |
-| QuitUseCase | Waits during an operation. Offers to disconnect, then disconnects all drives at the same time and keeps the app open on a failure. |
+| QuitUseCase | Waits during an operation. Otherwise offers to disconnect when a drive is active. |
 
 ## Infrastructure
 
@@ -97,13 +97,14 @@ These checks stay in Infrastructure, because uploads can change between two oper
 - Each reply says, for each drive, when the last status pass that read it started. A pass skips busy drives, so they keep their old time. `FinderBadgeCache` badges a file that Finder shows for the first time only after a later pass read its drive, so a new file never shows uploaded early, and a busy drive holds back only its own files. A timed-out pull keeps the badges and tries again; a missing port or a reply the extension cannot read clears them.
 - A right-click on the empty area of a folder window sends the folder as the selection, so one folder and a folder window get the same items.
 - `FinderBadges` maps a Finder URL to a drive by whole path components and rolls each queued upload up to its folders and the drive root, so the extension needs no file access.
-- The port does not check the sender. Any process of the same user can already run the same commands through Services and reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase`, `DuplicateFilesUseCase`, or `FileVersionsUseCase`, which check each file.
+- The port does not check the sender. Any process of the same user can already reach the drives through the rc sockets. Every command goes through `ShareFilesUseCase`, `DuplicateFilesUseCase`, or `FileVersionsUseCase`, which check each file.
 
 ## Presentation
 
 The app target has no tests. So view models decide what the UI shows: which items, their order, and counts. Views decide how it looks.
 
 - Views change `AppViewModel` state only through intents such as `toggle`. They can set the selection and what the app presents.
+- Disconnect All and the quit prompt use one `AppViewModel` path that disconnects all drives at the same time. A drive that stays connected shows its error or its pending uploads. Only the first failure in list order gets an alert. Quit disconnects the drives that the quit check found active, not the cached statuses, because a status pass can still be running.
 - `DriveCondition` is the one value behind the status text and dot. Its switches have no `default`, so a new case fails to compile. It hides whether the drive is mounted, so button rules read the status.
 - `ViewModelFactory` makes the feature view models. Views get it from the environment, so they do not know about repositories, gateways, or use cases.
 - A versions window opens from a `VersionsTarget`: `AppViewModel` resolves the Finder URL, and `VersionsWindows` in Application makes the view model and hosts it in an AppKit window, because `openWindow` needs a view and the factory needs the app view model first. Closing the window stops a list or a download, not a restore. A show command gets the `windowOpened` reply after the window exists, and only then does the extension bring the app forward, because macOS lets the app take focus only from the user's click.
@@ -116,5 +117,5 @@ The app target has no tests. So view models decide what the UI shows: which item
 
 ## Application
 
-- `AppDependencies.live()` builds the live objects. `AppDelegate` starts the status poll and handles network, sleep and wake, termination, and Finder services.
+- `AppDependencies.live()` builds the live objects. `AppDelegate` starts the status poll and handles network, sleep and wake, termination, and the Finder extension port.
 - A status pass asks all drives at the same time, so a slow drive delays only itself. A drive operation discards pending results.

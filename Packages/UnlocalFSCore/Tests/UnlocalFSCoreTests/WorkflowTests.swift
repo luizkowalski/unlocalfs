@@ -285,7 +285,7 @@ struct WorkflowTests {
         try await withWorkflowFixture { _, drives, connection in
             if active { try Data().write(to: drives.paths.socket(connection)) }
             let decision = await QuitUseCase(drives: drives.service).execute(connections: [connection], operationInProgress: false)
-            #expect(decision == (active ? .disconnect : .quit))
+            #expect(decision == (active ? .disconnect([connection]) : .quit))
         }
     }
 
