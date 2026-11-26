@@ -10,6 +10,7 @@ import UnlocalFSDomain
     func copyShareLinks(_ links: [URL])
     func chooseRcloneConfigDestination(for connection: Connection) -> RcloneConfigDestination?
     func notify(title: String, body: String, fallbackToAlert: Bool)
+    func showVersions(_ target: VersionsTarget)
     func announceFinderChange()
 }
 

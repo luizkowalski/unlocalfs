@@ -17,6 +17,8 @@ public enum Backend: Sendable {
 
     public var supportsUploadCleanup: Bool { self == .s3Compatible }
 
+    public var supportsVersions: Bool { self == .s3Compatible }
+
     public var supportsUploadTimes: Bool { self == .s3Compatible }
 
     public var supportsMultiThreadUploads: Bool { self == .sftp }

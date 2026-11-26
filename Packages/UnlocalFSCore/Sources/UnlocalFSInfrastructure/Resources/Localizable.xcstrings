@@ -188,6 +188,24 @@
         }
       }
     },
+    "couldNotListVersions": {
+      "comment": "%1$@ is the server's error",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not list the versions: %1$@. The storage may not support versions, or the drive's key needs the s3:ListBucketVersions and s3:GetObjectVersion permissions."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível listar as versões: %1$@. O armazenamento pode não ter versões, ou a chave da unidade precisa das permissões s3:ListBucketVersions e s3:GetObjectVersion."
+          }
+        }
+      }
+    },
     "couldNotMount": {
       "extractionState": "manual",
       "localizations": {
@@ -492,6 +510,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reconecte a unidade para parar envios. O UnlocalFS só pode parar envios por uma unidade conectada."
+          }
+        }
+      }
+    },
+    "restoreFileStillUploading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file is still uploading. Wait for it to finish, then restore the version again."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este arquivo ainda está sendo enviado. Espere o envio terminar e restaure a versão de novo."
           }
         }
       }

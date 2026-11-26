@@ -1367,6 +1367,24 @@
         }
       }
     },
+    "versionsUnavailable": {
+      "comment": "%1$@ is the provider name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versions aren't available for %1$@ drives."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versões não estão disponíveis para unidades %1$@."
+          }
+        }
+      }
+    },
     "waitBeforeQuitting": {
       "extractionState": "manual",
       "localizations": {

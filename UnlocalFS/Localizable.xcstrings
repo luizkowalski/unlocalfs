@@ -638,6 +638,17 @@
         }
       }
     },
+    "Current" : {
+      "comment" : "Versions window: marks the current version of the file",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atual"
+          }
+        }
+      }
+    },
     "Custom" : {
       "comment" : "Traffic period: opens the date picker for a range the user picks",
       "localizations" : {
@@ -1846,6 +1857,28 @@
         }
       }
     },
+    "Restore" : {
+      "comment" : "Versions window: copies the selected version over the current file",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar"
+          }
+        }
+      }
+    },
+    "Restore as Copy" : {
+      "comment" : "Versions window: copies the selected version to a new file next to the current one",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restaurar como cópia"
+          }
+        }
+      }
+    },
     "Retry %@" : {
       "localizations" : {
         "pt-BR" : {
@@ -1873,6 +1906,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salvar"
+          }
+        }
+      }
+    },
+    "Saved" : {
+      "comment" : "Versions window column: when the version was saved",
+      "localizations" : {
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvo em"
           }
         }
       }

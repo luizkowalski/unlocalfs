@@ -9,6 +9,7 @@ import UserNotifications
 
 @MainActor struct MacOSDesktopServices: DesktopServices {
     let paths: AppPaths
+    let versionsWindows: VersionsWindows
     var opensAtLogin: Bool { SMAppService.mainApp.status == .enabled }
 
     func setOpensAtLogin(_ enabled: Bool) throws {
@@ -83,6 +84,10 @@ import UserNotifications
                     """,
                 )
         }
+    }
+
+    func showVersions(_ target: VersionsTarget) {
+        versionsWindows.show(target)
     }
 
     func announceFinderChange() {

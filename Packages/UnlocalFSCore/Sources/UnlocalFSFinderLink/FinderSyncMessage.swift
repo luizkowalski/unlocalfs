@@ -1,7 +1,7 @@
 import Foundation
 
 @usableFromInline enum FinderSyncMessage {
-    static let version = 1
+    static let version = 2
     static let changedNotification = "net.luizkowalski.unlocalfs.finder.changed"
     @usableFromInline static var portName: String { Bundle.main.object(forInfoDictionaryKey: "FinderPortName") as? String ?? "" }
 

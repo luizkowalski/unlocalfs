@@ -15,9 +15,12 @@ extension AppViewModel {
     }
 
     private func finderMenu(for files: [URL]) -> [FinderMenuItem] {
-        guard files.allSatisfy({ !$0.hasDirectoryPath }) else { return [] }
-        let owners = files.map { drives.remoteFile($0, among: connections)?.connection }
+        let owners = files.map { versionsTarget(for: $0)?.connection }
         guard let connection = owners.first ?? nil, owners.allSatisfy({ $0 == connection }) else { return [] }
+        let showsVersions = files.count == 1 && connection.versionsRefusal == nil
+        if files.contains(where: \.hasDirectoryPath) {
+            return showsVersions ? [FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showVersions)] : []
+        }
         var menu: [FinderMenuItem] = []
         if connection.shareLinkRefusal == nil {
             menu += ShareLinkExpiry.allCases.map { FinderMenuItem(title: $0.menuTitle, command: .copyShareLink($0)) }
@@ -25,7 +28,18 @@ extension AppViewModel {
         if connection.serverCopyRefusal == nil {
             menu.append(FinderMenuItem(title: String(localized: .duplicateOnServer), command: .duplicateOnServer))
         }
+        if showsVersions {
+            menu.append(FinderMenuItem(title: String(localized: .showVersions), command: .showVersions))
+        }
         return menu
+    }
+
+    private func versionsTarget(for file: URL) -> VersionsTarget? {
+        if let drive = drives.remoteFile(file, among: connections) {
+            return VersionsTarget(connection: drive.connection, path: drive.path, isFolder: file.hasDirectoryPath)
+        }
+        let driveRoot = connections.first { servingStatus($0) != nil && file.path(inside: desktop.mountLocation($0)) == "" }
+        return driveRoot.map { VersionsTarget(connection: $0, path: "", isFolder: true) }
     }
 
     public func reply(to request: FinderSyncRequest) -> FinderSyncReply {
@@ -38,7 +52,14 @@ extension AppViewModel {
         case let .menu(files):
             return .menu(finderMenu(for: files))
         case let .run(command, files):
-            Task { await perform(command, on: files) }
+            switch command {
+            case let .copyShareLink(expiry): Task { await copyShareLinks(for: files, expiry: expiry) }
+            case .duplicateOnServer: Task { await duplicateOnServer(files) }
+            case .showVersions:
+                guard let target = files.first.flatMap(versionsTarget) else { return .failed }
+                desktop.showVersions(target)
+                return .windowOpened
+            }
             return .accepted
         }
     }
@@ -48,13 +69,6 @@ extension AppViewModel {
         guard snapshot != announcedFinderSnapshot else { return }
         announcedFinderSnapshot = snapshot
         desktop.announceFinderChange()
-    }
-
-    private func perform(_ command: FinderCommand, on files: [URL]) async {
-        switch command {
-        case let .copyShareLink(expiry): await copyShareLinks(for: files, expiry: expiry)
-        case .duplicateOnServer: await duplicateOnServer(files)
-        }
     }
 }
 

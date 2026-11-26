@@ -211,6 +211,7 @@ final class MemoryCredentialStorage: CredentialStorage {
     var notifications: [Notification] = []
     var rcloneConfigDestination: RcloneConfigDestination?
     var finderChanges = 0
+    var shownVersions: [VersionsTarget] = []
     private var notificationWaiters: [CheckedContinuation<Notification, Never>] = []
 
     init(paths: AppPaths) { self.paths = paths }
@@ -233,6 +234,8 @@ final class MemoryCredentialStorage: CredentialStorage {
         }
         notificationWaiters = []
     }
+
+    func showVersions(_ target: VersionsTarget) { shownVersions.append(target) }
 
     func nextNotification() async -> Notification {
         await withCheckedContinuation { notificationWaiters.append($0) }

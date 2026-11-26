@@ -44,6 +44,7 @@ export default defineConfig({
             { label: "Encryption", slug: "encryption" },
             { label: "Sharing links", slug: "sharing-links" },
             { label: "Duplicating files", slug: "duplicating-files" },
+            { label: "File versions", slug: "file-versions" },
             { label: "Traffic", slug: "traffic" },
             { label: "Troubleshooting", slug: "troubleshooting" },
             { label: "Privacy", slug: "privacy" },

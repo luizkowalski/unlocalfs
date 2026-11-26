@@ -18,6 +18,11 @@ public protocol DriveGateway: Sendable {
     func exportRcloneConfig(_ connection: Connection, credentials: Credentials?, to destination: URL) async throws
     func shareLink(for connection: Connection, path: String, expiry: ShareLinkExpiry, credentials: Credentials) async throws -> URL
     func duplicate(_ path: String, in connection: Connection) async throws -> String
+    func versioning(of connection: Connection) async -> BucketVersioning
+    func versions(in folder: String, of connection: Connection) async throws -> [FileVersion]
+    func restore(_ version: FileVersion, asCopy: Bool, in connection: Connection) async throws
+    func preview(_ version: FileVersion, in connection: Connection) async throws -> URL
+    func discardPreview(_ file: URL)
     func deleteFileToStopUpload(_ path: String, in connection: Connection) async throws
     func unfinishedUploads(in connection: Connection) async throws -> [UnfinishedUpload]
     func removeAbandonedUploads(in connection: Connection) async throws

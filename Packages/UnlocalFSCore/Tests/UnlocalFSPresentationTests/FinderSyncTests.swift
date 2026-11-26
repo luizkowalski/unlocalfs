@@ -143,19 +143,42 @@ import UnlocalFSTestSupport
             FinderMenuItem(title: String(localized: .copyShareLinkWeek), command: .copyShareLink(.week)),
         ]
         let duplicate = FinderMenuItem(title: String(localized: .duplicateOnServer), command: .duplicateOnServer)
+        let versions = FinderMenuItem(title: String(localized: .showVersions), command: .showVersions)
+        let folder = fixture.paths.mount(plain).appending(path: "b", directoryHint: .isDirectory)
 
         let (files, expected): ([URL], [FinderMenuItem]) = switch selection {
         case .plainFiles: ([file(plain), file(plain, "b/c.pdf")], links + [duplicate])
-        case .encryptedFile: ([file(encrypted)], [duplicate])
-        case .readOnlyFile: ([file(readOnly)], links)
+        case .encryptedFile: ([file(encrypted)], [duplicate, versions])
+        case .readOnlyFile: ([file(readOnly)], links + [versions])
         case .serverFile: ([file(server)], [])
-        case .fileAndFolder: ([file(plain), fixture.paths.mount(plain).appending(path: "b", directoryHint: .isDirectory)], [])
+        case .fileAndFolder: ([file(plain), folder], [])
         case .twoDrives: ([file(plain), file(other)], [])
         case .outside: ([fixture.root.appending(path: "a.pdf")], [])
         case .nothing: ([], [])
         }
 
         #expect(app.reply(to: .menu(files)) == .menu(expected))
+    }
+
+    @Test func oneFolderOrAServingDriveRootOffersRecentlyDeletedOnlyOnS3Drives() async throws {
+        let plain = Connection.s3(name: "Plain")
+        let server = Connection.sftp(name: "Server")
+        let offline = Connection.s3(name: "Offline")
+        for connection in [plain, server, offline] {
+            try fixture.repository.save(connection, credentials: Credentials())
+        }
+        try fixture.serve(plain)
+        let app = fixture.app()
+        await app.refresh()
+        func menu(_ connection: Connection, _ path: String) -> FinderSyncReply {
+            app.reply(to: .menu([fixture.paths.mount(connection).appending(path: path, directoryHint: .isDirectory)]))
+        }
+
+        let deleted = FinderSyncReply.menu([FinderMenuItem(title: String(localized: .showRecentlyDeleted), command: .showVersions)])
+        #expect(menu(plain, "b") == deleted)
+        #expect(menu(plain, "") == deleted)
+        #expect(menu(server, "b") == .menu([]))
+        #expect(menu(offline, "") == .menu([]))
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

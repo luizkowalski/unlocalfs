@@ -9,16 +9,20 @@ extension MountService {
         if try await isWaitingToUpload(path, in: connection) {
             throw AppError(String(localized: .duplicateFileStillUploading))
         }
-        let target = connection.driveTarget
-        let folder = (path as NSString).deletingLastPathComponent
-        let destination = try await reserveCopyPath(for: path, in: folder, of: connection, target: target)
+        return try await copyOnServer(path, to: path, asCopy: true, on: connection.driveTarget, in: connection)
+    }
+
+    @discardableResult
+    func copyOnServer(_ source: String, to file: String, asCopy: Bool, on remote: String, in connection: Connection) async throws -> String {
+        let destination = asCopy ? try await reserveCopyPath(for: file, of: connection) : file
+        reservedCopies[connection.id, default: []].insert(destination)
         defer { reservedCopies[connection.id]?.remove(destination) }
-        let job = try await control(StartedJob.self, connection, "operations/copyfile", [
-            "srcFs": target, "srcRemote": path, "dstFs": target, "dstRemote": destination,
-            "_async": "true", "_group": Self.copyGroup,
+        try await runJob(connection, "operations/copyfile", [
+            "srcFs": remote, "srcRemote": source, "dstFs": remote, "dstRemote": destination, "_group": Self.copyGroup,
         ])
-        try await waitForJob(job, on: connection)
+        let folder = (destination as NSString).deletingLastPathComponent
         _ = try? await control(connection, "vfs/refresh", folder.isEmpty ? [:] : ["dir": folder])
+        _ = try? await names(in: paths.mount(connection).appending(path: folder))
         return destination
     }
 
@@ -31,7 +35,9 @@ extension MountService {
         }
     }
 
-    private func reserveCopyPath(for path: String, in folder: String, of connection: Connection, target: String) async throws -> String {
+    private func reserveCopyPath(for path: String, of connection: Connection) async throws -> String {
+        let folder = (path as NSString).deletingLastPathComponent
+        let target = connection.driveTarget
         let mounted = try await names(in: paths.mount(connection).appending(path: folder))
         let name = CopyName(of: (path as NSString).lastPathComponent)
         var attempt = 0
@@ -48,7 +54,7 @@ extension MountService {
         }
     }
 
-    @concurrent private nonisolated func names(in folder: URL) async throws -> Set<String> {
+    @concurrent nonisolated func names(in folder: URL) async throws -> Set<String> {
         try Set(FileManager.default.contentsOfDirectory(atPath: folder.path))
     }
 }
