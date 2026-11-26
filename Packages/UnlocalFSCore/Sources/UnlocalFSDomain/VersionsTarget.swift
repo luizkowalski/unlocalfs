@@ -15,6 +15,8 @@ public struct VersionsTarget: Identifiable, Sendable {
 
     public var name: String { path.isEmpty ? connection.name : (path as NSString).lastPathComponent }
 
+    public var offersRestoreAsCopy: Bool { !isFolder }
+
     var listedFolder: String { isFolder ? path : (path as NSString).deletingLastPathComponent }
 
     func versions(in listing: VersionListing) -> [FileVersion] {

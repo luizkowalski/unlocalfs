@@ -160,13 +160,16 @@ import UnlocalFSTestSupport
         #expect(app.reply(to: .menu(files)) == .menu(expected))
     }
 
-    @Test func oneFolderOrADriveRootOffersRecentlyDeletedOnlyOnS3Drives() throws {
+    @Test func oneFolderOrAServingDriveRootOffersRecentlyDeletedOnlyOnS3Drives() async throws {
         let plain = Connection.s3(name: "Plain")
         let server = Connection.sftp(name: "Server")
-        for connection in [plain, server] {
+        let offline = Connection.s3(name: "Offline")
+        for connection in [plain, server, offline] {
             try fixture.repository.save(connection, credentials: Credentials())
         }
+        try fixture.serve(plain)
         let app = fixture.app()
+        await app.refresh()
         func menu(_ connection: Connection, _ path: String) -> FinderSyncReply {
             app.reply(to: .menu([fixture.paths.mount(connection).appending(path: path, directoryHint: .isDirectory)]))
         }
@@ -175,6 +178,7 @@ import UnlocalFSTestSupport
         #expect(menu(plain, "b") == deleted)
         #expect(menu(plain, "") == deleted)
         #expect(menu(server, "b") == .menu([]))
+        #expect(menu(offline, "") == .menu([]))
     }
 
     @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {

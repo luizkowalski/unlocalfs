@@ -876,6 +876,23 @@
         }
       }
     },
+    "restoreNeedsVersioning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The bucket may not keep the current file as a version, so Restore is off. Use Restore as Copy."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O bucket pode não guardar o arquivo atual como versão, então Restaurar está desligado. Use Restaurar como cópia."
+          }
+        }
+      }
+    },
     "showRecentlyDeleted": {
       "comment": "Finder context menu item that opens the files deleted in the selected folder",
       "extractionState": "manual",

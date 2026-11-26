@@ -12,17 +12,17 @@ These items need the UnlocalFS Finder extension; see [Finder badges and menu](/u
 Right-click one file in a connected drive and choose **Show Versions…**. A window lists the versions, newest first, with the time of each save and the size. The first row is the current file.
 
 - **Open** downloads the version and shows it in Quick Look. Double-click a row to do the same.
-- **Restore** copies the version over the current file. The server copies it, so nothing downloads or uploads. The current file becomes an earlier version, so you lose nothing.
+- **Restore** copies the version over the current file. The server copies it, so nothing downloads or uploads. The current file becomes an earlier version, so you lose nothing. **Restore** is available only while versioning is on for the bucket.
 - **Restore as Copy** copies the version next to the current file, as "report copy.pdf".
 
 ## Recently Deleted
 
-Right-click a folder, or the empty area of a folder window or of the drive, and choose **Show Recently Deleted…**. The window lists the files deleted in that folder, newest deletion first. **Restore** brings a file back with the content of its last save.
+Right-click a folder, or the empty area of a folder window or of the drive, and choose **Show Recently Deleted…**. The window lists the files deleted in that folder, with the time of the last save of each file, newest first. UnlocalFS cannot read when a file was deleted. **Restore** brings a file back with the content of its last save.
 
 ## Limits
 
 - Versions are available for Amazon S3 and other S3-compatible storage, also when the drive is encrypted. They are not available for Google Cloud Storage, Google Drive, or SFTP drives.
-- UnlocalFS does not turn versioning on. Turn it on in your storage provider's console. When versioning is off for the bucket, or the provider has no versions (Cloudflare R2), the window says so. When versioning is paused, the window shows the old versions, but new saves do not keep a version.
+- UnlocalFS does not turn versioning on. Turn it on in your storage provider's console. When versioning is off for the bucket, or the provider has no versions (Cloudflare R2), the window says so. When versioning is paused, the window shows the old versions, but new saves do not keep a version. A restore over the current file could then delete it for good, so only **Restore as Copy** is available. This is also true when the drive's access key cannot read the versioning state.
 - Recently Deleted shows the files of one folder, not of its subfolders. You cannot reach files in a deleted folder, because Finder cannot show that folder.
 - Wait until a file finishes uploading before you restore a version of it.
 - Read-only drives show versions and **Open**, but not **Restore**.

@@ -56,7 +56,9 @@ struct VersionsView: View {
 
     @ViewBuilder private func actions(for version: FileVersion) -> some View {
         Button("Open") { model.open(version) }.disabled(!model.canOpen)
-        Button("Restore as Copy") { model.restore(version, asCopy: true) }.disabled(!model.canRestore(version))
-        Button("Restore") { model.restore(version, asCopy: false) }.disabled(!model.canRestore(version))
+        if model.target.offersRestoreAsCopy {
+            Button("Restore as Copy") { model.restore(version, asCopy: true) }.disabled(!model.canRestore(version, asCopy: true))
+        }
+        Button("Restore") { model.restore(version, asCopy: false) }.disabled(!model.canRestore(version, asCopy: false))
     }
 }

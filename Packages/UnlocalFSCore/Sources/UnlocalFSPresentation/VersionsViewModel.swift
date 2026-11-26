@@ -27,8 +27,9 @@ import UnlocalFSDomain
     public var notice: String? {
         switch versioning {
         case .off: String(localized: .versioningOff)
-        case .suspended: String(localized: .versioningSuspended)
-        case .enabled, .unknown, nil: nil
+        case .suspended: String(localized: target.isFolder ? .versioningSuspended : .restoreNeedsVersioning)
+        case .unknown: target.isFolder ? nil : String(localized: .restoreNeedsVersioning)
+        case .enabled, nil: nil
         }
     }
 
@@ -38,8 +39,9 @@ import UnlocalFSDomain
 
     public var canOpen: Bool { working == nil }
 
-    public func canRestore(_ version: FileVersion) -> Bool {
+    public func canRestore(_ version: FileVersion, asCopy: Bool) -> Bool {
         target.connection.versionRestoreRefusal == nil && !version.isCurrent && working == nil
+            && (asCopy || target.isFolder || versioning == .enabled)
     }
 
     public func load() async {
@@ -57,6 +59,7 @@ import UnlocalFSDomain
     }
 
     public func open(_ version: FileVersion) {
+        guard canOpen else { return }
         download = run(version) { [self] in
             let file = try await fileVersions.preview(version, in: target.connection)
             previews.append(file)

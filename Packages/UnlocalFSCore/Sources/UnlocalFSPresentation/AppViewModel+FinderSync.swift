@@ -38,7 +38,7 @@ extension AppViewModel {
         if let drive = drives.remoteFile(file, among: connections) {
             return VersionsTarget(connection: drive.connection, path: drive.path, isFolder: file.hasDirectoryPath)
         }
-        let driveRoot = connections.first { file.path(inside: desktop.mountLocation($0)) == "" }
+        let driveRoot = connections.first { servingStatus($0) != nil && file.path(inside: desktop.mountLocation($0)) == "" }
         return driveRoot.map { VersionsTarget(connection: $0, path: "", isFolder: true) }
     }
 

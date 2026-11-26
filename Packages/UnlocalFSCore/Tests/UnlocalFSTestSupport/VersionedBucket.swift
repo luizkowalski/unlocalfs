@@ -25,7 +25,7 @@ public final class VersionedBucket: Sendable {
     public var respond: ControlServer.Respond {
         { [self] request in
             let destination = request.parameter("dstRemote")
-            return state.withLock { state in
+            return try state.withLock { state in
                 state.requests.append(request.body)
                 switch request.method {
                 case "operations/list":
@@ -41,7 +41,10 @@ public final class VersionedBucket: Sendable {
                 case "vfs/queue":
                     return #"{"queue":[\#(queue)]}"#
                 case "backend/command":
+                    guard !versioning.isEmpty else { throw ControlFailure("AccessDenied") }
                     return #"{"result":"\#(versioning)"}"#
+                case "job/batch":
+                    return statusBatch()
                 case "operations/stat":
                     return #"{"item":null}"#
                 default:
