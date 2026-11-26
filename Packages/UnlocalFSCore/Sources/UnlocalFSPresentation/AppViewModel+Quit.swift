@@ -11,13 +11,7 @@ public extension AppViewModel {
 
     func stopSignInsForQuit() async { await drives.stopSignIns() }
 
-    func disconnectForQuit() async -> (connection: Connection, error: any Error)? {
-        checkingQuit = true
-        let active = Set(connections.filter(isActive).map(\.id))
-        busy.formUnion(active)
-        let failure = await quit.disconnectAll(connections: connections)
-        busy.subtract(active)
-        await refresh()
-        return failure
+    func disconnectForQuit(_ active: [Connection]) async -> (connection: Connection, error: any Error)? {
+        await unmountAll(active)
     }
 }

@@ -43,39 +43,17 @@ public struct SignInAgainUseCase: Sendable {
 }
 
 public struct QuitUseCase: Sendable {
-    public enum Decision: Equatable, Sendable { case quit, disconnect, wait(String) }
+    public enum Decision: Equatable, Sendable { case quit, disconnect([Connection]), wait(String) }
     private let drives: any DriveGateway
 
     public init(drives: any DriveGateway) { self.drives = drives }
 
     public func execute(connections: [Connection], operationInProgress: Bool) async -> Decision {
         guard !operationInProgress else { return .wait(String(localized: .waitBeforeQuitting)) }
+        var active: [Connection] = []
         for connection in connections where await drives.status(connection).isActive {
-            return .disconnect
+            active.append(connection)
         }
-        return .quit
-    }
-
-    public func disconnectAll(connections: [Connection]) async -> (connection: Connection, error: any Error)? {
-        await withTaskGroup(of: (Int, any Error?).self) { group in
-            for (index, connection) in connections.enumerated() {
-                group.addTask { [drives] in
-                    guard await drives.status(connection).isActive else { return (index, nil) }
-                    do {
-                        try await drives.unmount(connection)
-                        return (index, nil)
-                    } catch {
-                        return (index, error)
-                    }
-                }
-            }
-            var first: (index: Int, error: any Error)?
-            for await (index, error) in group {
-                guard let error else { continue }
-                if let first, first.index <= index { continue }
-                first = (index, error)
-            }
-            return first.map { (connections[$0.index], $0.error) }
-        }
+        return active.isEmpty ? .quit : .disconnect(active)
     }
 }

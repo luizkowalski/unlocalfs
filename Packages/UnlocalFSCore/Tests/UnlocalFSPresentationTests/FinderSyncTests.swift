@@ -48,16 +48,7 @@ import UnlocalFSTestSupport
 
     @Test func aDisconnectIsAnnouncedWithoutWaitingForTheNextPoll() async throws {
         let connection = Connection.s3()
-        let socket = fixture.paths.socket(connection)
-        try fixture.serve(connection) { request in
-            switch request.method {
-            case "job/list": return #"{"runningIds":[]}"#
-            case "core/quit":
-                try FileManager.default.removeItem(at: socket)
-                return "{}"
-            default: return statusBatch()
-            }
-        }
+        try fixture.serveRunning(connection)
         let desktop = TestDesktopServices(paths: fixture.paths)
         let app = fixture.app(desktop: desktop)
         await app.refresh()
@@ -181,7 +172,7 @@ import UnlocalFSTestSupport
         #expect(menu(offline, "") == .menu([]))
     }
 
-    @Test func aCommandRunsTheSameWorkflowAsTheServicesEntry() async throws {
+    @Test func aDuplicateCommandExplainsWhyAnSFTPDriveCannotCopy() async throws {
         let server = Connection.sftp()
         try fixture.repository.save(server, credentials: Credentials(password: "secret"))
         let desktop = TestDesktopServices(paths: fixture.paths)
@@ -193,18 +184,27 @@ import UnlocalFSTestSupport
 
         #expect(notification.title == String(localized: .couldNotDuplicate("plan.pdf")))
         #expect(notification.body.contains(server.provider.title))
+        #expect(notification.fallbackToAlert)
     }
 
-    @Test func aCopyLinkCommandExplainsWhyAnEncryptedDriveHasNoLinks() async throws {
+    @Test func aRefusedCopyLinkCommandKeepsTheClipboardAndExplainsWhy() async throws {
         let encrypted = try fixture.saveEncryptedConnection()
         let desktop = TestDesktopServices(paths: fixture.paths)
+        let previousLink = try #require(URL(string: "https://example.com/previous"))
+        desktop.copiedLinks = [previousLink]
         let app = fixture.app(desktop: desktop)
+
+        #expect(app.reply(to: .run(.copyShareLink(.day), files: [fixture.root.appending(path: "outside.jpg")])) == .accepted)
+        let outside = await desktop.nextNotification()
+
+        #expect(outside.title == String(localized: .couldNotCopyLink("outside.jpg")))
+        #expect(outside.fallbackToAlert)
 
         #expect(app.reply(to: .run(.copyShareLink(.day), files: [fixture.paths.mount(encrypted).appending(path: "plan.pdf")])) == .accepted)
         let notification = await desktop.nextNotification()
 
         #expect(notification.title == String(localized: .couldNotCopyLink("plan.pdf")))
         #expect(notification.body == String(localized: .linksUnavailableEncrypted))
-        #expect(desktop.copiedLinks.isEmpty)
+        #expect(desktop.copiedLinks == [previousLink])
     }
 }

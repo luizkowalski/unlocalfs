@@ -111,8 +111,6 @@ import UnlocalFSPresentation
     let dependencies = AppDependencies.live()
     var model: AppViewModel { dependencies.model }
     var viewModels: ViewModelFactory { dependencies.viewModels }
-    private var requester = NSWorkspace.shared.frontmostApplication
-    private var serviceRequester: NSRunningApplication?
     private var checkingQuit = false
     private let pathMonitor = NWPathMonitor()
     private var finderPort: FinderSyncPort?
@@ -122,20 +120,19 @@ import UnlocalFSPresentation
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
         center.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
-        center.addObserver(self, selector: #selector(applicationActivated), name: NSWorkspace.didActivateApplicationNotification, object: nil)
         pathMonitor.pathUpdateHandler = { [weak self] path in
             let available = path.status == .satisfied
             Task { @MainActor [weak self] in await self?.model.networkChanged(available: available) }
         }
         pathMonitor.start(queue: DispatchQueue(label: "net.luizkowalski.unlocalfs.network"))
-        NSApp.servicesProvider = self
         do {
             finderPort = try FinderSyncPort { [model] in model.reply(to: $0) }
         } catch {
             Logger().error("Finder extension unavailable: \(error.localizedDescription, privacy: .public)")
         }
-        NSUpdateDynamicServices()
     }
+
+    func applicationDidBecomeActive(_: Notification) { model.syncOpensAtLogin() }
 
     @objc private func willSleep(_: Notification) { model.willSleep() }
 
@@ -157,14 +154,14 @@ import UnlocalFSPresentation
             switch await model.quitDecision() {
             case .quit:
                 allowed = true
-            case .disconnect:
+            case let .disconnect(active):
                 sender.activate()
                 let alert = NSAlert()
                 alert.messageText = String(localized: "Disconnect all drives before quitting?")
                 alert.addButton(withTitle: String(localized: "Disconnect All and Quit"))
                 alert.addButton(withTitle: String(localized: "Cancel"))
                 allowed = alert.runModal() == .alertFirstButtonReturn
-                if allowed, let failure = await model.disconnectForQuit() {
+                if allowed, let failure = await model.disconnectForQuit(active) {
                     let alert = NSAlert()
                     alert.messageText = String(localized: "“\(failure.connection.name)” couldn’t be disconnected.")
                     alert.informativeText = failure.error.localizedDescription
@@ -190,58 +187,5 @@ import UnlocalFSPresentation
         sender.setActivationPolicy(.regular)
         if !flag { sender.windows.first?.makeKeyAndOrderFront(nil) }
         return true
-    }
-}
-
-extension AppDelegate {
-    @objc func copyShareLink(_ pasteboard: NSPasteboard, userData: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        guard let expiry = userData.flatMap(ShareLinkExpiry.init) else {
-            refuseService(error)
-            return
-        }
-        runService(on: pasteboard, error: error) { await self.model.copyShareLinks(for: $0, expiry: expiry) }
-    }
-
-    @objc func duplicateOnServer(_ pasteboard: NSPasteboard, userData _: String?, error: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        runService(on: pasteboard, error: error) { await self.model.duplicateOnServer($0) }
-    }
-
-    private func runService(
-        on pasteboard: NSPasteboard, error: AutoreleasingUnsafeMutablePointer<NSString?>, _ action: @escaping @MainActor ([URL]) async -> Void,
-    ) {
-        guard let files = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL],
-              !files.isEmpty
-        else {
-            refuseService(error)
-            return
-        }
-        serviceRequester = requester == NSRunningApplication.current ? nil : requester
-        if NSApp.isActive { returnServiceFocus() }
-        Task { await action(files) }
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            serviceRequester = nil
-        }
-    }
-
-    private func refuseService(_ error: AutoreleasingUnsafeMutablePointer<NSString?>) {
-        error.pointee = String(localized: "Select files in an UnlocalFS drive.") as NSString
-    }
-
-    @objc private func applicationActivated(_ notification: Notification) {
-        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
-        if app == .current {
-            returnServiceFocus()
-            model.syncOpensAtLogin()
-        } else {
-            requester = app
-        }
-    }
-
-    private func returnServiceFocus() {
-        guard let serviceRequester else { return }
-        self.serviceRequester = nil
-        NSApp.yieldActivation(to: serviceRequester)
-        serviceRequester.activate()
     }
 }

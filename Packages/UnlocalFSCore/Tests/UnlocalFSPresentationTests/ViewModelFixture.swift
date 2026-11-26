@@ -112,6 +112,22 @@ struct ViewModelFixture {
         if downloaded > 0 { try String(getpid()).write(to: paths.pidFile(connection), atomically: true, encoding: .utf8) }
     }
 
+    func serveRunning(_ connection: Connection, beforeQuit: @escaping @Sendable () async throws -> Void = {}) throws {
+        let socket = paths.socket(connection)
+        try serve(connection) { request in
+            switch request.method {
+            case "job/list":
+                return #"{"runningIds":[]}"#
+            case "core/quit":
+                try await beforeQuit()
+                try FileManager.default.removeItem(at: socket)
+                return "{}"
+            default:
+                return statusBatch()
+            }
+        }
+    }
+
     func serve(_ connection: Connection, respond: @escaping ControlServer.Respond) throws {
         try ConnectionStore(url: paths.config).save(connection)
         try servers.start(at: paths.socket(connection), respond: respond)

@@ -23,6 +23,9 @@ struct SettingsView: View {
             } label: {
                 Text("Finder Extension")
                 Text("Shows upload status in Finder and adds Copy Share Link and Duplicate on Server to its right-click menu.")
+                if !finderExtensionEnabled {
+                    Text("While it is off, you cannot copy share links, duplicate files on the server, or show versions from Finder.")
+                }
             }
         }
         .formStyle(.grouped)
