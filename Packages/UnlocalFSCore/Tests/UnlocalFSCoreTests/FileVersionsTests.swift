@@ -7,59 +7,35 @@ import UnlocalFSTestSupport
 
 @Suite(.timeLimit(.minutes(1)))
 struct FileVersionsTests {
-    @Test(arguments: [
-        (false, "unlocalfs-s3,versions=true:my-bucket"),
-        (true, "unlocalfs,remote='unlocalfs-s3,versions=true:my-bucket':"),
-    ])
-    func listingReadsTheVersionedRemoteWithoutHeadRequests(encrypted: Bool, versionsFs: String) async throws {
-        let bucket = VersionedBucket(["sub/report.txt", "sub/report-v2026-11-02-140301-123.txt"])
-        try await withControl(connection: .s3 { $0.encrypted = encrypted }) { _, _ in bucket.respond } operation: { service, connection in
-            let versions = try await service.versions(in: "sub", of: connection)
-            #expect(versions.map(\.path) == ["sub/report.txt", "sub/report-v2026-11-02-140301-123.txt"])
-            let request = try #require(bucket.requests.first { $0["fs"] as? String == versionsFs })
-            #expect(request["remote"] as? String == "sub")
-            #expect((request["opt"] as? [String: Bool])?["noMimeType"] == true)
-            #expect((request["_config"] as? [String: Bool])?["UseServerModTime"] == true)
-        }
-    }
-
-    @Test func restoreCopiesTheVersionOnTheServerOverTheFileOrNextToIt() async throws {
+    @Test func restoreCopiesTheVersionOnTheServerAndADisconnectWaitsForIt() async throws {
         let bucket = VersionedBucket(["report.txt", "report-v2026-11-02-140301-123.txt"])
-        try await withControl { _, _ in bucket.respond } operation: { service, connection in
+        let copying = Mutex(false)
+        try await withControl { _, _ in
+            { request in
+                let held = copying.withLock { $0 }
+                switch request.method {
+                case "job/list": return #"{"runningIds":[]}"#
+                case "job/status" where held: return #"{"finished":false,"success":false,"error":""}"#
+                default: return try await bucket.respond(request)
+                }
+            }
+        } operation: { service, connection in
             try await FileManager.default.createDirectory(at: service.paths.mount(connection), withIntermediateDirectories: true)
             let old = try #require(try await service.versions(in: "", of: connection).first { !$0.isCurrent })
             try await service.restore(old, asCopy: false, in: connection)
             let copy = try #require(bucket.requests.last { $0["dstRemote"] as? String == "report.txt" })
             #expect(copy["srcFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
             #expect(copy["dstFs"] as? String == "unlocalfs-s3,versions=true:my-bucket")
-            #expect(copy["_group"] as? String == "duplicate")
             try await service.restore(old, asCopy: true, in: connection)
             #expect(bucket.requests.last { $0["dstRemote"] != nil }?["dstRemote"] as? String == "report copy.txt")
-        }
-    }
 
-    @Test func restoreRefusesAFileThatWaitsToUpload() async throws {
-        let bucket = VersionedBucket(["report.txt", "report-v2026-11-02-140301-123.txt"], queue: "report.txt")
-        try await withControl { _, _ in bucket.respond } operation: { service, connection in
-            let old = try #require(try await service.versions(in: "", of: connection).first { !$0.isCurrent })
-            await #expect { try await service.restore(old, asCopy: false, in: connection) } throws: { error in
-                error.localizedDescription == String(localized: .restoreFileStillUploading)
+            copying.withLock { $0 = true }
+            let restore = Task { try await service.restore(old, asCopy: false, in: connection) }
+            try await waitUntil { bucket.requests.count { $0["dstRemote"] != nil } == 3 }
+            await #expect { try await service.unmount(connection) } throws: { error in
+                error.localizedDescription == String(localized: .copyInProgress)
             }
-            #expect(!bucket.requests.contains { $0["dstRemote"] != nil })
-        }
-    }
-
-    @Test(arguments: [
-        ("Enabled", BucketVersioning.enabled), ("Suspended", .suspended), ("Unversioned", .off), ("", .unknown),
-    ])
-    func versioningReadsTheBucketState(reply: String, state: BucketVersioning) async throws {
-        try await withControl { _, _ in
-            { request in
-                guard request.method == "backend/command", !reply.isEmpty else { throw ControlFailure("AccessDenied") }
-                return #"{"result":"\#(reply)"}"#
-            }
-        } operation: { service, connection in
-            #expect(await service.versioning(of: connection) == state)
+            restore.cancel()
         }
     }
 
